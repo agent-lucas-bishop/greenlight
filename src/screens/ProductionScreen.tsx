@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCard, wrapProduction, resolveRelease, useReshoots, calculateQuality } from '../gameStore';
+import { drawProductionCard, wrapProduction, resolveRelease, useReshoots, calculateQuality, getMaxDraws } from '../gameStore';
 
 function RiskBadge({ tag }: { tag: string }) {
   return <span className={`risk-badge risk-${tag === '🟢' ? 'green' : tag === '🟡' ? 'yellow' : 'red'}`}>{tag}</span>;
@@ -85,10 +85,11 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   if (!prod) return null;
 
   const deckSize = prod.deck.length;
-  const canDraw = !prod.isWrapped && prod.drawCount < (prod.forceExtraDraw ? 7 : 6) && deckSize > 0;
-  const canWrap = prod.drawCount > 0 && !prod.isWrapped && !isDrawing && !prod.forceExtraDraw;
-  // If forceExtraDraw but we've drawn at least one more since it triggered, allow wrap
-  const mustDraw = prod.forceExtraDraw && prod.drawCount < 7 && !prod.isDisaster;
+  const maxDraws = getMaxDraws(prod);
+  const canDraw = !prod.isWrapped && prod.drawCount < maxDraws && deckSize > 0;
+  const canWrap = prod.drawCount > 0 && !prod.isWrapped && !isDrawing && !(prod.forceExtraDraw && prod.drawCount < maxDraws);
+  const mustDraw = prod.forceExtraDraw && prod.drawCount < maxDraws && !prod.isDisaster;
+  const drawsLeft = maxDraws - prod.drawCount;
 
   const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus } = calculateQuality(state);
 
@@ -124,12 +125,16 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       {/* Stats bar */}
       <div className="production-stats-bar">
         <div className="prod-stat">
-          <span className="label">Deck</span>
+          <span className="label">Deck Left</span>
           <span className="value">{deckSize}</span>
         </div>
         <div className="prod-stat">
           <span className="label">Draw</span>
-          <span className="value">{prod.drawCount}/{prod.forceExtraDraw ? 7 : 6}</span>
+          <span className="value">{prod.drawCount}/{maxDraws}</span>
+        </div>
+        <div className="prod-stat">
+          <span className="label">Draws Left</span>
+          <span className="value" style={{ color: drawsLeft <= 1 ? '#e74c3c' : drawsLeft <= 3 ? '#f39c12' : '#2ecc71' }}>{drawsLeft}</span>
         </div>
         <div className="prod-stat">
           <span className="label">🟢 Left</span>

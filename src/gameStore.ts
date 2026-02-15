@@ -235,7 +235,9 @@ export function startProduction() {
 export function drawProductionCard() {
   if (!state.production || state.production.isWrapped) return;
   const prod = { ...state.production };
-  const maxDraws = prod.forceExtraDraw ? 7 : 6;
+  const totalDeckSize = prod.deck.length + prod.played.length;
+  const baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
+  const maxDraws = baseDraw + (prod.forceExtraDraw ? 2 : 0);
   if (prod.drawCount >= maxDraws) return;
 
   const deck = [...prod.deck];
@@ -385,10 +387,16 @@ export function useReshoots() {
   });
 }
 
+export function getMaxDraws(prod: ProductionState): number {
+  const totalDeckSize = prod.deck.length + prod.played.length;
+  const baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
+  return baseDraw + (prod.forceExtraDraw ? 2 : 0);
+}
+
 export function wrapProduction() {
   if (!state.production) return;
-  if (state.production.forceExtraDraw && state.production.drawCount < 7 && !state.production.isDisaster) {
-    // Can't wrap yet — must draw one more
+  const maxDraws = getMaxDraws(state.production);
+  if (state.production.forceExtraDraw && state.production.drawCount < maxDraws && !state.production.isDisaster) {
     return;
   }
   setState({ production: { ...state.production, isWrapped: true } });

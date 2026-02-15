@@ -4,16 +4,21 @@ import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction }
 
 function CardPreview({ card }: { card: CardTemplate }) {
   return (
-    <div className="card-preview">
-      <span className={`risk-badge-sm risk-${card.riskTag === '🟢' ? 'green' : card.riskTag === '🟡' ? 'yellow' : 'red'}`}>{card.riskTag}</span>
-      <span className="cp-name">{card.name}</span>
-      <span className="cp-value">{card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}</span>
+    <div className="card-preview" style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span className={`risk-badge-sm risk-${card.riskTag === '🟢' ? 'green' : card.riskTag === '🟡' ? 'yellow' : 'red'}`}>{card.riskTag}</span>
+        <span className="cp-name" style={{ fontWeight: 600 }}>{card.name}</span>
+        <span className="cp-value">{card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}</span>
+      </div>
+      {card.synergyText && (
+        <div style={{ fontSize: '0.65rem', color: '#9b59b6', paddingLeft: 4 }}>✨ {card.synergyText}</div>
+      )}
     </div>
   );
 }
 
 function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onClick?: () => void; compact?: boolean; dimmed?: boolean; highlight?: boolean }) {
-  const [showCards, setShowCards] = useState(false);
+  const [showCards, setShowCards] = useState(true);
   const typeColors: Record<string, string> = { Lead: '#e74c3c', Support: '#e67e22', Director: '#9b59b6', Crew: '#3498db' };
   const typeEmoji: Record<string, string> = { Lead: '⭐', Support: '🤝', Director: '🎬', Crew: '🔧' };
 
@@ -73,6 +78,20 @@ export default function CastingScreen({ state }: { state: GameState }) {
     return sum + count;
   }, 0) + (state.currentScript?.cards.length || 0);
 
+  const greenCards = state.castSlots.reduce((sum, s) => {
+    if (!s.talent) return sum;
+    let count = s.talent.cards.filter(c => c.riskTag === '🟢').length;
+    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.riskTag === '🟢').length;
+    return sum + count;
+  }, 0) + (state.currentScript?.cards.filter(c => c.riskTag === '🟢').length || 0);
+
+  const yellowCards = state.castSlots.reduce((sum, s) => {
+    if (!s.talent) return sum;
+    let count = s.talent.cards.filter(c => c.riskTag === '🟡').length;
+    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.riskTag === '🟡').length;
+    return sum + count;
+  }, 0) + (state.currentScript?.cards.filter(c => c.riskTag === '🟡').length || 0);
+
   const redCards = state.castSlots.reduce((sum, s) => {
     if (!s.talent) return sum;
     let count = s.talent.cards.filter(c => c.riskTag === '🔴').length;
@@ -102,7 +121,19 @@ export default function CastingScreen({ state }: { state: GameState }) {
         <span>Skill: <strong style={{ color: 'var(--green-bright)' }}>{totalSkill}</strong></span>
         <span>Heat: <strong style={{ color: totalHeat > 5 ? 'var(--red-bright)' : 'var(--gold)' }}>{totalHeat}</strong></span>
         <span>Deck: <strong>{totalDeckCards}</strong> cards</span>
-        <span>🔴: <strong style={{ color: redCards > 4 ? '#e74c3c' : '#f39c12' }}>{redCards}</strong> ({totalDeckCards > 0 ? Math.round(redCards / totalDeckCards * 100) : 0}%)</span>
+        <span>Draws: <strong>{Math.min(15, Math.max(6, Math.ceil(totalDeckCards * 0.55)))}</strong></span>
+      </div>
+
+      {/* Deck Preview */}
+      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+        <strong style={{ color: '#ccc' }}>📦 Deck Preview</strong>
+        <span>🟢 <strong style={{ color: '#2ecc71' }}>{greenCards}</strong></span>
+        <span>🟡 <strong style={{ color: '#f1c40f' }}>{yellowCards}</strong></span>
+        <span>🔴 <strong style={{ color: '#e74c3c' }}>{redCards}</strong></span>
+        <span style={{ color: '#888' }}>|</span>
+        <span style={{ color: redCards >= 3 ? '#e74c3c' : greenCards > redCards * 2 ? '#2ecc71' : '#f39c12' }}>
+          {redCards >= 3 ? '⚠️ High Risk' : greenCards > redCards * 2 ? '✨ Strong Synergy Potential' : '⚡ Balanced'}
+        </span>
       </div>
 
       <div className="cast-area">

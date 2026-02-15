@@ -37,22 +37,70 @@ h1, h2, h3, h4 {
   min-height: 100vh;
 }
 
-/* FILM STRIP BORDER */
+/* ===== ANIMATIONS ===== */
+
+.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-title {
+  animation: titleReveal 0.8s ease;
+}
+
+@keyframes titleReveal {
+  0% { opacity: 0; transform: scale(0.8); letter-spacing: 0.3em; }
+  100% { opacity: 1; transform: scale(1); letter-spacing: 0.05em; }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.card-reveal {
+  animation: cardReveal 0.4s ease;
+}
+
+@keyframes cardReveal {
+  0% { opacity: 0; transform: rotateY(90deg) scale(0.8); }
+  50% { opacity: 1; transform: rotateY(-5deg) scale(1.05); }
+  100% { opacity: 1; transform: rotateY(0) scale(1); }
+}
+
+/* ===== LAYOUT ===== */
+
 .film-strip {
   background: repeating-linear-gradient(
     to right,
-    transparent 0px,
-    transparent 12px,
-    var(--dark3) 12px,
-    var(--dark3) 14px,
-    transparent 14px,
-    transparent 26px
+    transparent 0px, transparent 12px,
+    var(--dark3) 12px, var(--dark3) 14px,
+    transparent 14px, transparent 26px
   );
   height: 8px;
   width: 100%;
 }
 
-/* SPOTLIGHT */
 .spotlight {
   position: fixed;
   top: -200px;
@@ -65,7 +113,8 @@ h1, h2, h3, h4 {
   z-index: 0;
 }
 
-/* HEADER BAR */
+/* ===== HEADER ===== */
+
 .header {
   background: linear-gradient(180deg, var(--dark2) 0%, var(--dark) 100%);
   border-bottom: 2px solid var(--gold-dim);
@@ -75,6 +124,8 @@ h1, h2, h3, h4 {
   align-items: center;
   position: relative;
   z-index: 10;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .header h1 {
   font-size: 2rem;
@@ -94,7 +145,8 @@ h1, h2, h3, h4 {
 .header-stat .label { color: var(--gray-light); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; }
 .header-stat .value { color: var(--gold); font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; }
 
-/* MAIN CONTENT */
+/* ===== MAIN ===== */
+
 .main {
   max-width: 1100px;
   margin: 0 auto;
@@ -103,7 +155,6 @@ h1, h2, h3, h4 {
   z-index: 1;
 }
 
-/* PHASE TITLE */
 .phase-title {
   text-align: center;
   margin-bottom: 24px;
@@ -119,7 +170,8 @@ h1, h2, h3, h4 {
   margin-top: 4px;
 }
 
-/* CARDS */
+/* ===== CARDS ===== */
+
 .card {
   background: linear-gradient(135deg, var(--dark2) 0%, var(--dark3) 100%);
   border: 1px solid var(--dark3);
@@ -149,6 +201,30 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 20px rgba(212,168,67,0.25);
 }
 .card.selected::before { background: var(--gold-bright); }
+
+/* Card pick animations */
+.card.chosen {
+  animation: cardChosen 0.5s ease forwards;
+}
+@keyframes cardChosen {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(212,168,67,0.4); }
+  100% { transform: scale(1); border-color: var(--gold-bright); }
+}
+.card.not-chosen {
+  animation: cardDismiss 0.5s ease forwards;
+}
+@keyframes cardDismiss {
+  to { opacity: 0.2; transform: scale(0.95); }
+}
+
+.neow-card {
+  animation: cardSlideUp 0.5s ease both;
+}
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .card-grid {
   display: grid;
@@ -188,7 +264,8 @@ h1, h2, h3, h4 {
 .card-stat.green { color: var(--green-bright); border: 1px solid var(--green); }
 .card-stat.blue { color: #5dade2; border: 1px solid var(--blue); }
 
-/* TALENT CARD */
+/* ===== TALENT ===== */
+
 .talent-card { min-height: 120px; }
 .talent-type {
   font-size: 0.65rem;
@@ -202,7 +279,6 @@ h1, h2, h3, h4 {
 .talent-type.Star { background: var(--gold-dim); color: var(--gold-bright); }
 .talent-type.Director { background: #2c3e50; color: #5dade2; }
 .talent-type.Crew { background: #1a3a1a; color: var(--green-bright); }
-
 .trait-badge {
   font-size: 0.7rem;
   color: var(--gold);
@@ -211,7 +287,8 @@ h1, h2, h3, h4 {
   opacity: 0.8;
 }
 
-/* BUTTONS */
+/* ===== BUTTONS ===== */
+
 .btn {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
@@ -223,6 +300,7 @@ h1, h2, h3, h4 {
   cursor: pointer;
   transition: all 0.2s;
   border-radius: 4px;
+  position: relative;
 }
 .btn:hover {
   background: var(--gold);
@@ -244,23 +322,48 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 30px rgba(212,168,67,0.4);
 }
 
+.btn-glow {
+  animation: btnPulse 2s ease infinite;
+}
+@keyframes btnPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(212,168,67,0.2); }
+  50% { box-shadow: 0 0 20px rgba(212,168,67,0.4); }
+}
+
 .btn-danger { border-color: var(--red); color: var(--red); }
 .btn-danger:hover { background: var(--red); color: var(--white); }
-
 .btn-small { font-size: 0.85rem; padding: 6px 16px; }
+.btn-group { display: flex; gap: 12px; justify-content: center; margin-top: 20px; align-items: center; }
 
-.btn-group { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+/* ===== PRODUCTION ===== */
 
-/* PRODUCTION DRAW AREA */
-.production-area {
-  text-align: center;
+.production-area { text-align: center; }
+
+.production-stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 16px;
+  padding: 12px 20px;
+  background: var(--dark2);
+  border-radius: 8px;
+  border: 1px solid var(--dark3);
 }
+.prod-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.prod-stat .label { font-size: 0.7rem; color: var(--gray-light); text-transform: uppercase; letter-spacing: 0.1em; }
+.prod-stat .value { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; }
+
 .production-deck {
   display: flex;
   justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
   margin: 20px 0;
+  min-height: 80px;
 }
 .prod-card {
   width: 140px;
@@ -282,57 +385,76 @@ h1, h2, h3, h4 {
 .bad-counter {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 8px;
   margin: 16px 0;
 }
 .bad-pip {
-  width: 24px; height: 24px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   border: 2px solid var(--red);
   display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  color: #444;
+  transition: all 0.3s;
 }
-.bad-pip.filled { background: var(--red); }
+.bad-pip.filled { background: var(--red); color: white; font-size: 0.9rem; }
+.bad-label {
+  color: #666;
+  font-size: 0.8rem;
+  margin-left: 8px;
+}
 
-/* QUALITY METER */
 .quality-display {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 3rem;
   color: var(--gold-bright);
   text-shadow: 0 0 30px rgba(212,168,67,0.4);
   margin: 12px 0;
+  transition: color 0.3s;
+}
+.quality-display.positive { color: var(--green-bright); text-shadow: 0 0 30px rgba(46,204,113,0.4); }
+.quality-display.negative { color: var(--red-bright); text-shadow: 0 0 30px rgba(231,76,60,0.4); }
+
+.disaster-banner {
+  background: rgba(192,57,43,0.2);
+  border: 2px solid #c0392b;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+}
+.disaster-banner h3 { color: #e74c3c; font-size: 2rem; }
+.disaster-banner p { color: #e74c3c; }
+
+.draw-animation {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-back {
+  font-size: 2rem;
+  animation: cardSpin 0.3s linear;
+}
+@keyframes cardSpin {
+  from { transform: rotateY(0); }
+  to { transform: rotateY(180deg); }
 }
 
-/* RELEASE SCREEN */
-.box-office {
-  text-align: center;
-  padding: 40px 0;
-}
-.box-office-number {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 5rem;
-  color: var(--gold-bright);
-  text-shadow: 0 0 40px rgba(212,168,67,0.5);
-  animation: numberPop 0.5s ease;
-}
-.box-office-target {
-  font-size: 1.1rem;
-  color: var(--gray-light);
-  margin-top: 8px;
+/* ===== CASTING ===== */
+
+.casting-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  color: #999;
 }
 
-@keyframes numberPop {
-  0% { transform: scale(0.5); opacity: 0; }
-  70% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.hit { color: var(--green-bright) !important; }
-.miss { color: var(--red-bright) !important; }
-
-/* CAST SLOTS */
 .cast-area {
   display: grid;
-  grid-template-columns: 200px 1fr;
+  grid-template-columns: 220px 1fr;
   gap: 24px;
   margin-top: 20px;
 }
@@ -351,7 +473,7 @@ h1, h2, h3, h4 {
   transition: all 0.2s;
 }
 .cast-slot.filled { border-style: solid; border-color: var(--gold-dim); }
-.cast-slot.active { border-color: var(--gold); box-shadow: 0 0 10px rgba(212,168,67,0.2); }
+.cast-slot.active { border-color: var(--gold); box-shadow: 0 0 10px rgba(212,168,67,0.2); background: rgba(212,168,67,0.05); }
 .cast-slot .slot-label {
   font-size: 0.65rem;
   text-transform: uppercase;
@@ -365,17 +487,67 @@ h1, h2, h3, h4 {
   color: var(--gold);
 }
 
-/* SHOP */
-.shop-section { margin-bottom: 32px; }
-.shop-section h3 {
-  font-size: 1.5rem;
-  color: var(--gold);
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--dark3);
+/* ===== RELEASE ===== */
+
+.box-office { text-align: center; padding: 40px 0; }
+.box-office-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 5rem;
+  color: var(--gold-bright);
+  text-shadow: 0 0 40px rgba(212,168,67,0.5);
+  animation: numberPop 0.5s ease;
+  transition: color 0.5s;
+}
+.box-office-target {
+  font-size: 1.1rem;
+  color: var(--gray-light);
+  margin-top: 8px;
+  transition: opacity 0.5s;
+}
+.box-office-target.hidden { opacity: 0; }
+.box-office-target.revealed { animation: fadeIn 0.5s ease; }
+
+@keyframes numberPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-/* SEASON HISTORY */
+.hit { color: var(--green-bright) !important; text-shadow: 0 0 40px rgba(46,204,113,0.5) !important; }
+.miss { color: var(--red-bright) !important; text-shadow: 0 0 40px rgba(231,76,60,0.5) !important; }
+
+.strike-banner {
+  display: inline-block;
+  background: rgba(231,76,60,0.15);
+  border: 1px solid var(--red);
+  border-radius: 6px;
+  padding: 8px 20px;
+  color: var(--red-bright);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+}
+
+.nomination-banner {
+  color: #d4a843;
+  font-size: 1.2rem;
+  font-family: 'Bebas Neue', sans-serif;
+}
+
+.cast-summary {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.cast-credit {
+  background: #1e1e1e;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+/* ===== SEASON HISTORY ===== */
+
 .history {
   display: flex;
   gap: 8px;
@@ -389,18 +561,49 @@ h1, h2, h3, h4 {
   display: flex; align-items: center; justify-content: center;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 0.9rem;
+  color: #444;
+  transition: all 0.3s;
 }
 .history-pip.current { border-color: var(--gold); color: var(--gold); }
 .history-pip.hit { border-color: var(--green); background: rgba(39,174,96,0.2); color: var(--green-bright); }
 .history-pip.miss { border-color: var(--red); background: rgba(192,57,43,0.2); color: var(--red-bright); }
 
-/* REPUTATION STARS */
-.rep-stars { display: flex; gap: 4px; }
-.rep-star { font-size: 1.2rem; }
-.rep-star.filled { color: var(--gold); }
-.rep-star.empty { color: var(--dark3); }
+/* ===== SHOP ===== */
 
-/* START SCREEN */
+.shop-section { margin-bottom: 32px; }
+.shop-section h3 {
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--dark3);
+}
+
+.roster-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--dark2);
+  border: 1px solid var(--dark3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  gap: 4px;
+}
+.fire-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.7rem;
+  margin-left: 6px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+.fire-btn:hover { color: var(--red-bright); background: rgba(231,76,60,0.2); }
+
+/* ===== START SCREEN ===== */
+
 .start-screen {
   display: flex;
   flex-direction: column;
@@ -410,9 +613,10 @@ h1, h2, h3, h4 {
   text-align: center;
 }
 .start-title {
-  font-size: 5rem;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 6rem;
   color: var(--gold);
-  text-shadow: 0 0 60px rgba(212,168,67,0.3);
+  text-shadow: 0 0 60px rgba(212,168,67,0.3), 0 0 120px rgba(212,168,67,0.1);
   margin-bottom: 8px;
 }
 .start-subtitle {
@@ -422,31 +626,8 @@ h1, h2, h3, h4 {
   font-style: italic;
 }
 
-/* MARQUEE LIGHTS */
-.marquee-border {
-  position: relative;
-  padding: 3px;
-  background: var(--dark);
-  border-radius: 10px;
-}
-.marquee-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  padding: 2px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-dim), var(--gold), var(--gold-dim));
-  background-size: 200% 100%;
-  animation: marqueeShine 3s linear infinite;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-}
-@keyframes marqueeShine {
-  to { background-position: 200% 0; }
-}
+/* ===== NEOW ===== */
 
-/* NEOW */
 .neow-choices {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -455,7 +636,8 @@ h1, h2, h3, h4 {
   margin: 0 auto;
 }
 
-/* GAME OVER / VICTORY */
+/* ===== END SCREEN ===== */
+
 .end-screen {
   text-align: center;
   padding: 60px 0;
@@ -464,19 +646,43 @@ h1, h2, h3, h4 {
   font-size: 4rem;
   margin-bottom: 16px;
 }
+
+.rank-display {
+  font-size: 4rem;
+  font-family: 'Bebas Neue', sans-serif;
+  margin: 20px 0;
+  animation: rankReveal 0.8s ease;
+}
+@keyframes rankReveal {
+  0% { opacity: 0; transform: scale(3) rotate(-10deg); }
+  60% { transform: scale(0.9) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
 .end-stats {
   display: flex;
   gap: 32px;
   justify-content: center;
   margin: 32px 0;
 }
-.end-stat {
-  text-align: center;
-}
+.end-stat { text-align: center; }
 .end-stat .label { font-size: 0.8rem; color: var(--gray-light); text-transform: uppercase; }
 .end-stat .value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--gold); }
 
-/* PERKS BAR */
+.filmography-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #1e1e1e;
+  font-size: 0.9rem;
+}
+.film-season { color: #666; font-family: 'Bebas Neue', sans-serif; }
+.film-title { color: #d4a843; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; }
+
+/* ===== PERKS ===== */
+
 .perks-bar {
   display: flex;
   gap: 8px;
@@ -491,7 +697,8 @@ h1, h2, h3, h4 {
   white-space: nowrap;
 }
 
-/* EVENT BANNER */
+/* ===== EVENTS ===== */
+
 .event-banner {
   background: linear-gradient(90deg, transparent, rgba(212,168,67,0.1), transparent);
   border: 1px solid var(--gold-dim);
@@ -503,11 +710,82 @@ h1, h2, h3, h4 {
   color: var(--gold);
 }
 
-/* RESPONSIVE */
+/* ===== REPUTATION ===== */
+
+.rep-star { font-size: 1.2rem; }
+.rep-star.filled { color: var(--gold); }
+.rep-star.empty { color: var(--dark3); }
+
+/* ===== MODAL ===== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+.modal {
+  background: var(--dark);
+  border: 1px solid var(--gold-dim);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 650px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideDown 0.3s ease;
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--gray);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.modal-close:hover { color: var(--white); }
+
+.how-to-play {
+  text-align: left;
+}
+.htp-section {
+  margin-bottom: 20px;
+}
+.htp-section h3 {
+  color: var(--gold);
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+.htp-section p, .htp-section li {
+  color: #ccc;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.htp-section ol, .htp-section ul {
+  padding-left: 20px;
+}
+.htp-section li {
+  margin-bottom: 6px;
+}
+
+/* ===== RESPONSIVE ===== */
+
 @media (max-width: 768px) {
   .card-grid-3, .card-grid-4 { grid-template-columns: 1fr 1fr; }
   .cast-area { grid-template-columns: 1fr; }
   .neow-choices { grid-template-columns: 1fr; }
   .box-office-number { font-size: 3rem; }
-  .start-title { font-size: 3rem; }
+  .start-title { font-size: 3.5rem; }
+  .header { padding: 8px 12px; }
+  .header-stats { gap: 12px; }
+  .production-stats-bar { gap: 16px; }
+  .end-stats { gap: 16px; flex-wrap: wrap; }
+  .casting-stats { gap: 12px; font-size: 0.75rem; }
 }

@@ -1,24 +1,43 @@
+import { useState } from 'react';
 import { pickNeow } from '../gameStore';
 
 const CHOICES = [
-  { title: 'Fading Icon', desc: 'A volatile star: Skill 5, Heat 4. "Past Their Prime" — loses 1 Skill each season. A ticking time bomb of talent.', emoji: '⭐' },
-  { title: '$10M Extra Cash', desc: 'Play it safe. Extra budget means more options early, but no star power to lean on.', emoji: '💰' },
-  { title: 'Crisis Manager Perk', desc: 'Bad production card effects are halved. A safety net for the cautious producer.', emoji: '🛡️' },
+  { title: 'Fading Icon', desc: 'A volatile star: Skill 5, Heat 4. "Past Their Prime" — loses 1 Skill each season. A ticking time bomb of talent.', emoji: '⭐', color: '#d4a843' },
+  { title: '$10M Extra Cash', desc: 'Play it safe. Extra budget means more hiring options early, but no star power to lean on.', emoji: '💰', color: '#2ecc71' },
+  { title: 'Crisis Manager', desc: 'A studio perk: bad production card effects are halved. A safety net for the cautious producer.', emoji: '🛡️', color: '#5dade2' },
 ];
 
 export default function NeowScreen() {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [chosen, setChosen] = useState<number | null>(null);
+
+  const handlePick = (i: number) => {
+    setChosen(i);
+    setTimeout(() => pickNeow(i), 600);
+  };
+
   return (
-    <div>
+    <div className="fade-in">
       <div className="phase-title">
         <h2>Welcome to Hollywood</h2>
         <div className="subtitle">Every studio head gets one break. Choose yours.</div>
       </div>
       <div className="neow-choices">
         {CHOICES.map((c, i) => (
-          <div key={i} className="card" onClick={() => pickNeow(i)}>
-            <div style={{ fontSize: '2rem', marginBottom: 8 }}>{c.emoji}</div>
-            <div className="card-title">{c.title}</div>
-            <div className="card-body">{c.desc}</div>
+          <div
+            key={i}
+            className={`card neow-card ${chosen === i ? 'chosen' : ''} ${chosen !== null && chosen !== i ? 'not-chosen' : ''}`}
+            onClick={() => chosen === null && handlePick(i)}
+            onMouseEnter={() => setHoveredIdx(i)}
+            onMouseLeave={() => setHoveredIdx(null)}
+            style={{ 
+              animationDelay: `${i * 0.15}s`,
+              borderColor: hoveredIdx === i ? c.color : undefined,
+            }}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: 12, transition: 'transform 0.2s', transform: hoveredIdx === i ? 'scale(1.2)' : 'scale(1)' }}>{c.emoji}</div>
+            <div className="card-title" style={{ color: c.color }}>{c.title}</div>
+            <div className="card-body" style={{ fontSize: '0.85rem' }}>{c.desc}</div>
           </div>
         ))}
       </div>

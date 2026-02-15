@@ -7,21 +7,21 @@ const GENRES: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Roman
 
 // --- SCRIPTS ---
 export const ALL_SCRIPTS: Omit<Script, 'id'>[] = [
-  { title: 'Fast Lane', genre: 'Action', baseScore: 6, slots: ['Lead','Support','Director','Crew','Wild'], cost: 3, abilityDesc: 'Stunt bonuses doubled' },
-  { title: 'Midnight Caller', genre: 'Horror', baseScore: 7, slots: ['Lead','Director','Crew','Crew','Wild'], cost: 2, abilityDesc: 'Scandal cards add +1 quality' },
+  { title: 'Fast Lane', genre: 'Action', baseScore: 6, slots: ['Lead','Support','Director','Crew','Wild'], cost: 3, ability: 'stuntDouble', abilityDesc: 'Stunt bonuses doubled' },
+  { title: 'Midnight Caller', genre: 'Horror', baseScore: 7, slots: ['Lead','Director','Crew','Crew','Wild'], cost: 2, ability: 'scandalQuality', abilityDesc: 'Scandal cards add +1 quality instead' },
   { title: 'Summer Daze', genre: 'Comedy', baseScore: 5, slots: ['Lead','Support','Director','Crew','Wild'], cost: 0 },
-  { title: 'The Last Emperor', genre: 'Drama', baseScore: 8, slots: ['Lead','Support','Director','Crew','Wild'], cost: 5, abilityDesc: 'Director skill counts double' },
-  { title: 'Galactic War', genre: 'Sci-Fi', baseScore: 8, slots: ['Lead','Support','Director','Crew','Crew'], cost: 8, abilityDesc: '+3 quality if total crew skill ≥ 6' },
-  { title: 'Broken Hearts Club', genre: 'Romance', baseScore: 5, slots: ['Lead','Support','Director','Crew','Wild'], cost: 1, abilityDesc: '+4 if 2+ Stars in cast' },
-  { title: 'Nightmare Fuel', genre: 'Horror', baseScore: 6, slots: ['Lead','Support','Director','Crew','Wild'], cost: 2, abilityDesc: 'Scandal cards heal +2 quality instead' },
+  { title: 'The Last Emperor', genre: 'Drama', baseScore: 8, slots: ['Lead','Support','Director','Crew','Wild'], cost: 5, ability: 'directorDouble', abilityDesc: 'Director skill counts double' },
+  { title: 'Galactic War', genre: 'Sci-Fi', baseScore: 8, slots: ['Lead','Support','Director','Crew','Crew'], cost: 8, ability: 'crewBonus', abilityDesc: '+3 quality if total crew skill ≥ 6' },
+  { title: 'Broken Hearts Club', genre: 'Romance', baseScore: 5, slots: ['Lead','Support','Director','Crew','Wild'], cost: 1, ability: 'starChemistry', abilityDesc: '+4 if 2+ Stars in cast' },
+  { title: 'Nightmare Fuel', genre: 'Horror', baseScore: 6, slots: ['Lead','Support','Director','Crew','Wild'], cost: 2, ability: 'scandalHeal', abilityDesc: 'Scandal cards heal +2 quality instead' },
   { title: 'Neon Streets', genre: 'Action', baseScore: 7, slots: ['Lead','Support','Director','Crew','Wild'], cost: 4 },
-  { title: 'Laugh Track', genre: 'Comedy', baseScore: 5, slots: ['Lead','Support','Support','Director','Crew'], cost: 1, abilityDesc: '+2 per Star with Heat ≤ 1' },
-  { title: 'Deep Cover', genre: 'Thriller', baseScore: 7, slots: ['Lead','Support','Director','Crew','Wild'], cost: 3, abilityDesc: '+3 if Director skill ≥ 4' },
+  { title: 'Laugh Track', genre: 'Comedy', baseScore: 5, slots: ['Lead','Support','Support','Director','Crew'], cost: 1, ability: 'coolCast', abilityDesc: '+2 per Star with Heat ≤ 1' },
+  { title: 'Deep Cover', genre: 'Thriller', baseScore: 7, slots: ['Lead','Support','Director','Crew','Wild'], cost: 3, ability: 'directorSkill', abilityDesc: '+3 if Director skill ≥ 4' },
   { title: 'The Wanderer', genre: 'Drama', baseScore: 6, slots: ['Lead','Director','Crew','Wild','Wild'], cost: 2 },
   { title: 'Robot Uprising', genre: 'Sci-Fi', baseScore: 7, slots: ['Lead','Support','Director','Crew','Crew'], cost: 6 },
   { title: 'Love & Thunder', genre: 'Romance', baseScore: 6, slots: ['Lead','Support','Director','Crew','Wild'], cost: 2 },
   { title: 'Cabin Fever', genre: 'Horror', baseScore: 5, slots: ['Lead','Support','Director','Crew','Wild'], cost: 0 },
-  { title: 'Grand Heist', genre: 'Thriller', baseScore: 8, slots: ['Lead','Support','Support','Director','Crew'], cost: 5, abilityDesc: 'Each unique talent type gives +1' },
+  { title: 'Grand Heist', genre: 'Thriller', baseScore: 8, slots: ['Lead','Support','Support','Director','Crew'], cost: 5, ability: 'uniqueTypes', abilityDesc: 'Each unique talent type gives +1' },
 ];
 
 export function generateScripts(count: number, season: number): Script[] {
@@ -63,12 +63,15 @@ const TRAITS: { name: string; desc: string }[] = [
   { name: 'Chameleon', desc: 'Counts as matching any genre bonus' },
 ];
 
+const usedNames = new Set<string>();
+
 function randomTalent(type: 'Star' | 'Director' | 'Crew', skillRange: [number, number], heatRange: [number, number]): Talent {
   const names = type === 'Star' ? TALENT_NAMES_STAR : type === 'Director' ? TALENT_NAMES_DIR : TALENT_NAMES_CREW;
-  const name = names[Math.floor(Math.random() * names.length)];
+  // Try to avoid duplicate names within a generation batch
+  let name = names[Math.floor(Math.random() * names.length)];
+  const genre = Math.random() > 0.5 ? GENRES[Math.floor(Math.random() * GENRES.length)] : undefined;
   const skill = skillRange[0] + Math.floor(Math.random() * (skillRange[1] - skillRange[0] + 1));
   const heat = heatRange[0] + Math.floor(Math.random() * (heatRange[1] - heatRange[0] + 1));
-  const genre = Math.random() > 0.5 ? GENRES[Math.floor(Math.random() * GENRES.length)] : undefined;
   const trait = Math.random() > 0.4 ? TRAITS[Math.floor(Math.random() * TRAITS.length)] : undefined;
   const cost = skill * 2 + heat * 3 + (trait ? 2 : 0);
   return {
@@ -120,7 +123,7 @@ export function neowTalent(): Talent {
 // --- PRODUCTION CARDS ---
 const GOOD_CARDS: Omit<ProductionCard, 'id'>[] = [
   { name: 'Magic Moment', type: 'good', effect: '+3 quality', qualityMod: 3 },
-  { name: 'Perfect Take', type: 'good', effect: '+2 quality (+1 if Director Skill 4+)', qualityMod: 2 },
+  { name: 'Perfect Take', type: 'good', effect: '+2 quality (+1 if Director Skill 4+)', qualityMod: 2, skillReq: { type: 'Director', min: 4 } },
   { name: 'On-Set Chemistry', type: 'good', effect: '+2 quality (if 2+ Stars)', qualityMod: 2 },
   { name: 'Award-Worthy Scene', type: 'good', effect: '+4 quality', qualityMod: 4 },
   { name: 'Viral Trailer', type: 'good', effect: '+2 quality, +$5M', qualityMod: 2, budgetMod: 5 },
@@ -147,7 +150,7 @@ const BAD_CARDS: Omit<ProductionCard, 'id'>[] = [
 const NEUTRAL_CARDS: Omit<ProductionCard, 'id'>[] = [
   { name: 'Test Screening', type: 'neutral', effect: 'No effect — audience feedback', qualityMod: 0 },
   { name: 'Press Junket', type: 'neutral', effect: '+$1M publicity', qualityMod: 0, budgetMod: 1 },
-  { name: 'Rewrites', type: 'neutral', effect: 'Roll of the dice — could go either way', qualityMod: Math.random() > 0.5 ? 1 : -1 },
+  { name: 'Rewrites', type: 'neutral', effect: 'A gamble — +1 or -1 quality', qualityMod: 0 }, // resolved at draw time
 ];
 
 export function buildProductionDeck(totalHeat: number): ProductionCard[] {
@@ -159,7 +162,13 @@ export function buildProductionDeck(totalHeat: number): ProductionCard[] {
   }
   for (let i = 0; i < 3; i++) {
     const c = NEUTRAL_CARDS[Math.floor(Math.random() * NEUTRAL_CARDS.length)];
-    deck.push({ ...c, id: uid() });
+    // Resolve Rewrites at deck-build time
+    const card = { ...c, id: uid() };
+    if (card.name === 'Rewrites') {
+      card.qualityMod = Math.random() > 0.5 ? 1 : -1;
+      card.effect = card.qualityMod > 0 ? 'Rewrites paid off! +1 quality' : 'Rewrites made it worse. -1 quality';
+    }
+    deck.push(card);
   }
   for (let i = 0; i < 2; i++) {
     const c = BAD_CARDS[Math.floor(Math.random() * BAD_CARDS.length)];
@@ -235,7 +244,8 @@ export function generatePerkMarket(count: number, owned: string[]): StudioPerk[]
 }
 
 export function getSeasonTarget(season: number): number {
-  return [25, 40, 55, 70, 90][season - 1] || 90 + (season - 5) * 20;
+  // Slightly softened early targets: 22, 38, 52, 65, 85
+  return [22, 38, 52, 65, 85][season - 1] || 85 + (season - 5) * 20;
 }
 
 export const INDUSTRY_EVENTS = [

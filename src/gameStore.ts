@@ -508,13 +508,26 @@ export function resolveChallengeBet(accept: boolean) {
   prod.pendingChallenge = null;
   prod.challengeBetActive = false;
   
-  // If there was a pending card choice, show it now
-  if (prod.currentDraw && prod.currentDraw.choosable.length > 0) {
+  // If there was a pending card choice, handle it
+  if (prod.currentDraw && prod.currentDraw.choosable.length >= 2) {
+    // Show picker UI for 2 choosable cards
     setState({ production: prod });
     return;
   }
   
-  // Clear currentDraw so player can draw again
+  if (prod.currentDraw && prod.currentDraw.choosable.length === 1) {
+    // Auto-pick the single remaining action card
+    const single = { ...prod.currentDraw.choosable[0] };
+    prod.currentDraw = null;
+    const finalProd = resolveCardPlay(single, prod, state.castSlots);
+    finalProd.pendingChallenge = null;
+    finalProd.challengeBetActive = false;
+    finalProd.currentDraw = null;
+    setState({ production: finalProd });
+    return;
+  }
+  
+  // No choosable cards — clear everything so player can draw again
   prod.currentDraw = null;
   setState({ production: prod });
 }

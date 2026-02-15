@@ -135,31 +135,17 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       </div>
 
-      {/* Stats bar */}
+      {/* Stats bar — compact 3-item layout */}
       <div className="production-stats-bar">
         <div className="prod-stat">
           <span className="label">Deck</span>
-          <span className="value">{deckSize}</span>
-        </div>
-        <div className="prod-stat">
-          <span className="label">Draw</span>
-          <span className="value">{prod.drawCount}/{maxDraws}</span>
-        </div>
-        <div className="prod-stat">
-          <span className="label">Left</span>
-          <span className="value" style={{ color: drawsLeft <= 1 ? '#e74c3c' : drawsLeft <= 3 ? '#f39c12' : '#2ecc71' }}>{drawsLeft}</span>
-        </div>
-        <div className="prod-stat">
-          <span className="label" style={{ color: '#2ecc71' }}>Action</span>
-          <span className="value" style={{ color: '#2ecc71' }}>{actionInDeck}</span>
-        </div>
-        <div className="prod-stat">
-          <span className="label" style={{ color: '#f1c40f' }}>Challenge</span>
-          <span className="value" style={{ color: '#f1c40f' }}>{challengeInDeck}</span>
-        </div>
-        <div className="prod-stat">
-          <span className="label" style={{ color: '#e74c3c' }}>Incident</span>
-          <span className="value" style={{ color: '#e74c3c' }}>{incidentInDeck}</span>
+          <span className="value">
+            <span style={{ color: '#2ecc71' }}>{actionInDeck}</span>
+            {' / '}
+            <span style={{ color: '#f1c40f' }}>{challengeInDeck}</span>
+            {' / '}
+            <span style={{ color: '#e74c3c' }}>{incidentInDeck}</span>
+          </span>
         </div>
         <div className="prod-stat">
           <span className="label">Discard</span>
@@ -284,7 +270,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       <div className="btn-group">
         {canDraw && !isDrawing && (
           <button className="btn btn-primary btn-glow" onClick={handleDraw}>
-            🎬 {prod.drawCount === 0 ? 'DRAW FIRST CARDS' : 'DRAW 2 CARDS'}
+            🎬 {prod.drawCount === 0 ? 'DRAW FIRST CARDS' : `DRAW 2 (${prod.drawCount}/${maxDraws} draws)`}
           </button>
         )}
         {canWrap && !mustDraw && (

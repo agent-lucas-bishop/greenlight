@@ -265,7 +265,7 @@ export function pickScript(script: Script) {
   if (state.budget < script.cost) return;
   const slots: CastSlot[] = script.slots.map(s => ({ slotType: s, talent: null }));
   const moreTalent = state.perks.some(p => p.effect === 'moreTalent');
-  const market = generateTalentMarket(moreTalent ? 6 : 4, state.season);
+  const market = generateTalentMarket(moreTalent ? 6 : 4, state.season, state.roster);
   setState({
     currentScript: script,
     budget: state.budget - script.cost,
@@ -452,20 +452,56 @@ export function resolveChallengeBet(accept: boolean) {
   if (!state.production?.pendingChallenge) return;
   const prod = { ...state.production };
   const challenge = prod.pendingChallenge!;
+  const deck = [...prod.deck];
   
-  if (accept && challenge.bet) {
-    const ctx = buildSynergyContext(prod.played, prod.qualityTotal, prod.drawCount, state.castSlots, prod.deck);
+  if (accept && challenge.bet && deck.length > 0) {
+    // Draw next card from deck — this IS the bet
+    const sacrificedCard = deck.shift()!;
+    const discarded = [...prod.discarded, sacrificedCard];
+    
+    // Build context with the sacrificed card at position [0] of remaining deck
+    // (condition checks remainingDeck[0] which was the card before we shifted)
+    const ctxDeck = [sacrificedCard, ...deck];
+    const ctx = buildSynergyContext(prod.played, prod.qualityTotal, prod.drawCount, state.castSlots, ctxDeck);
     const success = challenge.bet.condition(ctx);
-    const bonus = success ? challenge.bet.successBonus : challenge.bet.failPenalty;
+    
+    // Special handling for betSacrificeForDouble
+    const isSacrificeDouble = challenge.bet.description.includes('Sacrifice next card');
+    let bonus: number;
+    
+    if (isSacrificeDouble) {
+      if (success) {
+        // Double the quality of the most recent played card
+        const lastPlayed = prod.played.length > 0 ? prod.played[prod.played.length - 1] : null;
+        bonus = lastPlayed?.totalValue ? lastPlayed.totalValue : 0;
+      } else {
+        // Next card was an Incident — take its penalty
+        bonus = sacrificedCard.baseQuality; // negative for incidents
+      }
+    } else {
+      bonus = success ? challenge.bet.successBonus : challenge.bet.failPenalty;
+    }
     
     prod.qualityTotal += bonus;
+    prod.deck = deck;
+    prod.discarded = discarded;
+    
+    // Handle incident from sacrifice
+    if (isSacrificeDouble && sacrificedCard.cardType === 'incident') {
+      prod.incidentCount++;
+      prod.redCount++;
+      if (prod.incidentCount >= 3) {
+        prod.isDisaster = true;
+        prod.isWrapped = true;
+      }
+    }
     
     // Update the challenge card's display values
-    const lastPlayed = prod.played[prod.played.length - 1];
-    if (lastPlayed && lastPlayed.id === challenge.card.id) {
-      lastPlayed.synergyBonus = bonus;
-      lastPlayed.synergyFired = true;
-      lastPlayed.totalValue = (lastPlayed.totalValue || 0) + bonus;
+    const challengeInPlayed = prod.played.find(c => c.id === challenge.card.id);
+    if (challengeInPlayed) {
+      challengeInPlayed.synergyBonus = bonus;
+      challengeInPlayed.synergyFired = true;
+      challengeInPlayed.totalValue = (challengeInPlayed.totalValue || 0) + bonus;
     }
   }
   
@@ -478,6 +514,7 @@ export function resolveChallengeBet(accept: boolean) {
     return;
   }
   
+  // Clear currentDraw so player can draw again
   prod.currentDraw = null;
   setState({ production: prod });
 }
@@ -703,7 +740,7 @@ export function proceedToShop() {
     return;
   }
   const perkMarket = generatePerkMarket(4, state.perks.map(p => p.name));
-  const talentMarket = generateTalentMarket(4, state.season);
+  const talentMarket = generateTalentMarket(4, state.season, state.roster);
   const event = INDUSTRY_EVENTS[Math.floor(Math.random() * INDUSTRY_EVENTS.length)];
   setState({
     phase: 'shop',

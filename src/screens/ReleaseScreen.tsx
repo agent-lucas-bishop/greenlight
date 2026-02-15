@@ -1,45 +1,48 @@
 import { useState, useEffect } from 'react';
-import { GameState } from '../types';
+import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
-import { proceedToShop } from '../gameStore';
+import { proceedToShop, calculateQuality } from '../gameStore';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
-  
   useEffect(() => {
     const start = Date.now();
     const tick = () => {
       const elapsed = Date.now() - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out
       const eased = 1 - Math.pow(1 - progress, 3);
       setCurrent(Math.round(target * eased * 10) / 10);
       if (progress < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   }, [target, duration]);
-  
   return <>${current.toFixed(1)}M</>;
 }
 
+const TIER_CONFIG: Record<RewardTier, { emoji: string; label: string; subtitle: string; color: string; bg: string }> = {
+  FLOP: { emoji: '💀', label: 'FLOP', subtitle: 'Straight to Streaming', color: '#e74c3c', bg: 'linear-gradient(135deg, #1a0000 0%, #3d0000 100%)' },
+  HIT: { emoji: '🎬', label: 'HIT', subtitle: 'Solid Opening Weekend', color: '#f39c12', bg: 'linear-gradient(135deg, #1a1200 0%, #3d2a00 100%)' },
+  SMASH: { emoji: '🔥', label: 'SMASH HIT', subtitle: 'Number One at the Box Office!', color: '#d4a843', bg: 'linear-gradient(135deg, #1a1500 0%, #4a3800 100%)' },
+  BLOCKBUSTER: { emoji: '🏆', label: 'BLOCKBUSTER', subtitle: 'Cultural Phenomenon!', color: '#ffd700', bg: 'linear-gradient(135deg, #1a1800 0%, #5a4a00 100%)' },
+};
+
 export default function ReleaseScreen({ state }: { state: GameState }) {
   const target = getSeasonTarget(state.season);
-  const hit = state.lastBoxOffice >= target;
+  const tier = state.lastTier || 'FLOP';
+  const config = TIER_CONFIG[tier];
   const lastResult = state.seasonHistory[state.seasonHistory.length - 1];
-  const [showResult, setShowResult] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  
+  const [phase, setPhase] = useState(0); // 0: counting, 1: tier reveal, 2: details
+
   useEffect(() => {
-    // Staggered reveals
-    const t1 = setTimeout(() => setShowResult(true), 1600);
-    const t2 = setTimeout(() => setShowDetails(true), 2200);
+    const t1 = setTimeout(() => setPhase(1), 1600);
+    const t2 = setTimeout(() => setPhase(2), 2800);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  // Show the reputation that was used for scoring (before update)
-  // The state.reputation is already updated, so we need to reverse-engineer
-  const repUsed = hit ? state.reputation - 1 : state.reputation + 1;
-  const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][Math.max(0, Math.min(5, repUsed))] || 1.0;
+  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus } = calculateQuality(state);
+
+  // Tier rewards
+  const bonusMoney = tier === 'BLOCKBUSTER' ? 20 : tier === 'SMASH' ? 10 : 0;
 
   return (
     <div className="box-office fade-in">
@@ -51,30 +54,79 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
       <div style={{ marginBottom: 16 }}>
         <span className="card-stat blue">Market: {state.activeMarket?.name}</span>
         <span className="card-stat gold">Quality: {state.lastQuality}</span>
-        <span className="card-stat gold">Rep: ×{repBonus}</span>
       </div>
 
-      <div className={`box-office-number ${showResult ? (hit ? 'hit' : 'miss') : ''}`}>
+      {/* Box office number */}
+      <div className="box-office-number" style={{ color: config.color }}>
         <CountUp target={state.lastBoxOffice} />
       </div>
-      
-      <div className={`box-office-target ${showResult ? 'revealed' : 'hidden'}`}>
-        Target: ${target}M — {hit ? '✅ HIT!' : '❌ MISS'}
+
+      <div className={`box-office-target ${phase >= 1 ? 'revealed' : 'hidden'}`}>
+        Target: ${target}M
       </div>
 
-      {showResult && !hit && (
-        <div className="strike-banner animate-shake" style={{ marginTop: 12 }}>
-          STRIKE {state.strikes}/3
+      {/* TIER BANNER */}
+      {phase >= 1 && (
+        <div
+          className={`tier-banner tier-${tier.toLowerCase()} animate-slide-down`}
+          style={{ background: config.bg, borderColor: config.color }}
+        >
+          <div className="tier-emoji">{config.emoji}</div>
+          <div className="tier-label" style={{ color: config.color }}>{config.label}</div>
+          <div className="tier-subtitle">{config.subtitle}</div>
         </div>
       )}
 
-      {lastResult?.nominated && showDetails && (
+      {/* Tier rewards */}
+      {phase >= 2 && (
+        <div className="tier-rewards animate-slide-down">
+          {tier === 'FLOP' && (
+            <>
+              <div className="reward-item negative">📉 -1 Reputation (Rep {state.reputation})</div>
+              <div className="reward-item negative">💰 Earned only 50% of box office</div>
+              <div className="reward-item negative">⚠️ Strike {state.strikes}/3</div>
+            </>
+          )}
+          {tier === 'HIT' && (
+            <div className="reward-item">💰 Earned ${state.lastBoxOffice.toFixed(1)}M</div>
+          )}
+          {tier === 'SMASH' && (
+            <>
+              <div className="reward-item positive">📈 +1 Reputation! (Rep {state.reputation})</div>
+              <div className="reward-item positive">🎁 +$10M bonus!</div>
+            </>
+          )}
+          {tier === 'BLOCKBUSTER' && (
+            <>
+              <div className="reward-item positive">📈 +1 Reputation! (Rep {state.reputation})</div>
+              <div className="reward-item positive">🎁 +$20M bonus!</div>
+              <div className="reward-item positive">🏆 Free Perk pick!</div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Quality breakdown */}
+      {phase >= 2 && (
+        <div className="quality-summary animate-slide-down">
+          <div className="qs-title">Quality Breakdown</div>
+          <div className="qs-row"><span>Script Base</span><span>{scriptBase}</span></div>
+          <div className="qs-row"><span>Talent Skill</span><span>+{talentSkill}</span></div>
+          <div className="qs-row"><span>Production</span><span>{productionBonus >= 0 ? '+' : ''}{productionBonus}</span></div>
+          {cleanWrapBonus > 0 && <div className="qs-row positive"><span>✨ Clean Wrap</span><span>+{cleanWrapBonus}</span></div>}
+          {scriptAbilityBonus > 0 && <div className="qs-row positive"><span>⭐ Script Ability</span><span>+{scriptAbilityBonus}</span></div>}
+          <div className="qs-row total"><span>Total</span><span>{rawQuality}</span></div>
+        </div>
+      )}
+
+      {lastResult?.nominated && phase >= 2 && (
         <div className="nomination-banner animate-slide-down" style={{ marginTop: 16 }}>
           🏆 NOMINATED FOR BEST PICTURE!
         </div>
       )}
 
-      {showDetails && (
+      {/* Cast credits */}
+      {phase >= 2 && (
         <div className="cast-summary animate-slide-down" style={{ marginTop: 24 }}>
           {state.castSlots.map((slot, i) => slot.talent && (
             <div key={i} className="cast-credit">
@@ -98,7 +150,7 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
         })}
       </div>
 
-      {showDetails && (
+      {phase >= 2 && (
         <div className="btn-group">
           <button className="btn btn-primary" onClick={proceedToShop}>
             {state.season >= 5 || state.strikes >= 3 || state.reputation <= 0

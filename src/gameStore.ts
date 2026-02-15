@@ -1,9 +1,12 @@
-import { GameState, GamePhase, Talent, Script, CastSlot, ProductionState, StudioPerk, MarketCondition } from './types';
+import { GameState, GamePhase, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate } from './types';
 import {
-  starterRoster, generateScripts, generateTalentMarket, buildProductionDeck,
+  starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
   INDUSTRY_EVENTS,
 } from './data';
+
+let _cardId = 0;
+const cardUid = () => `card_${_cardId++}`;
 
 function createInitialState(): GameState {
   return {
@@ -25,6 +28,7 @@ function createInitialState(): GameState {
     perkMarket: [],
     lastBoxOffice: 0,
     lastQuality: 0,
+    lastTier: null,
     seasonHistory: [],
     hasReshoots: false,
     reshootsUsed: false,
@@ -49,73 +53,89 @@ export function subscribe(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-// --- HELPERS ---
+// ─── BUILD PRODUCTION DECK ───
 
-/** Calculate effective skill for a talent in context */
-function effectiveSkill(talent: Talent, slotType: string, script: Script, castSlots: CastSlot[], lastFlop: boolean, drawCount?: number): number {
-  let skill = talent.skill;
-  
-  // Trait: Diva — must be Lead or -2
-  if (talent.trait === 'Diva' && slotType !== 'Lead') {
-    skill -= 2;
-  }
-  // Trait: Comeback Kid — +3 if last film flopped
-  if (talent.trait === 'Comeback Kid' && lastFlop) {
-    skill += 3;
-  }
-  // Trait: Perfectionist — +3 if 5+ draws (only in release calc)
-  if (talent.trait === 'Perfectionist' && drawCount !== undefined && drawCount >= 5) {
-    skill += 3;
-  }
-  // Trait: Mentor — adjacent talent gets +1 (handled separately)
-  
-  return Math.max(0, skill);
+function templateToCard(template: CardTemplate, source: string, sourceType: ProductionCard['sourceType']): ProductionCard {
+  return {
+    id: cardUid(),
+    name: template.name,
+    source,
+    sourceType,
+    baseQuality: template.baseQuality,
+    synergyText: template.synergyText,
+    synergyCondition: template.synergyCondition,
+    riskTag: template.riskTag,
+    budgetMod: template.budgetMod,
+    special: template.special,
+  };
 }
 
-/** Compute script ability bonus at release */
-function scriptAbilityBonus(script: Script, castSlots: CastSlot[]): number {
-  let bonus = 0;
-  if (!script.ability) return 0;
-  
-  switch (script.ability) {
-    case 'directorDouble': {
-      // Director skill counts double — add their skill again
-      const directors = castSlots.filter(s => s.talent?.type === 'Director');
-      for (const d of directors) {
-        if (d.talent) bonus += d.talent.skill;
+function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionCard[] {
+  const deck: ProductionCard[] = [];
+
+  // Add script cards
+  for (const template of script.cards) {
+    deck.push(templateToCard(template, script.title, 'script'));
+  }
+
+  // Add talent cards
+  for (const slot of castSlots) {
+    if (!slot.talent) continue;
+    const t = slot.talent;
+    const sourceType: ProductionCard['sourceType'] =
+      t.type === 'Lead' || t.type === 'Support' ? 'actor' :
+      t.type === 'Director' ? 'director' : 'crew';
+
+    for (const template of t.cards) {
+      deck.push(templateToCard(template, t.name, sourceType));
+    }
+
+    // Heat 4+: add extra 🔴 cards
+    if (t.heat >= 4 && t.heatCards) {
+      for (const template of t.heatCards) {
+        deck.push(templateToCard(template, t.name, sourceType));
       }
-      break;
-    }
-    case 'crewBonus': {
-      const crewSkill = castSlots.reduce((s, c) => s + (c.talent?.type === 'Crew' ? c.talent.skill : 0), 0);
-      if (crewSkill >= 6) bonus += 3;
-      break;
-    }
-    case 'starChemistry': {
-      const starCount = castSlots.filter(s => s.talent?.type === 'Star').length;
-      if (starCount >= 2) bonus += 4;
-      break;
-    }
-    case 'coolCast': {
-      const coolStars = castSlots.filter(s => s.talent?.type === 'Star' && (s.talent?.heat || 0) <= 1);
-      bonus += coolStars.length * 2;
-      break;
-    }
-    case 'directorSkill': {
-      const dir = castSlots.find(s => s.talent?.type === 'Director');
-      if (dir?.talent && dir.talent.skill >= 4) bonus += 3;
-      break;
-    }
-    case 'uniqueTypes': {
-      const types = new Set(castSlots.map(s => s.talent?.type).filter(Boolean));
-      bonus += types.size;
-      break;
     }
   }
-  return bonus;
+
+  // Shuffle (Fisher-Yates)
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+
+  return deck;
 }
 
-// --- ACTIONS ---
+function evaluateSynergy(card: ProductionCard, played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[]): SynergyResult {
+  if (!card.synergyCondition) return { bonus: 0 };
+
+  const leadSlot = castSlots.find(s => s.slotType === 'Lead' && s.talent);
+  const leadSkill = leadSlot?.talent?.skill || 0;
+  const redCount = played.filter(c => c.riskTag === '🔴').length;
+  const previousCard = played.length > 0 ? played[played.length - 1] : null;
+
+  // Calculate green streak
+  let greenStreak = 0;
+  for (let i = played.length - 1; i >= 0; i--) {
+    if (played[i].riskTag === '🟢') greenStreak++;
+    else break;
+  }
+
+  const ctx: SynergyContext = {
+    playedCards: played,
+    totalQuality,
+    drawNumber,
+    leadSkill,
+    redCount,
+    previousCard,
+    greenStreak,
+  };
+
+  return card.synergyCondition(ctx);
+}
+
+// ─── ACTIONS ───
 
 export function startGame() {
   setState({ ...createInitialState(), phase: 'neow' });
@@ -130,7 +150,7 @@ export function pickNeow(choice: number) {
   } else if (choice === 1) {
     budget += 10;
   } else {
-    perks.push({ id: 'neow_perk', name: 'Crisis Manager', cost: 0, description: 'Bad card effects halved', effect: 'crisisManager' });
+    perks.push({ id: 'neow_perk', name: 'Crisis Manager', cost: 0, description: '🔴 card quality penalties halved', effect: 'crisisManager' });
   }
   setState({ neowChoice: choice, roster, budget, perks, phase: 'greenlight' as GamePhase });
   beginSeason();
@@ -159,7 +179,6 @@ export function pickScript(script: Script) {
 
 export function assignTalent(slotIndex: number, talent: Talent) {
   const slots = [...state.castSlots];
-  // Check if already assigned elsewhere - remove first
   slots.forEach((s, i) => { if (s.talent?.id === talent.id) slots[i] = { ...s, talent: null }; });
   slots[slotIndex] = { ...slots[slotIndex], talent };
   setState({ castSlots: slots });
@@ -182,38 +201,14 @@ export function hireTalent(talent: Talent) {
 }
 
 export function fireTalent(talentId: string) {
-  // Can't fire talent that's currently assigned
   const assigned = new Set(state.castSlots.map(s => s.talent?.id).filter(Boolean));
   if (assigned.has(talentId)) return;
-  setState({
-    roster: state.roster.filter(t => t.id !== talentId),
-  });
+  setState({ roster: state.roster.filter(t => t.id !== talentId) });
 }
 
 export function startProduction() {
-  const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
-  const methodStudio = state.perks.some(p => p.effect === 'methodStudio');
-  const deck = buildProductionDeck(totalHeat);
-  
-  // Method Studio: add extra good cards per 2 heat
-  if (methodStudio && totalHeat > 0) {
-    const extraGood = Math.floor(totalHeat / 2);
-    // We need to import good cards... just add quality cards inline
-    for (let i = 0; i < extraGood; i++) {
-      const goodCards = deck.filter(c => c.type === 'good');
-      if (goodCards.length > 0) {
-        // Clone a random existing good card
-        const template = goodCards[Math.floor(Math.random() * goodCards.length)];
-        deck.push({ ...template, id: `ms_${i}_${Date.now()}` });
-      }
-    }
-    // Re-shuffle
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-  }
-  
+  if (!state.currentScript) return;
+  const deck = buildProductionDeck(state.castSlots, state.currentScript);
   const hasReshoots = state.perks.some(p => p.effect === 'reshoots');
   setState({
     phase: 'production',
@@ -221,153 +216,248 @@ export function startProduction() {
     reshootsUsed: false,
     production: {
       deck,
-      drawn: [],
-      badCount: 0,
-      qualityBonus: 0,
+      played: [],
+      redCount: 0,
+      qualityTotal: 0,
       budgetChange: 0,
       isDisaster: false,
       isWrapped: false,
       drawCount: 0,
+      cleanWrap: true,
+      actorBuff: 0,
+      poisonNext: 0,
+      forceExtraDraw: false,
+      scriptAbilityBonus: 0,
     },
   });
 }
 
 export function drawProductionCard() {
-  if (!state.production || state.production.isWrapped || state.production.drawCount >= 6) return;
+  if (!state.production || state.production.isWrapped) return;
   const prod = { ...state.production };
+  const maxDraws = prod.forceExtraDraw ? 7 : 6;
+  if (prod.drawCount >= maxDraws) return;
+
   const deck = [...prod.deck];
   if (deck.length === 0) { wrapProduction(); return; }
+
   const card = { ...deck.shift()! };
-  
-  // Script ability: scandal cards
-  const script = state.currentScript;
-  if (card.isScandal && script?.ability === 'scandalHeal') {
-    card.type = 'good';
-    card.qualityMod = 2;
-    card.effect = '✨ Scandal turned into gold! +2 quality';
-  } else if (card.isScandal && script?.ability === 'scandalQuality') {
-    card.type = 'good';
-    card.qualityMod = 1;
-    card.effect = '✨ Scandal adds mystique! +1 quality';
+  const drawNumber = prod.drawCount + 1;
+
+  // Evaluate synergy
+  const synResult = evaluateSynergy(card, prod.played, prod.qualityTotal, drawNumber, state.castSlots);
+
+  let totalCardValue = card.baseQuality + synResult.bonus;
+
+  // Apply poison from previous card
+  if (prod.poisonNext !== 0) {
+    totalCardValue += prod.poisonNext;
   }
-  
-  // Trait: Lucky — first bad card is ignored
-  const hasLucky = state.castSlots.some(s => s.talent?.trait === 'Lucky');
-  let isBad = card.type === 'bad';
-  if (isBad && hasLucky && prod.badCount === 0) {
-    // Lucky saves! Card still shows as bad visually but doesn't count
-    card.effect += ' (Lucky saves!)';
-    isBad = false; // don't count toward disaster
+
+  // Apply actor buff if this is an actor card
+  if (card.sourceType === 'actor' && prod.actorBuff !== 0) {
+    totalCardValue += prod.actorBuff;
   }
-  
-  const drawn = [...prod.drawn, card];
-  let badCount = prod.badCount + (isBad ? 1 : 0);
-  let qualityBonus = prod.qualityBonus + card.qualityMod;
-  let budgetChange = prod.budgetChange + (card.budgetMod || 0);
-  
-  // Crisis Manager halves bad effects
-  if (card.type === 'bad' && state.perks.some(p => p.effect === 'crisisManager')) {
-    qualityBonus -= card.qualityMod; // undo
-    qualityBonus += Math.ceil(card.qualityMod / 2); // halved (ceil keeps negative closer to 0)
-    if (card.budgetMod) {
-      budgetChange -= card.budgetMod;
-      budgetChange += Math.ceil(card.budgetMod / 2);
+
+  // Crisis Manager: halve negative quality from 🔴 cards
+  if (card.riskTag === '🔴' && state.perks.some(p => p.effect === 'crisisManager')) {
+    if (totalCardValue < 0) {
+      totalCardValue = Math.ceil(totalCardValue / 2);
     }
   }
 
-  const isDisaster = badCount >= 3;
+  // Store computed values on card for display
+  card.synergyBonus = synResult.bonus;
+  card.synergyFired = synResult.bonus !== 0 || !!synResult.multiply;
+  card.totalValue = totalCardValue;
+  card.budgetMod = (synResult.budgetMod || 0) + (card.budgetMod || 0);
+
+  let newQuality = prod.qualityTotal + totalCardValue;
+
+  // Apply multiplier
+  if (synResult.multiply) {
+    newQuality = Math.floor(newQuality * synResult.multiply);
+    // The "bonus" from multiplication
+    card.synergyBonus = Math.floor(prod.qualityTotal * synResult.multiply) - prod.qualityTotal + card.baseQuality;
+    card.totalValue = newQuality - prod.qualityTotal;
+  }
+
+  const played = [...prod.played, card];
+  let redCount = prod.redCount + (card.riskTag === '🔴' ? 1 : 0);
+  let cleanWrap = prod.cleanWrap && card.riskTag !== '🔴';
+  let budgetChange = prod.budgetChange + (card.budgetMod || 0);
+  let actorBuff = prod.actorBuff;
+  let poisonNext = 0; // reset poison for next draw
+  let forceExtraDraw = prod.forceExtraDraw;
+
+  // Handle special effects
+  if (card.special === 'buffActors') {
+    actorBuff += 1;
+  }
+  if (card.special === 'poisonNext') {
+    poisonNext = -2;
+  }
+  if (card.special === 'poisonActors') {
+    // This is handled through actorBuff (negative)
+    actorBuff -= 1;
+  }
+  if (card.special === 'forceExtraDraw') {
+    forceExtraDraw = true;
+  }
+  if (card.special === 'removeRed') {
+    // Remove one 🔴 card from remaining deck
+    const redIdx = deck.findIndex(c => c.riskTag === '🔴');
+    if (redIdx >= 0) deck.splice(redIdx, 1);
+  }
+  if (card.special === 'buffNext') {
+    poisonNext = 2; // positive "poison" = buff
+  }
+
+  const isDisaster = redCount >= 3;
   const isWrapped = isDisaster;
-  
+
+  // Script ability: Crowd Pleaser (consecutive 🟢 tracking)
+  let scriptAbilityBonus = prod.scriptAbilityBonus;
+  if (state.currentScript?.ability === 'crowdPleaser') {
+    // Count current max consecutive 🟢
+    let streak = 0;
+    let maxStreak = 0;
+    for (const c of played) {
+      if (c.riskTag === '🟢') { streak++; maxStreak = Math.max(maxStreak, streak); }
+      else streak = 0;
+    }
+    scriptAbilityBonus = Math.floor(maxStreak / 3) * 2;
+  }
+
   setState({
-    production: { deck, drawn, badCount, qualityBonus, budgetChange, isDisaster, isWrapped, drawCount: prod.drawCount + 1 },
+    production: {
+      deck,
+      played,
+      redCount,
+      qualityTotal: newQuality,
+      budgetChange,
+      isDisaster,
+      isWrapped,
+      drawCount: drawNumber,
+      cleanWrap,
+      actorBuff,
+      poisonNext,
+      forceExtraDraw,
+      scriptAbilityBonus,
+    },
   });
 }
 
 export function useReshoots() {
   if (!state.production || state.reshootsUsed || !state.hasReshoots) return;
   const prod = { ...state.production };
-  const drawn = [...prod.drawn];
-  if (drawn.length === 0) return;
-  const last = drawn.pop()!;
-  let badCount = prod.badCount - (last.type === 'bad' ? 1 : 0);
-  let qualityBonus = prod.qualityBonus - last.qualityMod;
+  const played = [...prod.played];
+  if (played.length === 0) return;
+  const last = played.pop()!;
+
+  // Undo the card's effects
+  let redCount = prod.redCount - (last.riskTag === '🔴' ? 1 : 0);
+  let qualityTotal = prod.qualityTotal - (last.totalValue || 0);
   let budgetChange = prod.budgetChange - (last.budgetMod || 0);
+  let cleanWrap = redCount === 0;
+
   // Draw replacement
   const deck = [...prod.deck];
   if (deck.length > 0) {
     const newCard = deck.shift()!;
-    drawn.push(newCard);
-    badCount += newCard.type === 'bad' ? 1 : 0;
-    qualityBonus += newCard.qualityMod;
-    budgetChange += (newCard.budgetMod || 0);
+    const synResult = evaluateSynergy(newCard, played, qualityTotal, prod.drawCount, state.castSlots);
+    let totalVal = newCard.baseQuality + synResult.bonus;
+    newCard.synergyBonus = synResult.bonus;
+    newCard.synergyFired = synResult.bonus !== 0;
+    newCard.totalValue = totalVal;
+    newCard.budgetMod = synResult.budgetMod || 0;
+
+    played.push(newCard);
+    redCount += newCard.riskTag === '🔴' ? 1 : 0;
+    qualityTotal += totalVal;
+    budgetChange += newCard.budgetMod || 0;
+    cleanWrap = cleanWrap && newCard.riskTag !== '🔴';
   }
+
   setState({
     reshootsUsed: true,
-    production: { ...prod, deck, drawn, badCount, qualityBonus, budgetChange, isDisaster: badCount >= 3, isWrapped: badCount >= 3, drawCount: prod.drawCount },
+    production: { ...prod, deck, played, redCount, qualityTotal, budgetChange, isDisaster: redCount >= 3, isWrapped: redCount >= 3, cleanWrap },
   });
 }
 
 export function wrapProduction() {
   if (!state.production) return;
+  if (state.production.forceExtraDraw && state.production.drawCount < 7 && !state.production.isDisaster) {
+    // Can't wrap yet — must draw one more
+    return;
+  }
   setState({ production: { ...state.production, isWrapped: true } });
 }
 
-export function calculateQuality(s: GameState): { rawQuality: number; talentSkill: number; genreBonus: number; scriptAbility: number; productionBonus: number } {
+export function calculateQuality(s: GameState): {
+  rawQuality: number;
+  scriptBase: number;
+  talentSkill: number;
+  productionBonus: number;
+  cleanWrapBonus: number;
+  scriptAbilityBonus: number;
+} {
   const script = s.currentScript!;
   const prod = s.production!;
-  const lastFlop = s.seasonHistory.length > 0 && !s.seasonHistory[s.seasonHistory.length - 1].hitTarget;
-  
-  let talentSkill = 0;
-  // Calculate effective skills with traits
-  for (let i = 0; i < s.castSlots.length; i++) {
-    const slot = s.castSlots[i];
-    if (!slot.talent) continue;
-    let skill = effectiveSkill(slot.talent, slot.slotType, script, s.castSlots, lastFlop, prod.drawCount);
-    
-    // Mentor: check if adjacent talent has Mentor
-    if (i > 0 && s.castSlots[i - 1].talent?.trait === 'Mentor') skill += 1;
-    if (i < s.castSlots.length - 1 && s.castSlots[i + 1].talent?.trait === 'Mentor') skill += 1;
-    
-    // Method Actor: +2 quality (we add to skill for simplicity)
-    if (slot.talent.trait === 'Method Actor') skill += 2;
-    
-    talentSkill += skill;
+
+  const scriptBase = script.baseScore;
+  const talentSkill = s.castSlots.reduce((sum, slot) => sum + (slot.talent?.skill || 0), 0);
+  const productionBonus = prod.qualityTotal;
+
+  // Clean Wrap bonus
+  const precisionFilm = s.perks.some(p => p.effect === 'precisionFilm');
+  let cleanWrapBonus = 0;
+  if (prod.cleanWrap && prod.drawCount > 0) {
+    cleanWrapBonus = precisionFilm ? 8 : 5;
   }
-  
-  let genreBonus = s.castSlots.reduce((sum, slot) => {
-    if (!slot.talent?.genreBonus) return sum;
-    // Chameleon: always matches
-    if (slot.talent.trait === 'Chameleon' || slot.talent.genreBonus.genre === script.genre) {
-      return sum + slot.talent.genreBonus.bonus;
-    }
-    return sum;
-  }, 0);
-  
-  const scriptAbility = scriptAbilityBonus(script, s.castSlots);
-  const productionBonus = prod.qualityBonus;
-  
-  let rawQuality = script.baseScore + talentSkill + productionBonus + genreBonus + scriptAbility;
+
+  // Script ability bonuses
+  let scriptAbilityBonus = prod.scriptAbilityBonus;
+  if (script.ability === 'finalGirl' && prod.drawCount === 5) {
+    scriptAbilityBonus += 5;
+  }
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus;
+
   if (prod.isDisaster) {
     const insuranceReduction = s.perks.some(p => p.effect === 'insurance') ? 0.75 : 0.5;
     rawQuality = Math.floor(rawQuality * insuranceReduction);
   }
-  
-  return { rawQuality, talentSkill, genreBonus, scriptAbility, productionBonus };
+
+  return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus };
+}
+
+function getMarketMultiplier(market: MarketCondition, genre: string, quality: number): number {
+  if (market.condition === 'quality>30' && quality <= 30) return 1.0;
+  if (market.genreBonus && market.genreBonus !== genre) return 1.0;
+  return market.multiplier;
+}
+
+function getTier(boxOffice: number, target: number): RewardTier {
+  const ratio = boxOffice / target;
+  if (ratio >= 1.5) return 'BLOCKBUSTER';
+  if (ratio >= 1.25) return 'SMASH';
+  if (ratio >= 1.0) return 'HIT';
+  return 'FLOP';
 }
 
 export function resolveRelease() {
   if (!state.production || !state.currentScript) return;
   const script = state.currentScript;
   const prod = state.production;
-  
+
   const { rawQuality } = calculateQuality(state);
-  
-  // Pick market (random or chosen)
+
+  // Pick market
   const chooseMarket = state.perks.some(p => p.effect === 'chooseMarket');
   let market = state.activeMarket;
   if (!market) {
     if (chooseMarket) {
-      // Find best matching
       market = state.marketConditions.reduce((best, m) => {
         const mult = getMarketMultiplier(m, script.genre, rawQuality);
         const bestMult = getMarketMultiplier(best, script.genre, rawQuality);
@@ -377,52 +467,67 @@ export function resolveRelease() {
       market = state.marketConditions[Math.floor(Math.random() * state.marketConditions.length)];
     }
   }
-  
+
   let multiplier = getMarketMultiplier(market, script.genre, rawQuality);
-  
+
+  // Blockbuster script ability: +0.3 to market mult
+  if (script.ability === 'blockbusterBonus') {
+    multiplier += 0.3;
+  }
+
   // Perk multiplier bonuses
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
   if (state.perks.some(p => p.effect === 'indieSpirit') && totalHeat <= 4) multiplier += 0.5;
   if (state.perks.some(p => p.effect === 'buzz') && rawQuality > 35) multiplier += 0.5;
-  
-  // Reputation bonus — use CURRENT rep (before update)
+
+  // Reputation bonus
   const currentRep = state.reputation;
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
-  
-  // Box Office Draw trait
-  let flatBonus = 0;
-  for (const slot of state.castSlots) {
-    if (slot.talent?.trait === 'Box Office Draw') flatBonus += 5;
-  }
-  
-  const boxOffice = Math.round((rawQuality * multiplier * repBonus + flatBonus) * 10) / 10;
+
+  const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
   const target = getSeasonTarget(state.season);
-  const hit = boxOffice >= target;
-  const newRep = hit ? Math.min(currentRep + 1, 5) : Math.max(currentRep - 1, 0);
-  const nominated = rawQuality > 25 + state.season * 5;
-  
-  // Prestige label bonus for nominations
-  let presBonus = 0;
-  if (nominated && state.perks.some(p => p.effect === 'prestige')) {
-    presBonus = rawQuality * 0.3;
+  const tier = getTier(boxOffice, target);
+
+  // Tier rewards
+  let repChange = 0;
+  let bonusMoney = 0;
+  let earnings = boxOffice;
+
+  switch (tier) {
+    case 'FLOP':
+      repChange = -1;
+      earnings = Math.round(boxOffice * 0.5 * 10) / 10;
+      break;
+    case 'HIT':
+      repChange = 0;
+      break;
+    case 'SMASH':
+      repChange = 1;
+      bonusMoney = 10;
+      break;
+    case 'BLOCKBUSTER':
+      repChange = 1;
+      bonusMoney = 20;
+      break;
   }
-  
-  const finalBoxOffice = Math.round((boxOffice + presBonus) * 10) / 10;
-  
+
+  const newRep = Math.max(0, Math.min(5, currentRep + repChange));
+  const nominated = rawQuality > 25 + state.season * 5;
+
   const result = {
     season: state.season,
     title: script.title,
     genre: script.genre,
     quality: rawQuality,
-    boxOffice: finalBoxOffice,
-    hitTarget: finalBoxOffice >= target,
+    boxOffice,
+    tier,
+    hitTarget: tier !== 'FLOP',
     nominated,
   };
-  
-  // Apply post-film trait effects
+
+  // Post-film trait effects
   let newRoster = [...state.roster];
   if (result.hitTarget) {
-    // Rising Star: +1 skill on success
     newRoster = newRoster.map(t => {
       if (t.trait === 'Rising Star' && state.castSlots.some(s => s.talent?.id === t.id)) {
         return { ...t, skill: Math.min(t.skill + 1, 6) };
@@ -430,41 +535,26 @@ export function resolveRelease() {
       return t;
     });
   }
-  // Method Actor: +1 Heat after each film
-  newRoster = newRoster.map(t => {
-    if (t.trait === 'Method Actor' && state.castSlots.some(s => s.talent?.id === t.id)) {
-      return { ...t, heat: t.heat + 1 };
-    }
-    return t;
-  });
-  // Past Their Prime: -1 skill per season (applied at season end)
   newRoster = newRoster.map(t => {
     if (t.trait === 'Past Their Prime') {
       return { ...t, skill: Math.max(t.skill - 1, 1) };
     }
     return t;
   });
-  
+
   setState({
     phase: 'release',
-    lastBoxOffice: finalBoxOffice,
+    lastBoxOffice: boxOffice,
     lastQuality: rawQuality,
+    lastTier: tier,
     activeMarket: market,
-    budget: state.budget + finalBoxOffice + prod.budgetChange,
-    totalEarnings: state.totalEarnings + finalBoxOffice,
+    budget: state.budget + earnings + bonusMoney + prod.budgetChange,
+    totalEarnings: state.totalEarnings + earnings,
     reputation: newRep,
-    strikes: result.hitTarget ? state.strikes : state.strikes + 1,
+    strikes: tier === 'FLOP' ? state.strikes + 1 : state.strikes,
     seasonHistory: [...state.seasonHistory, result],
     roster: newRoster,
   });
-}
-
-function getMarketMultiplier(market: MarketCondition, genre: string, quality: number): number {
-  // Check conditions
-  if (market.condition === 'quality>30' && quality <= 30) return 1.0;
-  // Genre match
-  if (market.genreBonus && market.genreBonus !== genre) return 1.0;
-  return market.multiplier;
 }
 
 export function proceedToShop() {
@@ -503,6 +593,7 @@ export function nextSeason() {
     castSlots: [],
     production: null,
     activeMarket: null,
+    lastTier: null,
     phase: 'greenlight',
   });
   beginSeason();

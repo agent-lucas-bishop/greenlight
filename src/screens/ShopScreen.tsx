@@ -1,5 +1,79 @@
-import { GameState } from '../types';
+import { useState } from 'react';
+import { GameState, Talent, CardTemplate } from '../types';
 import { buyPerk, hireTalent, fireTalent, nextSeason } from '../gameStore';
+
+function CardTypeBadge({ type }: { type: string }) {
+  const config: Record<string, { label: string; color: string; bg: string }> = {
+    action: { label: 'ACTION', color: '#fff', bg: '#2ecc71' },
+    challenge: { label: 'CHALLENGE', color: '#000', bg: '#f1c40f' },
+    incident: { label: 'INCIDENT', color: '#fff', bg: '#e74c3c' },
+  };
+  const c = config[type] || config.action;
+  return (
+    <span style={{ background: c.bg, color: c.color, padding: '1px 6px', borderRadius: 3, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+      {c.label}
+    </span>
+  );
+}
+
+function CardPreview({ card }: { card: CardTemplate }) {
+  return (
+    <div style={{ padding: '4px 8px', display: 'flex', flexDirection: 'column', gap: 2, background: 'rgba(255,255,255,0.02)', borderRadius: 4, marginBottom: 2 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem' }}>
+        <CardTypeBadge type={card.cardType} />
+        <span style={{ fontWeight: 600, color: '#ccc' }}>{card.name}</span>
+        <span style={{ color: card.baseQuality >= 0 ? '#2ecc71' : '#e74c3c', fontWeight: 600 }}>{card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}</span>
+      </div>
+      {card.synergyText && (
+        <div style={{ fontSize: '0.6rem', color: '#9b59b6', paddingLeft: 4 }}>✨ {card.synergyText}</div>
+      )}
+    </div>
+  );
+}
+
+function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void; canBuy: boolean }) {
+  const [showCards, setShowCards] = useState(false);
+  const typeColors: Record<string, string> = { Lead: '#e74c3c', Support: '#e67e22', Director: '#9b59b6', Crew: '#3498db' };
+
+  const totalCards = t.cards.length + (t.heat >= 4 && t.heatCards ? t.heatCards.length : 0);
+  const actionCount = t.cards.filter(c => c.cardType === 'action').length;
+  const challengeCount = t.cards.filter(c => c.cardType === 'challenge').length;
+  const incidentCount = t.cards.filter(c => c.cardType === 'incident').length + (t.heat >= 4 && t.heatCards ? t.heatCards.filter(c => c.cardType === 'incident').length : 0);
+
+  return (
+    <div
+      className="card talent-card"
+      onClick={canBuy ? onClick : undefined}
+      style={{ opacity: canBuy ? 1 : 0.4, cursor: canBuy ? 'pointer' : 'not-allowed' }}
+    >
+      <span className="talent-type" style={{ background: typeColors[t.type] || '#666' }}>{t.type}</span>
+      <div className="card-title">{t.name}</div>
+      <div>
+        <span className="card-stat green">Skill {t.skill}</span>
+        <span className="card-stat red">Heat {t.heat}</span>
+        <span className="card-stat gold">${t.cost}M</span>
+      </div>
+      {t.genreBonus && <div className="card-stat blue">{t.genreBonus.genre} +{t.genreBonus.bonus}</div>}
+      {t.trait && <div className="trait-badge">"{t.trait}" — {t.traitDesc}</div>}
+      
+      <div style={{ marginTop: 8 }}>
+        <button
+          className="btn-tiny"
+          onClick={(e) => { e.stopPropagation(); setShowCards(!showCards); }}
+          style={{ fontSize: '0.7rem' }}
+        >
+          {totalCards} cards ({actionCount}A/{challengeCount}C/{incidentCount}I) {showCards ? '▲' : '▼'}
+        </button>
+      </div>
+      {showCards && (
+        <div style={{ marginTop: 4 }}>
+          {t.cards.map((c, i) => <CardPreview key={i} card={c} />)}
+          {t.heat >= 4 && t.heatCards?.map((c, i) => <CardPreview key={`h${i}`} card={c} />)}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ShopScreen({ state }: { state: GameState }) {
   return (
@@ -43,22 +117,12 @@ export default function ShopScreen({ state }: { state: GameState }) {
           {state.talentMarket.map(t => {
             const canHire = state.budget >= t.cost && state.roster.length < 8;
             return (
-              <div
+              <TalentShopCard
                 key={t.id}
-                className="card talent-card"
-                onClick={() => canHire && hireTalent(t)}
-                style={{ opacity: canHire ? 1 : 0.4, cursor: canHire ? 'pointer' : 'not-allowed' }}
-              >
-                <span className={`talent-type ${t.type}`}>{t.type}</span>
-                <div className="card-title">{t.name}</div>
-                <div>
-                  <span className="card-stat green">Skill {t.skill}</span>
-                  <span className="card-stat red">Heat {t.heat}</span>
-                  <span className="card-stat gold">${t.cost}M</span>
-                </div>
-                {t.genreBonus && <div className="card-stat blue">{t.genreBonus.genre} +{t.genreBonus.bonus}</div>}
-                {t.trait && <div className="trait-badge">"{t.trait}" — {t.traitDesc}</div>}
-              </div>
+                t={t}
+                onClick={() => hireTalent(t)}
+                canBuy={canHire}
+              />
             );
           })}
         </div>

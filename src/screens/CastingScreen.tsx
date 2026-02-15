@@ -2,11 +2,25 @@ import { useState } from 'react';
 import { GameState, Talent, CardTemplate } from '../types';
 import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction } from '../gameStore';
 
+function CardTypeBadge({ type }: { type: string }) {
+  const config: Record<string, { label: string; color: string; bg: string }> = {
+    action: { label: 'ACTION', color: '#fff', bg: '#2ecc71' },
+    challenge: { label: 'CHALLENGE', color: '#000', bg: '#f1c40f' },
+    incident: { label: 'INCIDENT', color: '#fff', bg: '#e74c3c' },
+  };
+  const c = config[type] || config.action;
+  return (
+    <span style={{ background: c.bg, color: c.color, padding: '1px 6px', borderRadius: 3, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+      {c.label}
+    </span>
+  );
+}
+
 function CardPreview({ card }: { card: CardTemplate }) {
   return (
     <div className="card-preview" style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span className={`risk-badge-sm risk-${card.riskTag === '🟢' ? 'green' : card.riskTag === '🟡' ? 'yellow' : 'red'}`}>{card.riskTag}</span>
+        <CardTypeBadge type={card.cardType} />
         <span className="cp-name" style={{ fontWeight: 600 }}>{card.name}</span>
         <span className="cp-value">{card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}</span>
       </div>
@@ -49,7 +63,9 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
           className="btn-tiny"
           onClick={(e) => { e.stopPropagation(); setShowCards(!showCards); }}
         >
-          {t.cards.length} cards {t.heat >= 4 && t.heatCards ? `(+${t.heatCards.length} 🔴)` : ''} {showCards ? '▲' : '▼'}
+          {t.cards.length + (t.heat >= 4 && t.heatCards ? t.heatCards.length : 0)} cards
+          {' '}({t.cards.filter(c => c.cardType === 'action').length}A/{t.cards.filter(c => c.cardType === 'challenge').length}C/{t.cards.filter(c => c.cardType === 'incident').length + (t.heat >= 4 && t.heatCards ? t.heatCards.filter(c => c.cardType === 'incident').length : 0)}I)
+          {' '}{showCards ? '▲' : '▼'}
         </button>
       </div>
       {showCards && (
@@ -78,26 +94,26 @@ export default function CastingScreen({ state }: { state: GameState }) {
     return sum + count;
   }, 0) + (state.currentScript?.cards.length || 0);
 
-  const greenCards = state.castSlots.reduce((sum, s) => {
+  const actionCards = state.castSlots.reduce((sum, s) => {
     if (!s.talent) return sum;
-    let count = s.talent.cards.filter(c => c.riskTag === '🟢').length;
-    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.riskTag === '🟢').length;
+    let count = s.talent.cards.filter(c => c.cardType === 'action').length;
+    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.cardType === 'action').length;
     return sum + count;
-  }, 0) + (state.currentScript?.cards.filter(c => c.riskTag === '🟢').length || 0);
+  }, 0) + (state.currentScript?.cards.filter(c => c.cardType === 'action').length || 0);
 
-  const yellowCards = state.castSlots.reduce((sum, s) => {
+  const challengeCards = state.castSlots.reduce((sum, s) => {
     if (!s.talent) return sum;
-    let count = s.talent.cards.filter(c => c.riskTag === '🟡').length;
-    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.riskTag === '🟡').length;
+    let count = s.talent.cards.filter(c => c.cardType === 'challenge').length;
+    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.cardType === 'challenge').length;
     return sum + count;
-  }, 0) + (state.currentScript?.cards.filter(c => c.riskTag === '🟡').length || 0);
+  }, 0) + (state.currentScript?.cards.filter(c => c.cardType === 'challenge').length || 0);
 
-  const redCards = state.castSlots.reduce((sum, s) => {
+  const incidentCards = state.castSlots.reduce((sum, s) => {
     if (!s.talent) return sum;
-    let count = s.talent.cards.filter(c => c.riskTag === '🔴').length;
-    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.riskTag === '🔴').length;
+    let count = s.talent.cards.filter(c => c.cardType === 'incident').length;
+    if (s.talent.heat >= 4 && s.talent.heatCards) count += s.talent.heatCards.filter(c => c.cardType === 'incident').length;
     return sum + count;
-  }, 0) + (state.currentScript?.cards.filter(c => c.riskTag === '🔴').length || 0);
+  }, 0) + (state.currentScript?.cards.filter(c => c.cardType === 'incident').length || 0);
 
   const handleAssign = (t: Talent) => {
     assignTalent(activeSlot, t);
@@ -127,12 +143,12 @@ export default function CastingScreen({ state }: { state: GameState }) {
       {/* Deck Preview */}
       <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', fontSize: '0.85rem' }}>
         <strong style={{ color: '#ccc' }}>📦 Deck Preview</strong>
-        <span>🟢 <strong style={{ color: '#2ecc71' }}>{greenCards}</strong></span>
-        <span>🟡 <strong style={{ color: '#f1c40f' }}>{yellowCards}</strong></span>
-        <span>🔴 <strong style={{ color: '#e74c3c' }}>{redCards}</strong></span>
+        <span><strong style={{ color: '#2ecc71' }}>{actionCards}</strong> Action</span>
+        <span><strong style={{ color: '#f1c40f' }}>{challengeCards}</strong> Challenge</span>
+        <span><strong style={{ color: '#e74c3c' }}>{incidentCards}</strong> Incident</span>
         <span style={{ color: '#888' }}>|</span>
-        <span style={{ color: redCards >= 3 ? '#e74c3c' : greenCards > redCards * 2 ? '#2ecc71' : '#f39c12' }}>
-          {redCards >= 3 ? '⚠️ High Risk' : greenCards > redCards * 2 ? '✨ Strong Synergy Potential' : '⚡ Balanced'}
+        <span style={{ color: incidentCards >= 3 ? '#e74c3c' : actionCards > incidentCards * 2 ? '#2ecc71' : '#f39c12' }}>
+          {incidentCards >= 3 ? '⚠️ High Risk — 3 Incidents = Disaster!' : actionCards > incidentCards * 2 ? '✨ Strong Synergy Potential' : '⚡ Balanced'}
         </span>
       </div>
 

@@ -1,48 +1,65 @@
 export type Genre = 'Action' | 'Comedy' | 'Drama' | 'Horror' | 'Sci-Fi' | 'Romance' | 'Thriller';
 
-export type RiskTag = '🟢' | '🟡' | '🔴';
+export type CardType = 'action' | 'challenge' | 'incident';
+export type RiskTag = '🟢' | '🟡' | '🔴'; // kept for backward compat, maps to CardType
 export type CardSourceType = 'actor' | 'director' | 'crew' | 'script';
+
+export interface ChallengeBet {
+  description: string; // e.g. "Bet the next card is an Action card"
+  successBonus: number; // +3 to +6
+  failPenalty: number; // -2 to -4
+  condition: (ctx: SynergyContext) => boolean; // evaluated when bet resolves
+  oddsHint?: (ctx: SynergyContext) => string; // e.g. "3 Action cards remain in deck of 8"
+}
 
 export interface ProductionCard {
   id: string;
   name: string;
-  source: string; // role/talent name
+  source: string;
   sourceType: CardSourceType;
+  cardType: CardType;
   baseQuality: number;
-  synergyText: string; // display text for the synergy
+  synergyText: string;
   synergyCondition: ((ctx: SynergyContext) => SynergyResult) | null;
-  riskTag: RiskTag;
-  // Runtime state (set during play)
+  riskTag: RiskTag; // legacy, derived from cardType
+  challengeBet?: ChallengeBet;
+  // Runtime state
   synergyBonus?: number;
   synergyFired?: boolean;
   totalValue?: number;
   budgetMod?: number;
-  special?: string; // special effects like 'forceExtraDraw', 'rerollNext', 'removeRed', 'poisonNext', 'cancelLastDirector', 'buffActors', 'coinFlip'
+  special?: string;
 }
 
 export interface SynergyContext {
   playedCards: ProductionCard[];
   totalQuality: number;
-  drawNumber: number; // 1-indexed
+  drawNumber: number;
   leadSkill: number;
-  redCount: number;
+  redCount: number; // now incidentCount
+  incidentCount: number;
   previousCard: ProductionCard | null;
-  greenStreak: number; // consecutive 🟢 cards ending at previous card
+  greenStreak: number;
+  remainingDeck: ProductionCard[];
+  actionCardsPlayed: number;
+  challengeCardsPlayed: number;
 }
 
 export interface SynergyResult {
-  bonus: number; // flat quality bonus (or negative)
-  multiply?: number; // multiply total quality by this (e.g., 1.3)
+  bonus: number;
+  multiply?: number;
   budgetMod?: number;
-  description?: string; // what triggered
+  description?: string;
 }
 
 export interface CardTemplate {
   name: string;
+  cardType: CardType;
   baseQuality: number;
   synergyText: string;
   synergyCondition: ((ctx: SynergyContext) => SynergyResult) | null;
-  riskTag: RiskTag;
+  riskTag: RiskTag; // derived from cardType for display
+  challengeBet?: ChallengeBet;
   budgetMod?: number;
   special?: string;
 }
@@ -60,7 +77,6 @@ export interface Script {
 }
 
 export type SlotType = 'Lead' | 'Support' | 'Director' | 'Crew' | 'Wild';
-
 export type TalentType = 'Lead' | 'Support' | 'Director' | 'Crew';
 
 export interface Talent {
@@ -73,7 +89,7 @@ export interface Talent {
   trait?: string;
   traitDesc?: string;
   cards: CardTemplate[];
-  heatCards?: CardTemplate[]; // extra 🔴 cards added at Heat 4+
+  heatCards?: CardTemplate[];
   cost: number;
   filmsLeft?: number;
 }
@@ -114,20 +130,40 @@ export interface CastSlot {
 
 export type RewardTier = 'FLOP' | 'HIT' | 'SMASH' | 'BLOCKBUSTER';
 
+// Draw-2-keep-1 state
+export interface DrawChoice {
+  card1: ProductionCard;
+  card2: ProductionCard;
+  // After auto-resolving incidents/challenges, what's left to choose
+  resolved: ProductionCard[]; // auto-played cards (incidents, challenges)
+  choosable: ProductionCard[]; // action cards player picks from (0-2)
+}
+
+export interface PendingChallenge {
+  card: ProductionCard;
+  bet: ChallengeBet;
+}
+
 export interface ProductionState {
   deck: ProductionCard[];
   played: ProductionCard[];
-  redCount: number;
+  discarded: ProductionCard[];
+  redCount: number; // legacy alias for incidentCount
+  incidentCount: number;
   qualityTotal: number;
   budgetChange: number;
   isDisaster: boolean;
   isWrapped: boolean;
   drawCount: number;
-  cleanWrap: boolean; // true if 0 🔴 cards drawn
-  actorBuff: number; // from "Drama On Set" etc.
-  poisonNext: number; // from "Onset Altercation" etc.
-  forceExtraDraw: boolean; // from "Perfection Paralysis"
+  cleanWrap: boolean;
+  actorBuff: number;
+  poisonNext: number;
+  forceExtraDraw: boolean;
   scriptAbilityBonus: number;
+  // Draw-2-keep-1 state
+  currentDraw: DrawChoice | null;
+  pendingChallenge: PendingChallenge | null;
+  challengeBetActive: boolean;
 }
 
 export interface GameState {

@@ -1,18 +1,121 @@
-import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, SynergyContext, TalentType } from './types';
+import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, SynergyContext, TalentType, ChallengeBet } from './types';
 
 let _id = 0;
 const uid = () => `id_${_id++}`;
 
 const GENRES: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'];
 
-// ─── HELPER: synergy builders ───
-
 const noSynergy = null;
 
-function hasCardType(type: string) {
-  return (ctx: SynergyContext) => {
-    const found = ctx.playedCards.some(c => c.sourceType === type);
-    return found ? { bonus: 0, description: '' } : { bonus: 0 };
+// ─── CHALLENGE BET BUILDERS ───
+
+function betNextIsAction(): ChallengeBet {
+  return {
+    description: 'Bet the next card drawn is an Action card',
+    successBonus: 4,
+    failPenalty: -3,
+    condition: (ctx) => {
+      const remaining = ctx.remainingDeck;
+      if (remaining.length === 0) return false;
+      return remaining[0].cardType === 'action';
+    },
+    oddsHint: (ctx) => {
+      const remaining = ctx.remainingDeck;
+      const actionCount = remaining.filter(c => c.cardType === 'action').length;
+      return `${actionCount} Action cards remain in deck of ${remaining.length}`;
+    },
+  };
+}
+
+function betHaveDirectorCards(count: number): ChallengeBet {
+  return {
+    description: `Bet you have ${count}+ Director cards played`,
+    successBonus: 5,
+    failPenalty: -2,
+    condition: (ctx) => {
+      return ctx.playedCards.filter(c => c.sourceType === 'director').length >= count;
+    },
+    oddsHint: (ctx) => {
+      const dirCount = ctx.playedCards.filter(c => c.sourceType === 'director').length;
+      return `${dirCount} Director cards currently played`;
+    },
+  };
+}
+
+function betMoreActorsThanIncidents(): ChallengeBet {
+  return {
+    description: 'Bet you have more Actor cards than Incidents played',
+    successBonus: 4,
+    failPenalty: -3,
+    condition: (ctx) => {
+      const actors = ctx.playedCards.filter(c => c.sourceType === 'actor').length;
+      return actors > ctx.incidentCount;
+    },
+    oddsHint: (ctx) => {
+      const actors = ctx.playedCards.filter(c => c.sourceType === 'actor').length;
+      return `${actors} Actor cards vs ${ctx.incidentCount} Incidents`;
+    },
+  };
+}
+
+function betQualityAboveTarget(): ChallengeBet {
+  return {
+    description: 'Bet your current quality is above 10',
+    successBonus: 3,
+    failPenalty: -4,
+    condition: (ctx) => ctx.totalQuality > 10,
+    oddsHint: (ctx) => `Current quality: ${ctx.totalQuality}`,
+  };
+}
+
+function betHaveScriptCards(count: number): ChallengeBet {
+  return {
+    description: `Bet you have ${count}+ Script cards played`,
+    successBonus: 4,
+    failPenalty: -3,
+    condition: (ctx) => {
+      return ctx.playedCards.filter(c => c.sourceType === 'script').length >= count;
+    },
+    oddsHint: (ctx) => {
+      const sc = ctx.playedCards.filter(c => c.sourceType === 'script').length;
+      return `${sc} Script cards currently played`;
+    },
+  };
+}
+
+function betCrewOutnumberIncidents(): ChallengeBet {
+  return {
+    description: 'Bet Crew cards outnumber Incidents',
+    successBonus: 4,
+    failPenalty: -3,
+    condition: (ctx) => {
+      const crew = ctx.playedCards.filter(c => c.sourceType === 'crew').length;
+      return crew > ctx.incidentCount;
+    },
+    oddsHint: (ctx) => {
+      const crew = ctx.playedCards.filter(c => c.sourceType === 'crew').length;
+      return `${crew} Crew vs ${ctx.incidentCount} Incidents`;
+    },
+  };
+}
+
+function betNoIncidentsYet(): ChallengeBet {
+  return {
+    description: 'Bet you have zero Incidents so far',
+    successBonus: 6,
+    failPenalty: -2,
+    condition: (ctx) => ctx.incidentCount === 0,
+    oddsHint: (ctx) => `${ctx.incidentCount} Incidents so far`,
+  };
+}
+
+function betQualityAbove(threshold: number): ChallengeBet {
+  return {
+    description: `Bet current quality is above ${threshold}`,
+    successBonus: 3,
+    failPenalty: -4,
+    condition: (ctx) => ctx.totalQuality > threshold,
+    oddsHint: (ctx) => `Current quality: ${ctx.totalQuality}`,
   };
 }
 
@@ -30,42 +133,51 @@ const JAKE_STEELE: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Steele Jaw Clench',
-      baseQuality: 2,
-      synergyText: '+1 if an Action Script card was already played',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+2 if an Action Script card was already played',
       synergyCondition: (ctx) => {
-        const has = ctx.playedCards.some(c => c.sourceType === 'script' && c.name.includes('Chase') || c.name.includes('Explosion') || c.name.includes('Fight') || c.name.includes('Stunt') || c.name.includes('Fury'));
-        return has ? { bonus: 1, description: 'Action Script synergy!' } : { bonus: 0 };
+        const has = ctx.playedCards.some(c => c.sourceType === 'script' && (c.name.includes('Chase') || c.name.includes('Explosion') || c.name.includes('Fight') || c.name.includes('Stunt') || c.name.includes('Fury')));
+        return has ? { bonus: 2, description: 'Action Script synergy!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'One-Liner',
-      baseQuality: 2,
-      synergyText: '+1 for each other Actor card played this round',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+2 for each other Actor card played this round',
       synergyCondition: (ctx) => {
         const count = ctx.playedCards.filter(c => c.sourceType === 'actor').length;
-        return count > 0 ? { bonus: count, description: `${count} Actor card${count > 1 ? 's' : ''} boost!` } : { bonus: 0 };
+        return count > 0 ? { bonus: Math.min(count * 2, 4), description: `${count} Actor card${count > 1 ? 's' : ''} boost!` } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Training Montage',
-      baseQuality: 3,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+1 if a Crew card was played',
+      synergyCondition: (ctx) => {
+        const has = ctx.playedCards.some(c => c.sourceType === 'crew');
+        return has ? { bonus: 1, description: 'Crew backed the training!' } : { bonus: 0 };
+      },
       riskTag: '🟢',
     },
     {
-      name: 'Phoned It In',
+      name: 'Risky Stunt',
+      cardType: 'challenge',
       baseQuality: 0,
-      synergyText: 'No effect — wasted draw',
+      synergyText: 'Challenge: Bet next card is Action. Win +4, Lose -3',
       synergyCondition: noSynergy,
       riskTag: '🟡',
+      challengeBet: betNextIsAction(),
     },
     {
       name: 'Paparazzi Snap',
-      baseQuality: -1,
-      synergyText: 'Lose $1M',
+      cardType: 'incident',
+      baseQuality: -4,
+      synergyText: 'Tabloid chaos. Lose $1M.',
       synergyCondition: () => ({ bonus: 0, budgetMod: -1, description: 'Paparazzi cost $1M!' }),
       riskTag: '🔴',
     },
@@ -83,42 +195,45 @@ const VALENTINA_CORTEZ: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Iconic Performance',
-      baseQuality: 4,
-      synergyText: '+2 if Director card already played this round',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+4 if Director card already played this round',
       synergyCondition: (ctx) => {
         const has = ctx.playedCards.some(c => c.sourceType === 'director');
-        return has ? { bonus: 2, description: 'Director elevated the performance!' } : { bonus: 0 };
+        return has ? { bonus: 4, description: 'Director elevated the performance!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Awards Clip',
-      baseQuality: 3,
+      cardType: 'action',
+      baseQuality: 1,
       synergyText: '+3 if this is the 4th+ card drawn',
       synergyCondition: (ctx) => ctx.drawNumber >= 4 ? { bonus: 3, description: 'Late-round payoff!' } : { bonus: 0 },
       riskTag: '🟢',
     },
     {
-      name: 'Onset Chemistry',
-      baseQuality: 2,
-      synergyText: '+3 if another Actor card already played',
-      synergyCondition: (ctx) => {
-        const has = ctx.playedCards.some(c => c.sourceType === 'actor');
-        return has ? { bonus: 3, description: 'Chemistry with co-star!' } : { bonus: 0 };
-      },
+      name: 'Method Acting',
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet more Actors than Incidents. Win +4, Lose -3',
+      synergyCondition: noSynergy,
       riskTag: '🟡',
+      challengeBet: betMoreActorsThanIncidents(),
     },
     {
       name: 'Diva Meltdown',
-      baseQuality: 0,
-      synergyText: '-2 quality, pay $3M',
-      synergyCondition: () => ({ bonus: -2, budgetMod: -3, description: 'Diva demands met at $3M!' }),
+      cardType: 'incident',
+      baseQuality: -5,
+      synergyText: 'Diva demands met at $3M!',
+      synergyCondition: () => ({ bonus: 0, budgetMod: -3, description: 'Diva demands met at $3M!' }),
       riskTag: '🔴',
     },
     {
       name: 'Scandal! TMZ Exclusive',
-      baseQuality: -2,
-      synergyText: 'All future Actor cards this round get -1',
+      cardType: 'incident',
+      baseQuality: -6,
+      synergyText: 'Scandal poisons the set!',
       synergyCondition: () => ({ bonus: 0, description: 'Scandal poisons the set!' }),
       riskTag: '🔴',
       special: 'poisonActors',
@@ -127,8 +242,9 @@ const VALENTINA_CORTEZ: Omit<Talent, 'id'> = {
   heatCards: [
     {
       name: 'Late Night Partying',
-      baseQuality: -1,
-      synergyText: 'Next Actor card gets -1',
+      cardType: 'incident',
+      baseQuality: -4,
+      synergyText: 'Valentina was out late...',
       synergyCondition: () => ({ bonus: 0, description: 'Valentina was out late...' }),
       riskTag: '🔴',
       special: 'poisonNext',
@@ -147,46 +263,49 @@ const MARCUS_WEBB: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Transformative Performance',
-      baseQuality: 4,
-      synergyText: '+2 if a Director card was already played',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+3 if a Director card was already played',
       synergyCondition: (ctx) => {
         const has = ctx.playedCards.some(c => c.sourceType === 'director');
-        return has ? { bonus: 2, description: 'Director brought out his best!' } : { bonus: 0 };
+        return has ? { bonus: 3, description: 'Director brought out his best!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Stayed In Character',
-      baseQuality: 3,
-      synergyText: '+1 per Script card played this round',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+1 per Script card played this round (max +3)',
       synergyCondition: (ctx) => {
         const count = ctx.playedCards.filter(c => c.sourceType === 'script').length;
-        return count > 0 ? { bonus: count, description: `${count} Script card${count > 1 ? 's' : ''} fuel the method!` } : { bonus: 0 };
+        return count > 0 ? { bonus: Math.min(count, 3), description: `${count} Script card${count > 1 ? 's' : ''} fuel the method!` } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
-      name: 'Improvised Brilliance',
-      baseQuality: 2,
-      synergyText: '+2 if NO Crew cards played yet',
-      synergyCondition: (ctx) => {
-        const hasCrew = ctx.playedCards.some(c => c.sourceType === 'crew');
-        return !hasCrew ? { bonus: 2, description: 'No crew interference — pure improv!' } : { bonus: 0 };
-      },
+      name: 'Creative Differences',
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet 2+ Director cards played. Win +5, Lose -2',
+      synergyCondition: noSynergy,
       riskTag: '🟡',
+      challengeBet: betHaveDirectorCards(2),
     },
     {
       name: 'Refused Direction',
-      baseQuality: 0,
-      synergyText: 'Cancels the bonus of the last Director card',
+      cardType: 'incident',
+      baseQuality: -4,
+      synergyText: 'Marcus refused direction!',
       synergyCondition: () => ({ bonus: 0, description: 'Marcus refused direction!' }),
       riskTag: '🔴',
       special: 'cancelLastDirector',
     },
     {
       name: 'Onset Altercation',
-      baseQuality: -1,
-      synergyText: 'Next card drawn gets -2',
+      cardType: 'incident',
+      baseQuality: -5,
+      synergyText: 'Fight on set!',
       synergyCondition: () => ({ bonus: 0, description: 'Fight on set!' }),
       riskTag: '🔴',
       special: 'poisonNext',
@@ -205,38 +324,47 @@ const SOPHIE_CHEN: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Quiet Intensity',
-      baseQuality: 2,
+      cardType: 'action',
+      baseQuality: 1,
       synergyText: '+2 if total cards played ≤ 3',
       synergyCondition: (ctx) => ctx.playedCards.length <= 2 ? { bonus: 2, description: 'Restraint rewarded!' } : { bonus: 0 },
       riskTag: '🟢',
     },
     {
       name: 'Breakout Moment',
-      baseQuality: 2,
+      cardType: 'action',
+      baseQuality: 1,
       synergyText: '+1 per successful film she\'s been in (grows!)',
-      synergyCondition: () => ({ bonus: 0 }), // handled dynamically based on season history
+      synergyCondition: () => ({ bonus: 0 }),
       riskTag: '🟢',
     },
     {
       name: 'Natural Talent',
-      baseQuality: 2,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+1 if another Actor card played',
+      synergyCondition: (ctx) => {
+        const has = ctx.playedCards.some(c => c.sourceType === 'actor');
+        return has ? { bonus: 1, description: 'Chemistry!' } : { bonus: 0 };
+      },
       riskTag: '🟢',
     },
     {
       name: 'Nervous Energy',
-      baseQuality: 1,
-      synergyText: '-1 if this is the 5th+ card drawn',
-      synergyCondition: (ctx) => ctx.drawNumber >= 5 ? { bonus: -1, description: 'Pressure got to her!' } : { bonus: 0 },
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet zero Incidents so far. Win +6, Lose -2',
+      synergyCondition: noSynergy,
       riskTag: '🟡',
+      challengeBet: betNoIncidentsYet(),
     },
     {
       name: 'Overwhelmed',
-      baseQuality: 0,
-      synergyText: 'No effect — blank',
+      cardType: 'incident',
+      baseQuality: -3,
+      synergyText: 'Pressure got to her',
       synergyCondition: noSynergy,
-      riskTag: '🟡',
+      riskTag: '🔴',
     },
   ],
 };
@@ -256,31 +384,34 @@ const DANNY_PARK: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Scene Stealer',
-      baseQuality: 1,
-      synergyText: '+2 if a Lead Actor card was already played',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+3 if a Lead Actor card was already played',
       synergyCondition: (ctx) => {
-        // Check if any card from a Lead source was played
         const has = ctx.playedCards.some(c => c.sourceType === 'actor' && c.source !== 'Danny Park');
-        return has ? { bonus: 2, description: 'Stole the scene from the lead!' } : { bonus: 0 };
+        return has ? { bonus: 3, description: 'Stole the scene from the lead!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Ensemble Energy',
-      baseQuality: 1,
-      synergyText: '+1 for EACH other card played this round',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+1 for EACH other card played (max +4)',
       synergyCondition: (ctx) => {
-        const count = ctx.playedCards.length;
+        const count = Math.min(ctx.playedCards.length, 4);
         return count > 0 ? { bonus: count, description: `+${count} from ensemble energy!` } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
-      name: 'Solid Take',
-      baseQuality: 2,
-      synergyText: 'None',
+      name: 'Budget Overrun',
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet quality above 10. Win +3, Lose -4',
       synergyCondition: noSynergy,
-      riskTag: '🟢',
+      riskTag: '🟡',
+      challengeBet: betQualityAboveTarget(),
     },
   ],
 };
@@ -296,14 +427,16 @@ const ROXANNE_BLAZE: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Viral Moment',
-      baseQuality: 1,
-      synergyText: '+3 if any 🔴 card was already played this round',
-      synergyCondition: (ctx) => ctx.redCount > 0 ? { bonus: 3, description: 'Turned scandal into content!' } : { bonus: 0 },
-      riskTag: '🟡',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+4 if any Incident was already played this round',
+      synergyCondition: (ctx) => ctx.incidentCount > 0 ? { bonus: 4, description: 'Turned scandal into content!' } : { bonus: 0 },
+      riskTag: '🟢',
     },
     {
       name: 'Drama On Set',
-      baseQuality: -1,
+      cardType: 'incident',
+      baseQuality: -4,
       synergyText: 'All Actor cards get +1 for rest of round',
       synergyCondition: () => ({ bonus: 0, description: 'Drama fuels the actors!' }),
       riskTag: '🔴',
@@ -311,7 +444,8 @@ const ROXANNE_BLAZE: Omit<Talent, 'id'> = {
     },
     {
       name: 'Tabloid Distraction',
-      baseQuality: -2,
+      cardType: 'incident',
+      baseQuality: -5,
       synergyText: 'Lose $2M',
       synergyCondition: () => ({ bonus: 0, budgetMod: -2, description: 'Tabloids cost $2M!' }),
       riskTag: '🔴',
@@ -330,24 +464,29 @@ const OLD_RELIABLE: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Steady Presence',
-      baseQuality: 2,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+1 if a Director card played',
+      synergyCondition: (ctx) => {
+        const has = ctx.playedCards.some(c => c.sourceType === 'director');
+        return has ? { bonus: 1, description: 'Steady under direction!' } : { bonus: 0 };
+      },
       riskTag: '🟢',
     },
     {
       name: 'Mentor Moment',
-      baseQuality: 1,
-      synergyText: '+2 if a low-Heat Actor card was played',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+3 if a low-Heat Actor card was played',
       synergyCondition: (ctx) => {
-        // Check for any actor card from a low-heat source
         const has = ctx.playedCards.some(c => c.sourceType === 'actor');
-        return has ? { bonus: 2, description: 'Mentored the young star!' } : { bonus: 0 };
+        return has ? { bonus: 3, description: 'Mentored the young star!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Brings Out The Best',
+      cardType: 'action',
       baseQuality: 0,
       synergyText: 'Next card drawn gets +2',
       synergyCondition: () => ({ bonus: 0, description: 'Buffing the next draw!' }),
@@ -372,16 +511,18 @@ const AVA_THORNTON: Omit<Talent, 'id'> = {
   cards: [
     {
       name: "Auteur's Vision",
-      baseQuality: 1,
+      cardType: 'action',
+      baseQuality: 0,
       synergyText: 'Multiply total quality by ×1.3',
-      synergyCondition: (ctx) => {
+      synergyCondition: () => {
         return { bonus: 0, multiply: 1.3, description: 'Auteur\'s Vision multiplied everything!' };
       },
       riskTag: '🟢',
     },
     {
       name: 'Meticulous Framing',
-      baseQuality: 2,
+      cardType: 'action',
+      baseQuality: 1,
       synergyText: '+2 if a Crew card was already played',
       synergyCondition: (ctx) => {
         const has = ctx.playedCards.some(c => c.sourceType === 'crew');
@@ -391,15 +532,17 @@ const AVA_THORNTON: Omit<Talent, 'id'> = {
     },
     {
       name: 'Artistic Disagreement',
+      cardType: 'challenge',
       baseQuality: 0,
-      synergyText: 'Reroll the next card (draw 2, pick better)',
-      synergyCondition: () => ({ bonus: 0, description: 'Artistic differences...' }),
+      synergyText: 'Challenge: Bet 2+ Script cards played. Win +4, Lose -3',
+      synergyCondition: noSynergy,
       riskTag: '🟡',
-      special: 'rerollNext',
+      challengeBet: betHaveScriptCards(2),
     },
     {
       name: 'Perfection Paralysis',
-      baseQuality: -1,
+      cardType: 'incident',
+      baseQuality: -3,
       synergyText: 'You MUST draw at least 1 more card',
       synergyCondition: () => ({ bonus: 0, description: 'Ava demands another take!' }),
       riskTag: '🔴',
@@ -419,31 +562,38 @@ const RICK_BLASTER: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'By The Numbers',
-      baseQuality: 2,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+1 if a Crew card played',
+      synergyCondition: (ctx) => {
+        const has = ctx.playedCards.some(c => c.sourceType === 'crew');
+        return has ? { bonus: 1, description: 'By the book!' } : { bonus: 0 };
+      },
       riskTag: '🟢',
     },
     {
       name: 'Focus Group Approved',
-      baseQuality: 2,
-      synergyText: '+1 if total quality is between 10-25',
-      synergyCondition: (ctx) => (ctx.totalQuality >= 10 && ctx.totalQuality <= 25) ? { bonus: 1, description: 'Focus groups love it!' } : { bonus: 0 },
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+2 if total quality is between 5-20',
+      synergyCondition: (ctx) => (ctx.totalQuality >= 5 && ctx.totalQuality <= 20) ? { bonus: 2, description: 'Focus groups love it!' } : { bonus: 0 },
       riskTag: '🟢',
     },
     {
       name: 'Studio-Friendly Cut',
-      baseQuality: 1,
-      synergyText: 'Remove 1 🔴 card from remaining deck',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: 'Remove 1 Incident from remaining deck',
       synergyCondition: () => ({ bonus: 0, description: 'Removed a danger card!' }),
       riskTag: '🟢',
       special: 'removeRed',
     },
     {
       name: 'Uninspired Coverage',
-      baseQuality: 1,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+1 if 3+ cards played',
+      synergyCondition: (ctx) => ctx.playedCards.length >= 3 ? { bonus: 1, description: 'Adequate.' } : { bonus: 0 },
       riskTag: '🟢',
     },
   ],
@@ -460,35 +610,39 @@ const KENJI_MURAKAMI: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Genre Mastery',
-      baseQuality: 1,
-      synergyText: '+3 if 2+ Script cards already played',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+4 if 2+ Script cards already played',
       synergyCondition: (ctx) => {
         const count = ctx.playedCards.filter(c => c.sourceType === 'script').length;
-        return count >= 2 ? { bonus: 3, description: 'Genre mastery achieved!' } : { bonus: 0 };
+        return count >= 2 ? { bonus: 4, description: 'Genre mastery achieved!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Visual Spectacle',
-      baseQuality: 3,
-      synergyText: '+1 per Crew card played this round',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+2 per Crew card played (max +4)',
       synergyCondition: (ctx) => {
-        const count = ctx.playedCards.filter(c => c.sourceType === 'crew').length;
-        return count > 0 ? { bonus: count, description: `${count} Crew card${count > 1 ? 's' : ''} enhance the visuals!` } : { bonus: 0 };
+        const count = Math.min(ctx.playedCards.filter(c => c.sourceType === 'crew').length, 2);
+        return count > 0 ? { bonus: count * 2, description: `${count} Crew card${count > 1 ? 's' : ''} enhance the visuals!` } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Experimental Choice',
+      cardType: 'challenge',
       baseQuality: 0,
-      synergyText: 'Look at next 3 cards, pick 1',
-      synergyCondition: () => ({ bonus: 0, description: 'Experimenting...' }),
+      synergyText: 'Challenge: Bet Crew outnumber Incidents. Win +4, Lose -3',
+      synergyCondition: noSynergy,
       riskTag: '🟡',
-      special: 'peek3',
+      challengeBet: betCrewOutnumberIncidents(),
     },
     {
       name: 'Lost The Thread',
-      baseQuality: -1,
+      cardType: 'incident',
+      baseQuality: -4,
       synergyText: 'If no Script cards played yet, -2 more',
       synergyCondition: (ctx) => {
         const hasScript = ctx.playedCards.some(c => c.sourceType === 'script');
@@ -512,27 +666,34 @@ const STANDARD_GRIP_TEAM: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Clean Setup',
-      baseQuality: 2,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+1 if Director card played',
+      synergyCondition: (ctx) => {
+        const has = ctx.playedCards.some(c => c.sourceType === 'director');
+        return has ? { bonus: 1, description: 'Director coordinated!' } : { bonus: 0 };
+      },
       riskTag: '🟢',
     },
     {
       name: 'Smooth Operation',
-      baseQuality: 1,
-      synergyText: '+1 if another Crew card already played',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+2 if another Crew card already played',
       synergyCondition: (ctx) => {
         const has = ctx.playedCards.some(c => c.sourceType === 'crew');
-        return has ? { bonus: 1, description: 'Crew coordination!' } : { bonus: 0 };
+        return has ? { bonus: 2, description: 'Crew coordination!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Overtime',
-      baseQuality: 1,
-      synergyText: 'Lose $1M',
-      synergyCondition: () => ({ bonus: 0, budgetMod: -1, description: 'Overtime costs $1M' }),
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet quality above 5. Win +3, Lose -4',
+      synergyCondition: noSynergy,
       riskTag: '🟡',
+      challengeBet: betQualityAbove(5),
     },
   ],
 };
@@ -548,26 +709,32 @@ const MARIA_SANTOS: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Gorgeous Shot',
-      baseQuality: 3,
-      synergyText: '+1 if Director card already played',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+2 if Director card already played',
       synergyCondition: (ctx) => {
         const has = ctx.playedCards.some(c => c.sourceType === 'director');
-        return has ? { bonus: 1, description: 'Director guided the shot!' } : { bonus: 0 };
+        return has ? { bonus: 2, description: 'Director guided the shot!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Golden Hour Magic',
-      baseQuality: 2,
+      cardType: 'action',
+      baseQuality: 1,
       synergyText: '+2 if this is draw 3, 4, or 5',
       synergyCondition: (ctx) => (ctx.drawNumber >= 3 && ctx.drawNumber <= 5) ? { bonus: 2, description: 'Golden hour timing!' } : { bonus: 0 },
       riskTag: '🟢',
     },
     {
       name: 'Technical Precision',
-      baseQuality: 2,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+1 if 2+ Action cards played',
+      synergyCondition: (ctx) => {
+        const count = ctx.playedCards.filter(c => c.cardType === 'action').length;
+        return count >= 2 ? { bonus: 1, description: 'Precision in action!' } : { bonus: 0 };
+      },
       riskTag: '🟢',
     },
   ],
@@ -584,24 +751,30 @@ const QUICK_FIX_PRODUCTIONS: Omit<Talent, 'id'> = {
   cards: [
     {
       name: 'Gets The Job Done',
-      baseQuality: 1,
-      synergyText: 'None',
-      synergyCondition: noSynergy,
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+1 if an Actor card played',
+      synergyCondition: (ctx) => {
+        const has = ctx.playedCards.some(c => c.sourceType === 'actor');
+        return has ? { bonus: 1, description: 'Good enough!' } : { bonus: 0 };
+      },
       riskTag: '🟢',
     },
     {
       name: 'Duct Tape Fix',
-      baseQuality: 1,
-      synergyText: 'Cancel -1 quality from last 🔴 card',
+      cardType: 'action',
+      baseQuality: 0,
+      synergyText: '+2 if any Incident was played this round',
       synergyCondition: (ctx) => {
-        return ctx.redCount > 0 ? { bonus: 1, description: 'Duct tape saves the day!' } : { bonus: 0 };
+        return ctx.incidentCount > 0 ? { bonus: 2, description: 'Duct tape saves the day!' } : { bonus: 0 };
       },
       riskTag: '🟢',
     },
     {
       name: 'Equipment Failure',
-      baseQuality: -1,
-      synergyText: 'None',
+      cardType: 'incident',
+      baseQuality: -3,
+      synergyText: 'Cheap gear breaks down',
       synergyCondition: noSynergy,
       riskTag: '🔴',
     },
@@ -615,41 +788,46 @@ const ALL_CREW: Omit<Talent, 'id'>[] = [STANDARD_GRIP_TEAM, MARIA_SANTOS, QUICK_
 const NIGHTMARE_ALLEY_CARDS: CardTemplate[] = [
   {
     name: 'Jump Scare',
-    baseQuality: 2,
-    synergyText: '+2 if NO cards played yet (opening shock)',
-    synergyCondition: (ctx) => ctx.playedCards.length === 0 ? { bonus: 2, description: 'Opening shock!' } : { bonus: 0 },
+    cardType: 'action',
+    baseQuality: 1,
+    synergyText: '+3 if NO cards played yet (opening shock)',
+    synergyCondition: (ctx) => ctx.playedCards.length === 0 ? { bonus: 3, description: 'Opening shock!' } : { bonus: 0 },
     riskTag: '🟢',
   },
   {
     name: 'Building Dread',
-    baseQuality: 1,
-    synergyText: '+1 per card already played this round',
+    cardType: 'action',
+    baseQuality: 0,
+    synergyText: '+1 per card already played (max +4)',
     synergyCondition: (ctx) => {
-      const count = ctx.playedCards.length;
+      const count = Math.min(ctx.playedCards.length, 4);
       return count > 0 ? { bonus: count, description: `Dread builds... +${count}!` } : { bonus: 0 };
     },
     riskTag: '🟢',
   },
   {
     name: 'The Reveal',
-    baseQuality: 3,
-    synergyText: '+2 if this is the 4th+ card',
-    synergyCondition: (ctx) => ctx.drawNumber >= 4 ? { bonus: 2, description: 'The big reveal!' } : { bonus: 0 },
+    cardType: 'action',
+    baseQuality: 1,
+    synergyText: '+3 if this is the 4th+ card',
+    synergyCondition: (ctx) => ctx.drawNumber >= 4 ? { bonus: 3, description: 'The big reveal!' } : { bonus: 0 },
     riskTag: '🟢',
   },
   {
     name: 'Creepy Atmosphere',
-    baseQuality: 2,
-    synergyText: '+1 if a Director card was already played',
+    cardType: 'action',
+    baseQuality: 1,
+    synergyText: '+2 if a Director card was already played',
     synergyCondition: (ctx) => {
       const has = ctx.playedCards.some(c => c.sourceType === 'director');
-      return has ? { bonus: 1, description: 'Director set the mood!' } : { bonus: 0 };
+      return has ? { bonus: 2, description: 'Director set the mood!' } : { bonus: 0 };
     },
     riskTag: '🟢',
   },
   {
     name: 'Gore Backlash',
-    baseQuality: -1,
+    cardType: 'incident',
+    baseQuality: -5,
     synergyText: '-1 per Actor card played',
     synergyCondition: (ctx) => {
       const count = ctx.playedCards.filter(c => c.sourceType === 'actor').length;
@@ -659,7 +837,8 @@ const NIGHTMARE_ALLEY_CARDS: CardTemplate[] = [
   },
   {
     name: 'Cursed Set',
-    baseQuality: -2,
+    cardType: 'incident',
+    baseQuality: -6,
     synergyText: 'Bad luck on set',
     synergyCondition: () => ({ bonus: 0, description: 'The set is cursed!' }),
     riskTag: '🔴',
@@ -669,11 +848,12 @@ const NIGHTMARE_ALLEY_CARDS: CardTemplate[] = [
 const LAUGH_RIOT_CARDS: CardTemplate[] = [
   {
     name: 'Perfect Timing',
-    baseQuality: 2,
-    synergyText: '+2 if the previous card was also 🟢',
+    cardType: 'action',
+    baseQuality: 1,
+    synergyText: '+2 if the previous card was also Action',
     synergyCondition: (ctx) => {
-      if (ctx.previousCard && ctx.previousCard.riskTag === '🟢') {
-        return { bonus: 2, description: 'Green streak combo!' };
+      if (ctx.previousCard && ctx.previousCard.cardType === 'action') {
+        return { bonus: 2, description: 'Action streak combo!' };
       }
       return { bonus: 0 };
     },
@@ -681,7 +861,8 @@ const LAUGH_RIOT_CARDS: CardTemplate[] = [
   },
   {
     name: 'Improv Gold',
-    baseQuality: 2,
+    cardType: 'action',
+    baseQuality: 1,
     synergyText: '+2 if an Actor card was played immediately before',
     synergyCondition: (ctx) => {
       if (ctx.previousCard && ctx.previousCard.sourceType === 'actor') {
@@ -693,17 +874,19 @@ const LAUGH_RIOT_CARDS: CardTemplate[] = [
   },
   {
     name: 'Running Gag',
-    baseQuality: 1,
-    synergyText: '+1 for each Script card already played',
+    cardType: 'action',
+    baseQuality: 0,
+    synergyText: '+1 for each Script card already played (max +3)',
     synergyCondition: (ctx) => {
-      const count = ctx.playedCards.filter(c => c.sourceType === 'script').length;
+      const count = Math.min(ctx.playedCards.filter(c => c.sourceType === 'script').length, 3);
       return count > 0 ? { bonus: count, description: `The gag gets funnier! +${count}` } : { bonus: 0 };
     },
     riskTag: '🟢',
   },
   {
     name: 'Physical Comedy',
-    baseQuality: 2,
+    cardType: 'action',
+    baseQuality: 1,
     synergyText: '+1 if a Crew card was played',
     synergyCondition: (ctx) => {
       const has = ctx.playedCards.some(c => c.sourceType === 'crew');
@@ -713,22 +896,20 @@ const LAUGH_RIOT_CARDS: CardTemplate[] = [
   },
   {
     name: 'Joke Falls Flat',
+    cardType: 'challenge',
     baseQuality: 0,
-    synergyText: 'If previous card was 🔴, this becomes -2',
-    synergyCondition: (ctx) => {
-      if (ctx.previousCard && ctx.previousCard.riskTag === '🔴') {
-        return { bonus: -2, description: 'Bad vibe killed the joke!' };
-      }
-      return { bonus: 0 };
-    },
+    synergyText: 'Challenge: Bet no Incidents so far. Win +6, Lose -2',
+    synergyCondition: noSynergy,
     riskTag: '🟡',
+    challengeBet: betNoIncidentsYet(),
   },
   {
     name: 'Offensive Bit',
-    baseQuality: -1,
-    synergyText: '-2 more if any 🔴 Actor card played this round',
+    cardType: 'incident',
+    baseQuality: -4,
+    synergyText: '-2 more if any Incident Actor card played this round',
     synergyCondition: (ctx) => {
-      const hasRedActor = ctx.playedCards.some(c => c.sourceType === 'actor' && c.riskTag === '🔴');
+      const hasRedActor = ctx.playedCards.some(c => c.sourceType === 'actor' && c.cardType === 'incident');
       return hasRedActor ? { bonus: -2, description: 'Scandal made it worse!' } : { bonus: 0 };
     },
     riskTag: '🔴',
@@ -738,17 +919,19 @@ const LAUGH_RIOT_CARDS: CardTemplate[] = [
 const BROKEN_CROWN_CARDS: CardTemplate[] = [
   {
     name: 'Emotional Climax',
-    baseQuality: 3,
-    synergyText: '+2 if 2+ Actor cards played this round',
+    cardType: 'action',
+    baseQuality: 1,
+    synergyText: '+3 if 2+ Actor cards played this round',
     synergyCondition: (ctx) => {
       const count = ctx.playedCards.filter(c => c.sourceType === 'actor').length;
-      return count >= 2 ? { bonus: 2, description: 'Actors carried the scene!' } : { bonus: 0 };
+      return count >= 2 ? { bonus: 3, description: 'Actors carried the scene!' } : { bonus: 0 };
     },
     riskTag: '🟢',
   },
   {
     name: 'Subtle Writing',
-    baseQuality: 2,
+    cardType: 'action',
+    baseQuality: 1,
     synergyText: '+2 if Director card already played',
     synergyCondition: (ctx) => {
       const has = ctx.playedCards.some(c => c.sourceType === 'director');
@@ -758,36 +941,38 @@ const BROKEN_CROWN_CARDS: CardTemplate[] = [
   },
   {
     name: 'Character Study',
-    baseQuality: 2,
-    synergyText: '+1 per unique card type played',
+    cardType: 'action',
+    baseQuality: 0,
+    synergyText: '+1 per unique card type played (max +4)',
     synergyCondition: (ctx) => {
       const types = new Set(ctx.playedCards.map(c => c.sourceType));
-      return types.size > 0 ? { bonus: types.size, description: `${types.size} unique types = ensemble excellence!` } : { bonus: 0 };
+      return types.size > 0 ? { bonus: Math.min(types.size, 4), description: `${types.size} unique types = ensemble excellence!` } : { bonus: 0 };
     },
     riskTag: '🟢',
   },
   {
     name: 'Awards Bait Monologue',
-    baseQuality: 3,
+    cardType: 'action',
+    baseQuality: 1,
     synergyText: '+3 if Lead Actor Skill is 4+',
     synergyCondition: (ctx) => ctx.leadSkill >= 4 ? { bonus: 3, description: 'Star delivered the monologue!' } : { bonus: 0 },
     riskTag: '🟢',
   },
   {
     name: 'Pacing Issues',
+    cardType: 'challenge',
     baseQuality: 0,
-    synergyText: 'If 3+ Script cards played, -2',
-    synergyCondition: (ctx) => {
-      const count = ctx.playedCards.filter(c => c.sourceType === 'script').length;
-      return count >= 3 ? { bonus: -2, description: 'Too many script scenes — pacing drags!' } : { bonus: 0 };
-    },
+    synergyText: 'Challenge: Bet 2+ Script cards played. Win +4, Lose -3',
+    synergyCondition: noSynergy,
     riskTag: '🟡',
+    challengeBet: betHaveScriptCards(2),
   },
   {
     name: 'Pretentious Drivel',
-    baseQuality: -2,
-    synergyText: 'If quality under 10, -2 more',
-    synergyCondition: (ctx) => ctx.totalQuality < 10 ? { bonus: -2, description: 'Pretension without substance!' } : { bonus: 0 },
+    cardType: 'incident',
+    baseQuality: -5,
+    synergyText: 'If quality under 10, -3 more',
+    synergyCondition: (ctx) => ctx.totalQuality < 10 ? { bonus: -3, description: 'Pretension without substance!' } : { bonus: 0 },
     riskTag: '🔴',
   },
 ];
@@ -795,14 +980,19 @@ const BROKEN_CROWN_CARDS: CardTemplate[] = [
 const NEON_FURY_CARDS: CardTemplate[] = [
   {
     name: 'Chase Sequence',
-    baseQuality: 3,
-    synergyText: 'None — just solid',
-    synergyCondition: noSynergy,
+    cardType: 'action',
+    baseQuality: 1,
+    synergyText: '+2 if an Actor card played',
+    synergyCondition: (ctx) => {
+      const has = ctx.playedCards.some(c => c.sourceType === 'actor');
+      return has ? { bonus: 2, description: 'Star in the driver\'s seat!' } : { bonus: 0 };
+    },
     riskTag: '🟢',
   },
   {
     name: 'Explosion!',
-    baseQuality: 2,
+    cardType: 'action',
+    baseQuality: 1,
     synergyText: '+2 if a Crew card was played',
     synergyCondition: (ctx) => {
       const has = ctx.playedCards.some(c => c.sourceType === 'crew');
@@ -812,39 +1002,36 @@ const NEON_FURY_CARDS: CardTemplate[] = [
   },
   {
     name: 'Fight Choreography',
-    baseQuality: 2,
-    synergyText: '+2 if an Actor with Skill 4+ was played',
+    cardType: 'action',
+    baseQuality: 1,
+    synergyText: '+2 if Lead Actor Skill 4+',
     synergyCondition: (ctx) => ctx.leadSkill >= 4 ? { bonus: 2, description: 'Star nailed the choreography!' } : { bonus: 0 },
     riskTag: '🟢',
   },
   {
     name: 'Stunt Goes Wrong',
-    baseQuality: 3,
-    synergyText: 'Coin flip: heads +3, tails -2',
-    synergyCondition: () => {
-      const heads = Math.random() > 0.5;
-      return heads
-        ? { bonus: 3, description: '🪙 Heads! Stunt was AMAZING!' }
-        : { bonus: -5, description: '🪙 Tails! Stunt went WRONG!' }; // -5 because baseQuality is +3, net = -2
-    },
+    cardType: 'challenge',
+    baseQuality: 0,
+    synergyText: 'Challenge: Bet next card is Action. Win +4, Lose -3',
+    synergyCondition: noSynergy,
     riskTag: '🟡',
-    special: 'coinFlip',
+    challengeBet: betNextIsAction(),
   },
   {
     name: 'CGI Overload',
-    baseQuality: 1,
-    synergyText: '-1 per Crew card played',
-    synergyCondition: (ctx) => {
-      const count = ctx.playedCards.filter(c => c.sourceType === 'crew').length;
-      return count > 0 ? { bonus: -count, description: `CGI replaces craft... -${count}` } : { bonus: 0 };
-    },
+    cardType: 'challenge',
+    baseQuality: 0,
+    synergyText: 'Challenge: Bet quality above 15. Win +3, Lose -4',
+    synergyCondition: noSynergy,
     riskTag: '🟡',
+    challengeBet: betQualityAbove(15),
   },
   {
     name: 'Bloated Runtime',
-    baseQuality: -1,
-    synergyText: 'If 5+ cards drawn, -2 more',
-    synergyCondition: (ctx) => ctx.drawNumber >= 5 ? { bonus: -2, description: 'Movie is too long!' } : { bonus: 0 },
+    cardType: 'incident',
+    baseQuality: -5,
+    synergyText: 'If 5+ cards drawn, -3 more',
+    synergyCondition: (ctx) => ctx.drawNumber >= 5 ? { bonus: -3, description: 'Movie is too long!' } : { bonus: 0 },
     riskTag: '🔴',
   },
 ];
@@ -870,7 +1057,7 @@ export const ALL_SCRIPTS: Omit<Script, 'id'>[] = [
     cost: 1,
     cards: LAUGH_RIOT_CARDS,
     ability: 'crowdPleaser',
-    abilityDesc: 'Crowd Pleaser: For every 3 consecutive 🟢 cards, +2 bonus',
+    abilityDesc: 'Crowd Pleaser: For every 3 consecutive Action cards, +2 bonus',
   },
   {
     title: 'Broken Crown',
@@ -912,18 +1099,9 @@ function makeTalent(template: Omit<Talent, 'id'>): Talent {
 }
 
 export function generateTalentMarket(count: number, _season: number): Talent[] {
-  // Pick from named talent pools
-  const allPools: { pool: Omit<Talent, 'id'>[]; weight: number }[] = [
-    { pool: ALL_LEADS, weight: 2 },
-    { pool: ALL_SUPPORTS, weight: 1.5 },
-    { pool: ALL_DIRECTORS, weight: 1.5 },
-    { pool: ALL_CREW, weight: 1 },
-  ];
-
   const result: Talent[] = [];
   const usedNames = new Set<string>();
 
-  // Ensure at least one of each core type
   const ensureTypes: Omit<Talent, 'id'>[][] = [ALL_LEADS, ALL_DIRECTORS, ALL_CREW];
   for (const pool of ensureTypes) {
     if (result.length >= count) break;
@@ -934,7 +1112,6 @@ export function generateTalentMarket(count: number, _season: number): Talent[] {
     }
   }
 
-  // Fill remaining
   while (result.length < count) {
     const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW];
     const pick = allTalent[Math.floor(Math.random() * allTalent.length)];
@@ -942,7 +1119,6 @@ export function generateTalentMarket(count: number, _season: number): Talent[] {
       usedNames.add(pick.name);
       result.push(makeTalent(pick));
     }
-    // Safety: if all names used, break
     if (usedNames.size >= allTalent.length) break;
   }
 
@@ -999,9 +1175,9 @@ export const ALL_PERKS: Omit<StudioPerk, 'id'>[] = [
   { name: 'Marketing Machine', cost: 10, description: 'Choose your market condition', effect: 'chooseMarket' },
   { name: 'Independent Spirit', cost: 6, description: 'If total Heat ≤ 4, +×0.5 mult', effect: 'indieSpirit' },
   { name: 'Genre Specialist', cost: 5, description: 'Pick a genre for permanent +×0.3', effect: 'genreSpec' },
-  { name: 'Crisis Manager', cost: 8, description: '🔴 card quality penalties halved', effect: 'crisisManager' },
+  { name: 'Crisis Manager', cost: 8, description: 'Incident card quality penalties halved', effect: 'crisisManager' },
   { name: 'Buzz Machine', cost: 10, description: 'If quality > 35, +×0.5 mult', effect: 'buzz' },
-  { name: 'Insurance Policy', cost: 15, description: 'Disasters reduce quality 25% instead of 50%', effect: 'insurance' },
+  { name: 'Insurance Policy', cost: 15, description: 'Disasters reduce quality 25% instead of losing all', effect: 'insurance' },
   { name: 'Precision Filmmaking', cost: 8, description: 'Clean Wrap bonus increased to +8', effect: 'precisionFilm' },
   { name: 'Prestige Label', cost: 12, description: 'Award nominations give +×0.3 mult', effect: 'prestige' },
   { name: 'Talent Scout', cost: 7, description: 'Peek at talent before hiring', effect: 'talentScout' },

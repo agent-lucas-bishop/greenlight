@@ -1,4 +1,4 @@
-import { GameState, GamePhase, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate } from './types';
+import { GameState, GamePhase, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, DrawChoice, PendingChallenge } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
@@ -61,10 +61,12 @@ function templateToCard(template: CardTemplate, source: string, sourceType: Prod
     name: template.name,
     source,
     sourceType,
+    cardType: template.cardType,
     baseQuality: template.baseQuality,
     synergyText: template.synergyText,
     synergyCondition: template.synergyCondition,
     riskTag: template.riskTag,
+    challengeBet: template.challengeBet,
     budgetMod: template.budgetMod,
     special: template.special,
   };
@@ -73,12 +75,10 @@ function templateToCard(template: CardTemplate, source: string, sourceType: Prod
 function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionCard[] {
   const deck: ProductionCard[] = [];
 
-  // Add script cards
   for (const template of script.cards) {
     deck.push(templateToCard(template, script.title, 'script'));
   }
 
-  // Add talent cards
   for (const slot of castSlots) {
     if (!slot.talent) continue;
     const t = slot.talent;
@@ -90,7 +90,6 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
       deck.push(templateToCard(template, t.name, sourceType));
     }
 
-    // Heat 4+: add extra 🔴 cards
     if (t.heat >= 4 && t.heatCards) {
       for (const template of t.heatCards) {
         deck.push(templateToCard(template, t.name, sourceType));
@@ -107,32 +106,131 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
   return deck;
 }
 
-function evaluateSynergy(card: ProductionCard, played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[]): SynergyResult {
-  if (!card.synergyCondition) return { bonus: 0 };
-
+function buildSynergyContext(played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[], remainingDeck: ProductionCard[]): SynergyContext {
   const leadSlot = castSlots.find(s => s.slotType === 'Lead' && s.talent);
   const leadSkill = leadSlot?.talent?.skill || 0;
-  const redCount = played.filter(c => c.riskTag === '🔴').length;
+  const incidentCount = played.filter(c => c.cardType === 'incident').length;
   const previousCard = played.length > 0 ? played[played.length - 1] : null;
 
-  // Calculate green streak
   let greenStreak = 0;
   for (let i = played.length - 1; i >= 0; i--) {
-    if (played[i].riskTag === '🟢') greenStreak++;
+    if (played[i].cardType === 'action') greenStreak++;
     else break;
   }
 
-  const ctx: SynergyContext = {
+  return {
     playedCards: played,
     totalQuality,
     drawNumber,
     leadSkill,
-    redCount,
+    redCount: incidentCount,
+    incidentCount,
     previousCard,
     greenStreak,
+    remainingDeck,
+    actionCardsPlayed: played.filter(c => c.cardType === 'action').length,
+    challengeCardsPlayed: played.filter(c => c.cardType === 'challenge').length,
   };
+}
 
+function evaluateSynergy(card: ProductionCard, played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[], remainingDeck: ProductionCard[]): SynergyResult {
+  if (!card.synergyCondition) return { bonus: 0 };
+  const ctx = buildSynergyContext(played, totalQuality, drawNumber, castSlots, remainingDeck);
   return card.synergyCondition(ctx);
+}
+
+function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots: CastSlot[]): ProductionState {
+  const p = { ...prod };
+  const drawNumber = p.drawCount; // already incremented
+  const played = [...p.played];
+  const deck = [...p.deck];
+
+  const synResult = evaluateSynergy(card, played, p.qualityTotal, drawNumber, castSlots, deck);
+  
+  let totalCardValue = card.baseQuality + synResult.bonus;
+
+  // Apply poison from previous card
+  if (p.poisonNext !== 0) {
+    totalCardValue += p.poisonNext;
+  }
+
+  // Apply actor buff if actor card
+  if (card.sourceType === 'actor' && p.actorBuff !== 0) {
+    totalCardValue += p.actorBuff;
+  }
+
+  // Crisis Manager: halve incident penalties
+  if (card.cardType === 'incident' && state.perks.some(pk => pk.effect === 'crisisManager')) {
+    if (totalCardValue < 0) {
+      totalCardValue = Math.ceil(totalCardValue / 2);
+    }
+  }
+
+  card.synergyBonus = synResult.bonus;
+  card.synergyFired = synResult.bonus !== 0 || !!synResult.multiply;
+  card.totalValue = totalCardValue;
+  card.budgetMod = (synResult.budgetMod || 0) + (card.budgetMod || 0);
+
+  let newQuality = p.qualityTotal + totalCardValue;
+
+  if (synResult.multiply) {
+    newQuality = Math.floor(newQuality * synResult.multiply);
+    card.synergyBonus = Math.floor(p.qualityTotal * synResult.multiply) - p.qualityTotal + card.baseQuality;
+    card.totalValue = newQuality - p.qualityTotal;
+  }
+
+  played.push(card);
+  let incidentCount = p.incidentCount + (card.cardType === 'incident' ? 1 : 0);
+  let cleanWrap = p.cleanWrap && card.cardType !== 'incident';
+  let budgetChange = p.budgetChange + (card.budgetMod || 0);
+  let actorBuff = p.actorBuff;
+  let poisonNext = 0;
+  let forceExtraDraw = p.forceExtraDraw;
+
+  if (card.special === 'buffActors') actorBuff += 1;
+  if (card.special === 'poisonNext') poisonNext = -2;
+  if (card.special === 'poisonActors') actorBuff -= 1;
+  if (card.special === 'forceExtraDraw') forceExtraDraw = true;
+  if (card.special === 'removeRed') {
+    const redIdx = deck.findIndex(c => c.cardType === 'incident');
+    if (redIdx >= 0) deck.splice(redIdx, 1);
+  }
+  if (card.special === 'buffNext') poisonNext = 2;
+
+  // 3 Incidents = DISASTER — lose ALL quality
+  const isDisaster = incidentCount >= 3;
+
+  // Script ability: Crowd Pleaser (consecutive Action card tracking)
+  let scriptAbilityBonus = p.scriptAbilityBonus;
+  if (state.currentScript?.ability === 'crowdPleaser') {
+    let streak = 0;
+    let maxStreak = 0;
+    for (const c of played) {
+      if (c.cardType === 'action') { streak++; maxStreak = Math.max(maxStreak, streak); }
+      else streak = 0;
+    }
+    scriptAbilityBonus = Math.floor(maxStreak / 3) * 2;
+  }
+
+  return {
+    ...p,
+    deck,
+    played,
+    redCount: incidentCount,
+    incidentCount,
+    qualityTotal: newQuality,
+    budgetChange,
+    isDisaster,
+    isWrapped: isDisaster,
+    cleanWrap,
+    actorBuff,
+    poisonNext,
+    forceExtraDraw,
+    scriptAbilityBonus,
+    currentDraw: null,
+    pendingChallenge: null,
+    challengeBetActive: false,
+  };
 }
 
 // ─── ACTIONS ───
@@ -150,7 +248,7 @@ export function pickNeow(choice: number) {
   } else if (choice === 1) {
     budget += 10;
   } else {
-    perks.push({ id: 'neow_perk', name: 'Crisis Manager', cost: 0, description: '🔴 card quality penalties halved', effect: 'crisisManager' });
+    perks.push({ id: 'neow_perk', name: 'Crisis Manager', cost: 0, description: 'Incident card quality penalties halved', effect: 'crisisManager' });
   }
   setState({ neowChoice: choice, roster, budget, perks, phase: 'greenlight' as GamePhase });
   beginSeason();
@@ -217,7 +315,9 @@ export function startProduction() {
     production: {
       deck,
       played: [],
+      discarded: [],
       redCount: 0,
+      incidentCount: 0,
       qualityTotal: 0,
       budgetChange: 0,
       isDisaster: false,
@@ -228,126 +328,163 @@ export function startProduction() {
       poisonNext: 0,
       forceExtraDraw: false,
       scriptAbilityBonus: 0,
+      currentDraw: null,
+      pendingChallenge: null,
+      challengeBetActive: false,
     },
   });
 }
 
-export function drawProductionCard() {
+// Draw-2-Keep-1: reveals 2 cards, auto-resolves incidents/challenges, lets player pick from remaining action cards
+export function drawProductionCards() {
   if (!state.production || state.production.isWrapped) return;
   const prod = { ...state.production };
-  const totalDeckSize = prod.deck.length + prod.played.length;
-  const baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
-  const maxDraws = baseDraw + (prod.forceExtraDraw ? 2 : 0);
+  const maxDraws = getMaxDraws(prod);
   if (prod.drawCount >= maxDraws) return;
+  if (prod.currentDraw || prod.pendingChallenge) return; // already in a draw
 
   const deck = [...prod.deck];
   if (deck.length === 0) { wrapProduction(); return; }
 
-  const card = { ...deck.shift()! };
-  const drawNumber = prod.drawCount + 1;
+  prod.drawCount++;
 
-  // Evaluate synergy
-  const synResult = evaluateSynergy(card, prod.played, prod.qualityTotal, drawNumber, state.castSlots);
+  // Draw up to 2 cards
+  const card1 = deck.shift()!;
+  const card2 = deck.length > 0 ? deck.shift()! : null;
 
-  let totalCardValue = card.baseQuality + synResult.bonus;
+  const cards = card2 ? [card1, card2] : [card1];
+  const resolved: ProductionCard[] = [];
+  const choosable: ProductionCard[] = [];
 
-  // Apply poison from previous card
-  if (prod.poisonNext !== 0) {
-    totalCardValue += prod.poisonNext;
-  }
-
-  // Apply actor buff if this is an actor card
-  if (card.sourceType === 'actor' && prod.actorBuff !== 0) {
-    totalCardValue += prod.actorBuff;
-  }
-
-  // Crisis Manager: halve negative quality from 🔴 cards
-  if (card.riskTag === '🔴' && state.perks.some(p => p.effect === 'crisisManager')) {
-    if (totalCardValue < 0) {
-      totalCardValue = Math.ceil(totalCardValue / 2);
+  // Categorize: incidents auto-play, challenges auto-play, actions are choosable
+  for (const c of cards) {
+    if (c.cardType === 'incident') {
+      resolved.push(c);
+    } else if (c.cardType === 'challenge') {
+      resolved.push(c);
+    } else {
+      choosable.push(c);
     }
   }
 
-  // Store computed values on card for display
-  card.synergyBonus = synResult.bonus;
-  card.synergyFired = synResult.bonus !== 0 || !!synResult.multiply;
-  card.totalValue = totalCardValue;
-  card.budgetMod = (synResult.budgetMod || 0) + (card.budgetMod || 0);
-
-  let newQuality = prod.qualityTotal + totalCardValue;
-
-  // Apply multiplier
-  if (synResult.multiply) {
-    newQuality = Math.floor(newQuality * synResult.multiply);
-    // The "bonus" from multiplication
-    card.synergyBonus = Math.floor(prod.qualityTotal * synResult.multiply) - prod.qualityTotal + card.baseQuality;
-    card.totalValue = newQuality - prod.qualityTotal;
-  }
-
-  const played = [...prod.played, card];
-  let redCount = prod.redCount + (card.riskTag === '🔴' ? 1 : 0);
-  let cleanWrap = prod.cleanWrap && card.riskTag !== '🔴';
-  let budgetChange = prod.budgetChange + (card.budgetMod || 0);
-  let actorBuff = prod.actorBuff;
-  let poisonNext = 0; // reset poison for next draw
-  let forceExtraDraw = prod.forceExtraDraw;
-
-  // Handle special effects
-  if (card.special === 'buffActors') {
-    actorBuff += 1;
-  }
-  if (card.special === 'poisonNext') {
-    poisonNext = -2;
-  }
-  if (card.special === 'poisonActors') {
-    // This is handled through actorBuff (negative)
-    actorBuff -= 1;
-  }
-  if (card.special === 'forceExtraDraw') {
-    forceExtraDraw = true;
-  }
-  if (card.special === 'removeRed') {
-    // Remove one 🔴 card from remaining deck
-    const redIdx = deck.findIndex(c => c.riskTag === '🔴');
-    if (redIdx >= 0) deck.splice(redIdx, 1);
-  }
-  if (card.special === 'buffNext') {
-    poisonNext = 2; // positive "poison" = buff
-  }
-
-  const isDisaster = redCount >= 3;
-  const isWrapped = isDisaster;
-
-  // Script ability: Crowd Pleaser (consecutive 🟢 tracking)
-  let scriptAbilityBonus = prod.scriptAbilityBonus;
-  if (state.currentScript?.ability === 'crowdPleaser') {
-    // Count current max consecutive 🟢
-    let streak = 0;
-    let maxStreak = 0;
-    for (const c of played) {
-      if (c.riskTag === '🟢') { streak++; maxStreak = Math.max(maxStreak, streak); }
-      else streak = 0;
+  // Auto-resolve incidents immediately
+  let updatedProd: ProductionState = { ...prod, deck };
+  for (const inc of resolved.filter(c => c.cardType === 'incident')) {
+    updatedProd = resolveCardPlay({ ...inc }, updatedProd, state.castSlots);
+    if (updatedProd.isDisaster) {
+      setState({ production: updatedProd });
+      return;
     }
-    scriptAbilityBonus = Math.floor(maxStreak / 3) * 2;
   }
 
-  setState({
-    production: {
-      deck,
-      played,
-      redCount,
-      qualityTotal: newQuality,
-      budgetChange,
-      isDisaster,
-      isWrapped,
-      drawCount: drawNumber,
-      cleanWrap,
-      actorBuff,
-      poisonNext,
-      forceExtraDraw,
-      scriptAbilityBonus,
-    },
-  });
+  // Handle challenge cards
+  const challenges = resolved.filter(c => c.cardType === 'challenge');
+  if (challenges.length > 0) {
+    // Play challenge card first, then show bet prompt
+    const challengeCard = challenges[0];
+    // Auto-play the challenge (base value)
+    updatedProd = resolveCardPlay({ ...challengeCard }, updatedProd, state.castSlots);
+    
+    if (challengeCard.challengeBet) {
+      // Show bet prompt to player
+      const ctx = buildSynergyContext(updatedProd.played, updatedProd.qualityTotal, updatedProd.drawCount, state.castSlots, updatedProd.deck);
+      updatedProd.pendingChallenge = {
+        card: challengeCard,
+        bet: challengeCard.challengeBet,
+      };
+      updatedProd.challengeBetActive = true;
+      // If there are also choosable action cards, save them for after bet resolves
+      if (choosable.length > 0) {
+        updatedProd.currentDraw = {
+          card1: cards[0],
+          card2: card2 || cards[0],
+          resolved,
+          choosable,
+        };
+      }
+      setState({ production: updatedProd });
+      return;
+    }
+  }
+
+  // If only action cards remain for choice
+  if (choosable.length === 2) {
+    // Player must pick one
+    updatedProd.currentDraw = {
+      card1: choosable[0],
+      card2: choosable[1],
+      resolved,
+      choosable,
+    };
+    setState({ production: updatedProd });
+    return;
+  } else if (choosable.length === 1) {
+    // Auto-keep the single action card
+    updatedProd = resolveCardPlay({ ...choosable[0] }, updatedProd, state.castSlots);
+    setState({ production: updatedProd });
+    return;
+  }
+
+  // No choosable cards (all were incidents/challenges, already resolved)
+  setState({ production: updatedProd });
+}
+
+// Player picks one of two action cards
+export function pickCard(cardIndex: 0 | 1) {
+  if (!state.production?.currentDraw) return;
+  const prod = { ...state.production };
+  const draw = prod.currentDraw!;
+  const chosen = { ...draw.choosable[cardIndex] };
+  const discardIdx = cardIndex === 0 ? 1 : 0;
+  
+  if (draw.choosable.length > 1) {
+    const discarded = draw.choosable[discardIdx];
+    prod.discarded = [...prod.discarded, discarded];
+  }
+  
+  prod.currentDraw = null;
+  const updatedProd = resolveCardPlay(chosen, prod, state.castSlots);
+  setState({ production: updatedProd });
+}
+
+// Player accepts or declines a challenge bet
+export function resolveChallengeBet(accept: boolean) {
+  if (!state.production?.pendingChallenge) return;
+  const prod = { ...state.production };
+  const challenge = prod.pendingChallenge!;
+  
+  if (accept && challenge.bet) {
+    const ctx = buildSynergyContext(prod.played, prod.qualityTotal, prod.drawCount, state.castSlots, prod.deck);
+    const success = challenge.bet.condition(ctx);
+    const bonus = success ? challenge.bet.successBonus : challenge.bet.failPenalty;
+    
+    prod.qualityTotal += bonus;
+    
+    // Update the challenge card's display values
+    const lastPlayed = prod.played[prod.played.length - 1];
+    if (lastPlayed && lastPlayed.id === challenge.card.id) {
+      lastPlayed.synergyBonus = bonus;
+      lastPlayed.synergyFired = true;
+      lastPlayed.totalValue = (lastPlayed.totalValue || 0) + bonus;
+    }
+  }
+  
+  prod.pendingChallenge = null;
+  prod.challengeBetActive = false;
+  
+  // If there was a pending card choice, show it now
+  if (prod.currentDraw && prod.currentDraw.choosable.length > 0) {
+    setState({ production: prod });
+    return;
+  }
+  
+  prod.currentDraw = null;
+  setState({ production: prod });
+}
+
+// Legacy single-draw function (redirects to new system)
+export function drawProductionCard() {
+  drawProductionCards();
 }
 
 export function useReshoots() {
@@ -357,17 +494,15 @@ export function useReshoots() {
   if (played.length === 0) return;
   const last = played.pop()!;
 
-  // Undo the card's effects
-  let redCount = prod.redCount - (last.riskTag === '🔴' ? 1 : 0);
+  let incidentCount = prod.incidentCount - (last.cardType === 'incident' ? 1 : 0);
   let qualityTotal = prod.qualityTotal - (last.totalValue || 0);
   let budgetChange = prod.budgetChange - (last.budgetMod || 0);
-  let cleanWrap = redCount === 0;
+  let cleanWrap = incidentCount === 0;
 
-  // Draw replacement
   const deck = [...prod.deck];
   if (deck.length > 0) {
     const newCard = deck.shift()!;
-    const synResult = evaluateSynergy(newCard, played, qualityTotal, prod.drawCount, state.castSlots);
+    const synResult = evaluateSynergy(newCard, played, qualityTotal, prod.drawCount, state.castSlots, deck);
     let totalVal = newCard.baseQuality + synResult.bonus;
     newCard.synergyBonus = synResult.bonus;
     newCard.synergyFired = synResult.bonus !== 0;
@@ -375,20 +510,20 @@ export function useReshoots() {
     newCard.budgetMod = synResult.budgetMod || 0;
 
     played.push(newCard);
-    redCount += newCard.riskTag === '🔴' ? 1 : 0;
+    incidentCount += newCard.cardType === 'incident' ? 1 : 0;
     qualityTotal += totalVal;
     budgetChange += newCard.budgetMod || 0;
-    cleanWrap = cleanWrap && newCard.riskTag !== '🔴';
+    cleanWrap = cleanWrap && newCard.cardType !== 'incident';
   }
 
   setState({
     reshootsUsed: true,
-    production: { ...prod, deck, played, redCount, qualityTotal, budgetChange, isDisaster: redCount >= 3, isWrapped: redCount >= 3, cleanWrap },
+    production: { ...prod, deck, played, redCount: incidentCount, incidentCount, qualityTotal, budgetChange, isDisaster: incidentCount >= 3, isWrapped: incidentCount >= 3, cleanWrap },
   });
 }
 
 export function getMaxDraws(prod: ProductionState): number {
-  const totalDeckSize = prod.deck.length + prod.played.length;
+  const totalDeckSize = prod.deck.length + prod.played.length + prod.discarded.length;
   const baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
   return baseDraw + (prod.forceExtraDraw ? 2 : 0);
 }
@@ -417,14 +552,12 @@ export function calculateQuality(s: GameState): {
   const talentSkill = s.castSlots.reduce((sum, slot) => sum + (slot.talent?.skill || 0), 0);
   const productionBonus = prod.qualityTotal;
 
-  // Clean Wrap bonus
   const precisionFilm = s.perks.some(p => p.effect === 'precisionFilm');
   let cleanWrapBonus = 0;
   if (prod.cleanWrap && prod.drawCount > 0) {
     cleanWrapBonus = precisionFilm ? 8 : 5;
   }
 
-  // Script ability bonuses
   let scriptAbilityBonus = prod.scriptAbilityBonus;
   if (script.ability === 'finalGirl' && prod.drawCount === 5) {
     scriptAbilityBonus += 5;
@@ -433,8 +566,9 @@ export function calculateQuality(s: GameState): {
   let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus;
 
   if (prod.isDisaster) {
-    const insuranceReduction = s.perks.some(p => p.effect === 'insurance') ? 0.75 : 0.5;
-    rawQuality = Math.floor(rawQuality * insuranceReduction);
+    // 3 Incidents = lose ALL quality (insurance saves 25%)
+    const insuranceKeep = s.perks.some(p => p.effect === 'insurance') ? 0.25 : 0;
+    rawQuality = Math.floor(rawQuality * insuranceKeep);
   }
 
   return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus };
@@ -461,7 +595,6 @@ export function resolveRelease() {
 
   const { rawQuality } = calculateQuality(state);
 
-  // Pick market
   const chooseMarket = state.perks.some(p => p.effect === 'chooseMarket');
   let market = state.activeMarket;
   if (!market) {
@@ -478,17 +611,14 @@ export function resolveRelease() {
 
   let multiplier = getMarketMultiplier(market, script.genre, rawQuality);
 
-  // Blockbuster script ability: +0.3 to market mult
   if (script.ability === 'blockbusterBonus') {
     multiplier += 0.3;
   }
 
-  // Perk multiplier bonuses
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
   if (state.perks.some(p => p.effect === 'indieSpirit') && totalHeat <= 4) multiplier += 0.5;
   if (state.perks.some(p => p.effect === 'buzz') && rawQuality > 35) multiplier += 0.5;
 
-  // Reputation bonus
   const currentRep = state.reputation;
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
@@ -496,7 +626,6 @@ export function resolveRelease() {
   const target = getSeasonTarget(state.season);
   const tier = getTier(boxOffice, target);
 
-  // Tier rewards
   let repChange = 0;
   let bonusMoney = 0;
   let earnings = boxOffice;
@@ -533,7 +662,6 @@ export function resolveRelease() {
     nominated,
   };
 
-  // Post-film trait effects
   let newRoster = [...state.roster];
   if (result.hitTarget) {
     newRoster = newRoster.map(t => {

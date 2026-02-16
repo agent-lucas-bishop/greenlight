@@ -340,3 +340,15 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 - 4 Studio Archetypes, 12 Perks, 6 Challenge Modes
 - 9 Legacy Perks, 23 Sound Effects
 - Clean TypeScript, clean build, all systems verified
+
+## R36 — Mobile Touch Polish (2026-02-16)
+
+**Mobile-first improvements:**
+- **Viewport**: Added `viewport-fit=cover` for notched phones
+- **Safe areas**: CSS `env(safe-area-inset-*)` on body, header, and button groups
+- **Tap feedback**: CSS scale-bounce (0.95) on active state for all buttons, cards, slots — only on touch devices (`hover: none`)
+- **Touch targets**: Header help/mute buttons bumped to 44×44px on mobile (was 28px)
+- **Swipe gestures**: Greenlight script selection gets swipe-left/right card carousel on mobile (≤480px) with dot indicators
+- **Bottom sheet**: HowToPlay and QuickHelp modals slide up from bottom on mobile with drag handle pill, 85vh max height
+- **Mobile card carousel**: Single-card view on narrow screens with swipe navigation instead of cramped 3-column grid
+- **`-webkit-tap-highlight-color: transparent`** on all interactive elements to remove blue flash

@@ -1,3 +1,43 @@
+# GREENLIGHT Playtest Log — Round 32
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** Game Feel Polish — transitions, UX cues, information clarity
+
+## Summary
+
+Code-level playtest audit of all game screens, focusing on game feel and new player experience. Nine targeted improvements across 8 files.
+
+## Changes Made
+
+### 🔄 Phase Transitions (Smoother)
+- Increased exit animation from 220ms → 300ms, enter delay 50ms → 80ms
+- Added `window.scrollTo({ top: 0 })` on every phase change — players no longer land mid-page
+
+### 🎬 Production Screen (Core Loop Polish)
+- **First draw button**: Larger, says "ACTION! — DRAW FIRST CARDS" — more inviting and thematic
+- **Auto-advance timer**: Increased from 1.8s → 2.5s before "SEE BOX OFFICE" — gives players time to read encore results
+- **Selectable card pulse**: Draw-2-pick-1 cards now gently pulse gold to draw attention, stops on hover
+
+### 📊 Information Hierarchy Improvements
+- **Greenlight**: Each script now shows "📦 X script cards added to production deck" — helps players understand deck-building
+- **Casting**: Added "PRODUCTION DECK PREVIEW" summary box (Actions/Challenges/Incidents/Total) before BEGIN PRODUCTION — deck composition at a glance
+- **Shop**: Added "HEADING INTO SEASON X" readiness summary (budget, talent, perks, rep, debt) before BEGIN SEASON
+- **Release**: Explicit "✓ HIT" or "✗ MISSED" text next to target number — removes ambiguity
+
+### ✨ Visual Polish
+- **Neow choices**: Enhanced hover with colored glow + playful emoji rotation (-3deg)
+- **CSS**: Selectable production cards pulse with `selectablePulse` animation
+
+## Build Status
+- `npx tsc --noEmit` — ✅ PASS
+- `npm run build` — ✅ PASS (441KB JS / 36KB CSS)
+
+## Deployed
+- Commit: `0ae2689` → Vercel auto-deploy to https://greenlight-plum.vercel.app
+
+---
+
 # GREENLIGHT Playtest Log — Round 31
 
 **Date:** 2026-02-16  

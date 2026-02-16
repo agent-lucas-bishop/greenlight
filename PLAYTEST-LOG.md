@@ -1,3 +1,57 @@
+# GREENLIGHT Playtest Log — Round 22
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** NARRATIVE & FLAVOR — Give the game personality
+
+---
+
+## Changes Made
+
+### Film Title Generator (`narrative.ts`)
+- Procedurally generates evocative movie titles based on **genre + dominant tag**
+- 5 unique title templates per genre×tag combo (7 genres × 6 tag options = 210 total titles)
+- Examples: Horror+Chaos → "Blood Moon Protocol", Drama+Heart → "Letters from the Lake", Sci-Fi+Precision → "Quantum Lock"
+- Shown prominently on Release screen instead of script name
+
+### Critic Quotes
+- 5 quote templates per quality tier (FLOP/HIT/SMASH/BLOCKBUSTER = 20 total)
+- Dynamically insert film title, genre adjective, and lead actor name
+- Shown on Release screen after tier reveal with star ratings
+- Range from "A masterpiece. {title} will be studied for generations. — ★★★★★" to "The most expensive nap I've ever taken. — ½"
+
+### Studio Name Generator
+- Procedural studio name at game start (e.g. "Crimson Pictures", "Neon Motion Pictures")
+- Paired tagline (e.g. "Lights. Camera. Legacy.", "Every Frame Counts")
+- Shown in header alongside archetype identity
+- Used in headlines and box office rankings
+
+### Enhanced Headlines
+- Headlines now reference actual film title, box office numbers, lead actor name, and studio name
+- "🏆 Marcus Chen Leads 'Blood Moon Protocol' to $42.3M #1 Opening!" instead of generic "Your Studio Leads the Pack"
+- Crisis, flop, blockbuster, and rivalry headlines all personalized
+- Genre-aware flavor text
+
+### Integration Points
+- `GameState` gains `studioName`, `studioTagline`, `lastFilmTitle` fields
+- Studio name generated at archetype selection
+- Film title generated at release (uses production tag data)
+- Header shows: `🎬 CRIMSON PICTURES` + `🎭 Prestige Studio · Lights. Camera. Legacy.`
+- Release screen: film title, critic quote, personalized headline, studio-branded rankings
+
+---
+
+## Build & Deploy
+
+- **URL:** https://greenlight-plum.vercel.app
+- **Build:** Clean, no errors (415ms)
+- **Commit:** c7e5455
+- **Files modified:** narrative.ts (new), types.ts, gameStore.ts, ReleaseScreen.tsx, Header.tsx
+
+---
+
+# Previous Rounds
+
 # GREENLIGHT Playtest Log — Round 21
 
 **Date:** 2026-02-16  

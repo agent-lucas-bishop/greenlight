@@ -1,3 +1,49 @@
+# GREENLIGHT Playtest Log — Round 31
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** Visual Regression & Screenshot Audit — browser-based visual testing of all screens
+
+## Summary
+
+Visual audit of every game screen at desktop (1200px) and mobile (375px) viewports. Played through a complete run checking all UI elements.
+
+## Critical Bug Found & Fixed
+
+### 🔴 React Hooks Violation Crash (GAME-BREAKING)
+- **Symptom:** Clicking "NEW RUN" → white screen / app crash
+- **Cause:** `useState` and handler defined AFTER an early `return` in StartScreen.tsx (line ~201). When `showArchetypes` became true, the early return skipped those hooks, violating React's rules of hooks.
+- **Fix:** Moved `useState(isMuted())` and `handleToggleMute` before the early return, alongside other hooks.
+- **Impact:** This bug was **live in production** — no one could start a new game!
+
+### 🟡 Header Stats Overflow
+- **Symptom:** "STRIKES 0/3" text clipped/hidden behind mute & help buttons in header
+- **Fix:** Added `padding-right: 80px` to `.header` to account for absolute-positioned buttons
+
+## Visual Audit Results
+
+### ✅ Screens Reviewed (All Passing)
+| Screen | Desktop | Mobile | Notes |
+|--------|---------|--------|-------|
+| Title/Start | ✅ | ✅ | Clean, centered, mute toggle visible |
+| Onboarding Modal | ✅ | N/A | Well-structured, scrollable |
+| Archetype Selection | ✅ | ✅ | Cards flex-wrap properly on mobile |
+| Neow (Welcome) | ✅ | ✅ | Cards stack vertically on mobile |
+| Greenlight | ✅ | N/A | Market match badges, genre tags clean |
+| Casting | ✅ | N/A | Dense but organized, talent cards clear |
+| Production | ✅ | N/A | Quality bar, incident markers, card layout polished |
+| Encore Modal | ✅ | N/A | Risk/reward clearly presented |
+| Release Day | ✅ | N/A | Box office rankings, rival films, review quotes |
+
+### Overall Visual Impression
+**Polished indie game** — not a prototype. The dark cinema theme is cohesive, gold accents work well, card designs are readable, animations are smooth. The film strip borders and spotlight gradient add production value. Information density is high but well-organized.
+
+## Deployment
+- Commit: `1513f85` — `fix: React hooks violation crash + header overflow`
+- Auto-deployed via Vercel on push
+
+---
+
 # GREENLIGHT Playtest Log — Round 30
 
 **Date:** 2026-02-16  

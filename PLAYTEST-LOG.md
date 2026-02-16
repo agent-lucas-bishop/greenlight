@@ -1,250 +1,53 @@
-# GREENLIGHT Playtest Log — Round 23
+# GREENLIGHT Playtest Log — Round 24
 
 **Date:** 2026-02-16  
 **Tester:** Bishop (AI subagent)  
-**Focus:** END-OF-RUN SUMMARY & SHARING — Make the ending feel like a proper send-off
-
----
-
-## Changes Made
-
-### Rich Career Summary
-- Procedurally generated paragraph summarizing the player's run
-- References studio name, favorite genre, best/worst films, total earnings, and outcome
-- Tone adapts: triumphant for S-rank victories, cautionary for flop-heavy losses
-- Examples: "Crimson Pictures didn't just survive Hollywood — it conquered it. Known primarily for horror, the studio built a reputation..."
-
-### Enhanced Filmography
-- Each film shown with season number, tier emoji (🟩🟨🟧🟥💀), title, genre badge, box office, and hit/nomination markers
-- Clean tabular layout with color-coded tiers
-- Scrollable on mobile
-
-### Expanded Career Stats
-- Total box office, films made, score, final reputation, blockbusters count, nominations, favorite genre
-- Best film highlighted with title and earnings (spans 2 columns)
-
-### Shareable Text Block (Wordle-style)
-- Emoji grid encoding each season: 🟩 blockbuster, 🟨 smash, 🟧 hit, 🟥 flop, 💀 disaster
-- Includes studio name, season count, score/rank, total earnings, and game URL
-- One-click "Copy to Clipboard" button with ✅ feedback
-- Example output:
-  ```
-  🎬 GREENLIGHT 🏆
-  Crimson Pictures · 5 seasons
-  🟩🟨🟧🟩🟨
-  Score: 420 (B) · $87.3M
-  greenlight-plum.vercel.app
-  ```
-
-### Cinematic Staggered Reveals
-- 6-phase animation: title → career summary → stats → filmography → achievements → share block
-- Each section slides in with 600-800ms delays for dramatic pacing
-- Studio name shown above title as a subtitle
-
-### Visual Polish
-- Career summary in a warm gold-bordered card with italic styling
-- Share block in dark monospace box for readability
-- Responsive: all sections use clamp() sizing, filmography wraps on mobile
-
----
-
-## Build & Deploy
-
-- **URL:** https://greenlight-plum.vercel.app
-- **Build:** Clean, no errors (405ms)
-- **Commit:** 44c7b2e
-- **Files modified:** EndScreen.tsx (rewritten)
-
----
-
-# GREENLIGHT Playtest Log — Round 22
-
-**Date:** 2026-02-16  
-**Tester:** Bishop (AI subagent)  
-**Focus:** NARRATIVE & FLAVOR — Give the game personality
-
----
-
-## Changes Made
-
-### Film Title Generator (`narrative.ts`)
-- Procedurally generates evocative movie titles based on **genre + dominant tag**
-- 5 unique title templates per genre×tag combo (7 genres × 6 tag options = 210 total titles)
-- Examples: Horror+Chaos → "Blood Moon Protocol", Drama+Heart → "Letters from the Lake", Sci-Fi+Precision → "Quantum Lock"
-- Shown prominently on Release screen instead of script name
-
-### Critic Quotes
-- 5 quote templates per quality tier (FLOP/HIT/SMASH/BLOCKBUSTER = 20 total)
-- Dynamically insert film title, genre adjective, and lead actor name
-- Shown on Release screen after tier reveal with star ratings
-- Range from "A masterpiece. {title} will be studied for generations. — ★★★★★" to "The most expensive nap I've ever taken. — ½"
-
-### Studio Name Generator
-- Procedural studio name at game start (e.g. "Crimson Pictures", "Neon Motion Pictures")
-- Paired tagline (e.g. "Lights. Camera. Legacy.", "Every Frame Counts")
-- Shown in header alongside archetype identity
-- Used in headlines and box office rankings
-
-### Enhanced Headlines
-- Headlines now reference actual film title, box office numbers, lead actor name, and studio name
-- "🏆 Marcus Chen Leads 'Blood Moon Protocol' to $42.3M #1 Opening!" instead of generic "Your Studio Leads the Pack"
-- Crisis, flop, blockbuster, and rivalry headlines all personalized
-- Genre-aware flavor text
-
-### Integration Points
-- `GameState` gains `studioName`, `studioTagline`, `lastFilmTitle` fields
-- Studio name generated at archetype selection
-- Film title generated at release (uses production tag data)
-- Header shows: `🎬 CRIMSON PICTURES` + `🎭 Prestige Studio · Lights. Camera. Legacy.`
-- Release screen: film title, critic quote, personalized headline, studio-branded rankings
-
----
-
-## Build & Deploy
-
-- **URL:** https://greenlight-plum.vercel.app
-- **Build:** Clean, no errors (415ms)
-- **Commit:** c7e5455
-- **Files modified:** narrative.ts (new), types.ts, gameStore.ts, ReleaseScreen.tsx, Header.tsx
-
----
-
-# Previous Rounds
-
-# GREENLIGHT Playtest Log — Round 21
-
-**Date:** 2026-02-16  
-**Tester:** Bishop (AI subagent)  
-**Focus:** MOBILE & RESPONSIVE — Make the game fully playable on phone screens
-
----
-
-## Changes Made
-
-### Fluid Typography (clamp-based)
-- Phase titles, start screen title, box office numbers, combo counters, tier labels, disaster banners — all use `clamp()` for smooth scaling from 360px to desktop
-- No more jarring size jumps between breakpoints
-
-### Mobile Breakpoint (≤480px)
-- **Card grids** go single-column (was 2-col at tablet, now 1-col on phone)
-- **Production cards** switch from fixed `width: 165px` to `width: 100%` — fills available space
-- **Touch targets** enforced at 44px minimum on all buttons, cast slots, pips, fire buttons
-- **Selectable cards** (draw-2-pick-1) get visible gold border + active press state instead of hover-dependent styling
-- **Modals go full-screen** — no border-radius, 100% width/height, larger close button
-- **Header** condensed: smaller title, tighter stat spacing, larger help button (36px)
-- **Production stats bar** wraps with reduced gaps
-- **Tier banners** fill width with reduced padding
-- **End screen filmography** stacks vertically
-- **How-to-play card types** go full width
-- **Casting stats** wrap with smaller text
-- **Perks bar** wraps
-
-### Small Phone Breakpoint (≤375px — iPhone SE)
-- Further reduced header, stat, and card sizes
-- Tighter padding on choice area and production stats
-- Grid gaps reduced to 10px
-
-### Tablet Breakpoint (≤768px) — Preserved
-- Existing 2-column card grids, single-column cast area unchanged
-- Added reduced main padding and end screen padding
-
----
-
-## Build & Deploy
-
-- **URL:** https://greenlight-plum.vercel.app
-- **Build:** Clean, no errors (396ms)
-- **Commit:** c91390a
-- **Files modified:** index.css only (CSS-only changes, no component restructuring)
-
----
-
-# Previous Rounds
-
-## Round 20 — BUG SWEEP & QA
-**Date:** 2026-02-16 | 5 bug fixes (disaster shake, stale combo, dynamic pips, FLOP display, phase transitions) + dead code cleanup
-
-## Round 19 — JUICE & FEEDBACK
-**Date:** 2026-02-16 | Phase transitions, card draw animation, disaster shake, blockbuster confetti
-
-## Round 18 — VISUAL POLISH
-**Date:** 2026-02-16 | Color coherence, typography, card design, production drama
-
-## Round 17 — SCREEN MERGE & DECLUTTER
-Season Recap merged into Release, collapsed casting cards, simplified numbers
-
-## Round 16 — AUTO-ADVANCE
-Auto-advance SEE BOX OFFICE removes dead click
-
-**Date:** 2026-02-16  
-**Tester:** Bishop (AI subagent)  
-**Focus:** PLAYTESTING & BUG SWEEP — QA round, no new features
-
----
-
-## Bugs Found & Fixed
-
-### 🔴 Game-Breaking / Functional
-
-1. **Missing `disaster-shake` CSS class** — ProductionScreen applied `disaster-shake` class on disaster, but the CSS keyframes were never defined. Disasters had no screen shake despite R19 claiming it was added.
-   - **Fix:** Added full `disasterShake` keyframe animation (0.6s translate+rotate shake)
-
-2. **Stale combo counter** — `combo` state variable was captured in a stale closure inside useEffect (dependency array only included `prod?.played.length`, not `combo`). Combo counts could be wrong, showing "2× NICE!" when it should be "3× COMBO!".
-   - **Fix:** Replaced `combo + 1` with `setCombo(prev => prev + 1)` functional updater
-
-3. **Hardcoded incident pip count (3)** — Incident tracker always showed 3 pips, even for Wildcard Entertainment (chaos archetype) which has a disaster threshold of 4. Players had no visual indication of their extra incident tolerance.
-   - **Fix:** Dynamically generate pips based on `disasterThreshold` (3 or 4 depending on archetype)
-
-### 🟡 Visual / Display
-
-4. **FLOP earnings display always showed "60%"** — Didn't account for Streaming Surge industry event (which changes FLOP penalty to 75% retention). Also didn't show Critics' Choice -2 rep penalty.
-   - **Fix:** Display now dynamically shows correct percentage and rep penalty based on active events/challenges
-
-5. **Phase transitions missing scale+blur** — R19 log described scale(0.98) + blur(2px) transitions but CSS only had simple opacity+translateY. Transitions felt flat.
-   - **Fix:** Added `scale(0.98)` and `filter: blur(2px)` to phase-exit, spring-eased scale+deblur to phase-enter
-
-### 🟢 Cleanup
-
-6. **Dead `SeasonRecapScreen.tsx` file** — Unused since R17 merge into ReleaseScreen. 207 lines of dead code.
-   - **Fix:** Deleted file
-
-7. **Unused `drawsLeft` variable** — Computed but never referenced in ProductionScreen.
-   - **Fix:** Removed
-
----
-
-## Code Review Findings (No Fix Needed)
-
-- Challenge modes all correctly gate their mechanics (One Take blocks early wrap + disables encore, Shoestring reduces budget/stipend, etc.)
-- Daily seed activates/deactivates correctly across game lifecycle
-- Rival film generation and cumulative earnings tracking working correctly
-- All sound effects fire in correct contexts (verified sfx references match sound.ts exports)
-- R18 visual polish CSS variables and R19 animation keyframes coexist without conflicts
-- Card animations (cardFlipIn, cardSlam, cardShatter) layer correctly with R18 card design changes
-- Combo glow keyframes don't conflict with synergy-active card styles
-
----
-
-## Build & Deploy
-
-- **URL:** https://greenlight-plum.vercel.app
-- **Build:** Clean, no errors (395ms)
-- **Commit:** 7386f06
-- **Files modified:** index.css, ProductionScreen.tsx, ReleaseScreen.tsx
-- **Files deleted:** SeasonRecapScreen.tsx
-
----
-
-# Previous Rounds
-
-## Round 19 — JUICE & FEEDBACK
-**Date:** 2026-02-16 | Phase transitions, card draw animation, disaster shake, blockbuster confetti
-
-## Round 18 — VISUAL POLISH
-**Date:** 2026-02-16 | Color coherence, typography, card design, production drama
-
-## Round 17 — SCREEN MERGE & DECLUTTER
-Season Recap merged into Release, collapsed casting cards, simplified numbers
-
-## Round 16 — AUTO-ADVANCE
-Auto-advance SEE BOX OFFICE removes dead click
+**Focus:** INTEGRATION AUDIT & COHERENCE — Cleanup round, remove more than add
+
+## What Changed
+This was a **pure cleanup round**. No new features. Net -100 lines removed.
+
+### Dead Code Removed
+- `getGameMode()`, `getChallengeId()`, `proceedToRecap()` — exported from gameStore but never called
+- `drawProductionCard()` — legacy alias that just called `drawProductionCards()`
+- `generateHeadline()` in rivals.ts — 50-line function completely superseded by `generateDetailedHeadline()` in narrative.ts
+- `getNewlyUnlockedPerks()` in unlocks.ts — exported but never imported
+- `resetOnboarding()` in onboarding.ts — exported but never imported
+- `RivalSeason` interface — defined but never used (different from `RivalSeasonData` in types)
+- `generateRivalFilm` export removed (only used internally in rivals.ts)
+
+### Duplicate Code Fixed
+- `CardTypeBadge` was defined **twice**: once in `components/CardComponents.tsx` (exported) and again as a local function in `ProductionScreen.tsx`. Removed the duplicate, now imports from CardComponents.
+
+### Unused Imports Cleaned
+- `gameStore.ts`: removed `addLeaderboardEntry`, `RivalFilm`, `ChallengeMode`, `DrawChoice`, `PendingChallenge`, `EncoreState`, `getUnlocks`, `generateCriticQuote`, `generateDetailedHeadline`
+- `data.ts`: removed `SynergyContext`, `TalentType`
+- `ShopScreen.tsx`: removed `CardTemplate`, `CardTag`
+- `CastingScreen.tsx`: removed `CardTag`
+
+### Issues Identified but NOT Fixed (Low Risk, High Churn)
+- `redCount` in ProductionState is a legacy alias for `incidentCount` — always set to same value. Removing would touch many synergy lambdas in data.ts for zero behavioral change.
+- `riskTag` / `RiskTag` on CardTemplate — never read for logic, only defined. Removing from 100+ card definitions = huge diff, no behavior change.
+- `targetMultiplier` field on SeasonIdentity — always 1.0, never read. Cosmetic dead weight.
+
+### Contradictions/State Issues Found
+- None critical. The `redCount`/`incidentCount` duplication is the only real state sync risk, and they're always updated together (verified by audit).
+
+### Challenge Mode Verification
+All 6 challenges reference correct gameStore state:
+- `one_take`: checks `state.challengeId` in `wrapProduction()` ✓
+- `shoestring`: applied in `pickArchetype()`, `resolveRelease()`, `buyPerk()` ✓
+- `critics_choice`: applied in `getSeasonTarget()`, `resolveRelease()` ✓
+- `typecast`: applied in `pickScript()`, `beginSeason()`, `calculateQuality()` ✓
+- `speed_run`: applied in `startGame()` (maxSeasons/maxStrikes) ✓
+- `chaos_reigns`: applied in `pickScript()`, `resolveCardPlay()` ✓
+
+## Build Status
+- `npx tsc --noEmit` — ✅ clean
+- `npm run build` — ✅ clean (417KB JS, 36KB CSS)
+- Deployed via git push to Vercel
+
+## Stats
+- **Lines removed:** 109
+- **Lines added:** 9
+- **Net:** -100 lines

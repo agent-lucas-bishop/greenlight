@@ -1,4 +1,15 @@
-# GREENLIGHT Playtest Log — Round 41
+# GREENLIGHT Playtest Log — Round 43
+
+## R43: Daily Challenge Modifiers & Polish (2026-02-16)
+- **Daily modifier system**: 8 unique modifiers that rotate daily via seeded RNG
+  - Budget Crunch (−30% starting money), Critics' Darling (quality ×2 but BO −20%), Blockbuster Summer (Action/Sci-Fi +2 base), Indie Spirit (no S-tier, costs halved), Award Season (rep ×2, targets +5), Sequel Mania (+30% BO same genre streak), Method Madness (Heat +1, cards +1), Producer's Cut (−2 draws, clean wrap ×2)
+- **Modifier display**: Today's modifier shown prominently on daily run button with icon and description
+- **Weekly calendar**: Mini calendar showing completed days with modifier icons, ties into streak tracking
+- **Daily score sharing**: Dedicated "Copy Daily Score" button on end screen includes date + modifier name for Discord/social sharing
+- **Modifier on archetype select**: Shows active modifier when starting daily run
+- **Modifier on end screen**: Daily modifier shown in results summary
+
+## R41: SEO, Meta & Shareability (2026-02-16)
 
 ## R41: SEO, Meta & Shareability (2026-02-16)
 - **Enhanced meta tags**: Catchy title, compelling description, keywords, canonical URL

@@ -366,3 +366,25 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 - **Suspense boundary** — loading fallback for lazy screens during phase transitions
 
 **Result:** 47% reduction in initial JS payload (446KB → 236KB). Total code unchanged but loaded on-demand as players progress through game phases.
+
+## R38: Mid-Run Save/Resume System
+
+**Problem:** No mid-run save. Closing the browser loses all progress.
+
+**Changes:**
+- **Auto-save** — game state serialized to localStorage on every phase transition
+- **Continue Run button** — shown on start screen when a save exists, displaying studio name, season, film count, and budget
+- **Function rebuilding** — talent/script card synergy functions (non-serializable) are rebuilt from predefined data pools on restore by matching names
+- **Clean phase snapping** — if saved mid-production-decision (pending card choice/challenge/block), those pending states are cleared on restore so player resumes at a clean draw boundary
+- **Save cleared on run end** — gameOver/victory clears the mid-run save
+- **Save cleared on new run** — starting a new game wipes any existing save
+- **Version migration** — saves include a version number; incompatible versions are silently discarded
+- **New file:** `src/savegame.ts` — serialize/deserialize/rebuild logic
+- **Exported talent pools** from `data.ts` (ALL_LEADS, ALL_SUPPORTS, ALL_DIRECTORS, ALL_CREW) for name-based function reconstruction
+
+**Edge cases handled:**
+- Mid-production card draw → pending UI state cleared, player resumes at last clean draw
+- Corrupt/incompatible saves → gracefully discarded
+- Functions in state (synergyCondition, challengeBet) → stripped on save, rebuilt from template pools on load
+
+**Result:** Players can now close/refresh the browser mid-run and resume exactly where they left off. Build size unchanged (236KB).

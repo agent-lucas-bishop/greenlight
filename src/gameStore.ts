@@ -11,6 +11,7 @@ import { getChallengeById } from './challenges';
 import { generateRivalSeason, getSeasonIdentity } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
+import { saveGame, clearSave, loadGame } from './savegame';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -64,8 +65,13 @@ const listeners: Set<Listener> = new Set();
 export function getState(): GameState { return state; }
 
 function setState(partial: Partial<GameState>) {
+  const prevPhase = state.phase;
   state = { ...state, ...partial };
   listeners.forEach(l => l());
+  // Auto-save on phase transitions (skip start screen and end states handled below)
+  if (state.phase !== prevPhase && state.phase !== 'start') {
+    saveGame(state);
+  }
 }
 
 export function subscribe(listener: Listener): () => void {
@@ -336,7 +342,17 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
 
 // ─── ACTIONS ───
 
+export function resumeGame(): boolean {
+  const saved = loadGame();
+  if (!saved) return false;
+  state = saved;
+  listeners.forEach(l => l());
+  return true;
+}
+
 export function startGame(mode: GameMode = 'normal', challengeId?: string) {
+  // Clear any existing mid-run save
+  clearSave();
   // Activate seeded RNG for daily runs
   if (mode === 'daily') {
     activateSeed(getDailySeed());
@@ -1314,10 +1330,12 @@ export function resolveRelease() {
 
 export function proceedFromRecap() {
   if (state.reputation <= 0 || state.strikes >= state.maxStrikes) {
+    clearSave();
     setState({ phase: 'gameOver' });
     return;
   }
   if (state.season >= state.maxSeasons) {
+    clearSave();
     setState({ phase: 'victory' });
     return;
   }

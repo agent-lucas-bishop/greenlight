@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isMuted, toggleMute, sfx } from '../sound';
-import { startGame, pickArchetype } from '../gameStore';
+import { startGame, pickArchetype, resumeGame } from '../gameStore';
+import { hasSaveGame, getSaveInfo } from '../savegame';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
 import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
@@ -245,7 +246,18 @@ export default function StartScreen() {
             You're a freshly hired studio head. Make movies, build your reputation, survive the chaos of Hollywood.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-            <button className="btn btn-primary btn-glow" onClick={() => { markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
+            {hasSaveGame() && (() => {
+              const info = getSaveInfo();
+              return info ? (
+                <button className="btn btn-primary btn-glow" onClick={() => { resumeGame(); }} style={{ position: 'relative' }}>
+                  ▶ CONTINUE RUN
+                  <div style={{ fontSize: '0.65rem', opacity: 0.8, marginTop: 2, fontFamily: 'inherit' }}>
+                    {info.studioName ? `${info.studioName} · ` : ''}Season {info.season} · {info.filmCount} film{info.filmCount !== 1 ? 's' : ''} · ${info.budget.toFixed(0)}M
+                  </div>
+                </button>
+              ) : null;
+            })()}
+            <button className={`btn ${hasSaveGame() ? 'btn-small' : 'btn-primary btn-glow'}`} onClick={() => { markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
               NEW RUN
             </button>
             {/* Daily Run */}

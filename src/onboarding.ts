@@ -94,6 +94,3 @@ export const PHASE_TIPS: Record<string, { icon: string; title: string; text: str
   },
 };
 
-export function resetOnboarding() {
-  localStorage.removeItem(STORAGE_KEY);
-}

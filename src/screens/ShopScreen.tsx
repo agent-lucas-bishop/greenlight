@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GameState, Talent, CardTemplate, CardTag } from '../types';
+import { GameState, Talent } from '../types';
 import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason } from '../gameStore';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';

@@ -1,4 +1,4 @@
-import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, SynergyContext, TalentType, ChallengeBet, Chemistry, StudioArchetype, CardTag } from './types';
+import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag } from './types';
 import { rng } from './seededRng';
 
 let _id = 0;

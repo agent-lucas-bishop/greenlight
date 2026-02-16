@@ -144,11 +144,6 @@ export function getActiveLegacyPerks(): LegacyPerk[] {
   return LEGACY_PERKS.filter(p => p.check(u));
 }
 
-export function getNewlyUnlockedPerks(): LegacyPerk[] {
-  const u = getUnlocks();
-  return LEGACY_PERKS.filter(p => p.check(u) && !u.legacyPerks.includes(p.id));
-}
-
 export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string) {
   const u = getUnlocks();
   u.totalRuns++;

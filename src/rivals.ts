@@ -23,11 +23,6 @@ export interface RivalFilm {
   quality: number;
 }
 
-export interface RivalSeason {
-  season: number;
-  films: RivalFilm[];
-}
-
 const RIVAL_STUDIOS: RivalStudio[] = [
   {
     name: 'Apex Global',
@@ -79,7 +74,7 @@ function getTier(boxOffice: number, target: number): RewardTier {
 }
 
 // Generate a rival film for a given season
-export function generateRivalFilm(studio: RivalStudio, season: number, target: number): RivalFilm {
+function generateRivalFilm(studio: RivalStudio, season: number, target: number): RivalFilm {
   const genre = studio.genrePool[Math.floor(rng() * studio.genrePool.length)];
   const [minQ, maxQ] = studio.qualityRange;
   // Quality scales up slightly with season (rivals get better too)
@@ -171,56 +166,3 @@ export function getSeasonIdentity(season: number): SeasonIdentity {
   return SEASON_IDENTITIES[Math.min(season - 1, SEASON_IDENTITIES.length - 1)];
 }
 
-// ─── SEASON RECAP HEADLINES ───
-
-export function generateHeadline(
-  playerFilm: { title: string; tier: RewardTier; boxOffice: number },
-  rivalFilms: RivalFilm[],
-  season: number,
-  totalPlayerEarnings: number,
-  totalRivalEarnings: Record<string, number>,
-  strikes: number,
-  reputation: number,
-): string {
-  const allFilms = [...rivalFilms, { ...playerFilm, studioName: 'PLAYER' }];
-  const topFilm = allFilms.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b);
-  const playerIsTop = topFilm.studioName === 'PLAYER';
-  const playerIsFlop = playerFilm.tier === 'FLOP';
-  const playerIsBlockbuster = playerFilm.tier === 'BLOCKBUSTER';
-  const rivalBlockbusters = rivalFilms.filter(f => f.tier === 'BLOCKBUSTER');
-
-  // Season 1 headlines
-  if (season === 1) {
-    if (playerIsBlockbuster) return '🌟 Newcomer Studio Stuns Hollywood with Blockbuster Debut!';
-    if (playerIsTop) return '📰 Fresh Face Takes Opening Weekend Crown';
-    if (playerIsFlop) return '📉 Rough Start: Debut Film Disappoints';
-    return '📰 Solid Debut — A Studio to Watch?';
-  }
-
-  // Crisis headlines
-  if (strikes >= 2) return '🚨 Studio in Crisis — Board Meeting Called';
-  if (playerIsFlop && season >= 3) return '📉 Once-Promising Studio Stumbles Again';
-
-  // Dominance headlines
-  if (playerIsBlockbuster && playerIsTop) return `🏆 "${playerFilm.title}" Dominates Box Office!`;
-  if (playerIsBlockbuster) return `🔥 "${playerFilm.title}" Joins Blockbuster Club`;
-
-  // Rivalry headlines
-  if (rivalBlockbusters.length > 0 && playerIsFlop) {
-    return `📰 ${rivalBlockbusters[0].studioEmoji} ${rivalBlockbusters[0].studioName} Soars While Others Struggle`;
-  }
-  if (playerIsTop) return `📰 Your Studio Leads the Pack in Season ${season}`;
-
-  // Late game
-  if (season >= 4 && reputation >= 4) return '👑 A-List Studio Cements Its Legacy';
-  if (season >= 4 && reputation <= 2) return '📉 Fading Studio Fights for Relevance';
-
-  // Generic
-  const headlines = [
-    '📰 Competitive Season Wraps Up',
-    '📰 Industry Sees Mixed Results This Quarter',
-    '📰 Box Office Numbers Tell the Story',
-    `📰 Season ${season} — Surprises and Upsets`,
-  ];
-  return headlines[Math.floor(rng() * headlines.length)];
-}

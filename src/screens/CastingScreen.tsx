@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GameState, Talent, CardTemplate, CardTag } from '../types';
+import { GameState, Talent, CardTemplate } from '../types';
 import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction } from '../gameStore';
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';

@@ -1,18 +1,15 @@
-import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, DrawChoice, PendingChallenge, ArchetypeFocus, EncoreState } from './types';
+import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus } from './types';
+import type { StudioArchetypeId } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
   INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES,
 } from './data';
-import type { StudioArchetypeId } from './types';
-import { getUnlocks, getActiveLegacyPerks } from './unlocks';
+import { getActiveLegacyPerks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
-import type { ChallengeMode } from './challenges';
-import { addLeaderboardEntry } from './leaderboard';
 import { generateRivalSeason, getSeasonIdentity } from './rivals';
-import type { RivalFilm } from './rivals';
-import { generateStudioName, generateFilmTitle, generateCriticQuote, generateDetailedHeadline } from './narrative';
+import { generateStudioName, generateFilmTitle } from './narrative';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -340,14 +337,6 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string) {
     maxSeasons,
     maxStrikes,
   });
-}
-
-export function getGameMode(): GameMode {
-  return state.gameMode;
-}
-
-export function getChallengeId(): string | undefined {
-  return state.challengeId;
 }
 
 export function pickArchetype(archetypeId: StudioArchetypeId) {
@@ -756,11 +745,6 @@ export function resolveBlock(block: boolean) {
     updatedProd = resolveCardPlay({ ...actionCard }, updatedProd, state.castSlots);
     setState({ production: updatedProd });
   }
-}
-
-// Legacy single-draw function (redirects to new system)
-export function drawProductionCard() {
-  drawProductionCards();
 }
 
 // ─── DIRECTOR'S CUT ───
@@ -1226,11 +1210,6 @@ export function resolveRelease() {
       [script.genre]: (state.genreMastery[script.genre] || 0) + 1,
     },
   });
-}
-
-export function proceedToRecap() {
-  // Legacy: now Release screen handles recap inline, so go directly
-  proceedFromRecap();
 }
 
 export function proceedFromRecap() {

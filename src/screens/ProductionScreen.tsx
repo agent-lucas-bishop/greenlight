@@ -3,6 +3,7 @@ import { GameState, ProductionCard } from '../types';
 import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut, attemptEncore, declineEncore } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
+import { CardTypeBadge } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 
 // Auto-advance component: shows a button with a filling progress bar, auto-clicks after delay
@@ -48,20 +49,6 @@ function getProductionNarrative(drawCount: number, incidentCount: number, qualit
   if (qualityTotal > 10) return 'Looking good so far...';
   if (qualityTotal < 0) return 'It\'s rough out there. Keep pushing...';
   return '';
-}
-
-function CardTypeBadge({ type }: { type: string }) {
-  const config: Record<string, { label: string; color: string; bg: string }> = {
-    action: { label: 'ACTION', color: '#fff', bg: '#2ecc71' },
-    challenge: { label: 'CHALLENGE', color: '#000', bg: '#f1c40f' },
-    incident: { label: 'INCIDENT', color: '#fff', bg: '#e74c3c' },
-  };
-  const c = config[type] || config.action;
-  return (
-    <span style={{ background: c.bg, color: c.color, padding: '2px 8px', borderRadius: 4, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.05em' }}>
-      {c.label}
-    </span>
-  );
 }
 
 function SourceBadge({ type }: { type: string }) {

@@ -180,8 +180,6 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const canDraw = !prod.isWrapped && prod.drawCount < maxDraws && deckSize > 0 && !prod.currentDraw && !prod.pendingChallenge && !prod.pendingBlock;
   const canWrap = prod.drawCount > 0 && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && !prod.pendingBlock && !(prod.forceExtraDraw && prod.drawCount < maxDraws);
   const mustDraw = prod.forceExtraDraw && prod.drawCount < maxDraws && !prod.isDisaster;
-  const drawsLeft = maxDraws - prod.drawCount;
-
   const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus } = calculateQuality(state);
 
   // Chemistry display
@@ -247,10 +245,12 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         setCombo(0);
         setComboVisible(false);
       } else if (newCard.synergyFired) {
-        const newCombo = combo + 1;
-        setCombo(newCombo);
+        setCombo(prev => {
+          const newCombo = prev + 1;
+          sfx.combo(newCombo);
+          return newCombo;
+        });
         setComboVisible(true);
-        sfx.combo(newCombo);
         // Hide combo after 2s of no activity
         setTimeout(() => setComboVisible(false), 2500);
       } else {
@@ -407,16 +407,22 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       )}
 
       {/* Incident counter */}
-      <div className="bad-counter">
-        {[0, 1, 2].map(i => (
-          <div key={i} className={`bad-pip ${i < prod.incidentCount ? 'filled' : ''} ${i < prod.incidentCount ? 'animate-shake' : ''}`}>
-            {i < prod.incidentCount ? '💥' : '○'}
+      {(() => {
+        const disasterThreshold = state.studioArchetype === 'chaos' ? 4 : 3;
+        const nearDisaster = prod.incidentCount >= disasterThreshold - 1;
+        return (
+          <div className="bad-counter">
+            {Array.from({ length: disasterThreshold }, (_, i) => (
+              <div key={i} className={`bad-pip ${i < prod.incidentCount ? 'filled' : ''} ${i < prod.incidentCount ? 'animate-shake' : ''}`}>
+                {i < prod.incidentCount ? '💥' : '○'}
+              </div>
+            ))}
+            <span className="bad-label">
+              {nearDisaster && prod.incidentCount < disasterThreshold ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 && !nearDisaster ? '⚠️ Careful — incidents are piling up...' : prod.cleanWrap && prod.drawCount > 0 ? <span className="clean-wrap-badge">✨ Clean Wrap active (+{state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!)</span> : 'No Incidents yet'}
+            </span>
           </div>
-        ))}
-        <span className="bad-label">
-          {prod.incidentCount >= 2 ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 ? '⚠️ Careful — one more and you\'re on the edge...' : prod.cleanWrap && prod.drawCount > 0 ? <span className="clean-wrap-badge">✨ Clean Wrap active (+{state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!)</span> : 'No Incidents yet'}
-        </span>
-      </div>
+        );
+      })()}
 
       {/* Quality breakdown */}
       <div className="quality-breakdown">

@@ -138,8 +138,8 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
         <div className="tier-rewards animate-slide-down">
           {tier === 'FLOP' && (
             <>
-              <div className="reward-item negative">📉 -1 Reputation · ⚠️ Strike {state.strikes}/{state.maxStrikes}</div>
-              <div className="reward-item negative">💰 Earned 60% — ${(state.lastBoxOffice * 0.6).toFixed(1)}M</div>
+              <div className="reward-item negative">📉 -{state.challengeId === 'critics_choice' ? 2 : 1} Reputation · ⚠️ Strike {state.strikes}/{state.maxStrikes}</div>
+              <div className="reward-item negative">💰 Earned {state.industryEvent?.effect === 'streamingSafety' ? '75%' : '60%'} — ${(state.lastBoxOffice * (state.industryEvent?.effect === 'streamingSafety' ? 0.75 : 0.6)).toFixed(1)}M</div>
             </>
           )}
           {tier === 'HIT' && <div className="reward-item positive">💰 +$5M bonus</div>}

@@ -7,6 +7,9 @@ import TutorialOverlay from './components/TutorialOverlay';
 import StudioFoundingNarrative from './components/StudioFoundingNarrative';
 import { shouldShowNarrative, markNarrativeShown } from './onboarding';
 import { isTutorialActive } from './tutorial';
+import { checkAchievements, persistAchievements } from './achievements';
+import type { AchievementDef } from './achievements';
+import AchievementToast from './components/AchievementToast';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -22,8 +25,23 @@ function App() {
   const [transitioning, setTransitioning] = useState(false);
   const [prevPhase, setPrevPhase] = useState<string>(state.phase);
   const [showNarrative, setShowNarrative] = useState(false);
+  const [toastQueue, setToastQueue] = useState<AchievementDef[]>([]);
+  const [checkedPhases, setCheckedPhases] = useState<string>('');
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // Check achievements on phase transitions
+  useEffect(() => {
+    const phaseKey = `${state.phase}-${state.season}-${state.seasonHistory.length}`;
+    if (phaseKey === checkedPhases) return;
+    if (state.phase === 'start') return;
+    setCheckedPhases(phaseKey);
+    const newAchs = checkAchievements(state);
+    if (newAchs.length > 0) {
+      persistAchievements(newAchs.map(a => a.id));
+      setToastQueue(prev => [...prev, ...newAchs]);
+    }
+  }, [state.phase, state.season, state.seasonHistory.length, checkedPhases]);
 
   // Show narrative on first-ever neow entry
   useEffect(() => {
@@ -95,6 +113,12 @@ function App() {
       )}
       {state.phase !== 'start' && isTutorialActive() && (
         <TutorialOverlay phase={state.phase} />
+      )}
+      {toastQueue.length > 0 && (
+        <AchievementToast
+          achievement={toastQueue[0]}
+          onDone={() => setToastQueue(prev => prev.slice(1))}
+        />
       )}
     </>
   );

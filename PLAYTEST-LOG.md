@@ -76,3 +76,30 @@ Save/load round-trips correctly handle function serialization/rebuilding for all
 - Meta-progression: 9 legacy perks, daily challenges with streaks, 6 challenge modes, NG+/Director Mode
 - Full responsive mobile support, procedural audio, onboarding tutorial
 - Anonymous analytics pipeline ready for data-driven balancing
+
+---
+
+## Round 51 — Achievements & Unlockable Cosmetics
+**Date:** 2026-02-16
+
+### Changes
+1. **Achievements System** (`src/achievements.ts`) — 20 achievements across 4 categories:
+   - **Milestone (5):** First Hit, Box Office King, Five Star Studio, Perfect Run, Half Billion Club
+   - **Skill (5):** Clean Streak, Budget Hawk, Critics' Darling, A-List Studio, Hollywood Legend
+   - **Discovery (4):** Genre Master, Ending Collector, Prolific Producer, Veteran Studio Head
+   - **Fun (5):** Debt Lord, One Take Wonder, Flop Comeback, Death Spiral, Blockbuster Trilogy
+
+2. **Achievement Toast** — Gold notification slides in from top when achievements unlock. Auto-dismisses after 3s. Queues multiple unlocks. Non-blocking with backdrop blur.
+
+3. **Achievement Gallery** — New "🏅 TROPHIES" tab on Start screen. Shows all achievements as cards grouped by category with progress bar. Locked achievements show ❓ with hint text.
+
+4. **Cosmetic Unlocks** — 4 cosmetic rewards tied to specific achievements:
+   - Critics' Darling → "Legendary" studio prefix on title screen
+   - Hollywood Legend (S rank) → Gold border on start screen
+   - Genre Master → Crimson card back glow
+   - Ending Collector → Royal purple card back glow
+   Visual-only, no gameplay impact.
+
+### Build
+- `tsc --noEmit`: ✅ Clean
+- `npm run build`: ✅ Clean (436ms)

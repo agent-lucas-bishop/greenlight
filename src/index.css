@@ -2097,3 +2097,8 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.6s ease;
 }
+
+@keyframes achievementSlideIn {
+  from { transform: translateX(-50%) translateY(-80px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}

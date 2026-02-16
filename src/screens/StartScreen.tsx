@@ -10,6 +10,8 @@ import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import type { FilmDetail } from '../leaderboard';
 import { getHallOfFame } from '../hallOfFame';
 import { CHALLENGE_MODES } from '../challenges';
+import AchievementGallery from '../components/AchievementGallery';
+import { hasGoldBorder, getStudioPrefix } from '../achievements';
 import { getDailyDateString } from '../seededRng';
 import { getTodayModifier, getModifierForDate } from '../dailyModifiers';
 
@@ -356,7 +358,7 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history'>('play');
+  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'achievements'>('play');
   const [muted, setMutedLocal] = useState(isMuted());
   const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
   const stats = getRunStats();
@@ -416,7 +418,10 @@ export default function StartScreen() {
   }
 
   return (
-    <div className="start-screen" style={{ position: 'relative' }}>
+    <div className="start-screen" style={{
+      position: 'relative',
+      ...(hasGoldBorder() ? { border: '2px solid rgba(255,215,0,0.4)', borderRadius: 16, boxShadow: '0 0 30px rgba(255,215,0,0.1)' } : {}),
+    }}>
       <button
         onClick={handleToggleMute}
         title={muted ? 'Unmute' : 'Mute'}
@@ -429,13 +434,18 @@ export default function StartScreen() {
       >
         {muted ? '🔇' : '🔊'}
       </button>
+      {getStudioPrefix() && (
+        <div style={{ color: 'rgba(255,215,0,0.5)', fontFamily: 'Bebas Neue', fontSize: '0.8rem', letterSpacing: '0.2em', marginBottom: -4 }}>
+          ✦ {getStudioPrefix()} Edition ✦
+        </div>
+      )}
       <div className="start-title animate-title">GREENLIGHT</div>
       <div className="start-subtitle">A Movie Studio Roguelite</div>
 
       {/* Tab navigation — advanced tabs hidden until first run complete */}
       {stats.runs > 0 && !preFirstComplete && (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
-          {(['play', 'career', 'history', 'challenges', 'leaderboard'] as const).map(t => (
+          {(['play', 'achievements', 'career', 'history', 'challenges', 'leaderboard'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               background: tab === t ? 'rgba(212,168,67,0.15)' : 'transparent',
               border: `1px solid ${tab === t ? 'var(--gold-dim)' : '#333'}`,
@@ -443,7 +453,7 @@ export default function StartScreen() {
               cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.8rem', letterSpacing: '0.05em',
               transition: 'all 0.2s',
             }}>
-              {t === 'play' ? '🎬 PLAY' : t === 'career' ? '📊 CAREER' : t === 'history' ? '📜 RUNS' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 HALL OF FAME'}
+              {t === 'play' ? '🎬 PLAY' : t === 'achievements' ? '🏅 TROPHIES' : t === 'career' ? '📊 CAREER' : t === 'history' ? '📜 RUNS' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 HALL OF FAME'}
             </button>
           ))}
         </div>
@@ -762,6 +772,9 @@ export default function StartScreen() {
           </div>
         </div>
       )}
+
+      {/* ─── ACHIEVEMENTS TAB ─── */}
+      {tab === 'achievements' && <AchievementGallery />}
 
       {/* ─── RUN HISTORY TAB ─── */}
       {tab === 'history' && <RunHistoryTab leaderboard={leaderboard} />}

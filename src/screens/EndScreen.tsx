@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GameState } from '../types';
 import { startGame } from '../gameStore';
+import { recordRunEnd } from '../unlocks';
 
 function getAchievements(state: GameState): { icon: string; name: string; desc: string }[] {
   const a: { icon: string; name: string; desc: string }[] = [];
@@ -33,10 +34,15 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   
   const [showStats, setShowStats] = useState(false);
   const [showFilmography, setShowFilmography] = useState(false);
+  const [recorded, setRecorded] = useState(false);
   
   useEffect(() => {
     setTimeout(() => setShowStats(true), 800);
     setTimeout(() => setShowFilmography(true), 1500);
+    if (!recorded) {
+      recordRunEnd(isVictory, score, achievements.map(a => a.name));
+      setRecorded(true);
+    }
   }, []);
 
   const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' };

@@ -227,6 +227,11 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     }
     scriptAbilityBonus = Math.floor(maxStreak / 3) * 2;
   }
+  
+  // Script ability: Thriller Twist — if you have exactly 2 incidents, +8 quality (living on the edge)
+  if (state.currentScript?.genre === 'Thriller' && incidentCount === 2) {
+    scriptAbilityBonus = Math.max(scriptAbilityBonus, 8);
+  }
 
   return {
     ...p,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { startGame, pickArchetype } from '../gameStore';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId } from '../types';
+import { getRunStats } from '../unlocks';
 
 function HowToPlay({ onClose }: { onClose: () => void }) {
   return (
@@ -123,6 +124,17 @@ export default function StartScreen() {
         <span>⭐ Build Your Studio</span>
         <span>🏆 Chase the Oscar</span>
       </div>
+      {(() => {
+        const stats = getRunStats();
+        return stats.runs > 0 ? (
+          <div style={{ marginTop: 16, display: 'flex', gap: 16, color: '#444', fontSize: '0.7rem' }}>
+            <span>Runs: {stats.runs}</span>
+            <span>Wins: {stats.wins}</span>
+            <span>Win Rate: {stats.winRate}</span>
+            <span>Best Score: {stats.bestScore}</span>
+          </div>
+        ) : null;
+      })()}
       {showHelp && <HowToPlay onClose={() => setShowHelp(false)} />}
     </div>
   );

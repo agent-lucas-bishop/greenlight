@@ -1,3 +1,32 @@
+# GREENLIGHT Playtest Log — Round 16
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** FLOW & PACING AUDIT — Click counts, dead air, information overload
+
+## Previous Round Summary
+Round 15 added Season Identity system (5 named seasons with scaling resources), 3 rival AI studios, Season Recap screen with headlines and rankings, and dynamic narrative headlines.
+
+## Problems Identified
+1. **3 dead-air clicks per season** — "SEE BOX OFFICE", "SEASON WRAP-UP", and "BEGIN SEASON N" on Recap are all Continue buttons with no decision
+2. **Season Recap feels like a speed bump** — Rankings are neat the first time but become spam-click fodder by season 3
+3. **Casting screen information overload** — 20+ data points when card details are expanded
+4. **15 unnecessary clicks per full game** (3 dead clicks × 5 seasons)
+
+## Changes Implemented
+1. **Auto-advance "SEE BOX OFFICE"** — After wrapping + encore decision, the Release screen loads automatically after 1.8s with a progress bar. Player can still click to skip. Saves 1 click per season (5 per game).
+
+## Recommendations (Not Yet Implemented)
+- Merge Season Recap into Release screen as collapsible section
+- Collapse card details on Casting by default  
+- Remove Career Earnings table from Recap
+- Consider merging Release → Shop flow
+
+## Full Audit
+See `FLOW-AUDIT.md` for detailed findings including click counts, screen-by-screen info density analysis, and the Season Recap assessment.
+
+---
+
 # GREENLIGHT Playtest Log — Round 15
 
 **Date:** 2026-02-16

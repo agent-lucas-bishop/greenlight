@@ -38,12 +38,12 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
       <div style={{ textAlign: 'center', marginBottom: 12, fontSize: '0.85rem' }}>
         {state.hotGenres.length > 0 && (
           <span style={{ color: '#2ecc71', marginRight: 16 }}>
-            🔥 Hot: <strong>{state.hotGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(+40% box office)</span>
+            🔥 Hot: <strong>{state.hotGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(+25% box office)</span>
           </span>
         )}
         {state.coldGenres.length > 0 && (
           <span style={{ color: '#e74c3c' }}>
-            ❄️ Cold: <strong>{state.coldGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(-30% box office)</span>
+            ❄️ Cold: <strong>{state.coldGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(-20% box office)</span>
           </span>
         )}
       </div>

@@ -489,3 +489,44 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 - Endings persist via localStorage `endingsDiscovered` array in unlock state
 - Season 5 rival mega-blockbuster appears in release screen rankings
 - Score thresholds: S>800, A>500, B>300, C>150, D≤150, F=game over
+
+---
+
+## Round 44 — Final Integration Test & Cleanup (Feb 16, 2026)
+
+### Full Source Audit
+- Read all 31 source files in `src/`
+- Traced complete flows: new run, daily run, save/resume, career stats
+
+### Bugs Found & Fixed
+
+1. **Award Season target display mismatch** — `getSeasonTarget()` didn't include the daily modifier's `award_season` +5 adjustment, but `resolveRelease()` applied it separately. Player saw wrong target in Header, ProductionScreen, GreenlightScreen, and ReleaseScreen. **Fixed**: Added `dailyModifierId` param to `getSeasonTarget()`, updated all 5 call sites, removed duplicate adjustment in `resolveRelease()`.
+
+2. **Duplicate import in StartScreen** — `STUDIO_ARCHETYPES` was imported twice (once as `ARCHETYPE_DATA`). **Fixed**: Removed duplicate, unified to single import.
+
+3. **`markRunStarted()` not called for Daily/NG+/Director runs** — Run counter and phase tip resets only fired for "New Run" and Challenge modes. Daily, NG+, and Director Mode skipped it. **Fixed**: Added `markRunStarted()` to all three mode buttons.
+
+4. **Unused import `LEGACY_PERKS`** in StartScreen — imported but never referenced. **Fixed**: Removed from import.
+
+### Regression Checks (R38-R43) ✅
+- **Save system + daily modifiers**: `dailyModifierId` saved in full state, restored on load ✅
+- **Mega-blockbuster rival in season 5**: `generateRivalSeason()` adds when `season >= 5` ✅
+- **Confetti particles**: Fire on BLOCKBUSTER and SMASH tiers only ✅
+- **All 8 daily modifiers mechanically functional**: budget_crunch, critics_darling, blockbuster_summer, indie_spirit, award_season, sequel_mania, method_madness, producers_cut — all have game logic implementations ✅
+- **Weekly calendar**: Correctly shows 7 days (Sun-Sat) with completion status and modifier emojis ✅
+- **PWA manifest**: Links to `/favicon.svg` and `/og-image.png` which exist in `public/` ✅
+
+### Bundle Sizes (post-cleanup)
+| File | Size | Gzip |
+|------|------|------|
+| game-data | 106.69 KB | 25.39 KB |
+| index (React/vendor) | 239.40 KB | 73.24 KB |
+| game-engine | 43.85 KB | 14.61 KB |
+| CSS | 41.87 KB | 9.18 KB |
+| ProductionScreen | 22.75 KB | 7.05 KB |
+| EndScreen | 15.28 KB | 5.23 KB |
+| **Total JS** | **~466 KB** | **~138 KB** |
+
+### Build Status
+- `npx tsc --noEmit` — clean ✅
+- `npm run build` — clean, 448ms ✅

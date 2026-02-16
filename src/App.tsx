@@ -9,9 +9,7 @@ import ProductionScreen from './screens/ProductionScreen';
 import ReleaseScreen from './screens/ReleaseScreen';
 import ShopScreen from './screens/ShopScreen';
 import EndScreen from './screens/EndScreen';
-import SeasonRecapScreen from './screens/SeasonRecapScreen';
 import Header from './components/Header';
-import { proceedFromRecap } from './gameStore';
 
 function App() {
   const [state, setState] = useState<GameState>(getState());
@@ -39,15 +37,9 @@ function App() {
       case 'greenlight': return <GreenlightScreen state={state} />;
       case 'casting': return <CastingScreen state={state} />;
       case 'production': return <ProductionScreen state={state} />;
-      case 'release': return <ReleaseScreen state={state} />;
-      case 'seasonRecap': {
+      case 'release': {
         const latestRivals = state.rivalHistory[state.rivalHistory.length - 1];
-        return <SeasonRecapScreen
-          state={state}
-          rivalFilms={latestRivals?.films || []}
-          cumulativeRivalEarnings={state.cumulativeRivalEarnings}
-          onContinue={proceedFromRecap}
-        />;
+        return <ReleaseScreen state={state} rivalFilms={latestRivals?.films || []} />;
       }
       case 'shop': return <ShopScreen state={state} />;
       case 'gameOver': return <EndScreen state={state} type="gameover" />;

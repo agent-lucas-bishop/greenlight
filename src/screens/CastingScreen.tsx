@@ -6,51 +6,76 @@ import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 
 function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onClick?: () => void; compact?: boolean; dimmed?: boolean; highlight?: boolean }) {
-  const [showCards, setShowCards] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const typeColors: Record<string, string> = { Lead: '#e74c3c', Support: '#e67e22', Director: '#9b59b6', Crew: '#3498db' };
   const typeEmoji: Record<string, string> = { Lead: '⭐', Support: '🤝', Director: '🎬', Crew: '🔧' };
+
+  // Key tags: top 1-2 most common tags across this talent's cards
+  const tagCounts: Record<string, number> = {};
+  for (const c of t.cards) {
+    if (c.tags) for (const tag of c.tags) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+  }
+  const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 2);
+  const tagConfig: Record<string, { emoji: string; color: string }> = {
+    momentum: { emoji: '🔥', color: '#e67e22' },
+    precision: { emoji: '🎯', color: '#3498db' },
+    chaos: { emoji: '💀', color: '#9b59b6' },
+    heart: { emoji: '💕', color: '#e91e63' },
+    spectacle: { emoji: '✨', color: '#f1c40f' },
+  };
+
+  const totalCards = t.cards.length + (t.heat >= 4 && t.heatCards ? t.heatCards.length : 0);
+  const incidents = t.cards.filter(c => c.cardType === 'incident').length + (t.heat >= 4 && t.heatCards ? t.heatCards.filter(c => c.cardType === 'incident').length : 0);
 
   return (
     <div
       className={`card talent-card ${highlight ? 'selected' : ''}`}
       onClick={onClick}
       style={{
-        padding: compact ? 10 : 16,
-        minHeight: compact ? 'auto' : 120,
+        padding: 10,
+        minHeight: 'auto',
         opacity: dimmed ? 0.4 : 1,
         cursor: onClick ? 'pointer' : 'default',
       }}
     >
       <span className="talent-type" style={{ background: typeColors[t.type] || '#666' }}>{typeEmoji[t.type]} {t.type}</span>
-      <div className="card-title" style={compact ? { fontSize: '1rem' } : {}}>{t.name}</div>
-      <div>
-        <span className="card-stat green">Skill {t.skill}</span>
-        <span className="card-stat red">Heat {t.heat}</span>
-        {t.genreBonus && <span className="card-stat blue">{t.genreBonus.genre} +{t.genreBonus.bonus}</span>}
+      <div className="card-title" style={{ fontSize: '1rem' }}>{t.name}</div>
+      
+      {/* Summary line: cost + key tags */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
         {t.cost > 0 && <span className="card-stat gold">${t.cost}M</span>}
+        <span className="card-stat green">S{t.skill}</span>
+        <span className="card-stat red">H{t.heat}</span>
+        {topTags.map(([tag]) => {
+          const tc = tagConfig[tag] || { emoji: '•', color: '#888' };
+          return <span key={tag} style={{ fontSize: '0.75rem', color: tc.color }}>{tc.emoji} {tag}</span>;
+        })}
+        {incidents >= 2 && <span style={{ fontSize: '0.7rem', color: '#e74c3c' }}>⚠️{incidents}I</span>}
       </div>
-      {t.trait && <div className="trait-badge">"{t.trait}" — {t.traitDesc}</div>}
+
       {t.filmsLeft !== undefined && (
-        <div style={{ fontSize: '0.7rem', color: t.filmsLeft <= 1 ? '#e74c3c' : '#f39c12', marginTop: 4 }}>
-          📝 Contract: {t.filmsLeft} film{t.filmsLeft !== 1 ? 's' : ''} left
+        <div style={{ fontSize: '0.65rem', color: t.filmsLeft <= 1 ? '#e74c3c' : '#888', marginTop: 2 }}>
+          📝 {t.filmsLeft} film{t.filmsLeft !== 1 ? 's' : ''} left
         </div>
       )}
 
-      {/* Card count + preview toggle */}
-      <div className="card-deck-info">
-        <button
-          className="btn-tiny"
-          onClick={(e) => { e.stopPropagation(); setShowCards(!showCards); }}
-        >
-          {t.cards.length + (t.heat >= 4 && t.heatCards ? t.heatCards.length : 0)} cards
-          {' '}({t.cards.filter(c => c.cardType === 'action').length}A/{t.cards.filter(c => c.cardType === 'challenge').length}C/{t.cards.filter(c => c.cardType === 'incident').length + (t.heat >= 4 && t.heatCards ? t.heatCards.filter(c => c.cardType === 'incident').length : 0)}I)
-          {' '}{showCards ? '▲' : '▼'}
-        </button>
-      </div>
-      {showCards && (
-        <div className="card-preview-list">
-          {t.cards.map((c, i) => <CardPreview key={i} card={c} />)}
-          {t.heat >= 4 && t.heatCards?.map((c, i) => <CardPreview key={`h${i}`} card={c} />)}
+      {/* Expand/collapse for full details */}
+      <button
+        className="btn-tiny"
+        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+        style={{ marginTop: 4, fontSize: '0.7rem', color: '#888' }}
+      >
+        {expanded ? '▲ Less' : `▼ ${totalCards} cards`}{t.trait ? ' · trait' : ''}
+      </button>
+
+      {expanded && (
+        <div style={{ marginTop: 6 }}>
+          {t.trait && <div className="trait-badge">"{t.trait}" — {t.traitDesc}</div>}
+          {t.genreBonus && <div style={{ fontSize: '0.7rem', color: '#3498db', marginBottom: 4 }}>{t.genreBonus.genre} +{t.genreBonus.bonus}</div>}
+          <div className="card-preview-list">
+            {t.cards.map((c, i) => <CardPreview key={i} card={c} />)}
+            {t.heat >= 4 && t.heatCards?.map((c, i) => <CardPreview key={`h${i}`} card={c} />)}
+          </div>
         </div>
       )}
     </div>
@@ -65,7 +90,6 @@ export default function CastingScreen({ state }: { state: GameState }) {
   const totalHeat = state.castSlots.reduce((s, c) => s + (c.talent?.heat || 0), 0);
   const totalSkill = state.castSlots.reduce((s, c) => s + (c.talent?.skill || 0), 0);
 
-  // Count total cards in deck
   const totalDeckCards = state.castSlots.reduce((sum, s) => {
     if (!s.talent) return sum;
     let count = s.talent.cards.length;
@@ -113,54 +137,14 @@ export default function CastingScreen({ state }: { state: GameState }) {
         </div>
       </div>
 
+      {/* Compact deck stats */}
       <div className="casting-stats">
         <span>Skill: <strong style={{ color: 'var(--green-bright)' }}>{totalSkill}</strong></span>
         <span>Heat: <strong style={{ color: totalHeat > 5 ? 'var(--red-bright)' : 'var(--gold)' }}>{totalHeat}</strong></span>
-        <span>Deck: <strong>{totalDeckCards}</strong> cards</span>
-        <span>Draws: <strong>{Math.min(15, Math.max(6, Math.ceil(totalDeckCards * 0.55)))}</strong></span>
-      </div>
-
-      {/* Deck Preview */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 16px', marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', fontSize: '0.85rem' }}>
-        <strong style={{ color: '#ccc' }}>📦 Deck Preview</strong>
-        <span><strong style={{ color: '#2ecc71' }}>{actionCards}</strong> Action</span>
-        <span><strong style={{ color: '#f1c40f' }}>{challengeCards}</strong> Challenge</span>
-        <span><strong style={{ color: '#e74c3c' }}>{incidentCards}</strong> Incident</span>
-        <span style={{ color: '#888' }}>|</span>
-        <span style={{ color: incidentCards >= 3 ? '#e74c3c' : actionCards > incidentCards * 2 ? '#2ecc71' : '#f39c12' }}>
-          {incidentCards >= 3 ? '⚠️ High Risk — 3 Incidents = Disaster!' : actionCards > incidentCards * 2 ? '✨ Strong Synergy Potential' : '⚡ Balanced'}
+        <span>Deck: <strong>{totalDeckCards}</strong> ({actionCards}A/{challengeCards}C/{incidentCards}I)</span>
+        <span style={{ color: incidentCards >= 3 ? '#e74c3c' : actionCards > incidentCards * 2 ? '#2ecc71' : '#f39c12', fontSize: '0.8rem' }}>
+          {incidentCards >= 3 ? '⚠️ High Risk' : actionCards > incidentCards * 2 ? '✨ Strong' : '⚡ Balanced'}
         </span>
-        {/* Tag summary */}
-        {(() => {
-          const tagCounts: Record<string, number> = {};
-          const allCards = [
-            ...(state.currentScript?.cards || []),
-            ...state.castSlots.flatMap(s => s.talent ? [...s.talent.cards, ...(s.talent.heat >= 4 && s.talent.heatCards ? s.talent.heatCards : [])] : []),
-          ];
-          for (const c of allCards) {
-            if (c.tags) for (const tag of c.tags) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-          }
-          const tagConfig: Record<string, { emoji: string; color: string }> = {
-            momentum: { emoji: '🔥', color: '#e67e22' },
-            precision: { emoji: '🎯', color: '#3498db' },
-            chaos: { emoji: '💀', color: '#9b59b6' },
-            heart: { emoji: '💕', color: '#e91e63' },
-            spectacle: { emoji: '✨', color: '#f1c40f' },
-          };
-          const entries = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
-          if (entries.length === 0) return null;
-          const dominant = entries[0];
-          return (
-            <>
-              <span style={{ color: '#888' }}>|</span>
-              {entries.map(([tag, count]) => {
-                const tc = tagConfig[tag] || { emoji: '•', color: '#888' };
-                return <span key={tag} style={{ color: tc.color, fontWeight: count >= 3 ? 700 : 400 }}>{tc.emoji}{count}</span>;
-              })}
-              {dominant[1] >= 4 && <span style={{ color: tagConfig[dominant[0]]?.color || '#fff', fontWeight: 700 }}>⚡ {dominant[0].toUpperCase()} DECK!</span>}
-            </>
-          );
-        })()}
       </div>
 
       {/* Chemistry indicators */}
@@ -169,7 +153,6 @@ export default function CastingScreen({ state }: { state: GameState }) {
         const rosterNames = state.roster.map(t => t.name);
         const allNames = [...new Set([...castNames, ...rosterNames])];
         const active = getActiveChemistry(castNames);
-        // Show potential chemistry from roster/market
         const potential = ALL_CHEMISTRY.filter(c => {
           const has1 = allNames.includes(c.talent1);
           const has2 = allNames.includes(c.talent2);
@@ -178,12 +161,12 @@ export default function CastingScreen({ state }: { state: GameState }) {
         }).slice(0, 3);
         
         return (active.length > 0 || potential.length > 0) ? (
-          <div style={{ background: 'rgba(233,30,99,0.08)', borderRadius: 8, padding: '8px 16px', marginBottom: 16, fontSize: '0.8rem' }}>
+          <div style={{ background: 'rgba(233,30,99,0.08)', borderRadius: 8, padding: '6px 12px', marginBottom: 12, fontSize: '0.75rem' }}>
             {active.map((c, i) => (
               <div key={i} style={{ color: '#e91e63', fontWeight: 600 }}>💕 <strong>{c.name}</strong> ACTIVE — {c.description}</div>
             ))}
             {potential.map((c, i) => (
-              <div key={`p${i}`} style={{ color: '#888' }}>💭 Potential: <strong>{c.talent1}</strong> + <strong>{c.talent2}</strong> = "{c.name}" (+{c.qualityBonus})</div>
+              <div key={`p${i}`} style={{ color: '#888' }}>💭 {c.talent1} + {c.talent2} = "{c.name}" (+{c.qualityBonus})</div>
             ))}
           </div>
         ) : null;
@@ -207,7 +190,6 @@ export default function CastingScreen({ state }: { state: GameState }) {
                   <div className="slot-talent">
                     {slot.talent.name}
                     <span style={{ fontSize: '0.75rem', color: '#999' }}> S{slot.talent.skill}/H{slot.talent.heat}</span>
-                    <span style={{ fontSize: '0.65rem', color: '#666' }}> ({slot.talent.cards.length} cards)</span>
                     <span style={{ marginLeft: 4, fontSize: '0.6rem', color: '#666' }}>✕</span>
                   </div>
                 ) : (
@@ -217,16 +199,9 @@ export default function CastingScreen({ state }: { state: GameState }) {
             ))}
           </div>
 
-          {/* Script cards preview */}
+          {/* Script cards — collapsed by default */}
           {state.currentScript && (
-            <div style={{ marginTop: 16 }}>
-              <h4 style={{ color: '#999', marginBottom: 8, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                📜 Script Cards ({state.currentScript.cards.length})
-              </h4>
-              <div className="card-preview-list">
-                {state.currentScript.cards.map((c, i) => <CardPreview key={i} card={c} />)}
-              </div>
-            </div>
+            <ScriptCardsCollapsible cards={state.currentScript.cards} />
           )}
 
           <div className="btn-group" style={{ flexDirection: 'column', marginTop: 16 }}>
@@ -283,6 +258,26 @@ export default function CastingScreen({ state }: { state: GameState }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ScriptCardsCollapsible({ cards }: { cards: CardTemplate[] }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button
+        className="btn-tiny"
+        onClick={() => setShow(!show)}
+        style={{ fontSize: '0.75rem', color: '#999' }}
+      >
+        📜 Script Cards ({cards.length}) {show ? '▲' : '▼'}
+      </button>
+      {show && (
+        <div className="card-preview-list" style={{ marginTop: 6 }}>
+          {cards.map((c, i) => <CardPreview key={i} card={c} />)}
+        </div>
+      )}
     </div>
   );
 }

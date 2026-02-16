@@ -1220,8 +1220,8 @@ export function resolveRelease() {
 }
 
 export function proceedToRecap() {
-  // Show season recap before proceeding
-  setState({ phase: 'seasonRecap' });
+  // Legacy: now Release screen handles recap inline, so go directly
+  proceedFromRecap();
 }
 
 export function proceedFromRecap() {

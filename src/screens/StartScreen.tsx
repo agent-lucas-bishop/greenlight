@@ -11,8 +11,9 @@ import { getDailyDateString } from '../seededRng';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className={`modal-overlay ${isMobile ? 'bottom-sheet' : ''}`} onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 700 }}>
         <button className="modal-close" onClick={onClose}>✕</button>
         

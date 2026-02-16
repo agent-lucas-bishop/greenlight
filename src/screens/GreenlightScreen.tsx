@@ -6,11 +6,18 @@ import { getSeasonIdentity } from '../rivals';
 import PhaseTip from '../components/PhaseTip';
 import { isSimplifiedRun } from '../onboarding';
 import { sfx } from '../sound';
+import { useSwipe } from '../hooks/useSwipe';
 
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
+  const [mobileIdx, setMobileIdx] = useState(0);
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
   const simplified = isSimplifiedRun();
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
+  const swipeHandlers = useSwipe(
+    () => setMobileIdx(i => Math.min(i + 1, state.scriptChoices.length - 1)),
+    () => setMobileIdx(i => Math.max(i - 1, 0))
+  );
 
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (picked) return;
@@ -57,7 +64,17 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
         ))}
       </div>
 
-      <div className="card-grid card-grid-3">
+      {isMobile && !picked && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+          {state.scriptChoices.map((_, i) => (
+            <button key={i} onClick={() => setMobileIdx(i)} aria-label={`Script ${i + 1}`}
+              style={{ width: 10, height: 10, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                background: i === mobileIdx ? 'var(--gold)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s' }} />
+          ))}
+          <span style={{ fontSize: '0.7rem', color: '#555', marginLeft: 4 }}>← swipe →</span>
+        </div>
+      )}
+      <div className="card-grid card-grid-3" {...swipeHandlers}>
         {state.scriptChoices.map((script, i) => {
           const canAfford = state.budget >= script.cost;
           const isPicked = picked === script.id;
@@ -69,7 +86,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           return (
             <div
               key={script.id}
-              className={`card ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''}`}
+              className={`card tap-target ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''}`}
               onClick={() => handlePick(script)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(script); } }}
               tabIndex={picked ? -1 : 0}

@@ -6,8 +6,9 @@ import { isMuted, toggleMute, sfx } from '../sound';
 import StatTooltip from './StatTooltip';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Quick Reference">
+    <div className={`modal-overlay ${isMobile ? 'bottom-sheet' : ''}`} onClick={onClose} role="dialog" aria-modal="true" aria-label="Quick Reference">
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
         <button className="modal-close" onClick={onClose} aria-label="Close dialog">✕</button>
         <h2 style={{ color: 'var(--gold)', marginBottom: 16 }}>Quick Reference</h2>
@@ -122,7 +123,7 @@ export default function Header({ state }: { state: GameState }) {
         onClick={handleToggleMute}
         title={muted ? 'Unmute' : 'Mute'}
         aria-label={muted ? 'Unmute sound' : 'Mute sound'}
-        style={{ right: 40 }}
+        style={{ right: 54 }}
       >
         {muted ? '🔇' : '🔊'}
       </button>

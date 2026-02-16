@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
 import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut, attemptEncore, declineEncore } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';

@@ -59,7 +59,17 @@ function App() {
       {state.phase !== 'start' && <Header state={state} />}
       <div className="film-strip" aria-hidden="true" />
       <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite">
-        <Suspense fallback={<div className="fade-in" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gold)' }}>Loading...</div>}>
+        <Suspense fallback={
+          <div style={{ padding: '2rem', maxWidth: 600, margin: '0 auto' }}>
+            <div className="shimmer-skeleton" style={{ height: 40, width: '60%', margin: '0 auto 20px', borderRadius: 8 }} />
+            <div className="shimmer-skeleton" style={{ height: 120, marginBottom: 16 }} />
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div className="shimmer-skeleton" style={{ height: 160, flex: 1 }} />
+              <div className="shimmer-skeleton" style={{ height: 160, flex: 1 }} />
+            </div>
+            <div className="shimmer-skeleton" style={{ height: 44, width: '50%', margin: '20px auto 0', borderRadius: 6 }} />
+          </div>
+        }>
           {renderPhase()}
         </Suspense>
       </main>

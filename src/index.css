@@ -65,6 +65,10 @@ button:focus-visible, .card:focus-visible, .cast-slot:focus-visible, .selectable
     transition-duration: 0.01ms !important;
   }
   .spotlight { display: none; }
+  .card-3d-tilt { transform: none !important; }
+  .shimmer-skeleton::after { animation: none !important; }
+  .confetti-burst { display: none !important; }
+  .streak-bounce { animation: none !important; }
 }
 
 /* Skip to content link for screen readers */
@@ -1965,4 +1969,112 @@ body {
   .btn { padding: 10px 16px; }
   .production-stats-bar { gap: 6px; padding: 8px 8px; }
   .choice-area { padding: 12px 8px; }
+}
+
+/* ===== R39: VISUAL JUICE ===== */
+
+/* 3D perspective tilt on card hover */
+.card {
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-4px) rotateX(2deg) rotateY(-3deg);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212,168,67,0.12), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .prod-card-new:hover {
+    transform: rotateX(2deg) rotateY(-2deg) translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(212,168,67,0.1);
+  }
+}
+
+/* Shimmer skeleton loading */
+.shimmer-skeleton {
+  background: linear-gradient(135deg, var(--dark2) 0%, var(--dark3) 100%);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(212,168,67,0.06) 40%, rgba(212,168,67,0.1) 50%, rgba(212,168,67,0.06) 60%, transparent 100%);
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Streak fire bounce */
+.streak-bounce {
+  display: inline-block;
+  animation: streakBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes streakBounce {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.5) rotate(-10deg); }
+  50% { transform: scale(0.9) rotate(5deg); }
+  75% { transform: scale(1.2) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.streak-pulse {
+  animation: streakPulse 2s ease-in-out infinite;
+}
+@keyframes streakPulse {
+  0%, 100% { text-shadow: 0 0 4px rgba(243,156,18,0.3); }
+  50% { text-shadow: 0 0 12px rgba(243,156,18,0.6), 0 0 24px rgba(243,156,18,0.2); }
+}
+
+/* SMASH confetti burst (CSS-only) */
+.confetti-burst {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-10px) rotate(0deg) scale(1); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+
+/* Box office number dramatic reveal */
+.box-office-counting {
+  animation: numberCounting 0.1s ease infinite alternate;
+}
+@keyframes numberCounting {
+  0% { text-shadow: 0 0 60px rgba(212,168,67,0.4), 0 2px 4px rgba(0,0,0,0.8); }
+  100% { text-shadow: 0 0 80px rgba(212,168,67,0.6), 0 2px 4px rgba(0,0,0,0.8), 0 0 120px rgba(212,168,67,0.15); }
+}
+.box-office-final {
+  animation: numberFinal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes numberFinal {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); text-shadow: 0 0 80px rgba(212,168,67,0.8); }
+  100% { transform: scale(1); }
+}
+
+/* Staggered card entrance */
+.card-stagger { opacity: 0; animation: cardStaggerIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.card-stagger:nth-child(1) { animation-delay: 0.05s; }
+.card-stagger:nth-child(2) { animation-delay: 0.12s; }
+.card-stagger:nth-child(3) { animation-delay: 0.19s; }
+.card-stagger:nth-child(4) { animation-delay: 0.26s; }
+.card-stagger:nth-child(5) { animation-delay: 0.33s; }
+.card-stagger:nth-child(6) { animation-delay: 0.40s; }
+@keyframes cardStaggerIn {
+  0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }

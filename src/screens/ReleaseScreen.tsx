@@ -8,18 +8,45 @@ import { sfx } from '../sound';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
+  const [done, setDone] = useState(false);
   useEffect(() => {
     const start = Date.now();
     const tick = () => {
       const elapsed = Date.now() - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      // Ease-out cubic with a dramatic slow-down at the end
+      const eased = 1 - Math.pow(1 - progress, 4);
       setCurrent(Math.round(target * eased * 10) / 10);
-      if (progress < 1) requestAnimationFrame(tick);
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        setDone(true);
+      }
     };
     requestAnimationFrame(tick);
   }, [target, duration]);
-  return <>${current.toFixed(1)}M</>;
+  return <span className={done ? 'box-office-final' : 'box-office-counting'}>${current.toFixed(1)}M</span>;
+}
+
+function ConfettiBurst({ color }: { color: 'gold' | 'red' }) {
+  const colors = color === 'gold' 
+    ? ['#d4a843', '#f0c75e', '#ffd700', '#e8b84b', '#fff3c4']
+    : ['#e74c3c', '#c0392b', '#ff6b6b', '#d35400', '#e67e22'];
+  return (
+    <div className="confetti-burst">
+      {Array.from({ length: 40 }, (_, i) => (
+        <span key={i} className="confetti-piece" style={{
+          left: `${Math.random() * 100}%`,
+          background: colors[Math.floor(Math.random() * colors.length)],
+          borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+          width: `${6 + Math.random() * 8}px`,
+          height: `${6 + Math.random() * 8}px`,
+          animationDuration: `${1.5 + Math.random() * 2}s`,
+          animationDelay: `${Math.random() * 0.8}s`,
+        }} />
+      ))}
+    </div>
+  );
 }
 
 const TIER_CONFIG: Record<RewardTier, { emoji: string; label: string; subtitle: string; color: string; bg: string }> = {
@@ -92,7 +119,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
     const t1 = setTimeout(() => {
       setPhase(1);
       if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); }
-      else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); }
+      else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); }
       else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); }
       else { sfx.hit(); }
       setTimeout(() => setScreenFlash(''), 800);
@@ -106,20 +133,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
 
   return (
     <div className={`box-office fade-in ${screenFlash}`}>
-      {showConfetti && (
-        <div className="victory-particles">
-          {Array.from({ length: 30 }, (_, i) => (
-            <span key={i} className="particle" style={{
-              left: `${Math.random() * 100}%`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-              animationDelay: `${Math.random() * 1.5}s`,
-              fontSize: `${0.8 + Math.random() * 1.2}rem`,
-            }}>
-              {['🌟', '✨', '🏆', '⭐', '🎬', '🎉'][Math.floor(Math.random() * 6)]}
-            </span>
-          ))}
-        </div>
-      )}
+      {showConfetti && <ConfettiBurst color={tier === 'BLOCKBUSTER' ? 'gold' : 'gold'} />}
       <div className="phase-title">
         <h2>🎞️ Release Day</h2>
         <div className="subtitle" style={{ fontSize: '1.1rem', color: '#d4a843' }}>"{filmTitle}"</div>

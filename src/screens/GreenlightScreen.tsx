@@ -86,7 +86,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           return (
             <div
               key={script.id}
-              className={`card tap-target ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''}`}
+              className={`card tap-target card-stagger ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''}`}
               onClick={() => handlePick(script)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(script); } }}
               tabIndex={picked ? -1 : 0}

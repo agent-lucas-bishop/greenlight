@@ -55,6 +55,11 @@ function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void
       </div>
       {t.genreBonus && <div className="card-stat blue">{t.genreBonus.genre} +{t.genreBonus.bonus}</div>}
       {t.trait && <div className="trait-badge">"{t.trait}" — {t.traitDesc}</div>}
+      {t.filmsLeft !== undefined && (
+        <div style={{ fontSize: '0.7rem', color: t.filmsLeft <= 1 ? '#e74c3c' : '#f39c12', marginTop: 4 }}>
+          📝 Contract: {t.filmsLeft} film{t.filmsLeft !== 1 ? 's' : ''} left
+        </div>
+      )}
       
       <div style={{ marginTop: 8 }}>
         <button
@@ -84,7 +89,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
       </div>
 
       {state.industryEvent && (
-        <div className="event-banner animate-slide-down">📰 Industry Event: {state.industryEvent}</div>
+        <div className="event-banner animate-slide-down">📰 <strong>{state.industryEvent.name}</strong> — {state.industryEvent.description}</div>
       )}
 
       {/* Studio Perks */}

@@ -144,6 +144,11 @@ export interface PendingChallenge {
   bet: ChallengeBet;
 }
 
+export interface PendingBlock {
+  incident: ProductionCard;
+  actionCard: ProductionCard;
+}
+
 export interface ProductionState {
   deck: ProductionCard[];
   played: ProductionCard[];
@@ -160,11 +165,18 @@ export interface ProductionState {
   poisonNext: number;
   forceExtraDraw: boolean;
   scriptAbilityBonus: number;
+  // Director's Cut: peek/rearrange top 3 cards, once per production
+  directorsCutUsed: boolean;
+  directorsCutActive: boolean;
+  directorsCutCards: ProductionCard[]; // top 3 cards being rearranged
   // Draw-2-keep-1 state
   currentDraw: DrawChoice | null;
   pendingChallenge: PendingChallenge | null;
   challengeBetActive: boolean;
+  pendingBlock: PendingBlock | null;
 }
+
+export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';
 
 export interface GameState {
   phase: GamePhase;
@@ -189,8 +201,26 @@ export interface GameState {
   seasonHistory: SeasonResult[];
   hasReshoots: boolean;
   reshootsUsed: boolean;
-  industryEvent: string | null;
+  industryEvent: { name: string; description: string; effect: string } | null;
   neowChoice: number | null;
+  studioArchetype: StudioArchetypeId | null;
+  genreMastery: Record<string, number>; // genre -> count of films made in that genre
+}
+
+export interface Chemistry {
+  talent1: string; // name
+  talent2: string;
+  name: string; // "Power Couple", "Old Rivals"
+  description: string;
+  qualityBonus: number;
+}
+
+export interface StudioArchetype {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  effect: string; // key used by game logic
 }
 
 export interface SeasonResult {

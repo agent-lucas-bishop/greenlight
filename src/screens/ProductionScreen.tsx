@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, wrapProduction, resolveRelease, useReshoots, calculateQuality, getMaxDraws } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut } from '../gameStore';
+import { getSeasonTarget, getActiveChemistry } from '../data';
 
 function CardTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; color: string; bg: string }> = {
@@ -94,18 +95,24 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const prod = state.production;
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastDrawn, setLastDrawn] = useState<string | null>(null);
+  const [showDiscard, setShowDiscard] = useState(false);
+  const [dcOrder, setDcOrder] = useState<number[]>([0, 1, 2]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   if (!prod) return null;
 
   const deckSize = prod.deck.length;
   const maxDraws = getMaxDraws(prod);
-  const canDraw = !prod.isWrapped && prod.drawCount < maxDraws && deckSize > 0 && !prod.currentDraw && !prod.pendingChallenge;
-  const canWrap = prod.drawCount > 0 && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && !(prod.forceExtraDraw && prod.drawCount < maxDraws);
+  const canDraw = !prod.isWrapped && prod.drawCount < maxDraws && deckSize > 0 && !prod.currentDraw && !prod.pendingChallenge && !prod.pendingBlock;
+  const canWrap = prod.drawCount > 0 && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && !prod.pendingBlock && !(prod.forceExtraDraw && prod.drawCount < maxDraws);
   const mustDraw = prod.forceExtraDraw && prod.drawCount < maxDraws && !prod.isDisaster;
   const drawsLeft = maxDraws - prod.drawCount;
 
-  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus } = calculateQuality(state);
+  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus } = calculateQuality(state);
+
+  // Chemistry display
+  const castNames = state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[];
+  const activeChemistry = getActiveChemistry(castNames);
 
   const incidentInDeck = prod.deck.filter(c => c.cardType === 'incident').length;
   const actionInDeck = prod.deck.filter(c => c.cardType === 'action').length;
@@ -157,6 +164,36 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       </div>
 
+      {/* Deck forecast — shows what's left */}
+      {deckSize > 0 && !prod.isWrapped && (
+        <div style={{ 
+          background: 'rgba(255,255,255,0.03)', 
+          borderRadius: 8, 
+          padding: '8px 16px', 
+          marginBottom: 12, 
+          display: 'flex', 
+          gap: 12, 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          fontSize: '0.8rem' 
+        }}>
+          <span style={{ color: '#888' }}>📊 Remaining:</span>
+          <span style={{ color: '#2ecc71' }}>
+            {actionInDeck} Action ({deckSize > 0 ? Math.round(actionInDeck/deckSize*100) : 0}%)
+          </span>
+          <span style={{ color: '#f1c40f' }}>
+            {challengeInDeck} Challenge ({deckSize > 0 ? Math.round(challengeInDeck/deckSize*100) : 0}%)
+          </span>
+          <span style={{ color: '#e74c3c' }}>
+            {incidentInDeck} Incident ({deckSize > 0 ? Math.round(incidentInDeck/deckSize*100) : 0}%)
+          </span>
+          {incidentInDeck >= 2 && prod.incidentCount >= 1 && (
+            <span style={{ color: '#e74c3c', fontWeight: 600 }}>⚠️ Disaster risk!</span>
+          )}
+        </div>
+      )}
+
       {/* Incident counter */}
       <div className="bad-counter">
         {[0, 1, 2].map(i => (
@@ -176,6 +213,11 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         <span className="qb-item" style={{ color: productionBonus >= 0 ? '#2ecc71' : '#e74c3c' }}>🎬 Production: {productionBonus >= 0 ? '+' : ''}{productionBonus}</span>
         {cleanWrapBonus > 0 && <span className="qb-item" style={{ color: '#d4a843' }}>✨ Clean Wrap: +{cleanWrapBonus}</span>}
         {scriptAbilityBonus > 0 && <span className="qb-item" style={{ color: '#9b59b6' }}>⭐ Ability: +{scriptAbilityBonus}</span>}
+        {genreMasteryBonus > 0 && <span className="qb-item" style={{ color: '#2ecc71' }}>🎓 Genre Mastery: +{genreMasteryBonus}</span>}
+        {chemistryBonus > 0 && <span className="qb-item" style={{ color: '#e91e63' }}>💕 Chemistry: +{chemistryBonus}</span>}
+        <span className="qb-item" style={{ color: rawQuality >= getSeasonTarget(state.season) / 1.5 ? '#2ecc71' : rawQuality >= getSeasonTarget(state.season) / 2.5 ? '#f1c40f' : '#e74c3c' }}>
+          🎯 Need ~{Math.ceil(getSeasonTarget(state.season) / 1.2)} quality
+        </span>
       </div>
 
       {prod.budgetChange !== 0 && (
@@ -196,16 +238,42 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         <div style={{ background: 'rgba(212,168,67,0.1)', border: '2px solid var(--gold)', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'center' }}>
           <h3 style={{ color: 'var(--gold)', marginBottom: 12, fontSize: '1rem' }}>🎬 CHOOSE ONE CARD</h3>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {prod.currentDraw.choosable.map((card, i) => (
-              <div key={card.id} style={{ flex: '1 1 200px', maxWidth: 280 }}>
-                <ProductionCardDisplay
-                  card={card}
-                  isNew={true}
-                  selectable={true}
-                  onClick={() => pickCard(i as 0 | 1)}
-                />
-              </div>
-            ))}
+            {prod.currentDraw.choosable.map((card, i) => {
+              // Preview what synergy would fire for each choice
+              const wouldFire = card.synergyCondition ? (() => {
+                const ctx = {
+                  playedCards: prod.played,
+                  totalQuality: prod.qualityTotal,
+                  drawNumber: prod.drawCount,
+                  leadSkill: state.castSlots.find(s => s.slotType === 'Lead')?.talent?.skill || 0,
+                  redCount: prod.incidentCount,
+                  incidentCount: prod.incidentCount,
+                  previousCard: prod.played.length > 0 ? prod.played[prod.played.length - 1] : null,
+                  greenStreak: 0,
+                  remainingDeck: prod.deck,
+                  actionCardsPlayed: prod.played.filter(c => c.cardType === 'action').length,
+                  challengeCardsPlayed: prod.played.filter(c => c.cardType === 'challenge').length,
+                };
+                const result = card.synergyCondition!(ctx);
+                return result.bonus !== 0 ? `Will fire: +${result.bonus}` : null;
+              })() : null;
+              
+              return (
+                <div key={card.id} style={{ flex: '1 1 200px', maxWidth: 280 }}>
+                  <ProductionCardDisplay
+                    card={card}
+                    isNew={true}
+                    selectable={true}
+                    onClick={() => pickCard(i as 0 | 1)}
+                  />
+                  {wouldFire && (
+                    <div style={{ color: '#2ecc71', fontSize: '0.75rem', fontWeight: 600, marginTop: 4 }}>
+                      ✨ {wouldFire}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <p style={{ color: '#888', fontSize: '0.75rem', marginTop: 8 }}>Tap a card to keep it. The other is discarded.</p>
         </div>
@@ -241,6 +309,35 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       )}
 
+      {/* Block Choice UI */}
+      {prod.pendingBlock && (
+        <div style={{ background: 'rgba(231,76,60,0.1)', border: '2px solid #e74c3c', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'center' }}>
+          <h3 style={{ color: '#e74c3c', marginBottom: 8, fontSize: '1rem' }}>🛡️ INCIDENT INCOMING!</h3>
+          <p style={{ color: '#ccc', marginBottom: 12, fontSize: '0.9rem' }}>
+            <strong style={{ color: '#e74c3c' }}>{prod.pendingBlock.incident.name}</strong> ({prod.pendingBlock.incident.baseQuality}) was drawn alongside <strong style={{ color: '#2ecc71' }}>{prod.pendingBlock.actionCard.name}</strong>.
+          </p>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: 12 }}>
+            Sacrifice your Action card to block the Incident? Both cards are discarded.
+          </p>
+          <div className="btn-group" style={{ justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => resolveBlock(false)} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
+              🎬 KEEP BOTH (Incident fires, keep Action)
+            </button>
+            <button className="btn" onClick={() => resolveBlock(true)} style={{ background: 'rgba(231,76,60,0.2)', borderColor: '#e74c3c', color: '#e74c3c' }}>
+              🛡️ BLOCK (Sacrifice Action, discard Incident)
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 180px', maxWidth: 250 }}>
+              <ProductionCardDisplay card={prod.pendingBlock.incident} isNew={true} />
+            </div>
+            <div style={{ flex: '1 1 180px', maxWidth: 250 }}>
+              <ProductionCardDisplay card={prod.pendingBlock.actionCard} isNew={true} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Played cards */}
       <div className="production-deck" ref={scrollRef}>
         {prod.played.map((card) => (
@@ -252,11 +349,80 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         ))}
       </div>
 
+      {/* Discard pile */}
+      {prod.discarded.length > 0 && (
+        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+          <button className="btn-tiny" onClick={() => setShowDiscard(!showDiscard)}>
+            🗑️ Discarded ({prod.discarded.length}) {showDiscard ? '▲' : '▼'}
+          </button>
+          {showDiscard && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8, opacity: 0.6 }}>
+              {prod.discarded.map(card => (
+                <div key={card.id} style={{
+                  background: 'var(--dark2)',
+                  border: '1px solid var(--dark3)',
+                  borderRadius: 6,
+                  padding: '4px 8px',
+                  fontSize: '0.7rem',
+                }}>
+                  <span style={{ color: '#888' }}>{card.name}</span>
+                  <span style={{ marginLeft: 4, color: card.baseQuality >= 0 ? '#2ecc71' : '#e74c3c' }}>
+                    {card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Disaster banner */}
       {prod.isDisaster && (
         <div className="disaster-banner animate-shake">
           <h3>💥 DISASTER!</h3>
           <p>3 Incidents! ALL production quality lost!</p>
+        </div>
+      )}
+
+      {/* Chemistry banner */}
+      {activeChemistry.length > 0 && prod.drawCount === 0 && (
+        <div style={{ background: 'rgba(233,30,99,0.1)', border: '1px solid #e91e63', borderRadius: 8, padding: '8px 16px', marginBottom: 12, textAlign: 'center' }}>
+          {activeChemistry.map((c, i) => (
+            <div key={i} style={{ color: '#e91e63', fontSize: '0.85rem' }}>
+              💕 <strong>{c.name}</strong>: {c.description}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Director's Cut UI */}
+      {prod.directorsCutActive && prod.directorsCutCards.length > 0 && (
+        <div style={{ background: 'rgba(155,89,182,0.15)', border: '2px solid #9b59b6', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'center' }}>
+          <h3 style={{ color: '#9b59b6', marginBottom: 8, fontSize: '1rem' }}>🎬 DIRECTOR'S CUT</h3>
+          <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: 12 }}>Rearrange the top {prod.directorsCutCards.length} cards. Tap cards to swap positions.</p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+            {dcOrder.slice(0, prod.directorsCutCards.length).map((cardIdx, pos) => {
+              const card = prod.directorsCutCards[cardIdx];
+              return (
+                <div key={pos} onClick={() => {
+                  // Rotate: move clicked card to front, shift others
+                  const newOrder = [...dcOrder];
+                  const clicked = newOrder.splice(pos, 1)[0];
+                  newOrder.unshift(clicked);
+                  setDcOrder(newOrder);
+                }} style={{ cursor: 'pointer', opacity: 1, minWidth: 120 }}>
+                  <div style={{ color: '#9b59b6', fontSize: '0.65rem', fontWeight: 600, marginBottom: 2 }}>#{pos + 1}</div>
+                  <ProductionCardDisplay card={card} isNew={false} selectable />
+                </div>
+              );
+            })}
+          </div>
+          <div className="btn-group" style={{ justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => {
+              confirmDirectorsCut(dcOrder.slice(0, prod.directorsCutCards.length));
+            }}>✅ CONFIRM ORDER</button>
+            <button className="btn" onClick={() => cancelDirectorsCut()}>❌ CANCEL</button>
+          </div>
         </div>
       )}
 
@@ -276,6 +442,11 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         {canWrap && !mustDraw && (
           <button className="btn" onClick={wrapProduction}>
             ✂️ WRAP — Call "CUT!"
+          </button>
+        )}
+        {!prod.directorsCutUsed && !prod.directorsCutActive && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && prod.deck.length >= 2 && prod.drawCount > 0 && (
+          <button className="btn btn-small" onClick={() => { setDcOrder([0, 1, 2]); activateDirectorsCut(); }} style={{ background: 'rgba(155,89,182,0.2)', borderColor: '#9b59b6', color: '#9b59b6' }}>
+            🎬 DIRECTOR'S CUT
           </button>
         )}
         {state.hasReshoots && !state.reshootsUsed && prod.played.length > 0 && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && (

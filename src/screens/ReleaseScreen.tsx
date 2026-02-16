@@ -39,7 +39,7 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus } = calculateQuality(state);
+  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus } = calculateQuality(state);
 
   // Tier rewards
   const bonusMoney = tier === 'BLOCKBUSTER' ? 20 : tier === 'SMASH' ? 10 : 0;
@@ -115,6 +115,8 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
           <div className="qs-row"><span>Production</span><span>{productionBonus >= 0 ? '+' : ''}{productionBonus}</span></div>
           {cleanWrapBonus > 0 && <div className="qs-row positive"><span>✨ Clean Wrap</span><span>+{cleanWrapBonus}</span></div>}
           {scriptAbilityBonus > 0 && <div className="qs-row positive"><span>⭐ Script Ability</span><span>+{scriptAbilityBonus}</span></div>}
+          {genreMasteryBonus > 0 && <div className="qs-row positive"><span>🎓 Genre Mastery</span><span>+{genreMasteryBonus}</span></div>}
+          {chemistryBonus > 0 && <div className="qs-row positive"><span>💕 Chemistry</span><span>+{chemistryBonus}</span></div>}
           <div className="qs-row total"><span>Total</span><span>{rawQuality}</span></div>
         </div>
       )}

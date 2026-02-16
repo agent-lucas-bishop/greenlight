@@ -21,7 +21,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
       </div>
 
       {state.industryEvent && (
-        <div className="event-banner animate-slide-down">📰 {state.industryEvent}</div>
+        <div className="event-banner animate-slide-down">📰 <strong>{state.industryEvent.name}</strong> — {state.industryEvent.description}</div>
       )}
 
       <div style={{ textAlign: 'center', marginBottom: 20, fontSize: '0.85rem', color: '#999' }}>
@@ -61,6 +61,9 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
                 <span className="card-stat gold">Base {script.baseScore}</span>
                 {script.cost > 0 && <span className="card-stat red">-${script.cost}M</span>}
                 <span className="card-stat blue">{script.slots.length} slots</span>
+                {(state.genreMastery[script.genre] || 0) > 0 && (
+                  <span className="card-stat green">🎓 Mastery +{(state.genreMastery[script.genre] || 0) * 2}</span>
+                )}
               </div>
               <div className="card-body">
                 Slots: {script.slots.join(', ')}

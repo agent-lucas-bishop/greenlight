@@ -2,10 +2,34 @@ import { useState, useEffect } from 'react';
 import { GameState } from '../types';
 import { startGame } from '../gameStore';
 
+function getAchievements(state: GameState): { icon: string; name: string; desc: string }[] {
+  const a: { icon: string; name: string; desc: string }[] = [];
+  const history = state.seasonHistory;
+  
+  if (history.length >= 5 && history.every(h => h.hitTarget)) a.push({ icon: '🏆', name: 'Perfect Run', desc: 'Hit every target' });
+  if (history.some(h => h.tier === 'BLOCKBUSTER')) a.push({ icon: '💎', name: 'Blockbuster Baby', desc: 'Made a Blockbuster' });
+  if (history.filter(h => h.nominated).length >= 3) a.push({ icon: '🎭', name: 'Awards Darling', desc: '3+ nominations' });
+  if (state.totalEarnings > 500) a.push({ icon: '💰', name: 'Money Machine', desc: '$500M+ total earnings' });
+  if (history.some(h => h.quality >= 40)) a.push({ icon: '⭐', name: 'Masterpiece', desc: 'Quality 40+ on a film' });
+  
+  const genres = new Set(history.map(h => h.genre));
+  if (genres.size >= 4) a.push({ icon: '🌈', name: 'Renaissance Studio', desc: 'Made 4+ different genres' });
+  
+  const genreCounts: Record<string, number> = {};
+  history.forEach(h => { genreCounts[h.genre] = (genreCounts[h.genre] || 0) + 1; });
+  if (Object.values(genreCounts).some(c => c >= 3)) a.push({ icon: '🎯', name: 'Genre Specialist', desc: 'Made 3+ films in one genre' });
+  
+  if (history.length >= 2 && history.slice(-2).every(h => h.tier === 'FLOP')) a.push({ icon: '💀', name: 'Death Spiral', desc: '2 flops in a row' });
+  if (state.reputation >= 5) a.push({ icon: '👑', name: 'A-List Studio', desc: 'Reached max reputation' });
+  
+  return a;
+}
+
 export default function EndScreen({ state, type }: { state: GameState; type: 'gameover' | 'victory' }) {
   const isVictory = type === 'victory';
   const score = Math.round(state.totalEarnings * state.reputation * (1 + state.seasonHistory.filter(s => s.nominated).length * 0.2));
   const rank = score > 800 ? 'S' : score > 500 ? 'A' : score > 300 ? 'B' : score > 150 ? 'C' : 'D';
+  const achievements = getAchievements(state);
   
   const [showStats, setShowStats] = useState(false);
   const [showFilmography, setShowFilmography] = useState(false);
@@ -75,6 +99,29 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
               {r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Achievements */}
+      {showFilmography && achievements.length > 0 && (
+        <div style={{ marginTop: 24 }} className="animate-slide-down">
+          <h3 style={{ color: '#d4a843', marginBottom: 12 }}>Achievements</h3>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {achievements.map((a, i) => (
+              <div key={i} style={{
+                background: 'rgba(212,168,67,0.1)',
+                border: '1px solid var(--gold-dim)',
+                borderRadius: 8,
+                padding: '10px 16px',
+                textAlign: 'center',
+                minWidth: 120,
+              }}>
+                <div style={{ fontSize: '1.5rem' }}>{a.icon}</div>
+                <div style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>{a.name}</div>
+                <div style={{ color: '#888', fontSize: '0.7rem' }}>{a.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

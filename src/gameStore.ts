@@ -2,8 +2,9 @@ import { GameState, GamePhase, Talent, Script, CastSlot, ProductionState, Produc
 import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
-  INDUSTRY_EVENTS,
+  INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES,
 } from './data';
+import type { StudioArchetypeId } from './types';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -34,6 +35,8 @@ function createInitialState(): GameState {
     reshootsUsed: false,
     industryEvent: null,
     neowChoice: null,
+    studioArchetype: null,
+    genreMastery: {},
   };
 }
 
@@ -147,7 +150,14 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
 
   const synResult = evaluateSynergy(card, played, p.qualityTotal, drawNumber, castSlots, deck);
   
-  let totalCardValue = card.baseQuality + synResult.bonus;
+  let cardBase = card.baseQuality;
+  
+  // Slow Burn script ability: cards after draw 4 get +1 base
+  if (state.currentScript?.ability === 'slowBurn' && drawNumber > 4) {
+    cardBase += 1;
+  }
+  
+  let totalCardValue = cardBase + synResult.bonus;
 
   // Apply poison from previous card
   if (p.poisonNext !== 0) {
@@ -197,8 +207,14 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
   }
   if (card.special === 'buffNext') poisonNext = 2;
 
-  // 3 Incidents = DISASTER — lose ALL quality
-  const isDisaster = incidentCount >= 3;
+  // 3 Incidents = DISASTER — lose ALL quality (4 for Wildcard Entertainment)
+  const disasterThreshold = state.studioArchetype === 'chaos' ? 4 : 3;
+  const isDisaster = incidentCount >= disasterThreshold;
+
+  // Chaos archetype: each incident gives +2 quality
+  if (card.cardType === 'incident' && state.studioArchetype === 'chaos') {
+    totalCardValue += 2;
+  }
 
   // Script ability: Crowd Pleaser (consecutive Action card tracking)
   let scriptAbilityBonus = p.scriptAbilityBonus;
@@ -227,21 +243,31 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     poisonNext,
     forceExtraDraw,
     scriptAbilityBonus,
+    directorsCutUsed: p.directorsCutUsed,
+    directorsCutActive: false,
+    directorsCutCards: [],
     currentDraw: null,
     pendingChallenge: null,
     challengeBetActive: false,
+      pendingBlock: null,
   };
 }
 
 // ─── ACTIONS ───
 
 export function startGame() {
-  setState({ ...createInitialState(), phase: 'neow' });
+  setState({ ...createInitialState(), phase: 'start' });
+}
+
+export function pickArchetype(archetypeId: StudioArchetypeId) {
+  let budget = 15;
+  if (archetypeId === 'blockbuster') budget += 5;
+  setState({ studioArchetype: archetypeId, budget, phase: 'neow' as GamePhase });
 }
 
 export function pickNeow(choice: number) {
   let roster = starterRoster();
-  let budget = 15;
+  let budget = state.budget; // already set by archetype
   let perks: StudioPerk[] = [];
   if (choice === 0) {
     roster.push(neowTalent());
@@ -256,8 +282,14 @@ export function pickNeow(choice: number) {
 
 function beginSeason() {
   const devSlate = state.perks.some(p => p.effect === 'devSlate');
-  const scripts = generateScripts(devSlate ? 4 : 3, state.season);
+  let scripts = generateScripts(devSlate ? 4 : 3, state.season);
   const markets = generateMarketConditions(3);
+  
+  // Apply baseBoost industry event from previous season
+  if (state.industryEvent?.effect === 'baseBoost') {
+    scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 2 }));
+  }
+  
   setState({ scriptChoices: scripts, marketConditions: markets });
 }
 
@@ -328,9 +360,13 @@ export function startProduction() {
       poisonNext: 0,
       forceExtraDraw: false,
       scriptAbilityBonus: 0,
+      directorsCutUsed: false,
+      directorsCutActive: false,
+      directorsCutCards: [],
       currentDraw: null,
       pendingChallenge: null,
       challengeBetActive: false,
+      pendingBlock: null,
     },
   });
 }
@@ -341,7 +377,7 @@ export function drawProductionCards() {
   const prod = { ...state.production };
   const maxDraws = getMaxDraws(prod);
   if (prod.drawCount >= maxDraws) return;
-  if (prod.currentDraw || prod.pendingChallenge) return; // already in a draw
+  if (prod.currentDraw || prod.pendingChallenge || prod.pendingBlock) return; // already in a draw
 
   const deck = [...prod.deck];
   if (deck.length === 0) { wrapProduction(); return; }
@@ -367,9 +403,33 @@ export function drawProductionCards() {
     }
   }
 
+  // BLOCK MECHANIC: If exactly 1 incident + 1 action card drawn together,
+  // player can sacrifice the action card to block (discard) the incident.
+  // Present this as a choice via pendingBlock state.
+  const incidents = resolved.filter(c => c.cardType === 'incident');
+  if (incidents.length === 1 && choosable.length === 1) {
+    let updatedProd: ProductionState = { ...prod, deck };
+    updatedProd.pendingBlock = {
+      incident: incidents[0],
+      actionCard: choosable[0],
+    };
+    // Also auto-resolve any challenge cards
+    const challenges = resolved.filter(c => c.cardType === 'challenge');
+    for (const ch of challenges) {
+      updatedProd = resolveCardPlay({ ...ch }, updatedProd, state.castSlots);
+      if (ch.challengeBet) {
+        const ctx = buildSynergyContext(updatedProd.played, updatedProd.qualityTotal, updatedProd.drawCount, state.castSlots, updatedProd.deck);
+        updatedProd.pendingChallenge = { card: ch, bet: ch.challengeBet };
+        updatedProd.challengeBetActive = true;
+      }
+    }
+    setState({ production: updatedProd });
+    return;
+  }
+
   // Auto-resolve incidents immediately
   let updatedProd: ProductionState = { ...prod, deck };
-  for (const inc of resolved.filter(c => c.cardType === 'incident')) {
+  for (const inc of incidents) {
     updatedProd = resolveCardPlay({ ...inc }, updatedProd, state.castSlots);
     if (updatedProd.isDisaster) {
       setState({ production: updatedProd });
@@ -532,9 +592,75 @@ export function resolveChallengeBet(accept: boolean) {
   setState({ production: prod });
 }
 
+// Resolve block choice: sacrifice action card to discard incident, or let incident play
+export function resolveBlock(block: boolean) {
+  if (!state.production?.pendingBlock) return;
+  const prod = { ...state.production };
+  const { incident, actionCard } = prod.pendingBlock!;
+  
+  if (block) {
+    // Sacrifice action card to block the incident — both go to discard
+    prod.discarded = [...prod.discarded, incident, actionCard];
+    prod.pendingBlock = null;
+    setState({ production: prod });
+  } else {
+    // Let incident auto-play, then keep the action card
+    prod.pendingBlock = null;
+    let updatedProd = resolveCardPlay({ ...incident }, prod, state.castSlots);
+    if (updatedProd.isDisaster) {
+      setState({ production: updatedProd });
+      return;
+    }
+    // Auto-keep the action card
+    updatedProd = resolveCardPlay({ ...actionCard }, updatedProd, state.castSlots);
+    setState({ production: updatedProd });
+  }
+}
+
 // Legacy single-draw function (redirects to new system)
 export function drawProductionCard() {
   drawProductionCards();
+}
+
+// ─── DIRECTOR'S CUT ───
+// Peek at top 3 cards of deck, rearrange them in any order. Once per production.
+export function activateDirectorsCut() {
+  if (!state.production || state.production.directorsCutUsed || state.production.directorsCutActive) return;
+  if (state.production.currentDraw || state.production.pendingChallenge) return;
+  if (state.production.deck.length < 2) return;
+  
+  const prod = { ...state.production };
+  const peek = prod.deck.slice(0, Math.min(3, prod.deck.length));
+  prod.directorsCutActive = true;
+  prod.directorsCutCards = [...peek];
+  setState({ production: prod });
+}
+
+export function confirmDirectorsCut(newOrder: number[]) {
+  if (!state.production || !state.production.directorsCutActive) return;
+  const prod = { ...state.production };
+  const deck = [...prod.deck];
+  const peekCount = prod.directorsCutCards.length;
+  
+  // Replace top cards with reordered version
+  const reordered = newOrder.map(i => prod.directorsCutCards[i]);
+  for (let i = 0; i < peekCount; i++) {
+    deck[i] = reordered[i];
+  }
+  
+  prod.deck = deck;
+  prod.directorsCutUsed = true;
+  prod.directorsCutActive = false;
+  prod.directorsCutCards = [];
+  setState({ production: prod });
+}
+
+export function cancelDirectorsCut() {
+  if (!state.production) return;
+  const prod = { ...state.production };
+  prod.directorsCutActive = false;
+  prod.directorsCutCards = [];
+  setState({ production: prod });
 }
 
 export function useReshoots() {
@@ -594,6 +720,8 @@ export function calculateQuality(s: GameState): {
   productionBonus: number;
   cleanWrapBonus: number;
   scriptAbilityBonus: number;
+  genreMasteryBonus: number;
+  chemistryBonus: number;
 } {
   const script = s.currentScript!;
   const prod = s.production!;
@@ -605,7 +733,8 @@ export function calculateQuality(s: GameState): {
   const precisionFilm = s.perks.some(p => p.effect === 'precisionFilm');
   let cleanWrapBonus = 0;
   if (prod.cleanWrap && prod.drawCount > 0) {
-    cleanWrapBonus = precisionFilm ? 8 : 5;
+    const baseCleanWrap = s.studioArchetype === 'prestige' ? 8 : 5;
+    cleanWrapBonus = precisionFilm ? baseCleanWrap + 3 : baseCleanWrap;
   }
 
   let scriptAbilityBonus = prod.scriptAbilityBonus;
@@ -613,7 +742,25 @@ export function calculateQuality(s: GameState): {
     scriptAbilityBonus += 5;
   }
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus;
+  // Genre mastery bonus: +2 per previous film in the same genre (+3 for Prestige)
+  const masteryPerFilm = s.studioArchetype === 'prestige' ? 3 : 2;
+  const genreMasteryBonus = (s.genreMastery[script.genre] || 0) * masteryPerFilm;
+
+  // Chemistry bonus
+  const castNames = s.castSlots.map(slot => slot.talent?.name).filter(Boolean) as string[];
+  const activeChemistry = getActiveChemistry(castNames);
+  const chemistryBonus = activeChemistry.reduce((sum, c) => sum + c.qualityBonus, 0);
+  
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus;
+
+  // Industry event quality bonuses
+  const ie = s.industryEvent;
+  if (ie) {
+    if (ie.effect === 'goldenAge') rawQuality += 3;
+    if (ie.effect === 'baseBoost') rawQuality += 2;
+    const totalHeatForEvent = s.castSlots.reduce((sum, slot) => sum + (slot.talent?.heat || 0), 0);
+    if (ie.effect === 'indieBoost' && totalHeatForEvent <= 3) rawQuality += 5;
+  }
 
   if (prod.isDisaster) {
     // 3 Incidents = lose ALL quality (insurance saves 25%)
@@ -621,7 +768,7 @@ export function calculateQuality(s: GameState): {
     rawQuality = Math.floor(rawQuality * insuranceKeep);
   }
 
-  return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus };
+  return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus };
 }
 
 function getMarketMultiplier(market: MarketCondition, genre: string, quality: number): number {
@@ -643,7 +790,7 @@ export function resolveRelease() {
   const script = state.currentScript;
   const prod = state.production;
 
-  const { rawQuality } = calculateQuality(state);
+  let { rawQuality } = calculateQuality(state);
 
   const chooseMarket = state.perks.some(p => p.effect === 'chooseMarket');
   let market = state.activeMarket;
@@ -665,7 +812,23 @@ export function resolveRelease() {
     multiplier += 0.3;
   }
 
+  // Apply industry event effects
+  const ie = state.industryEvent;
+  if (ie) {
+    if (ie.effect === 'actionNerf' && script.genre === 'Action') multiplier -= 0.3;
+    if (ie.effect === 'dramaBoost' && script.genre === 'Drama') multiplier += 0.5;
+    if (ie.effect === 'horrorBoost' && script.genre === 'Horror') multiplier += 0.5;
+    if (ie.effect === 'comedyBoost' && script.genre === 'Comedy') multiplier += 0.3;
+  }
+
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
+  // Studio archetype effects
+  if (state.studioArchetype === 'blockbuster') multiplier += 0.2;
+  if (state.studioArchetype === 'indie') {
+    const totalHeatForIndie = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
+    if (totalHeatForIndie <= 3) rawQuality += 5;
+  }
+  
   if (state.perks.some(p => p.effect === 'indieSpirit') && totalHeat <= 4) multiplier += 0.5;
   if (state.perks.some(p => p.effect === 'buzz') && rawQuality > 35) multiplier += 0.5;
 
@@ -683,7 +846,8 @@ export function resolveRelease() {
   switch (tier) {
     case 'FLOP':
       repChange = -1;
-      earnings = Math.round(boxOffice * 0.5 * 10) / 10;
+      const streamingSafety = state.industryEvent?.effect === 'streamingSafety';
+      earnings = Math.round(boxOffice * (streamingSafety ? 0.75 : 0.5) * 10) / 10;
       break;
     case 'HIT':
       repChange = 0;
@@ -728,6 +892,15 @@ export function resolveRelease() {
     return t;
   });
 
+  // Decrement films left on talent used this season
+  newRoster = newRoster.map(t => {
+    const wasUsed = state.castSlots.some(s => s.talent?.id === t.id);
+    if (wasUsed && t.filmsLeft !== undefined) {
+      return { ...t, filmsLeft: t.filmsLeft - 1 };
+    }
+    return t;
+  }).filter(t => t.filmsLeft === undefined || t.filmsLeft > 0);
+
   setState({
     phase: 'release',
     lastBoxOffice: boxOffice,
@@ -740,6 +913,10 @@ export function resolveRelease() {
     strikes: tier === 'FLOP' ? state.strikes + 1 : state.strikes,
     seasonHistory: [...state.seasonHistory, result],
     roster: newRoster,
+    genreMastery: {
+      ...state.genreMastery,
+      [script.genre]: (state.genreMastery[script.genre] || 0) + 1,
+    },
   });
 }
 
@@ -755,11 +932,23 @@ export function proceedToShop() {
   const perkMarket = generatePerkMarket(4, state.perks.map(p => p.name));
   const talentMarket = generateTalentMarket(4, state.season, state.roster);
   const event = INDUSTRY_EVENTS[Math.floor(Math.random() * INDUSTRY_EVENTS.length)];
+  
+  // Apply talent drought effect to market size
+  let finalTalentMarket = talentMarket;
+  if (event.effect === 'talentDrought') {
+    finalTalentMarket = talentMarket.slice(0, 3);
+  }
+  
+  // Apply cheap hires effect
+  if (event.effect === 'cheapHires') {
+    finalTalentMarket = finalTalentMarket.map(t => ({ ...t, cost: Math.max(1, t.cost - 2) }));
+  }
+  
   setState({
     phase: 'shop',
     perkMarket,
-    talentMarket,
-    industryEvent: event,
+    talentMarket: finalTalentMarket,
+    industryEvent: { name: event.name, description: event.description, effect: event.effect },
   });
 }
 

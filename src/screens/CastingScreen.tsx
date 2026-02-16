@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GameState, Talent, CardTemplate } from '../types';
 import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction } from '../gameStore';
+import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
 
 function CardTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; color: string; bg: string }> = {
@@ -56,6 +57,11 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
         {t.cost > 0 && <span className="card-stat gold">${t.cost}M</span>}
       </div>
       {t.trait && <div className="trait-badge">"{t.trait}" — {t.traitDesc}</div>}
+      {t.filmsLeft !== undefined && (
+        <div style={{ fontSize: '0.7rem', color: t.filmsLeft <= 1 ? '#e74c3c' : '#f39c12', marginTop: 4 }}>
+          📝 Contract: {t.filmsLeft} film{t.filmsLeft !== 1 ? 's' : ''} left
+        </div>
+      )}
 
       {/* Card count + preview toggle */}
       <div className="card-deck-info">
@@ -151,6 +157,32 @@ export default function CastingScreen({ state }: { state: GameState }) {
           {incidentCards >= 3 ? '⚠️ High Risk — 3 Incidents = Disaster!' : actionCards > incidentCards * 2 ? '✨ Strong Synergy Potential' : '⚡ Balanced'}
         </span>
       </div>
+
+      {/* Chemistry indicators */}
+      {(() => {
+        const castNames = state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[];
+        const rosterNames = state.roster.map(t => t.name);
+        const allNames = [...new Set([...castNames, ...rosterNames])];
+        const active = getActiveChemistry(castNames);
+        // Show potential chemistry from roster/market
+        const potential = ALL_CHEMISTRY.filter(c => {
+          const has1 = allNames.includes(c.talent1);
+          const has2 = allNames.includes(c.talent2);
+          const bothCast = castNames.includes(c.talent1) && castNames.includes(c.talent2);
+          return (has1 || has2) && !bothCast;
+        }).slice(0, 3);
+        
+        return (active.length > 0 || potential.length > 0) ? (
+          <div style={{ background: 'rgba(233,30,99,0.08)', borderRadius: 8, padding: '8px 16px', marginBottom: 16, fontSize: '0.8rem' }}>
+            {active.map((c, i) => (
+              <div key={i} style={{ color: '#e91e63', fontWeight: 600 }}>💕 <strong>{c.name}</strong> ACTIVE — {c.description}</div>
+            ))}
+            {potential.map((c, i) => (
+              <div key={`p${i}`} style={{ color: '#888' }}>💭 Potential: <strong>{c.talent1}</strong> + <strong>{c.talent2}</strong> = "{c.name}" (+{c.qualityBonus})</div>
+            ))}
+          </div>
+        ) : null;
+      })()}
 
       <div className="cast-area">
         <div>

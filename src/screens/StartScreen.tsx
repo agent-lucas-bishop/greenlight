@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { startGame } from '../gameStore';
+import { startGame, pickArchetype } from '../gameStore';
+import { STUDIO_ARCHETYPES } from '../data';
+import type { StudioArchetypeId } from '../types';
 
 function HowToPlay({ onClose }: { onClose: () => void }) {
   return (
@@ -17,31 +19,51 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
           <div className="htp-section">
             <h3>📝 Each Season</h3>
             <ol>
-              <li><strong>Greenlight</strong> — Pick a script. Each has a genre, base quality score, and talent slots to fill.</li>
-              <li><strong>Casting</strong> — Fill your cast slots from your roster or hire new talent. Talent has <span className="card-stat green" style={{ display: 'inline' }}>Skill</span> (quality boost) and <span className="card-stat red" style={{ display: 'inline' }}>Heat</span> (fame = volatility).</li>
-              <li><strong>Production</strong> — <em>This is the core.</em> Draw cards one at a time. Good cards add quality. Bad cards hurt. <strong>3 bad cards = DISASTER</strong> (quality halved). Choose when to "wrap" — stop drawing and lock in your film.</li>
-              <li><strong>Release</strong> — Your film's quality × a random market condition = box office. Hit the target or take a strike.</li>
-              <li><strong>Off-Season</strong> — Buy studio perks and hire new talent for next season.</li>
+              <li><strong>Greenlight</strong> — Pick a script. Each has a genre, base quality score, and talent slots.</li>
+              <li><strong>Casting</strong> — Fill slots from your roster or hire new talent. Talent has <span className="card-stat green" style={{ display: 'inline' }}>Skill</span> (quality boost) and <span className="card-stat red" style={{ display: 'inline' }}>Heat</span> (fame = volatility). Look for 💕 Chemistry between specific talent pairs!</li>
+              <li><strong>Production</strong> — <em>This is the core.</em> Each draw reveals 2 cards. Incidents & Challenges auto-play; you pick 1 of any remaining Action cards. <strong>3 Incidents = DISASTER</strong> (ALL quality lost!). Choose when to "wrap."</li>
+              <li><strong>Release</strong> — Quality × market condition × reputation = box office. Hit the target or take a strike.</li>
+              <li><strong>Off-Season</strong> — Buy studio perks and hire new talent.</li>
             </ol>
           </div>
           
           <div className="htp-section">
-            <h3>🔥 The Heat Dilemma</h3>
-            <p>High-Heat talent adds more cards to the production deck — both good AND bad. A Heat-4 star might deliver a masterpiece or tank your movie. That's the push-your-luck tension.</p>
+            <h3>🃏 Card Types</h3>
+            <ul>
+              <li><strong style={{ color: '#2ecc71' }}>Action</strong> — Good cards with synergy bonuses. You choose which to keep.</li>
+              <li><strong style={{ color: '#f1c40f' }}>Challenge</strong> — Gambling cards. Accept or decline a bet on the next card.</li>
+              <li><strong style={{ color: '#e74c3c' }}>Incident</strong> — Bad cards that auto-play. 3 = Disaster!</li>
+            </ul>
+          </div>
+
+          <div className="htp-section">
+            <h3>🎬 Casting = Deckbuilding</h3>
+            <p>Each talent brings their own cards into the production deck. A high-Skill actor adds great Action cards. A high-Heat diva adds powerful cards AND dangerous Incidents. Your cast literally shapes what cards you'll draw!</p>
+          </div>
+
+          <div className="htp-section">
+            <h3>💕 Chemistry</h3>
+            <p>Certain talent pairs have special chemistry — cast them together for bonus quality. Look for the 💕 indicator during casting!</p>
+          </div>
+
+          <div className="htp-section">
+            <h3>🎬 Director's Cut</h3>
+            <p>Once per production, use Director's Cut to peek at the top 3 cards and rearrange them. Use it to set up synergy combos or avoid disasters!</p>
           </div>
           
           <div className="htp-section">
             <h3>💀 How You Lose</h3>
-            <p><strong>3 strikes</strong> (missed targets) = fired. Or if your <strong>reputation hits 0</strong>. Hits boost rep, misses drop it. Higher rep = bigger box office multiplier.</p>
+            <p><strong>3 strikes</strong> (missed targets) = fired. Or if your <strong>reputation hits 0</strong>.</p>
           </div>
           
           <div className="htp-section">
             <h3>💡 Tips</h3>
             <ul>
-              <li>Don't always push for max draws — wrapping early with decent quality beats a disaster</li>
-              <li>Match your script's genre to the visible market conditions</li>
-              <li>Studio perks define your strategy — build around them</li>
-              <li>Watch for talent traits — they can be powerful or dangerous</li>
+              <li>Wrapping early with decent quality beats risking a disaster</li>
+              <li>Match genre to visible market conditions for big multipliers</li>
+              <li>Build chemistry pairs — they're worth several quality points</li>
+              <li>Use Director's Cut to line up synergy combos</li>
+              <li>Genre mastery grows: each film in the same genre gives +2 next time</li>
             </ul>
           </div>
         </div>
@@ -52,6 +74,32 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
 
 export default function StartScreen() {
   const [showHelp, setShowHelp] = useState(false);
+  const [showArchetypes, setShowArchetypes] = useState(false);
+
+  if (showArchetypes) {
+    return (
+      <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
+        <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>Choose Your Studio</h2>
+        <p style={{ color: '#888', marginBottom: 24, fontSize: '0.9rem' }}>Your studio identity shapes your strategy for the entire run.</p>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 800, margin: '0 auto' }}>
+          {STUDIO_ARCHETYPES.map(a => (
+            <div
+              key={a.id}
+              className="card"
+              onClick={() => { startGame(); pickArchetype(a.id as StudioArchetypeId); }}
+              style={{ cursor: 'pointer', padding: 20, flex: '1 1 180px', maxWidth: 220, textAlign: 'center', transition: 'transform 0.2s, border-color 0.2s' }}
+              onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = 'var(--gold)'; (e.target as HTMLElement).style.transform = 'scale(1.05)'; }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = ''; (e.target as HTMLElement).style.transform = ''; }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{a.emoji}</div>
+              <div style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>{a.name}</div>
+              <div style={{ color: '#aaa', fontSize: '0.8rem', lineHeight: 1.5 }}>{a.description}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="start-screen">
@@ -62,7 +110,7 @@ export default function StartScreen() {
         Push your luck in production, agonize over casting, and watch box office numbers explode.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-        <button className="btn btn-primary btn-glow" onClick={startGame}>
+        <button className="btn btn-primary btn-glow" onClick={() => setShowArchetypes(true)}>
           NEW RUN
         </button>
         <button className="btn btn-small" onClick={() => setShowHelp(true)}>

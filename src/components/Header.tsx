@@ -1,5 +1,5 @@
 import { GameState } from '../types';
-import { getSeasonTarget } from '../data';
+import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 
 export default function Header({ state }: { state: GameState }) {
   return (

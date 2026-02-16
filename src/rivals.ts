@@ -100,10 +100,31 @@ function generateRivalFilm(studio: RivalStudio, season: number, target: number):
   };
 }
 
+// Generate a mega-blockbuster rival film for Season 5 finale
+function generateMegaBlockbuster(season: number, target: number): RivalFilm {
+  const megaTitles = ['Infinity Protocol', 'The Last Horizon', 'Endgame Rising', 'Titan\'s Fall', 'The Final Frontier'];
+  const title = megaTitles[Math.floor(rng() * megaTitles.length)];
+  const quality = 50 + Math.floor(rng() * 20); // 50-70 quality
+  const multiplier = 1.5 + rng() * 0.5; // 1.5-2.0
+  const boxOffice = Math.round(quality * multiplier * 10) / 10;
+  return {
+    studioName: 'Titan Pictures',
+    studioEmoji: '⚡',
+    title,
+    genre: (['Action', 'Sci-Fi'] as Genre[])[Math.floor(rng() * 2)],
+    boxOffice,
+    tier: getTier(boxOffice, target),
+    quality,
+  };
+}
+
 // Generate all rival films for a season
 // hotGenres: rivals are more likely to chase trends (50% chance to switch to a hot genre)
 export function generateRivalSeason(season: number, target: number, hotGenres?: Genre[], coldGenres?: Genre[]): RivalFilm[] {
-  return RIVAL_STUDIOS.map(studio => {
+  // Season 5: add a mega-blockbuster rival that sets the bar
+  const megaFilm = season >= 5 ? [generateMegaBlockbuster(season, target)] : [];
+  
+  return [...megaFilm, ...RIVAL_STUDIOS.map(studio => {
     const film = generateRivalFilm(studio, season, target);
     // Rivals chase hot genres 50% of the time
     if (hotGenres && hotGenres.length > 0 && rng() < 0.5) {
@@ -118,7 +139,7 @@ export function generateRivalSeason(season: number, target: number, hotGenres?: 
     }
     film.tier = getTier(film.boxOffice, target);
     return film;
-  });
+  })];
 }
 
 // ─── SEASON IDENTITY ───

@@ -3470,7 +3470,18 @@ export function generateScripts(count: number, _season: number): Script[] {
   for (let i = 0; i < count && pool.length > 0; i++) {
     const idx = Math.floor(rng() * pool.length);
     const s = pool.splice(idx, 1)[0];
-    result.push({ ...s, id: uid() });
+    let script = { ...s, id: uid() };
+    // Season 5 escalation: scripts have higher base scores but more variance
+    // Cards get amplified — bigger highs and lower lows
+    if (_season >= 5) {
+      script.baseScore += 2;
+      script.cards = script.cards.map(c => {
+        if (c.cardType === 'action') return { ...c, baseQuality: c.baseQuality + 1 };
+        if (c.cardType === 'incident') return { ...c, baseQuality: c.baseQuality - 1 };
+        return c;
+      });
+    }
+    result.push(script);
   }
   return result;
 }

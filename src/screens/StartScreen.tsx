@@ -4,7 +4,7 @@ import { startGame, pickArchetype, resumeGame } from '../gameStore';
 import { hasSaveGame, getSaveInfo } from '../savegame';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
-import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
+import { getRunStats, getMilestoneProgress, LEGACY_PERKS, getEndingsDiscovered, ENDINGS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES } from '../challenges';
@@ -426,6 +426,34 @@ export default function StartScreen() {
               </div>
             </div>
           )}
+
+          {/* Endings Discovered */}
+          {(() => {
+            const found = getEndingsDiscovered();
+            return found.length > 0 ? (
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 8, letterSpacing: 1 }}>📖 ENDINGS DISCOVERED ({found.length}/{ENDINGS.length})</h3>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {ENDINGS.map(e => {
+                    const discovered = found.includes(e.id);
+                    return (
+                      <div key={e.id} style={{
+                        background: discovered ? `${e.color}15` : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${discovered ? e.color + '44' : '#333'}`,
+                        borderRadius: 8, padding: '6px 12px', textAlign: 'center', minWidth: 80,
+                        opacity: discovered ? 1 : 0.4,
+                      }}>
+                        <div style={{ fontSize: '1.2rem' }}>{discovered ? e.emoji : '❓'}</div>
+                        <div style={{ color: discovered ? e.color : '#555', fontSize: '0.6rem', fontFamily: 'Bebas Neue' }}>
+                          {discovered ? e.title : '???'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null;
+          })()}
 
           {/* Daily Streak */}
           {stats.dailyStreak.best > 0 && (

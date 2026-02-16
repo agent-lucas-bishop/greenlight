@@ -12,6 +12,8 @@ export interface UnlockState {
   ngPlusWins: number;
   // Legacy system
   legacyPerks: string[]; // IDs of unlocked legacy perks
+  // Endings discovered
+  endingsDiscovered: string[]; // ending IDs seen
   careerStats: {
     totalFilms: number;
     totalBlockbusters: number;
@@ -73,6 +75,7 @@ export function getUnlocks(): UnlockState {
         directorModeUnlocked: parsed.directorModeUnlocked || false,
         ngPlusWins: parsed.ngPlusWins || 0,
         legacyPerks: parsed.legacyPerks || [],
+        endingsDiscovered: parsed.endingsDiscovered || [],
         careerStats: { ...defaultCareerStats(), ...(parsed.careerStats || {}) },
         dailyStreak: { ...defaultDailyStreak(), ...(parsed.dailyStreak || {}) },
       };
@@ -89,6 +92,7 @@ export function getUnlocks(): UnlockState {
     directorModeUnlocked: false,
     ngPlusWins: 0,
     legacyPerks: [],
+    endingsDiscovered: [],
     careerStats: defaultCareerStats(),
     dailyStreak: defaultDailyStreak(),
   };
@@ -289,6 +293,93 @@ export function getRunStats(): { wins: number; runs: number; bestScore: number; 
     careerStats: u.careerStats,
     dailyStreak: u.dailyStreak,
   };
+}
+
+// ─── ENDINGS ───
+
+export interface EndingDef {
+  id: string;
+  rank: string;
+  title: string;
+  subtitle: string;
+  emoji: string;
+  color: string;
+  flavorText: string;
+}
+
+export const ENDINGS: EndingDef[] = [
+  {
+    id: 'hollywood_legend',
+    rank: 'S',
+    title: 'HOLLYWOOD LEGEND',
+    subtitle: 'Your studio joins the pantheon',
+    emoji: '👑',
+    color: '#ff6b6b',
+    flavorText: 'They\'ll build a star on the Walk of Fame with your studio\'s name. Every film student will study your catalog. You didn\'t just make movies — you made history. The golden age of cinema has a new chapter, and it\'s yours.',
+  },
+  {
+    id: 'critical_darling',
+    rank: 'A',
+    title: 'CRITICAL DARLING',
+    subtitle: 'Respected, not dominant — but unforgettable',
+    emoji: '🎭',
+    color: '#ffd93d',
+    flavorText: 'You never chased the box office — the box office chased you. Critics adore your work, cinephiles worship your name. You proved that art and commerce can coexist. Not every legend needs a billion-dollar franchise.',
+  },
+  {
+    id: 'steady_hand',
+    rank: 'B',
+    title: 'STEADY HAND',
+    subtitle: 'You survived and built something real',
+    emoji: '🎬',
+    color: '#6bcb77',
+    flavorText: 'Not every studio needs to set the world on fire. You made solid films, kept the lights on, and gave people something to watch on Friday night. In a town that chews people up, you stood your ground. That\'s worth something.',
+  },
+  {
+    id: 'one_hit_wonder',
+    rank: 'C',
+    title: 'ONE-HIT WONDER',
+    subtitle: 'A flash of brilliance, then... silence',
+    emoji: '💫',
+    color: '#5dade2',
+    flavorText: 'You had moments of magic — maybe one great film, one unforgettable scene. But the industry moves fast, and you couldn\'t keep up. They\'ll remember your name, but only when someone asks "whatever happened to...?"',
+  },
+  {
+    id: 'straight_to_streaming',
+    rank: 'D',
+    title: 'STRAIGHT TO STREAMING',
+    subtitle: 'Not even a theatrical release',
+    emoji: '📺',
+    color: '#999',
+    flavorText: 'Your films ended up in the algorithmic void — sandwiched between true crime docs and reality TV. Not terrible, not memorable. The kind of studio that makes people say "oh yeah, I think I saw that" before changing the subject.',
+  },
+  {
+    id: 'studio_bankruptcy',
+    rank: 'F',
+    title: 'STUDIO BANKRUPTCY',
+    subtitle: 'The dream is over',
+    emoji: '💀',
+    color: '#e74c3c',
+    flavorText: 'The accountants came first. Then the lawyers. The lot was sold, the back catalog auctioned off, and your name became a punchline at industry parties. Hollywood doesn\'t forgive, and it certainly doesn\'t forget.',
+  },
+];
+
+export function getEndingForRank(rank: string, isVictory: boolean): EndingDef {
+  if (!isVictory) return ENDINGS.find(e => e.id === 'studio_bankruptcy')!;
+  const ending = ENDINGS.find(e => e.rank === rank);
+  return ending || ENDINGS.find(e => e.id === 'straight_to_streaming')!;
+}
+
+export function recordEndingDiscovered(endingId: string) {
+  const u = getUnlocks();
+  if (!u.endingsDiscovered.includes(endingId)) {
+    u.endingsDiscovered.push(endingId);
+    saveUnlocks(u);
+  }
+}
+
+export function getEndingsDiscovered(): string[] {
+  return getUnlocks().endingsDiscovered;
 }
 
 // Get all milestone progress for Career Stats display

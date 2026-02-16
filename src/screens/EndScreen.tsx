@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameState, SeasonResult, RewardTier } from '../types';
 import { startGame } from '../gameStore';
-import { recordRunEnd, getActiveLegacyPerks } from '../unlocks';
+import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered, getEndingsDiscovered, ENDINGS } from '../unlocks';
 import { sfx } from '../sound';
 import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
@@ -201,6 +201,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [copied, setCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
+  const ending = getEndingForRank(rank, isVictory);
+  const endingsFound = getEndingsDiscovered();
 
   // Career stats
   const totalBO = state.totalEarnings;
@@ -262,6 +264,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         won: isVictory,
         dailySeed: state.dailySeed,
       });
+      recordEndingDiscovered(ending.id);
       markFirstRunComplete();
       setRecorded(true);
     }
@@ -281,16 +284,20 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
     <div className="end-screen fade-in" style={{ paddingBottom: 60 }}>
       {isVictory && <VictoryParticles />}
 
-      {/* ─── TITLE ─── */}
+      {/* ─── ENDING TITLE ─── */}
       <div style={{ marginBottom: 8 }}>
         {state.studioName && (
           <div style={{ fontSize: 'clamp(0.8rem, 2vw, 1rem)', color: '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
             {state.studioName}
           </div>
         )}
-        <h2 style={{ color: isVictory ? '#d4a843' : '#e74c3c', margin: 0 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>
-          {isVictory ? '🏆 LEGENDARY PRODUCER' : '💀 FIRED'}
+        <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>{ending.emoji}</div>
+        <h2 style={{ color: ending.color, margin: 0, letterSpacing: 2 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>
+          {ending.title}
         </h2>
+        <div style={{ color: ending.color, opacity: 0.7, fontSize: 'clamp(0.75rem, 2vw, 0.9rem)', fontStyle: 'italic', marginTop: 4 }}>
+          {ending.subtitle}
+        </div>
       </div>
 
       {state.gameMode !== 'normal' && (
@@ -309,11 +316,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         RANK: {rank}
       </div>
 
-      {/* ─── CAREER SUMMARY ─── */}
+      {/* ─── ENDING FLAVOR TEXT ─── */}
       {phase >= 1 && (
         <div className="animate-slide-down" style={{
-          background: 'rgba(212,168,67,0.06)',
-          border: '1px solid rgba(212,168,67,0.2)',
+          background: `${ending.color}08`,
+          border: `1px solid ${ending.color}33`,
           borderRadius: 12,
           padding: '16px 20px',
           margin: '16px auto',
@@ -322,6 +329,23 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           color: '#ccc',
           fontSize: 'clamp(0.8rem, 2.2vw, 0.95rem)',
           lineHeight: 1.6,
+        }}>
+          {ending.flavorText}
+        </div>
+      )}
+
+      {/* ─── CAREER SUMMARY ─── */}
+      {phase >= 1 && (
+        <div className="animate-slide-down" style={{
+          background: 'rgba(212,168,67,0.06)',
+          border: '1px solid rgba(212,168,67,0.2)',
+          borderRadius: 12,
+          padding: '16px 20px',
+          margin: '8px auto',
+          maxWidth: 520,
+          color: '#999',
+          fontSize: 'clamp(0.75rem, 2vw, 0.85rem)',
+          lineHeight: 1.5,
         }}>
           {careerSummary}
         </div>
@@ -487,6 +511,33 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           >
             {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
           </button>
+        </div>
+      )}
+
+      {/* ─── ENDINGS TRACKER ─── */}
+      {phase >= 5 && (
+        <div className="animate-slide-down" style={{ marginTop: 24 }}>
+          <div style={{ color: '#888', fontSize: '0.8rem', marginBottom: 8, letterSpacing: 1 }}>
+            📖 ENDINGS DISCOVERED: {endingsFound.length}/{ENDINGS.length}
+          </div>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {ENDINGS.map(e => {
+              const found = endingsFound.includes(e.id);
+              return (
+                <div key={e.id} style={{
+                  width: 36, height: 36,
+                  borderRadius: 8,
+                  background: found ? `${e.color}20` : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${found ? e.color + '66' : '#333'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.1rem',
+                  opacity: found ? 1 : 0.3,
+                }} title={found ? e.title : '???'}>
+                  {found ? e.emoji : '❓'}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

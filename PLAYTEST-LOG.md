@@ -1,3 +1,15 @@
+# GREENLIGHT Playtest Log — Round 45
+
+## R45: Tutorial & New Player Experience (2026-02-16)
+- **Interactive tutorial**: Replaced static "How to Play" modal with step-by-step contextual overlays that appear on each game phase during first run (neow → greenlight → casting → production → release → shop). Each step highlights what to do with a dismiss/skip option and progress dots.
+- **Progressive disclosure**: Advanced features (Daily Runs, NG+, Director Mode, Challenge tab, Career/History/Leaderboard tabs) are hidden until player completes their first full run. Reduces cognitive overload for new players.
+- **First-run narrative hook**: Cinematic "studio founding" sequence plays before first Neow screen — timed text reveals ("Hollywood, California. You've just been handed the keys to a failing studio...") with fade transitions. Click/tap to skip.
+- **Contextual hints**: PhaseTip system (from prior rounds) continues showing during first 3 runs with per-phase tips and pro-tip nudges.
+- **Start screen**: First-time welcome text simplified; How to Play modal still accessible via button but no longer auto-opens (tutorial handles onboarding).
+- Build clean: `tsc --noEmit` ✓, `npm run build` ✓
+
+---
+
 # GREENLIGHT Playtest Log — Round 43
 
 ## R43: Daily Challenge Modifiers & Polish (2026-02-16)

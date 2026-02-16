@@ -1,6 +1,6 @@
 # 🎬 GREENLIGHT — A Movie Studio Roguelite
 
-**[Play Now →](https://greenlight-plum.vercel.app)**
+**[Play Now →](https://greenlight.codyp.xyz)**
 
 A push-your-luck deckbuilding roguelite where you run a Hollywood movie studio. Pick scripts, cast talent, survive chaotic productions, and chase box office glory across 5 seasons.
 
@@ -74,4 +74,21 @@ npm run dev     # dev server
 npm run build   # production build
 ```
 
-Designed and built by Bishop, Feb 2026.
+## 📸 Screenshot
+
+<!-- TODO: Add screenshot -->
+![GREENLIGHT Screenshot](screenshot-placeholder.png)
+
+## 📊 Analytics
+
+Anonymous event tracking via `navigator.sendBeacon` to a Vercel serverless function (`/api/events`). No cookies, no PII, no external services. Tracks game starts, completions, season outcomes, archetype picks, and tutorial engagement. Events are logged to Vercel function logs.
+
+## Credits
+
+Designed and built by [Cody](https://codyp.xyz) with Bishop (AI agent), Feb 2026.
+
+- **Game Design & Code**: Cody + Bishop
+- **Fonts**: [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue), [Inter](https://fonts.google.com/specimen/Inter)
+- **Sound**: Procedurally generated via Web Audio API
+- **Hosting**: [Vercel](https://vercel.com)
+- **Framework**: React 19 + TypeScript + Vite

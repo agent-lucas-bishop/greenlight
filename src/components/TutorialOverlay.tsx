@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getTutorialStepForPhase, completeTutorialStep, dismissTutorial } from '../tutorial';
+import { track } from '../analytics';
 import type { GamePhase } from '../types';
 
 export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
@@ -26,6 +27,7 @@ export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
 
   const handleSkipAll = () => {
     dismissTutorial();
+    track('tutorial_skip');
     setVisible(false);
   };
 

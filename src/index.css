@@ -204,7 +204,7 @@ h1, h2, h3, h4 {
 .header {
   background: linear-gradient(180deg, rgba(26,26,30,0.98) 0%, rgba(17,17,19,0.98) 100%);
   border-bottom: 1px solid rgba(212,168,67,0.2);
-  padding: 10px 110px 10px 24px;
+  padding: 10px 56px 10px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1956,6 +1956,21 @@ body {
     border-radius: 2px;
     margin: 0 auto 16px;
   }
+}
+
+/* Text overflow protection for small screens */
+@media (max-width: 480px) {
+  .card-title, .prod-card-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card-body {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  /* Fix header right padding for help button */
+  .header { padding-right: 52px; }
 }
 
 /* Small phones — 360px (iPhone SE) */

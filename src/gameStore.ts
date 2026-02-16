@@ -13,6 +13,7 @@ import { generateRivalSeason, getSeasonIdentity } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
 import { saveGame, clearSave, loadGame } from './savegame';
+import { track } from './analytics';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -404,6 +405,7 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   // Daily modifier: Budget Crunch — start with 30% less money
   if (state.dailyModifierId === 'budget_crunch') budget = Math.round(budget * 0.7);
   const studio = generateStudioName();
+  track('game_start', { mode: state.gameMode, archetype: archetypeId });
   setState({ studioArchetype: archetypeId, budget, studioName: studio.name, studioTagline: studio.tagline, phase: 'neow' as GamePhase });
 }
 
@@ -1333,6 +1335,8 @@ export function resolveRelease() {
   // Generate procedural film title based on genre + tags
   const filmTitle = generateFilmTitle(script.genre, prod.tagsPlayed);
 
+  track('season_end', { season: state.season, tier, genre: script.genre, quality: rawQuality, boxOffice });
+
   // Debt interest: 20% per season compounding
   let debt = state.debt;
   if (debt > 0) {
@@ -1374,11 +1378,13 @@ export function resolveRelease() {
 export function proceedFromRecap() {
   if (state.reputation <= 0 || state.strikes >= state.maxStrikes) {
     clearSave();
+    track('game_complete', { mode: state.gameMode, archetype: state.studioArchetype || '', won: false, seasons: state.season });
     setState({ phase: 'gameOver' });
     return;
   }
   if (state.season >= state.maxSeasons) {
     clearSave();
+    track('game_complete', { mode: state.gameMode, archetype: state.studioArchetype || '', won: true, seasons: state.season });
     setState({ phase: 'victory' });
     return;
   }

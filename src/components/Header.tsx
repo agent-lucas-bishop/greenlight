@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getChallengeById } from '../challenges';
-import { isMuted, toggleMute, sfx } from '../sound';
+import { isMuted, toggleMute, getVolume, setVolume, sfx } from '../sound';
 import StatTooltip from './StatTooltip';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
@@ -45,8 +45,15 @@ function QuickHelp({ onClose }: { onClose: () => void }) {
 export default function Header({ state }: { state: GameState }) {
   const [showHelp, setShowHelp] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
+  const [showVolume, setShowVolume] = useState(false);
+  const [volume, setVolumeState] = useState(getVolume());
   const archetype = STUDIO_ARCHETYPES.find(a => a.id === state.studioArchetype);
   const handleToggleMute = () => { const m = toggleMute(); setMutedState(m); if (!m) sfx.click(); };
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    setVolume(v);
+    setVolumeState(v);
+  };
   return (
     <header className="header" role="banner" aria-label="Game status">
       <h1>🎬 {state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT'}</h1>
@@ -118,15 +125,26 @@ export default function Header({ state }: { state: GameState }) {
       >
         ?
       </button>
-      <button
-        className="header-help-btn"
-        onClick={handleToggleMute}
-        title={muted ? 'Unmute' : 'Mute'}
-        aria-label={muted ? 'Unmute sound' : 'Mute sound'}
-        style={{ right: 54 }}
-      >
-        {muted ? '🔇' : '🔊'}
-      </button>
+      <div style={{ position: 'absolute', right: 54, top: 12, zIndex: 20 }}>
+        <button
+          className="header-help-btn"
+          onClick={handleToggleMute}
+          onContextMenu={e => { e.preventDefault(); setShowVolume(v => !v); }}
+          onDoubleClick={() => setShowVolume(v => !v)}
+          title={muted ? 'Unmute (right-click for volume)' : 'Mute (right-click for volume)'}
+          aria-label={muted ? 'Unmute sound' : 'Mute sound'}
+          style={{ position: 'static' }}
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
+        {showVolume && (
+          <div style={{ position: 'absolute', right: 0, top: 36, background: 'var(--card-bg, #1a1a2e)', border: '1px solid var(--gold, #d4a017)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', zIndex: 30 }}>
+            <span style={{ fontSize: '0.7rem', color: '#999' }}>🔈</span>
+            <input type="range" min="0" max="1" step="0.05" value={volume} onChange={handleVolumeChange} style={{ width: 80, accentColor: 'var(--gold, #d4a017)' }} aria-label="Master volume" />
+            <span style={{ fontSize: '0.7rem', color: '#999' }}>🔊</span>
+          </div>
+        )}
+      </div>
       {showHelp && <QuickHelp onClose={() => setShowHelp(false)} />}
     </header>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut, attemptEncore, declineEncore } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut, attemptEncore, declineEncore, getState } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { CardTypeBadge } from '../components/CardComponents';
@@ -211,6 +211,11 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const handleWrap = () => {
     sfx.wrap();
     wrapProduction();
+    // Play clean wrap chime after state updates (check next tick)
+    setTimeout(() => {
+      const s = getState();
+      if (s.production?.cleanWrap && !s.production?.isDisaster) sfx.cleanWrap();
+    }, 300);
   };
   
   const handleBlock = (block: boolean) => {

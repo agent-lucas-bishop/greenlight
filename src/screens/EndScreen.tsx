@@ -220,7 +220,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const shareText = useMemo(() => generateShareText(state, score, rank, isVictory), []);
 
   useEffect(() => {
-    if (isVictory) sfx.victory(); else sfx.flop();
+    if (isVictory) sfx.victory(); else sfx.gameOver();
     // Stagger reveals
     const timers = [
       setTimeout(() => setPhase(1), 600),

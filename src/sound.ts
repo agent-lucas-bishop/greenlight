@@ -1,8 +1,13 @@
 // Procedural sound effects using Web Audio API — no external files needed
 let ctx: AudioContext | null = null;
+let masterGain: GainNode | null = null;
 
 // Mute state — persisted in localStorage
 let _muted = typeof localStorage !== 'undefined' ? localStorage.getItem('greenlight-muted') === 'true' : false;
+
+// Volume state — persisted in localStorage (0.0 – 1.0)
+let _volume = typeof localStorage !== 'undefined' ? parseFloat(localStorage.getItem('greenlight-volume') || '0.7') : 0.7;
+if (isNaN(_volume) || _volume < 0 || _volume > 1) _volume = 0.7;
 
 export function isMuted(): boolean { return _muted; }
 export function setMuted(m: boolean) {
@@ -14,10 +19,27 @@ export function toggleMute(): boolean {
   return _muted;
 }
 
+export function getVolume(): number { return _volume; }
+export function setVolume(v: number) {
+  _volume = Math.max(0, Math.min(1, v));
+  try { localStorage.setItem('greenlight-volume', String(_volume)); } catch {}
+  if (masterGain) masterGain.gain.value = _volume;
+}
+
 function getCtx(): AudioContext {
-  if (!ctx) ctx = new AudioContext();
+  if (!ctx) {
+    ctx = new AudioContext();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = _volume;
+    masterGain.connect(ctx.destination);
+  }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
+}
+
+function getMaster(): GainNode {
+  getCtx();
+  return masterGain!;
 }
 
 function play(fn: (c: AudioContext) => void) {
@@ -25,7 +47,7 @@ function play(fn: (c: AudioContext) => void) {
   try { fn(getCtx()); } catch { /* silent fail on browsers that block audio */ }
 }
 
-// Quick note helper
+// Quick note helper — routes through master gain
 function note(c: AudioContext, freq: number, start: number, dur: number, vol = 0.15, type: OscillatorType = 'sine') {
   const o = c.createOscillator();
   const g = c.createGain();
@@ -33,12 +55,12 @@ function note(c: AudioContext, freq: number, start: number, dur: number, vol = 0
   o.frequency.value = freq;
   g.gain.setValueAtTime(vol, c.currentTime + start);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
-  o.connect(g).connect(c.destination);
+  o.connect(g).connect(getMaster());
   o.start(c.currentTime + start);
   o.stop(c.currentTime + start + dur + 0.05);
 }
 
-// Noise burst helper
+// Noise burst helper — routes through master gain
 function noise(c: AudioContext, start: number, dur: number, vol = 0.08) {
   const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
   const data = buf.getChannelData(0);
@@ -48,7 +70,7 @@ function noise(c: AudioContext, start: number, dur: number, vol = 0.08) {
   src.buffer = buf;
   g.gain.setValueAtTime(vol, c.currentTime + start);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
-  src.connect(g).connect(c.destination);
+  src.connect(g).connect(getMaster());
   src.start(c.currentTime + start);
 }
 
@@ -287,6 +309,32 @@ export const sfx = {
       note(c, 659, 0.08, 0.25, 0.12, 'triangle');
       note(c, 784, 0.16, 0.3, 0.1, 'sine');
       note(c, 1047, 0.24, 0.2, 0.06, 'sine');
+    });
+  },
+
+  // Game over — descending minor tones
+  gameOver() {
+    play(c => {
+      note(c, 440, 0, 0.35, 0.12, 'triangle');
+      note(c, 370, 0.25, 0.35, 0.12, 'triangle');
+      note(c, 311, 0.5, 0.35, 0.1, 'triangle');
+      note(c, 261, 0.75, 0.35, 0.1, 'sine');
+      note(c, 196, 1.0, 0.6, 0.12, 'sine');
+      // Low rumble underneath
+      note(c, 55, 0.3, 1.2, 0.08, 'sine');
+    });
+  },
+
+  // Clean wrap achieved — triumphant ascending arpeggio
+  cleanWrap() {
+    play(c => {
+      // C major arpeggio up
+      note(c, 523, 0, 0.2, 0.1, 'triangle');
+      note(c, 659, 0.1, 0.2, 0.1, 'triangle');
+      note(c, 784, 0.2, 0.2, 0.1, 'triangle');
+      note(c, 1047, 0.3, 0.35, 0.12, 'sine');
+      // Sparkle
+      note(c, 2093, 0.35, 0.3, 0.04, 'sine');
     });
   },
 

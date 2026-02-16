@@ -542,3 +542,43 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 ### Build Status
 - `npx tsc --noEmit` — clean ✅
 - `npm run build` — clean, 448ms ✅
+
+---
+
+## Round 46 — Sound Design & Audio Feedback (2026-02-16)
+
+### Changes
+- **Master volume control**: Added volume slider (0–100%) persisted in localStorage, accessible via right-click/double-click on the 🔊 button in the header. All audio routes through a master GainNode.
+- **New sounds**: `gameOver()` (descending minor tones with low rumble), `cleanWrap()` (triumphant ascending arpeggio with sparkle)
+- **Integration**: Game over screen now plays dedicated `gameOver` sound instead of `flop`. Clean wrap plays celebratory chime on successful wrap.
+- **Audio architecture**: All oscillators and noise sources now route through master gain node for proper volume control.
+
+### Sound Inventory (all procedural, Web Audio API)
+| Sound | Trigger |
+|-------|---------|
+| cardFlip | Draw cards |
+| cardPick | Select/keep a card |
+| cardDiscard | Discard a card |
+| synergy | Synergy bonus fires |
+| combo | Consecutive action cards |
+| incident | Incident card plays |
+| disaster | 3 incidents = disaster |
+| block | Block an incident |
+| wrap | Wrap production |
+| cleanWrap | Clean wrap achieved (no incidents) |
+| boxOfficeReveal | Box office count-up starts |
+| blockbuster/smash/hit/flop | Tier reveals |
+| nomination | Award nomination |
+| victory | Win the game |
+| gameOver | Lose the game |
+| click | UI button clicks |
+| seasonTransition | Next season |
+| scriptSelect | Pick a script |
+| hire | Hire talent |
+| purchase | Buy a perk |
+| debtWarning | High debt warning |
+| challenge | Challenge bet |
+
+### Build Status
+- `npx tsc --noEmit` — clean ✅
+- `npm run build` — clean, 443ms ✅

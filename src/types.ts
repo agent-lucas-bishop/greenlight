@@ -238,6 +238,9 @@ export interface GameState {
   genreMastery: Record<string, number>; // genre -> count of films made in that genre
   rivalHistory: RivalSeasonData[]; // rival films per season
   cumulativeRivalEarnings: Record<string, number>; // rival studio name -> total earnings
+  studioName: string;
+  studioTagline: string;
+  lastFilmTitle: string; // procedurally generated film title for release
   gameMode: GameMode;
   challengeId?: string;
   dailySeed?: string;

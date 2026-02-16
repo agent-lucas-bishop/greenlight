@@ -12,6 +12,7 @@ import type { ChallengeMode } from './challenges';
 import { addLeaderboardEntry } from './leaderboard';
 import { generateRivalSeason, getSeasonIdentity } from './rivals';
 import type { RivalFilm } from './rivals';
+import { generateStudioName, generateFilmTitle, generateCriticQuote, generateDetailedHeadline } from './narrative';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -43,6 +44,9 @@ function createInitialState(): GameState {
     industryEvent: null,
     neowChoice: null,
     studioArchetype: null,
+    studioName: '',
+    studioTagline: '',
+    lastFilmTitle: '',
     genreMastery: {},
     rivalHistory: [],
     cumulativeRivalEarnings: {},
@@ -355,7 +359,8 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   const legacyPerks = getActiveLegacyPerks();
   // Challenge: Shoestring Budget
   if (state.challengeId === 'shoestring') budget = 8;
-  setState({ studioArchetype: archetypeId, budget, phase: 'neow' as GamePhase });
+  const studio = generateStudioName();
+  setState({ studioArchetype: archetypeId, budget, studioName: studio.name, studioTagline: studio.tagline, phase: 'neow' as GamePhase });
 }
 
 export function pickNeow(choice: number) {
@@ -1198,8 +1203,12 @@ export function resolveRelease() {
   }
   const rivalSeasonData = { season: state.season, films: rivalFilms };
 
+  // Generate procedural film title based on genre + tags
+  const filmTitle = generateFilmTitle(script.genre, prod.tagsPlayed);
+
   setState({
     phase: 'release',
+    lastFilmTitle: filmTitle,
     lastBoxOffice: boxOffice,
     lastQuality: rawQuality,
     lastTier: tier,

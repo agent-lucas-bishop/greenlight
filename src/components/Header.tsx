@@ -44,7 +44,14 @@ export default function Header({ state }: { state: GameState }) {
   const archetype = STUDIO_ARCHETYPES.find(a => a.id === state.studioArchetype);
   return (
     <div className="header">
-      <h1>🎬 {archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT'}</h1>
+      <h1>🎬 {state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT'}</h1>
+      {(state.studioTagline || archetype) && (
+        <div style={{ fontSize: '0.6rem', color: '#666', fontStyle: 'italic', marginTop: -4, marginBottom: 4, letterSpacing: '0.05em' }}>
+          {archetype && <span>{archetype.emoji} {archetype.name}</span>}
+          {state.studioTagline && archetype && <span> · </span>}
+          {state.studioTagline && <span>{state.studioTagline}</span>}
+        </div>
+      )}
       <div className="header-stats">
         <div className="header-stat">
           <span className="label">Season</span>

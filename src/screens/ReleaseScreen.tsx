@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
 import { proceedFromRecap, calculateQuality } from '../gameStore';
-import { RivalFilm, getSeasonIdentity, generateHeadline } from '../rivals';
+import { RivalFilm, getSeasonIdentity } from '../rivals';
+import { generateCriticQuote, generateDetailedHeadline } from '../narrative';
 import { sfx } from '../sound';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
@@ -55,20 +56,33 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   const season = state.seasonHistory.length;
   const identity = getSeasonIdentity(season);
 
+  const filmTitle = state.lastFilmTitle || state.currentScript?.title || 'Untitled';
+  const leadTalent = state.castSlots.find(s => s.slotType === 'Lead' && s.talent)?.talent;
+
+  // Generate critic quote
+  const criticQuote = lastResult ? generateCriticQuote(
+    lastResult.tier,
+    lastResult.genre,
+    filmTitle,
+    leadTalent?.name,
+  ) : '';
+
   // Generate headline
-  const headline = lastResult ? generateHeadline(
-    { title: lastResult.title, tier: lastResult.tier, boxOffice: lastResult.boxOffice },
+  const headline = lastResult ? generateDetailedHeadline(
+    { title: filmTitle, tier: lastResult.tier, boxOffice: lastResult.boxOffice, genre: lastResult.genre },
     rivalFilms,
     season,
     state.totalEarnings,
     state.cumulativeRivalEarnings,
     state.strikes,
     state.reputation,
+    state.castSlots,
+    state.studioName,
   ) : '';
 
   // All films sorted by box office
   const allFilms = lastResult ? [
-    { name: '🎬 YOUR STUDIO', emoji: '🎬', title: lastResult.title, genre: lastResult.genre, boxOffice: lastResult.boxOffice, tier: lastResult.tier, isPlayer: true },
+    { name: `🎬 ${state.studioName || 'YOUR STUDIO'}`, emoji: '🎬', title: filmTitle, genre: lastResult.genre, boxOffice: lastResult.boxOffice, tier: lastResult.tier, isPlayer: true },
     ...rivalFilms.map(f => ({ name: `${f.studioEmoji} ${f.studioName}`, emoji: f.studioEmoji, title: f.title, genre: f.genre, boxOffice: f.boxOffice, tier: f.tier, isPlayer: false })),
   ].sort((a, b) => b.boxOffice - a.boxOffice) : [];
 
@@ -105,7 +119,8 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       )}
       <div className="phase-title">
         <h2>🎞️ Release Day</h2>
-        <div className="subtitle">"{state.currentScript?.title}" hits theaters!</div>
+        <div className="subtitle" style={{ fontSize: '1.1rem', color: '#d4a843' }}>"{filmTitle}"</div>
+        <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>a {state.currentScript?.genre} film by {state.studioName || 'Your Studio'}</div>
       </div>
 
       {/* Core results: film name, quality, box office, tier */}
@@ -130,6 +145,25 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
           <div className="tier-emoji">{config.emoji}</div>
           <div className="tier-label" style={{ color: config.color }}>{config.label}</div>
           <div className="tier-subtitle">{config.subtitle}</div>
+        </div>
+      )}
+
+      {/* Critic quote */}
+      {phase >= 1 && criticQuote && (
+        <div className="animate-slide-down" style={{
+          marginTop: 12,
+          padding: '10px 16px',
+          background: 'rgba(255,255,255,0.03)',
+          borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.06)',
+          fontStyle: 'italic',
+          fontSize: '0.8rem',
+          color: '#aaa',
+          lineHeight: 1.5,
+          maxWidth: 400,
+          margin: '12px auto 0',
+        }}>
+          {criticQuote}
         </div>
       )}
 

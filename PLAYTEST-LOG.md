@@ -582,3 +582,22 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 ### Build Status
 - `npx tsc --noEmit` — clean ✅
 - `npm run build` — clean, 443ms ✅
+
+---
+
+## Round 47 — Film History & Career Replay Value (2026-02-16)
+
+### Changes
+1. **Filmography Detail View** — Tapping any film in the end-screen filmography expands a movie poster/playbill card showing: genre, cast names, director, quality score, box office gross, tier, season, and nomination status. Elegant centered layout with stat boxes.
+
+2. **Run History Browser** — The "📜 RUNS" tab on the Start screen now shows full run cards with studio name, archetype, seasons survived, total gross, film count, and mode. Tapping a run expands its full filmography; tapping a film within shows the detail card with cast/director/quality/box office.
+
+3. **Studio Hall of Fame** — New persistent section (localStorage) on the "🏆 HALL OF FAME" tab tracking: highest single-film gross, highest quality film, longest win streak, most films in one run, best rank achieved, highest run gross. New records flash gold on the end screen when set.
+
+4. **"One More Run" Hook** — After game over/victory, a contextual motivational message appears: comparing to best run length, distance to gross record, next milestone progress, or S-rank chase. Randomized from relevant hooks.
+
+5. **Richer Leaderboard Data** — LeaderboardEntry.films now stores quality, boxOffice, season, cast[], director, and nominated. Studio name also persisted. Backward-compatible with old entries.
+
+### Build Status
+- `npx tsc --noEmit` — clean ✅
+- `npm run build` — clean, 433ms ✅

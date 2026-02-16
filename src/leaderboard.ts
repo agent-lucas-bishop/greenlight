@@ -1,5 +1,18 @@
 // Local leaderboard — persisted in localStorage
 
+export interface FilmDetail {
+  title: string;
+  genre: string;
+  tier: string;
+  quality?: number;
+  boxOffice?: number;
+  season?: number;
+  cast?: string[];
+  director?: string;
+  budgetSpent?: number;
+  nominated?: boolean;
+}
+
 export interface LeaderboardEntry {
   id: string;
   date: string;
@@ -11,9 +24,10 @@ export interface LeaderboardEntry {
   mode: string;
   challenge?: string;
   archetype: string;
-  films: { title: string; genre: string; tier: string }[];
+  films: FilmDetail[];
   won: boolean;
   dailySeed?: string; // date string if daily run
+  studioName?: string;
 }
 
 const LB_KEY = 'greenlight_leaderboard';

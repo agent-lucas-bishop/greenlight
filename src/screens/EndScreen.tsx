@@ -4,6 +4,8 @@ import { startGame } from '../gameStore';
 import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered, getEndingsDiscovered, ENDINGS } from '../unlocks';
 import { sfx } from '../sound';
 import { addLeaderboardEntry } from '../leaderboard';
+import { updateHallOfFame, getHallOfFame } from '../hallOfFame';
+import { getRunStats, getMilestoneProgress } from '../unlocks';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { getModifierById } from '../dailyModifiers';
@@ -203,6 +205,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [dailyCopied, setDailyCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
+  const [newHofRecords, setNewHofRecords] = useState<string[]>([]);
+  const [expandedFilm, setExpandedFilm] = useState<number | null>(null);
   const ending = getEndingForRank(rank, isVictory);
   const endingsFound = getEndingsDiscovered();
 
@@ -252,6 +256,25 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       const afterPerks = getActiveLegacyPerks();
       const newlyUnlocked = afterPerks.filter(p => !beforePerks.includes(p.id));
       if (newlyUnlocked.length > 0) setNewPerks(newlyUnlocked);
+      // Build rich film data with cast/director info
+      const richFilms = history.map(s => {
+        const castNames = state.castSlots
+          .filter(slot => slot.talent && slot.talent.type !== 'Director')
+          .map(slot => slot.talent!.name);
+        const director = state.castSlots
+          .find(slot => slot.talent?.type === 'Director')?.talent?.name;
+        return {
+          title: s.title,
+          genre: s.genre,
+          tier: s.tier,
+          quality: s.quality,
+          boxOffice: s.boxOffice,
+          season: s.season,
+          cast: castNames,
+          director,
+          nominated: s.nominated,
+        };
+      });
       addLeaderboardEntry({
         date: new Date().toISOString().slice(0, 10),
         score,
@@ -262,10 +285,22 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         mode: state.gameMode,
         challenge: state.challengeId,
         archetype: state.studioArchetype || 'unknown',
-        films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier })),
+        films: richFilms,
         won: isVictory,
         dailySeed: state.dailySeed,
+        studioName: state.studioName || undefined,
       });
+      // Update Hall of Fame
+      const hofRecords = updateHallOfFame({
+        studioName: state.studioName || 'Unknown Studio',
+        date: new Date().toISOString().slice(0, 10),
+        rank,
+        score,
+        seasons: history.length,
+        totalGross: state.totalEarnings,
+        films: history.map(s => ({ title: s.title, genre: s.genre, quality: s.quality, boxOffice: s.boxOffice, tier: s.tier })),
+      });
+      if (hofRecords.length > 0) setNewHofRecords(hofRecords);
       recordEndingDiscovered(ending.id);
       markFirstRunComplete();
       setRecorded(true);
@@ -423,34 +458,98 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       {phase >= 3 && (
         <div style={{ marginTop: 28 }} className="animate-slide-down">
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>📜 FILMOGRAPHY</h3>
+          <p style={{ color: '#666', fontSize: '0.7rem', marginBottom: 8 }}>Tap a film for details</p>
           <div style={{ maxWidth: 540, margin: '0 auto' }}>
-            {history.map((r, i) => (
-              <div key={i} className="filmography-row" style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                flexWrap: 'wrap',
-              }}>
-                <span style={{ color: '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
-                <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
-                <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
-                <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
-                <span style={{
-                  color: TIER_COLOR[r.tier],
-                  fontFamily: 'Bebas Neue',
-                  fontSize: '1rem',
-                  minWidth: 55,
-                  textAlign: 'right',
-                }}>
-                  ${r.boxOffice.toFixed(1)}M
-                </span>
-                <span style={{ width: 18, textAlign: 'center' }}>
-                  {r.nominated ? '🏆' : r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
-                </span>
-              </div>
-            ))}
+            {history.map((r, i) => {
+              const isExpanded = expandedFilm === i;
+              const castNames = state.castSlots
+                .filter(slot => slot.talent && slot.talent.type !== 'Director')
+                .map(slot => slot.talent!.name);
+              const director = state.castSlots
+                .find(slot => slot.talent?.type === 'Director')?.talent?.name;
+              return (
+                <div key={i}>
+                  <div className="filmography-row" onClick={() => setExpandedFilm(isExpanded ? null : i)} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 12px',
+                    borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                    flexWrap: 'wrap',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                    background: isExpanded ? 'rgba(212,168,67,0.06)' : 'transparent',
+                    borderRadius: isExpanded ? '8px 8px 0 0' : 0,
+                  }}>
+                    <span style={{ color: '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
+                    <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
+                    <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
+                    <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
+                    <span style={{
+                      color: TIER_COLOR[r.tier],
+                      fontFamily: 'Bebas Neue',
+                      fontSize: '1rem',
+                      minWidth: 55,
+                      textAlign: 'right',
+                    }}>
+                      ${r.boxOffice.toFixed(1)}M
+                    </span>
+                    <span style={{ width: 18, textAlign: 'center' }}>
+                      {r.nominated ? '🏆' : r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
+                    </span>
+                  </div>
+                  {isExpanded && (
+                    <div style={{
+                      background: 'rgba(212,168,67,0.04)',
+                      border: '1px solid rgba(212,168,67,0.15)',
+                      borderTop: 'none',
+                      borderRadius: '0 0 8px 8px',
+                      padding: '16px 20px',
+                      marginBottom: 8,
+                    }}>
+                      {/* Movie poster / playbill style */}
+                      <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                        <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 3, color: '#666', marginBottom: 4 }}>
+                          Season {r.season} · {r.genre}
+                        </div>
+                        <div style={{ fontSize: '1.3rem', fontFamily: 'Bebas Neue', color: TIER_COLOR[r.tier], letterSpacing: 1 }}>
+                          "{r.title}"
+                        </div>
+                        <div style={{
+                          display: 'inline-block', marginTop: 6, padding: '2px 12px',
+                          background: `${TIER_COLOR[r.tier]}20`, border: `1px solid ${TIER_COLOR[r.tier]}40`,
+                          borderRadius: 4, color: TIER_COLOR[r.tier], fontFamily: 'Bebas Neue', fontSize: '0.85rem',
+                        }}>
+                          {TIER_LABEL[r.tier]} {r.nominated && '🏆 Nominated'}
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.75rem' }}>
+                        <div style={{ textAlign: 'center', padding: 8, background: 'rgba(0,0,0,0.2)', borderRadius: 6 }}>
+                          <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase' }}>Quality</div>
+                          <div style={{ color: r.quality >= 30 ? '#2ecc71' : r.quality >= 15 ? '#f1c40f' : '#e74c3c', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{r.quality}</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: 8, background: 'rgba(0,0,0,0.2)', borderRadius: 6 }}>
+                          <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase' }}>Box Office</div>
+                          <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>${r.boxOffice.toFixed(1)}M</div>
+                        </div>
+                      </div>
+                      {director && (
+                        <div style={{ marginTop: 10, textAlign: 'center', fontSize: '0.75rem' }}>
+                          <span style={{ color: '#888' }}>Directed by </span>
+                          <span style={{ color: '#ccc', fontWeight: 600 }}>{director}</span>
+                        </div>
+                      )}
+                      {castNames.length > 0 && (
+                        <div style={{ marginTop: 6, textAlign: 'center', fontSize: '0.7rem' }}>
+                          <span style={{ color: '#888' }}>Starring </span>
+                          <span style={{ color: '#aaa' }}>{castNames.join(' · ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -586,6 +685,61 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         </div>
       )}
+
+      {/* ─── NEW HALL OF FAME RECORDS ─── */}
+      {phase >= 5 && newHofRecords.length > 0 && (
+        <div className="animate-slide-down" style={{ marginTop: 24, textAlign: 'center' }}>
+          <h3 style={{ color: '#ffd700', marginBottom: 8 }}>🏅 NEW RECORDS SET!</h3>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {newHofRecords.map((r, i) => (
+              <span key={i} style={{
+                background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)',
+                borderRadius: 6, padding: '4px 12px', fontSize: '0.8rem', color: '#ffd700',
+              }}>🏆 {r}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── ONE MORE RUN HOOK ─── */}
+      {phase >= 5 && (() => {
+        const runStats = getRunStats();
+        const hof = getHallOfFame();
+        const milestones = getMilestoneProgress();
+        const nextMilestone = milestones.find(m => !m.unlocked);
+        const hooks: string[] = [];
+
+        if (hof.longestRunSeasons && hof.longestRunSeasons.value > history.length) {
+          hooks.push(`Your best run lasted ${hof.longestRunSeasons.value} seasons. Can you beat it?`);
+        } else if (history.length >= 5) {
+          hooks.push(`You survived all 5 seasons! Can you get an S-rank next time?`);
+        }
+
+        if (hof.highestTotalGross && hof.highestTotalGross.value > state.totalEarnings) {
+          hooks.push(`Your record gross is $${hof.highestTotalGross.value.toFixed(1)}M — just $${(hof.highestTotalGross.value - state.totalEarnings).toFixed(1)}M ahead.`);
+        }
+
+        if (nextMilestone) {
+          hooks.push(`${nextMilestone.emoji} ${nextMilestone.progressText} toward "${nextMilestone.name}"`);
+        }
+
+        if (runStats.runs > 1 && rank !== 'S') {
+          hooks.push(`${runStats.runs} runs completed. The S-rank awaits.`);
+        }
+
+        const hook = hooks.length > 0 ? hooks[Math.floor(Math.random() * hooks.length)] : null;
+        return hook ? (
+          <div className="animate-slide-down" style={{
+            marginTop: 20, padding: '14px 20px', maxWidth: 480, margin: '20px auto 0',
+            background: 'rgba(212,168,67,0.08)', border: '1px solid rgba(212,168,67,0.25)',
+            borderRadius: 10, textAlign: 'center',
+          }}>
+            <div style={{ color: 'var(--gold)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+              💡 {hook}
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       {/* ─── PLAY AGAIN ─── */}
       {phase >= 5 && (

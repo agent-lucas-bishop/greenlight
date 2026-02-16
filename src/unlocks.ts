@@ -16,11 +16,21 @@ export interface UnlockState {
     totalFilms: number;
     totalBlockbusters: number;
     totalFlops: number;
+    totalBoxOffice: number; // lifetime cumulative box office
     genreFilms: Record<string, number>; // genre -> count
     tagFocusWins: Record<string, number>; // tag -> wins with that focus
     perfectRuns: number;
     disasterCount: number;
     highestQuality: number;
+    ranksAchieved: Record<string, number>; // rank -> count (S, A, B, C, D)
+    archetypesUsed: Record<string, number>; // archetype -> count
+    challengesCompleted: string[]; // challenge IDs won
+  };
+  // Daily challenge streak
+  dailyStreak: {
+    current: number;
+    best: number;
+    lastDate: string; // YYYY-MM-DD of last daily played
   };
 }
 
@@ -31,12 +41,20 @@ function defaultCareerStats() {
     totalFilms: 0,
     totalBlockbusters: 0,
     totalFlops: 0,
+    totalBoxOffice: 0,
     genreFilms: {} as Record<string, number>,
     tagFocusWins: {} as Record<string, number>,
     perfectRuns: 0,
     disasterCount: 0,
     highestQuality: 0,
+    ranksAchieved: {} as Record<string, number>,
+    archetypesUsed: {} as Record<string, number>,
+    challengesCompleted: [] as string[],
   };
+}
+
+function defaultDailyStreak() {
+  return { current: 0, best: 0, lastDate: '' };
 }
 
 export function getUnlocks(): UnlockState {
@@ -56,6 +74,7 @@ export function getUnlocks(): UnlockState {
         ngPlusWins: parsed.ngPlusWins || 0,
         legacyPerks: parsed.legacyPerks || [],
         careerStats: { ...defaultCareerStats(), ...(parsed.careerStats || {}) },
+        dailyStreak: { ...defaultDailyStreak(), ...(parsed.dailyStreak || {}) },
       };
     }
   } catch {}
@@ -71,6 +90,7 @@ export function getUnlocks(): UnlockState {
     ngPlusWins: 0,
     legacyPerks: [],
     careerStats: defaultCareerStats(),
+    dailyStreak: defaultDailyStreak(),
   };
 }
 
@@ -137,6 +157,42 @@ export const LEGACY_PERKS: LegacyPerk[] = [
     check: (u) => u.careerStats.totalBlockbusters >= 5,
     effect: 'marketBoost01',
   },
+  {
+    id: 'indie_darling',
+    name: 'Indie Darling',
+    emoji: '🎬',
+    description: 'Start with +$2M budget. Reward for prolific filmmaking.',
+    requirement: 'Make 10 films across all runs',
+    check: (u) => u.careerStats.totalFilms >= 10,
+    effect: 'startBudget2',
+  },
+  {
+    id: 'mogul',
+    name: 'Mogul',
+    emoji: '💰',
+    description: 'Start with +$3M budget. The money follows the money.',
+    requirement: 'Earn $500M lifetime box office',
+    check: (u) => u.careerStats.totalBoxOffice >= 500,
+    effect: 'startBudget3',
+  },
+  {
+    id: 'genre_savant',
+    name: 'Genre Savant',
+    emoji: '🌈',
+    description: 'Genre mastery starts at +1 for all genres. A true student of cinema.',
+    requirement: 'Make films in all 7 genres',
+    check: (u) => Object.keys(u.careerStats.genreFilms).length >= 7,
+    effect: 'genreMasteryHead',
+  },
+  {
+    id: 'daily_devotee',
+    name: 'Daily Devotee',
+    emoji: '📅',
+    description: 'Daily runs give +$3M starting budget. Consistency pays.',
+    requirement: 'Achieve a 7-day daily challenge streak',
+    check: (u) => u.dailyStreak.best >= 7,
+    effect: 'dailyBudget3',
+  },
 ];
 
 export function getActiveLegacyPerks(): LegacyPerk[] {
@@ -144,7 +200,7 @@ export function getActiveLegacyPerks(): LegacyPerk[] {
   return LEGACY_PERKS.filter(p => p.check(u));
 }
 
-export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string) {
+export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string }) {
   const u = getUnlocks();
   u.totalRuns++;
   if (won) {
@@ -180,6 +236,36 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
     if (allHit) u.careerStats.perfectRuns++;
   }
 
+  // Track extras
+  if (extras) {
+    if (extras.totalEarnings) u.careerStats.totalBoxOffice += extras.totalEarnings;
+    if (extras.rank) u.careerStats.ranksAchieved[extras.rank] = (u.careerStats.ranksAchieved[extras.rank] || 0) + 1;
+    if (extras.archetype) u.careerStats.archetypesUsed[extras.archetype] = (u.careerStats.archetypesUsed[extras.archetype] || 0) + 1;
+    if (extras.challengeId && won && !u.careerStats.challengesCompleted.includes(extras.challengeId)) {
+      u.careerStats.challengesCompleted.push(extras.challengeId);
+    }
+    // Daily streak tracking
+    if (extras.dailySeed) {
+      const today = extras.dailySeed;
+      const lastDate = u.dailyStreak.lastDate;
+      if (lastDate) {
+        const last = new Date(lastDate);
+        const curr = new Date(today);
+        const diffDays = Math.round((curr.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          u.dailyStreak.current++;
+        } else if (diffDays > 1) {
+          u.dailyStreak.current = 1;
+        }
+        // same day = no change
+      } else {
+        u.dailyStreak.current = 1;
+      }
+      u.dailyStreak.lastDate = today;
+      u.dailyStreak.best = Math.max(u.dailyStreak.best, u.dailyStreak.current);
+    }
+  }
+
   // Check for newly unlocked legacy perks
   for (const perk of LEGACY_PERKS) {
     if (perk.check(u) && !u.legacyPerks.includes(perk.id)) {
@@ -190,7 +276,7 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
   saveUnlocks(u);
 }
 
-export function getRunStats(): { wins: number; runs: number; bestScore: number; winRate: string; ngPlusUnlocked: boolean; directorUnlocked: boolean; legacyPerks: LegacyPerk[]; careerStats: UnlockState['careerStats'] } {
+export function getRunStats(): { wins: number; runs: number; bestScore: number; winRate: string; ngPlusUnlocked: boolean; directorUnlocked: boolean; legacyPerks: LegacyPerk[]; careerStats: UnlockState['careerStats']; dailyStreak: UnlockState['dailyStreak'] } {
   const u = getUnlocks();
   return {
     wins: u.totalWins,
@@ -201,5 +287,88 @@ export function getRunStats(): { wins: number; runs: number; bestScore: number; 
     directorUnlocked: u.directorModeUnlocked,
     legacyPerks: getActiveLegacyPerks(),
     careerStats: u.careerStats,
+    dailyStreak: u.dailyStreak,
   };
+}
+
+// Get all milestone progress for Career Stats display
+export interface MilestoneProgress {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  requirement: string;
+  progress: number; // 0-1
+  progressText: string;
+  unlocked: boolean;
+}
+
+export function getMilestoneProgress(): MilestoneProgress[] {
+  const u = getUnlocks();
+  const milestones: MilestoneProgress[] = [
+    {
+      id: 'indie_darling', name: 'Indie Darling', emoji: '🎬',
+      description: 'Start with +$2M budget', requirement: 'Make 10 films',
+      progress: Math.min(1, u.careerStats.totalFilms / 10),
+      progressText: `${u.careerStats.totalFilms}/10 films`,
+      unlocked: u.careerStats.totalFilms >= 10,
+    },
+    {
+      id: 'mogul', name: 'Mogul', emoji: '💰',
+      description: 'Start with +$3M budget', requirement: '$500M lifetime BO',
+      progress: Math.min(1, u.careerStats.totalBoxOffice / 500),
+      progressText: `$${u.careerStats.totalBoxOffice.toFixed(0)}M/$500M`,
+      unlocked: u.careerStats.totalBoxOffice >= 500,
+    },
+    {
+      id: 'perfectionist', name: 'Perfectionist', emoji: '⭐',
+      description: 'Start with Crisis Manager', requirement: 'Complete a perfect run',
+      progress: u.careerStats.perfectRuns >= 1 ? 1 : 0,
+      progressText: u.careerStats.perfectRuns >= 1 ? 'Unlocked!' : 'No perfect runs yet',
+      unlocked: u.careerStats.perfectRuns >= 1,
+    },
+    {
+      id: 'talent_whisperer', name: 'Talent Whisperer', emoji: '🎭',
+      description: 'Talent hiring costs $1 less', requirement: 'Win 5 runs',
+      progress: Math.min(1, u.totalWins / 5),
+      progressText: `${u.totalWins}/5 wins`,
+      unlocked: u.totalWins >= 5,
+    },
+    {
+      id: 'blockbuster_factory', name: 'Blockbuster Factory', emoji: '🏭',
+      description: 'Market multipliers +0.1', requirement: '5 Blockbusters',
+      progress: Math.min(1, u.careerStats.totalBlockbusters / 5),
+      progressText: `${u.careerStats.totalBlockbusters}/5 blockbusters`,
+      unlocked: u.careerStats.totalBlockbusters >= 5,
+    },
+    {
+      id: 'genre_savant', name: 'Genre Savant', emoji: '🌈',
+      description: 'Genre mastery starts at +1', requirement: 'Film in all 7 genres',
+      progress: Math.min(1, Object.keys(u.careerStats.genreFilms).length / 7),
+      progressText: `${Object.keys(u.careerStats.genreFilms).length}/7 genres`,
+      unlocked: Object.keys(u.careerStats.genreFilms).length >= 7,
+    },
+    {
+      id: 'daily_devotee', name: 'Daily Devotee', emoji: '📅',
+      description: 'Daily runs +$3M budget', requirement: '7-day streak',
+      progress: Math.min(1, u.dailyStreak.best / 7),
+      progressText: `Best: ${u.dailyStreak.best}/7 days`,
+      unlocked: u.dailyStreak.best >= 7,
+    },
+    {
+      id: 'comeback_kid', name: 'Comeback Kid', emoji: '🔄',
+      description: '+5 quality after a FLOP', requirement: '4 flops + 1 win',
+      progress: Math.min(1, (Math.min(u.careerStats.totalFlops, 4) + Math.min(u.totalWins, 1)) / 5),
+      progressText: `${u.careerStats.totalFlops} flops, ${u.totalWins} wins`,
+      unlocked: u.careerStats.totalFlops >= 4 && u.totalWins >= 1,
+    },
+    {
+      id: 'precision_master', name: 'Precision Master', emoji: '💎',
+      description: 'Clean Wrap +3', requirement: '2 wins with Precision focus',
+      progress: Math.min(1, (u.careerStats.tagFocusWins['precision'] || 0) / 2),
+      progressText: `${u.careerStats.tagFocusWins['precision'] || 0}/2 precision wins`,
+      unlocked: (u.careerStats.tagFocusWins['precision'] || 0) >= 2,
+    },
+  ];
+  return milestones;
 }

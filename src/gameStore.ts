@@ -364,6 +364,12 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   if (state.gameMode === 'newGamePlus') budget += 5;
   if (state.gameMode === 'directorMode') budget += 10;
   const legacyPerks = getActiveLegacyPerks();
+  // Legacy perk: Indie Darling — start with +$2M
+  if (legacyPerks.some(p => p.effect === 'startBudget2')) budget += 2;
+  // Legacy perk: Mogul — start with +$3M
+  if (legacyPerks.some(p => p.effect === 'startBudget3')) budget += 3;
+  // Legacy perk: Daily Devotee — daily runs get +$3M
+  if (state.gameMode === 'daily' && legacyPerks.some(p => p.effect === 'dailyBudget3')) budget += 3;
   // Challenge: Shoestring Budget
   if (state.challengeId === 'shoestring') budget = 8;
   const studio = generateStudioName();
@@ -391,7 +397,14 @@ export function pickNeow(choice: number) {
   if (legacyPerks.some(p => p.effect === 'startCrisisManager') && !perks.some(p => p.effect === 'crisisManager')) {
     perks.push({ id: 'legacy_crisis', name: 'Crisis Manager (Legacy)', cost: 0, description: 'Incident card quality penalties halved (Legacy Perk)', effect: 'crisisManager' });
   }
-  setState({ neowChoice: choice, roster, budget, perks, phase: 'greenlight' as GamePhase });
+  // Legacy perk: Genre Savant — start with +1 mastery in all genres
+  let genreMastery: Record<string, number> = {};
+  if (legacyPerks.some(p => p.effect === 'genreMasteryHead')) {
+    for (const g of ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller']) {
+      genreMastery[g] = 1;
+    }
+  }
+  setState({ neowChoice: choice, roster, budget, perks, genreMastery, phase: 'greenlight' as GamePhase });
   beginSeason();
 }
 

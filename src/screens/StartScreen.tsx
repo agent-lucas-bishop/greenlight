@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { startGame, pickArchetype } from '../gameStore';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
-import { getRunStats } from '../unlocks';
+import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
 import { isFirstRun, markRunStarted } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES } from '../challenges';
 import { getDailyDateString } from '../seededRng';
+import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
@@ -140,9 +141,10 @@ export default function StartScreen() {
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard'>('play');
+  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history'>('play');
   const stats = getRunStats();
   const leaderboard = getLeaderboard();
+  const milestones = getMilestoneProgress();
   const dailyDate = getDailyDateString();
   const dailyDone = hasDailyRun(dailyDate);
   const dailyBest = getDailyBest(dailyDate);
@@ -195,16 +197,16 @@ export default function StartScreen() {
 
       {/* Tab navigation */}
       {stats.runs > 0 && (
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8 }}>
-          {(['play', 'challenges', 'leaderboard'] as const).map(t => (
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
+          {(['play', 'career', 'history', 'challenges', 'leaderboard'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               background: tab === t ? 'rgba(212,168,67,0.15)' : 'transparent',
               border: `1px solid ${tab === t ? 'var(--gold-dim)' : '#333'}`,
-              borderRadius: 6, padding: '6px 16px', color: tab === t ? 'var(--gold)' : '#666',
-              cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.05em',
+              borderRadius: 6, padding: '6px 12px', color: tab === t ? 'var(--gold)' : '#666',
+              cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.8rem', letterSpacing: '0.05em',
               transition: 'all 0.2s',
             }}>
-              {t === 'play' ? '🎬 PLAY' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 HALL OF FAME'}
+              {t === 'play' ? '🎬 PLAY' : t === 'career' ? '📊 CAREER' : t === 'history' ? '📜 RUNS' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 HALL OF FAME'}
             </button>
           ))}
         </div>
@@ -224,6 +226,7 @@ export default function StartScreen() {
               onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
               📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
               {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
+              {stats.dailyStreak.current > 0 && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
             </button>
             {stats.ngPlusUnlocked && (
               <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
@@ -324,6 +327,186 @@ export default function StartScreen() {
                   <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem' }}>{entry.won ? '✓ Won' : '✗ Lost'}</span>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── CAREER STATS TAB ─── */}
+      {tab === 'career' && (
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+            {[
+              { label: 'Total Films', value: stats.careerStats.totalFilms.toString(), color: '#ccc' },
+              { label: 'Lifetime BO', value: `$${(stats.careerStats.totalBoxOffice || 0).toFixed(0)}M`, color: 'var(--gold)' },
+              { label: 'Blockbusters', value: stats.careerStats.totalBlockbusters.toString(), color: '#2ecc71' },
+              { label: 'Win Rate', value: stats.winRate, color: '#3498db' },
+              { label: 'Best Score', value: stats.bestScore.toString(), color: '#f39c12' },
+              { label: 'Perfect Runs', value: stats.careerStats.perfectRuns.toString(), color: '#e74c3c' },
+            ].map((s, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '12px 8px', textAlign: 'center' }}>
+                <div style={{ color: s.color, fontFamily: 'Bebas Neue', fontSize: '1.3rem' }}>{s.value}</div>
+                <div style={{ color: '#666', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Genre breakdown */}
+          {Object.keys(stats.careerStats.genreFilms).length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 8, letterSpacing: 1 }}>🎭 GENRES EXPLORED</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {Object.entries(stats.careerStats.genreFilms).sort((a, b) => b[1] - a[1]).map(([genre, count]) => (
+                  <span key={genre} style={{
+                    background: 'rgba(52,152,219,0.1)', border: '1px solid rgba(52,152,219,0.3)',
+                    borderRadius: 6, padding: '4px 10px', fontSize: '0.75rem', color: '#3498db',
+                  }}>{genre} ×{count}</span>
+                ))}
+              </div>
+              <div style={{ color: '#555', fontSize: '0.65rem', marginTop: 6 }}>
+                {Object.keys(stats.careerStats.genreFilms).length}/7 genres discovered
+              </div>
+            </div>
+          )}
+
+          {/* Rank distribution */}
+          {Object.keys(stats.careerStats.ranksAchieved || {}).length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 8, letterSpacing: 1 }}>🏅 RANK DISTRIBUTION</h3>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                {['S', 'A', 'B', 'C', 'D'].map(r => {
+                  const count = (stats.careerStats.ranksAchieved || {})[r] || 0;
+                  const colors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' };
+                  return (
+                    <div key={r} style={{ textAlign: 'center' }}>
+                      <div style={{ color: colors[r], fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{r}</div>
+                      <div style={{ color: '#666', fontSize: '0.7rem' }}>×{count}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Daily Streak */}
+          {stats.dailyStreak.best > 0 && (
+            <div style={{ marginBottom: 24, padding: 16, background: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.2)', borderRadius: 8, textAlign: 'center' }}>
+              <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1rem', marginBottom: 4 }}>📅 DAILY STREAK</div>
+              <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
+                <div>
+                  <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>🔥 {stats.dailyStreak.current}</div>
+                  <div style={{ color: '#888', fontSize: '0.65rem' }}>Current</div>
+                </div>
+                <div>
+                  <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>⭐ {stats.dailyStreak.best}</div>
+                  <div style={{ color: '#888', fontSize: '0.65rem' }}>Best</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Milestones */}
+          <div>
+            <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 12, letterSpacing: 1 }}>🔓 MILESTONES</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {milestones.map(m => (
+                <div key={m.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                  background: m.unlocked ? 'rgba(46,204,113,0.08)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${m.unlocked ? 'rgba(46,204,113,0.3)' : '#222'}`,
+                  borderRadius: 8, opacity: m.unlocked ? 1 : 0.7,
+                }}>
+                  <span style={{ fontSize: '1.3rem' }}>{m.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: m.unlocked ? '#2ecc71' : '#aaa', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {m.name} {m.unlocked && '✓'}
+                    </div>
+                    <div style={{ color: '#666', fontSize: '0.7rem' }}>{m.description}</div>
+                    <div style={{ color: '#555', fontSize: '0.65rem' }}>{m.progressText}</div>
+                  </div>
+                  {!m.unlocked && (
+                    <div style={{ width: 60, height: 6, background: '#222', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${m.progress * 100}%`, height: '100%', background: 'var(--gold)', borderRadius: 3, transition: 'width 0.3s' }} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── RUN HISTORY TAB ─── */}
+      {tab === 'history' && (
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          {leaderboard.length === 0 ? (
+            <p style={{ color: '#666', fontSize: '0.9rem' }}>No runs completed yet. Finish a run to see your history!</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {leaderboard.slice(0, 10).map((entry, i) => {
+                const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' };
+                const tierColors: Record<string, string> = { BLOCKBUSTER: '#2ecc71', SMASH: '#f1c40f', HIT: '#e67e22', FLOP: '#e74c3c' };
+                const bestFilm = entry.films.reduce((best, f) => {
+                  const tierRank = ['BLOCKBUSTER', 'SMASH', 'HIT', 'FLOP'];
+                  return tierRank.indexOf(f.tier) < tierRank.indexOf(best.tier) ? f : best;
+                }, entry.films[0]);
+                const archetypeEmoji = ARCHETYPE_DATA.find(a => a.id === entry.archetype)?.emoji || '🎬';
+                return (
+                  <div key={entry.id} style={{
+                    padding: '14px 16px', background: 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${entry.won ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'}`,
+                    borderRadius: 8,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: rankColors[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{entry.rank}</span>
+                        <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem', fontWeight: 600 }}>
+                          {entry.won ? '🏆 WON' : '💀 LOST'}
+                        </span>
+                        <span style={{ color: '#555', fontSize: '0.7rem' }}>{entry.date}</span>
+                      </div>
+                      <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{entry.score} pts</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                      <span style={{ fontSize: '0.7rem', color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                        {archetypeEmoji} {entry.archetype}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                        ${entry.earnings.toFixed(1)}M BO
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                        {'★'.repeat(entry.reputation)}{'☆'.repeat(5 - entry.reputation)} rep
+                      </span>
+                      {entry.mode !== 'normal' && (
+                        <span style={{ fontSize: '0.7rem', color: '#f39c12', background: 'rgba(243,156,18,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                          {entry.mode === 'newGamePlus' ? '⭐ NG+' : entry.mode === 'directorMode' ? '🔥 Dir' : entry.mode === 'daily' ? '📅 Daily' : entry.mode === 'challenge' ? '⚡ Ch' : ''}
+                        </span>
+                      )}
+                      {entry.challenge && (
+                        <span style={{ fontSize: '0.7rem', color: '#e67e22', background: 'rgba(230,126,34,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                          {CHALLENGE_MODES.find(c => c.id === entry.challenge)?.emoji} {CHALLENGE_MODES.find(c => c.id === entry.challenge)?.name}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {entry.films.map((f, j) => (
+                        <span key={j} style={{
+                          fontSize: '0.65rem', padding: '2px 6px', borderRadius: 3,
+                          background: `${tierColors[f.tier]}15`, color: tierColors[f.tier],
+                          border: `1px solid ${tierColors[f.tier]}30`,
+                        }}>
+                          {f.title} ({f.genre})
+                        </span>
+                      ))}
+                    </div>
+                    {bestFilm && (
+                      <div style={{ color: '#555', fontSize: '0.6rem', marginTop: 4 }}>
+                        Best: "{bestFilm.title}" ({bestFilm.tier})
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

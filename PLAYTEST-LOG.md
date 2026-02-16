@@ -1,3 +1,54 @@
+# GREENLIGHT Playtest Log — Round 27
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** NEW GAME+ & REPLAYABILITY — Meta-progression, career stats, daily streaks, run history
+
+## What Was Added
+
+### 📊 Career Stats Panel (new tab on title screen)
+- **Lifetime stats:** Total films, lifetime box office, blockbusters, win rate, best score, perfect runs
+- **Genre breakdown:** Shows all genres explored with counts, progress toward 7/7
+- **Rank distribution:** Visual breakdown of S/A/B/C/D ranks across all runs
+- **Daily streak tracker:** Current streak + best streak with 🔥 indicator
+- **Milestone progress:** 9 milestones with progress bars showing how close you are to unlocking each
+
+### 🔓 New Milestone Unlocks (4 new legacy perks)
+- **Indie Darling** 🎬 — Make 10 films → Start with +$2M budget
+- **Mogul** 💰 — Earn $500M lifetime BO → Start with +$3M budget
+- **Genre Savant** 🌈 — Film in all 7 genres → Genre mastery starts at +1 for all genres
+- **Daily Devotee** 📅 — 7-day daily streak → Daily runs get +$3M starting budget
+
+### 📅 Daily Challenge Streak
+- Tracks consecutive days of daily challenge play
+- Shows 🔥 streak counter on Daily Run button
+- Best streak displayed in Career Stats panel
+- Streak-based legacy perk reward
+
+### 📜 Run History (new tab on title screen)
+- Last 10 completed runs with full details
+- Shows: rank, score, archetype, earnings, reputation, game mode, challenge
+- Filmography per run with color-coded tiers
+- Best film highlighted per run
+
+### 🔧 Enhanced Tracking
+- `recordRunEnd()` now tracks: total lifetime BO, rank distribution, archetypes used, challenges completed, daily streak
+- All localStorage usage handles missing/corrupt data gracefully with defaults
+
+## Build Status
+- `npx tsc --noEmit` — ✅ clean (0 errors)
+- `npm run build` — ✅ clean (435KB JS, 36KB CSS)
+- Deployed via git push to Vercel
+
+## Stats
+- Round: 27
+- Files changed: 4 (unlocks.ts, gameStore.ts, StartScreen.tsx, EndScreen.tsx)
+- New features: 4 (career stats, milestones, daily streak, run history)
+- New legacy perks: 4 (Indie Darling, Mogul, Genre Savant, Daily Devotee)
+- Bug/regression: None
+
+---
+
 # GREENLIGHT Playtest Log — Round 26
 
 **Date:** 2026-02-16  

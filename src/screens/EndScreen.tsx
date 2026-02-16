@@ -237,7 +237,13 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         }
       }
       const seasonData = history.map(s => ({ genre: s.genre, tier: s.tier, quality: s.quality, hitTarget: s.hitTarget }));
-      recordRunEnd(isVictory, score, achievements.map(a => a.name), state.gameMode, seasonData, dominantTag);
+      recordRunEnd(isVictory, score, achievements.map(a => a.name), state.gameMode, seasonData, dominantTag, {
+        totalEarnings: state.totalEarnings,
+        rank,
+        archetype: state.studioArchetype || undefined,
+        challengeId: state.challengeId,
+        dailySeed: state.dailySeed,
+      });
       const afterPerks = getActiveLegacyPerks();
       const newlyUnlocked = afterPerks.filter(p => !beforePerks.includes(p.id));
       if (newlyUnlocked.length > 0) setNewPerks(newlyUnlocked);

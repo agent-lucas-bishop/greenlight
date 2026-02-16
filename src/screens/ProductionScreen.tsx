@@ -5,6 +5,7 @@ import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { CardTypeBadge } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
+import StatTooltip from '../components/StatTooltip';
 
 // Auto-advance component: shows a button with a filling progress bar, auto-clicks after delay
 function AutoAdvance({ onAdvance, delayMs, label }: { onAdvance: () => void; delayMs: number; label: string }) {
@@ -390,7 +391,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           fontSize: '0.8rem',
           color: '#888',
         }}>
-          📦 {deckSize} cards remaining in deck
+          📦 {deckSize} cards remaining in deck <StatTooltip tip="When the deck runs out, production wraps automatically. Plan your draws!" />
           {prod.incidentCount >= 2 && (
             <span style={{ color: '#e74c3c', fontWeight: 600, marginLeft: 8 }}>⚠️ Disaster risk!</span>
           )}
@@ -409,7 +410,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
               </div>
             ))}
             <span className="bad-label">
-              {nearDisaster && prod.incidentCount < disasterThreshold ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 && !nearDisaster ? '⚠️ Careful — incidents are piling up...' : prod.cleanWrap && prod.drawCount > 0 ? <span className="clean-wrap-badge">✨ Clean Wrap active (+{state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!)</span> : 'No Incidents yet'}
+              {nearDisaster && prod.incidentCount < disasterThreshold ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 && !nearDisaster ? '⚠️ Careful — incidents are piling up...' : prod.cleanWrap && prod.drawCount > 0 ? <span className="clean-wrap-badge">✨ Clean Wrap active (+{state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!) <StatTooltip tip="Finish production with zero incidents to keep the Clean Wrap bonus. Any incident breaks it." /></span> : 'No Incidents yet'}
             </span>
           </div>
         );

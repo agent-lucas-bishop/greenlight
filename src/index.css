@@ -1246,6 +1246,72 @@ h1, h2, h3, h4 {
 }
 .phase-tip-dismiss:hover { color: #888; }
 
+/* Strategy nudge (sub-line in phase tip) */
+.phase-tip-nudge {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: #888;
+  font-style: italic;
+}
+
+/* ===== STAT TOOLTIPS ===== */
+
+.stat-tooltip-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.stat-tooltip-inline {
+  display: inline;
+}
+.stat-tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  font-size: 0.55rem;
+  color: #888;
+  font-weight: 700;
+  cursor: help;
+  flex-shrink: 0;
+  vertical-align: middle;
+  transition: background 0.15s, color 0.15s;
+}
+.stat-tooltip-icon:hover {
+  background: rgba(212,168,67,0.2);
+  color: var(--gold);
+  border-color: rgba(212,168,67,0.4);
+}
+.stat-tooltip-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  border: 1px solid rgba(212,168,67,0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: #ccc;
+  line-height: 1.4;
+  white-space: normal;
+  width: max-content;
+  max-width: 260px;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease;
+}
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 @keyframes tipPulse {
   0% { border-color: rgba(52,152,219,0.4); box-shadow: 0 0 12px rgba(52,152,219,0.15); }
   100% { border-color: rgba(52,152,219,0.2); box-shadow: none; }

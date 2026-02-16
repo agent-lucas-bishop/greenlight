@@ -3,6 +3,7 @@ import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getChallengeById } from '../challenges';
 import { isMuted, toggleMute, sfx } from '../sound';
+import StatTooltip from './StatTooltip';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
@@ -71,7 +72,7 @@ export default function Header({ state }: { state: GameState }) {
           </div>
         )}
         <div className="header-stat">
-          <span className="label">Reputation</span>
+          <span className="label">Reputation <StatTooltip tip="Stars multiply your box office earnings. Gain stars from big hits, lose them from flops and debt." /></span>
           <span className="value">
             {Array.from({ length: 5 }, (_, i) => (
               <span key={i} className={`rep-star ${i < state.reputation ? 'filled' : 'empty'}`}>★</span>
@@ -79,11 +80,11 @@ export default function Header({ state }: { state: GameState }) {
           </span>
         </div>
         <div className="header-stat">
-          <span className="label">Target</span>
+          <span className="label">Target <StatTooltip tip="Earn at least this much at the box office to avoid a strike. Increases each season." /></span>
           <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId)}M</span>
         </div>
         <div className="header-stat">
-          <span className="label">Strikes</span>
+          <span className="label">Strikes <StatTooltip tip="Miss the box office target and you get a strike. 3 strikes = game over!" /></span>
           <span className="value" style={{ color: state.strikes > 0 ? '#e74c3c' : undefined }}>
             {state.strikes}/{state.maxStrikes}
           </span>

@@ -22,6 +22,7 @@ export default function PhaseTip({ phase }: { phase: string }) {
         <span className="phase-tip-icon">{tip.icon}</span>
         <div>
           <strong>{tip.title}:</strong> {tip.text}
+          {tip.nudge && <span className="phase-tip-nudge">💡 {tip.nudge}</span>}
         </div>
         <button className="phase-tip-dismiss" onClick={() => setVisible(false)}>✕</button>
       </div>

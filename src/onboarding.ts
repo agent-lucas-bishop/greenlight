@@ -97,36 +97,42 @@ export function getRunCount(): number {
 }
 
 // Phase-specific contextual tips shown on first visit
-export const PHASE_TIPS: Record<string, { icon: string; title: string; text: string }> = {
+export const PHASE_TIPS: Record<string, { icon: string; title: string; text: string; nudge?: string }> = {
   neow: {
     icon: '🎁',
     title: 'Starting Bonus',
     text: 'Each option shapes your early game differently. The cash is safe, the star is powerful but risky, and the perk protects against bad luck.',
+    nudge: 'Tip: Extra cash gives flexibility, but a free perk can pay off all game long.',
   },
   greenlight: {
     icon: '📝',
     title: 'Pick Your Script',
-    text: 'Match the genre to market conditions (shown above) for a big box office multiplier. Check the slot types — they determine who you can cast.',
+    text: 'This determines your film\'s genre, base score, and cast slots. Match the genre to 🔥 Hot trends and 📈 market conditions for a big box office multiplier.',
+    nudge: 'Tip: A "Hot" genre with a market match can double your earnings — that combo is hard to beat.',
   },
   casting: {
     icon: '🎭',
-    title: 'Build Your Deck',
-    text: 'Each talent adds their cards to production. High Skill = great cards. High Heat = powerful BUT adds Incident cards. Look for 💕 chemistry pairs and 🔥🎯💀💕✨ tag synergies!',
+    title: 'Cast Your Crew',
+    text: 'Each talent adds their cards to your production deck. High Skill = great cards. High Heat = powerful BUT adds Incident cards. Look for 💕 chemistry pairs!',
+    nudge: 'Tip: Check the deck preview at the bottom — if incidents outnumber actions, you\'re in danger territory.',
   },
   production: {
     icon: '🎬',
     title: 'Lights, Camera, Action!',
-    text: 'Each draw reveals 2 cards. Incidents auto-play (bad!). You pick 1 of the remaining Action cards. 3 incidents = DISASTER. Wrap early to play safe, or push for more quality. Use Director\'s Cut to peek ahead!',
+    text: 'Draw 2 cards, keep 1. Incidents auto-play — 3 incidents = DISASTER (lose ALL quality). Wrap early to play safe, or push for more.',
+    nudge: 'Tip: At 2 incidents, seriously consider wrapping. One more and you lose everything.',
   },
   release: {
-    icon: '🎬',
-    title: 'Box Office',
-    text: 'Your quality × market conditions determines earnings. Hit the target to avoid a strike. 3 strikes = game over!',
+    icon: '📊',
+    title: 'Box Office Results',
+    text: 'Your quality × market conditions × reputation determines earnings. Hit the target to avoid a strike. 3 strikes = game over!',
+    nudge: 'Tip: Reputation stars multiply everything — protecting your rep is as important as raw quality.',
   },
   shop: {
     icon: '🏠',
-    title: 'Prepare for Next Season',
-    text: 'Buy studio perks for permanent bonuses. Hire new talent to expand your roster. Train existing talent to remove bad cards or boost good ones.',
+    title: 'Between Seasons',
+    text: 'Buy studio perks for permanent bonuses. Hire new talent. Train existing talent to remove bad cards or improve good ones.',
+    nudge: 'Tip: Training away incident cards from high-heat talent can be more valuable than buying a new perk.',
   },
 };
 

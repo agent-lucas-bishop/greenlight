@@ -4,6 +4,7 @@ import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction, 
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
+import StatTooltip from '../components/StatTooltip';
 import { sfx } from '../sound';
 
 function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onClick?: () => void; compact?: boolean; dimmed?: boolean; highlight?: boolean }) {
@@ -150,9 +151,9 @@ export default function CastingScreen({ state }: { state: GameState }) {
 
       {/* Compact deck stats */}
       <div className="casting-stats">
-        <span>Skill: <strong style={{ color: 'var(--green-bright)' }}>{totalSkill}</strong></span>
-        <span>Heat: <strong style={{ color: totalHeat > 5 ? 'var(--red-bright)' : 'var(--gold)' }}>{totalHeat}</strong></span>
-        <span>Deck: <strong>{totalDeckCards}</strong> ({actionCards}A/{challengeCards}C/{incidentCards}I)</span>
+        <span>Skill <StatTooltip tip="Total skill of your cast. Higher skill means better action cards in production." />: <strong style={{ color: 'var(--green-bright)' }}>{totalSkill}</strong></span>
+        <span>Heat <StatTooltip tip="Combined heat level. Heat 4+ talent add extra incident cards to your deck — risky but they're often powerful." />: <strong style={{ color: totalHeat > 5 ? 'var(--red-bright)' : 'var(--gold)' }}>{totalHeat}</strong></span>
+        <span>Deck <StatTooltip tip="A = Action (you choose), C = Challenge (gamble), I = Incident (auto-play, bad). Keep incidents low!" />: <strong>{totalDeckCards}</strong> ({actionCards}A/{challengeCards}C/{incidentCards}I)</span>
         <span style={{ color: incidentCards >= 3 ? '#e74c3c' : actionCards > incidentCards * 2 ? '#2ecc71' : '#f39c12', fontSize: '0.8rem' }}>
           {incidentCards >= 3 ? '⚠️ High Risk' : actionCards > incidentCards * 2 ? '✨ Strong' : '⚡ Balanced'}
         </span>

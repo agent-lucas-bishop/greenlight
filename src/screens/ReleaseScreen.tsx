@@ -70,7 +70,7 @@ interface Props {
 }
 
 export default function ReleaseScreen({ state, rivalFilms }: Props) {
-  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId);
   const tier = state.lastTier || 'FLOP';
   const config = TIER_CONFIG[tier];
   const lastResult = state.seasonHistory[state.seasonHistory.length - 1];

@@ -82,7 +82,7 @@ export default function Header({ state }: { state: GameState }) {
         </div>
         <div className="header-stat">
           <span className="label">Target <StatTooltip tip="Earn at least this much at the box office to avoid a strike. Increases each season." /></span>
-          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId)}M</span>
+          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId)}M</span>
         </div>
         <div className="header-stat">
           <span className="label">Strikes <StatTooltip tip="Miss the box office target and you get a strike. 3 strikes = game over!" /></span>

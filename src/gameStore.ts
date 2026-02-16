@@ -1249,9 +1249,7 @@ export function resolveRelease() {
   }
 
   const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
-  let target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
-  // Daily modifier: Award Season — quality targets +5
-  if (state.dailyModifierId === 'award_season') target += 5;
+  let target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId);
   const tier = getTier(boxOffice, target);
 
   let repChange = 0;

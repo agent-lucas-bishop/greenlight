@@ -4,12 +4,11 @@ import { startGame, pickArchetype, resumeGame } from '../gameStore';
 import { hasSaveGame, getSaveInfo } from '../savegame';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
-import { getRunStats, getMilestoneProgress, LEGACY_PERKS, getEndingsDiscovered, ENDINGS } from '../unlocks';
+import { getRunStats, getMilestoneProgress, getEndingsDiscovered, ENDINGS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES } from '../challenges';
 import { getDailyDateString } from '../seededRng';
-import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { getTodayModifier, getModifierForDate } from '../dailyModifiers';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
@@ -268,7 +267,7 @@ export default function StartScreen() {
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', maxWidth: 400 }}>
                   <button className="btn btn-small" style={{ color: '#3498db', borderColor: '#3498db', opacity: dailyDone ? 0.5 : 1, width: '100%' }}
-                    onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
+                    onClick={() => { if (!dailyDone) { markRunStarted(); setSelectedMode('daily'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
                     📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
                     {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
                     {stats.dailyStreak.current > 0 && <span className="streak-bounce streak-pulse" style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
@@ -317,12 +316,12 @@ export default function StartScreen() {
               );
             })()}
             {stats.ngPlusUnlocked && (
-              <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
+              <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { markRunStarted(); setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>
               </button>
             )}
             {stats.directorUnlocked && (
-              <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
+              <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { markRunStarted(); setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 🔥 DIRECTOR MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.8 targets)</span>
               </button>
             )}
@@ -566,7 +565,7 @@ export default function StartScreen() {
                   const tierRank = ['BLOCKBUSTER', 'SMASH', 'HIT', 'FLOP'];
                   return tierRank.indexOf(f.tier) < tierRank.indexOf(best.tier) ? f : best;
                 }, entry.films[0]);
-                const archetypeEmoji = ARCHETYPE_DATA.find(a => a.id === entry.archetype)?.emoji || '🎬';
+                const archetypeEmoji = STUDIO_ARCHETYPES.find(a => a.id === entry.archetype)?.emoji || '🎬';
                 return (
                   <div key={entry.id} style={{
                     padding: '14px 16px', background: 'rgba(255,255,255,0.02)',

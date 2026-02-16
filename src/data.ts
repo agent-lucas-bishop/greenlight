@@ -3612,7 +3612,7 @@ export function generatePerkMarket(count: number, owned: string[]): StudioPerk[]
   return result;
 }
 
-export function getSeasonTarget(season: number, gameMode: string = 'normal', challengeId?: string): number {
+export function getSeasonTarget(season: number, gameMode: string = 'normal', challengeId?: string, dailyModifierId?: string): number {
   let adjustedSeason = season;
   // Speed Run: use seasons 3/4/5 difficulty for seasons 1/2/3
   if (challengeId === 'speed_run') adjustedSeason = season + 2;
@@ -3622,6 +3622,8 @@ export function getSeasonTarget(season: number, gameMode: string = 'normal', cha
   else if (gameMode === 'directorMode') target = Math.round(base * 1.8);
   // Critics' Choice: targets ×1.5
   if (challengeId === 'critics_choice') target = Math.round(target * 1.5);
+  // Daily modifier: Award Season — quality targets +5
+  if (dailyModifierId === 'award_season') target += 5;
   return target;
 }
 

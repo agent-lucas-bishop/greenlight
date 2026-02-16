@@ -276,7 +276,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
 
       {/* Movie quality meter — shows progress toward target */}
       {(() => {
-        const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
+        const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId);
         // Estimate needed quality based on available market multipliers and rep
         const repBonus = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5][state.reputation] || 1.0;
         const bestMarketMult = Math.max(...state.marketConditions.map(m => m.multiplier), 1.0);

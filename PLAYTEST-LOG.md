@@ -51,3 +51,28 @@ Save/load round-trips correctly handle function serialization/rebuilding for all
 ### Build Status
 - `tsc --noEmit`: ✅ Clean
 - `npm run build`: ✅ Clean (428ms, 14 chunks)
+
+---
+
+## Round 50 — Analytics, Polish & Launch Readiness (2026-02-16)
+
+### Changes
+1. **Lightweight Analytics** — Added anonymous event tracking via `navigator.sendBeacon` → `/api/events` Vercel serverless endpoint. Tracks game starts (mode + archetype), game completions (win/loss + seasons), season outcomes (tier, genre, quality, box office), and tutorial skips. No cookies, no PII, no external services. Events logged to Vercel function logs for now.
+
+2. **Error Boundary** — Added top-level React Error Boundary that catches crashes and shows a themed "Something went wrong — tap to restart" screen. Clears mid-run save to prevent crash loops. Career stats and unlocks are preserved.
+
+3. **Visual Polish** — Fixed header right padding (110px → 56px) that wasted space on all screens. Added text-overflow ellipsis protection for card titles on mobile. Added word-break for card body text on narrow screens.
+
+4. **README.md** — Updated deployment URL to greenlight.codyp.xyz. Added screenshot placeholder, analytics section, and proper credits with tech stack attribution.
+
+### Build
+- `tsc --noEmit`: ✅ Clean
+- `npm run build`: ✅ Clean (453ms, 14 chunks)
+
+### Milestone: Round 50
+50 rounds of iteration from concept to a fully featured roguelite with:
+- Complete game loop with 4 studio archetypes, 41 unique talent, 22 chemistry pairs
+- Draw-2-keep-1 card system with synergies, tags, combos, and push-your-luck mechanics
+- Meta-progression: 9 legacy perks, daily challenges with streaks, 6 challenge modes, NG+/Director Mode
+- Full responsive mobile support, procedural audio, onboarding tutorial
+- Anonymous analytics pipeline ready for data-driven balancing

@@ -1,3 +1,18 @@
+# GREENLIGHT Playtest Log — Round 39
+
+## R39: Visual Juice Pass (2026-02-16)
+- **Card hover 3D tilt**: Cards now subtly rotate in 3D on hover (CSS perspective transform)
+- **SMASH confetti**: Pure CSS confetti burst on both SMASH and BLOCKBUSTER tier results (40 particles, gold colors)
+- **Box office dramatic reveal**: Count-up now uses quartic ease-out + pulsing glow while counting, slam effect on final number
+- **Streak fire bounce**: Daily streak 🔥 emoji bounces on appear + continuous pulse glow
+- **Shimmer skeleton loading**: Lazy-loaded screens show gold-shimmer skeleton placeholders instead of "Loading..."
+- **Staggered card entrances**: Greenlight script cards animate in with staggered delays
+- **Phase transitions**: Already existed from prior rounds, kept intact
+- All animations respect `prefers-reduced-motion` media query (R34)
+- Zero new dependencies — pure CSS animations only
+
+---
+
 # GREENLIGHT Playtest Log — Round 35
 
 **Date:** 2026-02-16  

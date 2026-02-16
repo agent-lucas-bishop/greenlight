@@ -403,3 +403,40 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 - Functions in state (synergyCondition, challengeBet) → stripped on save, rebuilt from template pools on load
 
 **Result:** Players can now close/refresh the browser mid-run and resume exactly where they left off. Build size unchanged (236KB).
+
+---
+
+## Round 40 — Integration Test & Bug Fixes
+
+**Date:** 2026-02-16  
+**Type:** Full codebase audit & bug sweep  
+
+### Bugs Found & Fixed
+
+1. **Save persists at gameOver/victory (critical)** — After `clearSave()` in `proceedFromRecap`, the `setState` auto-save was re-saving the gameOver/victory state. Players would see a "Continue" button leading to an end screen. Fixed by skipping save for `gameOver` and `victory` phases.
+
+2. **Clean Wrap bonus display wrong for Prestige** — ProductionScreen showed "+8" for Prestige archetype but R33 reduced it to +7. Updated display to match actual calculation.
+
+3. **Block cost display outdated** — UI said "Costs 2 quality" but R33 increased block cost to 3. Updated text.
+
+4. **Encore penalty display outdated** — UI said "-5 extra penalty" but R33 reduced encore failure penalty to -3. Updated text.
+
+5. **Quality meter rep multiplier wrong at rep 0** — ProductionScreen used `[0, 0.5, ...]` but actual game logic uses `[0.25, 0.5, ...]` (R33 change). Quality estimates were too pessimistic at low rep. Fixed.
+
+6. **Debt threshold display wrong** — Both CastingScreen and ShopScreen said "≥$15M = reputation penalty" but R33 lowered threshold to $10M and added -2 at $20M. Updated all debt warnings.
+
+7. **Savage Lands ability description outdated** — Said "Each Incident adds +$1M budget" but that mechanic was removed. Updated description.
+
+### Verification
+
+- Full game flow traced: Start → Archetype → Neow → Season 1 (Greenlight → Casting → Production → Release → Shop) → Season 2+ → End
+- TypeScript strict check: 0 errors
+- Production build: 0 errors, 236KB main bundle
+- All imports verified (no dead imports found)
+- Save/resume: verified auto-save skips terminal phases
+- Debt compounding: `debt * 1.2` confirmed correct (20% per season)
+- Confetti: only fires on SMASH and BLOCKBUSTER (verified in ReleaseScreen)
+- Rival scaling: season boost = (season-1)*4, multiplier range widens with season (R33 correct)
+- Genre trends: display matches calculation (+0.25/-0.2 multiplier)
+- Career stats: `recordRunEnd` correctly tracks all stats including daily streak
+- Milestones: all conditions achievable (verified against LEGACY_PERKS checks)

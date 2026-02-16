@@ -1,3 +1,52 @@
+# GREENLIGHT Playtest Log — Round 28
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** TUTORIAL & ONBOARDING — First-run simplification, contextual tips, How to Play panel
+
+## What Was Added
+
+### 🎓 First-Run Tutorial System (already existed, enhanced)
+- **Auto-show "How to Play"** on first-ever visit to title screen (with welcome header variant)
+- **Contextual PhaseTip overlays** at each game phase (greenlight, casting, production, release, shop) — dismissible with one tap
+- Tips show for first 3 runs, then stop
+- `onboarding.ts` tracks `firstRunComplete`, `shownUnlockToast`, per-phase visits
+
+### 🧸 Simplified First Run
+- **No debt system** on first-ever run — overspending just goes negative, no interest/penalties
+- **No genre trends** (hot/cold) on first-ever run — removes cognitive load
+- **Debt warnings hidden** in Greenlight screen during simplified mode
+- After completing first run (reaching EndScreen), `markFirstRunComplete()` flips the flag
+
+### 🔓 "New Systems Unlocked!" Toast
+- On second run, a green toast banner appears at top of title screen: "🔓 New Systems Unlocked! Genre trends & debt are now active."
+- Auto-dismisses after 5 seconds, or tap to dismiss
+- Only shows once (tracked via `shownUnlockToast` flag)
+
+### 📖 "How to Play" Panel (already existed from prior rounds)
+- Quick reference accessible from title screen via "HOW TO PLAY" button
+- Covers: game flow (5 numbered steps), card types, casting = deckbuilding, key mechanics, losing conditions, pro tips
+- TL;DR box at top for scanners
+- First-time variant has welcome header + "LET'S MAKE MOVIES!" CTA
+
+## Build Status
+- `npx tsc --noEmit` — ✅ clean (0 errors)
+- `npm run build` — ✅ clean (436KB JS, 36KB CSS)
+- Deployed via git push to Vercel
+
+## Stats
+- Round: 28
+- Files changed: 5 (onboarding.ts, gameStore.ts, StartScreen.tsx, GreenlightScreen.tsx, EndScreen.tsx)
+- New features: 3 (simplified first run, unlock toast, first-run-complete tracking)
+- Bug/regression: None
+
+## Design Notes
+- Much of the tutorial infrastructure (PhaseTip, HowToPlay modal, onboarding.ts) was already built in prior rounds
+- This round focused on the *missing piece*: reducing cognitive load for absolute first-timers by hiding debt & trends
+- The "progressive disclosure" approach means systems unlock after the player has context for them
+
+---
+
 # GREENLIGHT Playtest Log — Round 27
 
 **Date:** 2026-02-16  

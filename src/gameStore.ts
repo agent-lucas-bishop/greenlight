@@ -10,6 +10,7 @@ import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } f
 import { getChallengeById } from './challenges';
 import { generateRivalSeason, getSeasonIdentity } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
+import { isSimplifiedRun } from './onboarding';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -448,8 +449,9 @@ function beginSeason() {
   const scriptGenres = scripts.map(s => s.genre);
   const markets = generateMarketConditions(3, scriptGenres);
   
-  // Generate genre trends for this season
-  const trends = generateGenreTrends();
+  // Generate genre trends for this season (hidden on first-ever run to reduce cognitive load)
+  const simplified = isSimplifiedRun();
+  const trends = simplified ? { hot: [] as Genre[], cold: [] as Genre[] } : generateGenreTrends();
   
   setState({ scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold });
 }
@@ -464,10 +466,10 @@ export function pickScript(script: Script) {
   if (state.challengeId === 'chaos_reigns') {
     market = market.map(t => ({ ...t, heat: t.heat + 2 }));
   }
-  // Allow overspending — excess goes to debt
+  // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - script.cost;
   let newDebt = state.debt;
-  if (newBudget < 0) {
+  if (newBudget < 0 && !isSimplifiedRun()) {
     newDebt += Math.abs(newBudget);
     newBudget = 0;
   }
@@ -509,10 +511,10 @@ export function hireTalent(talent: Talent) {
   const discount = legacyPerks.some(p => p.effect === 'cheaperTalent') ? 1 : 0;
   const actualCost = Math.max(1, talent.cost - discount);
   if (state.roster.length >= 8) return;
-  // Allow overspending — excess goes to debt
+  // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - actualCost;
   let newDebt = state.debt;
-  if (newBudget < 0) {
+  if (newBudget < 0 && !isSimplifiedRun()) {
     newDebt += Math.abs(newBudget);
     newBudget = 0;
   }

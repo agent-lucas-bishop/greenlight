@@ -4,17 +4,25 @@ const STORAGE_KEY = 'greenlight_onboarding';
 
 interface OnboardingState {
   hasPlayedBefore: boolean;
+  firstRunComplete: boolean; // true after completing first full run
   phasesVisited: Record<string, boolean>;
   tipsDissmissed: Record<string, boolean>;
   runCount: number;
+  shownUnlockToast: boolean; // true after showing "new systems" toast
 }
 
 function getOnboarding(): OnboardingState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Migrate old state
+      if (parsed.firstRunComplete === undefined) parsed.firstRunComplete = parsed.runCount > 1;
+      if (parsed.shownUnlockToast === undefined) parsed.shownUnlockToast = false;
+      return parsed;
+    }
   } catch {}
-  return { hasPlayedBefore: false, phasesVisited: {}, tipsDissmissed: {}, runCount: 0 };
+  return { hasPlayedBefore: false, firstRunComplete: false, phasesVisited: {}, tipsDissmissed: {}, runCount: 0, shownUnlockToast: false };
 }
 
 function saveOnboarding(s: OnboardingState) {
@@ -23,6 +31,34 @@ function saveOnboarding(s: OnboardingState) {
 
 export function isFirstRun(): boolean {
   return !getOnboarding().hasPlayedBefore;
+}
+
+/** True if this is the player's first-ever run (simplified mode: no debt, no trends) */
+export function isSimplifiedRun(): boolean {
+  const s = getOnboarding();
+  return !s.firstRunComplete;
+}
+
+/** Mark that the player has completed their first full run */
+export function markFirstRunComplete() {
+  const s = getOnboarding();
+  if (!s.firstRunComplete) {
+    s.firstRunComplete = true;
+    saveOnboarding(s);
+  }
+}
+
+/** Should we show the "New systems unlocked!" toast? */
+export function shouldShowUnlockToast(): boolean {
+  const s = getOnboarding();
+  return s.firstRunComplete && !s.shownUnlockToast;
+}
+
+/** Mark the unlock toast as shown */
+export function markUnlockToastShown() {
+  const s = getOnboarding();
+  s.shownUnlockToast = true;
+  saveOnboarding(s);
 }
 
 export function markRunStarted() {

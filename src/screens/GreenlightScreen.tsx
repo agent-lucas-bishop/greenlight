@@ -4,10 +4,12 @@ import { pickScript } from '../gameStore';
 import { getSeasonTarget } from '../data';
 import { getSeasonIdentity } from '../rivals';
 import PhaseTip from '../components/PhaseTip';
+import { isSimplifiedRun } from '../onboarding';
 
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
+  const simplified = isSimplifiedRun();
 
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (picked) return;
@@ -94,7 +96,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
                   </div>
                 )}
               </div>
-              {!canAfford && (
+              {!canAfford && !simplified && (
                 <div style={{ marginTop: 8, color: '#e67e22', fontSize: '0.75rem' }}>
                   ⚠️ Goes into debt (+${(script.cost - state.budget).toFixed(0)}M) — 20% interest/season
                 </div>

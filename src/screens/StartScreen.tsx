@@ -3,7 +3,7 @@ import { startGame, pickArchetype } from '../gameStore';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
 import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
-import { isFirstRun, markRunStarted } from '../onboarding';
+import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES } from '../challenges';
 import { getDailyDateString } from '../seededRng';
@@ -139,6 +139,7 @@ export default function StartScreen() {
   const firstRun = isFirstRun();
   const [showHelp, setShowHelp] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
+  const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history'>('play');
@@ -152,6 +153,12 @@ export default function StartScreen() {
   useEffect(() => {
     if (firstRun) {
       const t = setTimeout(() => setShowHelp(true), 600);
+      return () => clearTimeout(t);
+    }
+    if (shouldShowUnlockToast()) {
+      markUnlockToastShown();
+      setShowUnlockToast(true);
+      const t = setTimeout(() => setShowUnlockToast(false), 5000);
       return () => clearTimeout(t);
     }
   }, [firstRun]);
@@ -512,6 +519,16 @@ export default function StartScreen() {
         </div>
       )}
 
+      {showUnlockToast && (
+        <div className="animate-slide-down" style={{
+          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+          background: 'rgba(46,204,113,0.15)', border: '1px solid #2ecc71', borderRadius: 10,
+          padding: '12px 24px', color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1rem',
+          letterSpacing: '0.05em', cursor: 'pointer', backdropFilter: 'blur(8px)',
+        }} onClick={() => setShowUnlockToast(false)}>
+          🔓 New Systems Unlocked! Genre trends & debt are now active.
+        </div>
+      )}
       {showHelp && <HowToPlay onClose={() => { setShowHelp(false); if (firstRun) markRunStarted(); }} isFirstTime={firstRun} />}
     </div>
   );

@@ -5,6 +5,7 @@ import { recordRunEnd, getActiveLegacyPerks } from '../unlocks';
 import { sfx } from '../sound';
 import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
+import { markFirstRunComplete } from '../onboarding';
 
 // ─── Helpers ───
 
@@ -261,6 +262,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         won: isVictory,
         dailySeed: state.dailySeed,
       });
+      markFirstRunComplete();
       setRecorded(true);
     }
     return () => timers.forEach(clearTimeout);

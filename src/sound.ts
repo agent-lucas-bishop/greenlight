@@ -102,7 +102,7 @@ export const sfx = {
       o.frequency.exponentialRampToValueAtTime(100, c.currentTime + 0.2);
       g.gain.setValueAtTime(0.08, c.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.2);
-      o.connect(g).connect(c.destination);
+      o.connect(g).connect(getMaster());
       o.start(); o.stop(c.currentTime + 0.25);
     });
   },
@@ -203,7 +203,7 @@ export const sfx = {
       o.frequency.linearRampToValueAtTime(800, c.currentTime + 0.4);
       g.gain.setValueAtTime(0.06, c.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.5);
-      o.connect(g).connect(c.destination);
+      o.connect(g).connect(getMaster());
       o.start(); o.stop(c.currentTime + 0.55);
     });
   },
@@ -243,7 +243,7 @@ export const sfx = {
       g.gain.setValueAtTime(0.06, c.currentTime);
       g.gain.setValueAtTime(0.08, c.currentTime + 0.6);
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.4);
-      o.connect(g).connect(c.destination);
+      o.connect(g).connect(getMaster());
       o.start(); o.stop(c.currentTime + 1.5);
       // Subtle noise crackle underneath
       noise(c, 0, 1.2, 0.03);
@@ -261,7 +261,7 @@ export const sfx = {
       o.frequency.exponentialRampToValueAtTime(200, c.currentTime + 0.35);
       g.gain.setValueAtTime(0.1, c.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
-      o.connect(g).connect(c.destination);
+      o.connect(g).connect(getMaster());
       o.start(); o.stop(c.currentTime + 0.45);
       noise(c, 0, 0.25, 0.06);
     });

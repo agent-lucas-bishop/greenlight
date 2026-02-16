@@ -1,4 +1,4 @@
-import { CardTemplate, CardTag } from '../types';
+import { CardTemplate } from '../types';
 
 const TAG_CONFIG: Record<string, { emoji: string; color: string }> = {
   momentum: { emoji: '🔥', color: 'var(--tag-momentum, #e67e22)' },

@@ -141,9 +141,7 @@ export type GamePhase =
   | 'casting'
   | 'production'
   | 'release'
-  | 'awards'
   | 'shop'
-  | 'seasonRecap'
   | 'gameOver'
   | 'victory';
 

@@ -5,7 +5,7 @@ import StartScreen from './screens/StartScreen';
 import Header from './components/Header';
 import TutorialOverlay from './components/TutorialOverlay';
 import StudioFoundingNarrative from './components/StudioFoundingNarrative';
-import { shouldShowNarrative, markNarrativeShown, isFirstRun } from './onboarding';
+import { shouldShowNarrative, markNarrativeShown } from './onboarding';
 import { isTutorialActive } from './tutorial';
 
 // Lazy-load screens that aren't needed at startup

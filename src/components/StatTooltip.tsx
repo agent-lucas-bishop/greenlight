@@ -35,7 +35,7 @@ export default function StatTooltip({
 
   return (
     <span
-      ref={ref as any}
+      ref={ref as React.Ref<HTMLSpanElement>}
       className={`stat-tooltip-wrap ${inline ? 'stat-tooltip-inline' : ''}`}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}

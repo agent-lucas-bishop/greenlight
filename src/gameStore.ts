@@ -663,7 +663,6 @@ export function drawProductionCards() {
     for (const ch of challenges) {
       updatedProd = resolveCardPlay({ ...ch }, updatedProd, state.castSlots);
       if (ch.challengeBet) {
-        const ctx = buildSynergyContext(updatedProd.played, updatedProd.qualityTotal, updatedProd.drawCount, state.castSlots, updatedProd.deck);
         updatedProd.pendingChallenge = { card: ch, bet: ch.challengeBet };
         updatedProd.challengeBetActive = true;
       }
@@ -692,7 +691,6 @@ export function drawProductionCards() {
     
     if (challengeCard.challengeBet) {
       // Show bet prompt to player
-      const ctx = buildSynergyContext(updatedProd.played, updatedProd.qualityTotal, updatedProd.drawCount, state.castSlots, updatedProd.deck);
       updatedProd.pendingChallenge = {
         card: challengeCard,
         bet: challengeCard.challengeBet,

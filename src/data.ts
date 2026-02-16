@@ -1,10 +1,8 @@
-import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag, TalentBaggage } from './types';
+import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag } from './types';
 import { rng } from './seededRng';
 
 let _id = 0;
 const uid = () => `id_${_id++}`;
-
-const GENRES: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'];
 
 const noSynergy = null;
 

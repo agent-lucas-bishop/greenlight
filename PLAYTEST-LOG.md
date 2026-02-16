@@ -1,3 +1,14 @@
+# GREENLIGHT Playtest Log — Round 41
+
+## R41: SEO, Meta & Shareability (2026-02-16)
+- **Enhanced meta tags**: Catchy title, compelling description, keywords, canonical URL
+- **JSON-LD structured data**: WebApplication/Game schema for rich search results
+- **SVG favicon**: 🎬 emoji-based favicon replacing Vite default
+- **PWA manifest**: Web app manifest for mobile home screen install (standalone mode, theme color)
+- **robots.txt + sitemap.xml**: Basic crawling/indexing support
+- **Share feature**: Already existed from prior rounds — verified working (copy-to-clipboard with emoji grid)
+- **Apple mobile web app**: Added meta tags for iOS PWA support
+
 # GREENLIGHT Playtest Log — Round 39
 
 ## R39: Visual Juice Pass (2026-02-16)

@@ -213,6 +213,12 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     cardBase += 1;
   }
   
+  // R33: Wildcard Entertainment chaos archetype — chaos-tagged cards get +1 base quality
+  // This was described in the archetype but never implemented
+  if (state.studioArchetype === 'chaos' && card.tags?.includes('chaos')) {
+    cardBase += 1;
+  }
+  
   let totalCardValue = cardBase + synResult.bonus;
 
   // Apply poison from previous card
@@ -797,9 +803,10 @@ export function resolveBlock(block: boolean) {
   const { incident, actionCard } = prod.pendingBlock!;
   
   if (block) {
-    // Sacrifice action card to block the incident — both go to discard, costs 2 quality
+    // Sacrifice action card to block the incident — both go to discard, costs 3 quality
+    // R33: increased from -2 to -3 — blocking was almost always optimal vs -3 to -6 incident damage
     prod.discarded = [...prod.discarded, incident, actionCard];
-    prod.qualityTotal -= 2; // blocking costs production time
+    prod.qualityTotal -= 3;
     prod.pendingBlock = null;
     setState({ production: prod });
   } else {
@@ -962,8 +969,9 @@ export function attemptEncore() {
   const card = deck.shift()!;
 
   if (card.cardType === 'incident') {
-    // Encore failure: incident hits harder (-5 extra penalty) and breaks clean wrap
-    const penalty = card.baseQuality - 5;
+    // Encore failure: incident hits harder (-3 extra penalty) and breaks clean wrap
+    // R33: reduced from -5 to -3 — old penalty made encore never worth the risk
+    const penalty = card.baseQuality - 3;
     prod.qualityTotal += penalty;
     prod.incidentCount++;
     prod.cleanWrap = false;
@@ -1032,7 +1040,7 @@ export function calculateQuality(s: GameState): {
   const precisionFilm = s.perks.some(p => p.effect === 'precisionFilm');
   let cleanWrapBonus = 0;
   if (prod.cleanWrap && prod.drawCount > 0) {
-    const baseCleanWrap = s.studioArchetype === 'prestige' ? 8 : 5;
+    const baseCleanWrap = s.studioArchetype === 'prestige' ? 7 : 5; // R33: prestige 8→7, still best but less dominant
     cleanWrapBonus = precisionFilm ? baseCleanWrap + 3 : baseCleanWrap;
     // Precision Craft script doubles clean wrap
     if (script.ability === 'precisionCraft') cleanWrapBonus *= 2;
@@ -1178,7 +1186,8 @@ export function resolveRelease() {
   if (state.perks.some(p => p.effect === 'buzz') && rawQuality > 35) multiplier += 0.5;
 
   const currentRep = state.reputation;
-  const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
+  // R33: Rep 0 was ×0 (unrecoverable death spiral). Now ×0.25 minimum — you're in trouble but not dead.
+  const repBonus = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
   const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
@@ -1189,8 +1198,10 @@ export function resolveRelease() {
   let earnings = boxOffice;
 
   // Baseline season income: prevents death spiral from bad seasons
-  let seasonStipend = 5; // $5M guaranteed income per season
-  if (state.challengeId === 'shoestring') seasonStipend = 3;
+  // R33: stipend decreases in later seasons (6/5/5/4/3) — late game should feel tighter
+  const stipendByseason = [6, 5, 5, 4, 3];
+  let seasonStipend = stipendByseason[Math.min(state.season - 1, 4)];
+  if (state.challengeId === 'shoestring') seasonStipend = Math.max(2, seasonStipend - 2);
   
   switch (tier) {
     case 'FLOP':
@@ -1230,7 +1241,7 @@ export function resolveRelease() {
   if (result.hitTarget) {
     newRoster = newRoster.map(t => {
       if (t.trait === 'Rising Star' && state.castSlots.some(s => s.talent?.id === t.id)) {
-        return { ...t, skill: Math.min(t.skill + 1, 6) };
+        return { ...t, skill: Math.min(t.skill + 1, 5) }; // R33: cap at 5 (was 6) — Sophie Chen was too dominant as a $6 investment
       }
       return t;
     });
@@ -1274,8 +1285,9 @@ export function resolveRelease() {
     if (slot.talent?.baggage?.extraCost) baggageCost += slot.talent.baggage.extraCost;
     if (slot.talent?.baggage?.budgetDrain) baggageCost += slot.talent.baggage.budgetDrain;
   }
-  // Debt reputation penalty: lose 1 rep if in significant debt
-  let debtRepPenalty = debt >= 15 ? -1 : 0;
+  // R33: Debt rep penalty tightened — threshold lowered from $15 to $10, and $20+ = -2 rep
+  // Encourages paying debt sooner; debt spiral is more punishing
+  let debtRepPenalty = debt >= 20 ? -2 : debt >= 10 ? -1 : 0;
 
   setState({
     phase: 'release',

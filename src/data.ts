@@ -489,11 +489,12 @@ const DARIUS_KNOX: Omit<Talent, 'id'> = {
       name: 'Scene Chameleon',
       cardType: 'action',
       baseQuality: 1,
-      synergyText: 'Copy the bonus of the last played card. Knox becomes whatever you need.',
+      synergyText: 'Copy the bonus of the last played card (max +4). Knox becomes whatever you need.',
       synergyCondition: (ctx) => {
         const prev = ctx.previousCard;
         if (prev && prev.totalValue && prev.totalValue > 0) {
-          return { bonus: prev.totalValue, description: `Copied ${prev.name}'s +${prev.totalValue}!` };
+          const bonus = Math.min(prev.totalValue, 4); // R33: capped at +4 to prevent degenerate combos
+          return { bonus, description: `Copied ${prev.name}'s +${bonus}!` };
         }
         return { bonus: 0, description: 'Nothing to copy' };
       },
@@ -3640,7 +3641,7 @@ export const STUDIO_ARCHETYPES: StudioArchetype[] = [
     id: 'prestige',
     name: 'Prestige Pictures',
     emoji: '🏆',
-    description: 'Clean Wrap bonus doubled (+8 base). Genre mastery gives +3 instead of +2. Built for consistent excellence.',
+    description: 'Clean Wrap bonus +7 (vs +5 base). Genre mastery gives +3 instead of +2. Built for consistent excellence.',
     effect: 'prestige',
   },
   {

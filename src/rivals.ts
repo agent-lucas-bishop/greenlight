@@ -77,11 +77,14 @@ function getTier(boxOffice: number, target: number): RewardTier {
 function generateRivalFilm(studio: RivalStudio, season: number, target: number): RivalFilm {
   const genre = studio.genrePool[Math.floor(rng() * studio.genrePool.length)];
   const [minQ, maxQ] = studio.qualityRange;
-  // Quality scales up slightly with season (rivals get better too)
-  const seasonBoost = (season - 1) * 3;
+  // R33: Rivals scale more aggressively — season boost 3→4 per season, wider multiplier range
+  // This makes late-game rivals a real threat and early rivals slightly easier
+  const seasonBoost = (season - 1) * 4;
   const quality = Math.round(minQ + seasonBoost + rng() * (maxQ - minQ));
-  // Simple box office: quality * random multiplier (0.8 - 1.6)
-  const multiplier = 0.8 + rng() * 0.8;
+  // R33: multiplier range widens with season (more variance = less predictable)
+  const baseMultLow = 0.7 + season * 0.05;  // 0.75 → 0.95
+  const baseMultHigh = 1.2 + season * 0.1;  // 1.3 → 1.7
+  const multiplier = baseMultLow + rng() * (baseMultHigh - baseMultLow);
   const boxOffice = Math.round(quality * multiplier * 10) / 10;
   const tier = getTier(boxOffice, target);
   const title = generateRivalTitle(genre);

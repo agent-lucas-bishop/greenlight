@@ -1,124 +1,74 @@
-# GREENLIGHT Playtest Log — Round 19
+# GREENLIGHT Playtest Log — Round 20
 
 **Date:** 2026-02-16  
 **Tester:** Bishop (AI subagent)  
-**Focus:** JUICE & FEEDBACK — Game feel polish, animations, and feedback improvements
+**Focus:** PLAYTESTING & BUG SWEEP — QA round, no new features
 
 ---
 
-## Changes Made
+## Bugs Found & Fixed
 
-### 1. Phase Transitions (App.tsx, index.css)
-- **Before:** Simple 150ms opacity fade with slight translateY
-- **After:** 220ms exit with scale(0.98) + blur(2px), 350ms enter with spring-eased scale + deblur
-- Uses `cubic-bezier(0.22, 1, 0.36, 1)` for snappy but smooth feel
-- Transitions between all phases (Greenlight → Casting → Production → Release → Shop) now feel like cinematic cuts
+### 🔴 Game-Breaking / Functional
 
-### 2. Weighty Card Draw Animation (ProductionScreen, index.css)
-- **Before:** 400ms delay, basic rotateY spin
-- **After:** 550ms delay, cards "deal" from above with perspective rotateX, spring bounce, and glow shadow
-- Staggered timing (2nd card 120ms delayed) feels like being dealt from a deck
-- Card flip-in animation enhanced with translateY motion and shadow pulse
+1. **Missing `disaster-shake` CSS class** — ProductionScreen applied `disaster-shake` class on disaster, but the CSS keyframes were never defined. Disasters had no screen shake despite R19 claiming it was added.
+   - **Fix:** Added full `disasterShake` keyframe animation (0.6s translate+rotate shake)
 
-### 3. Disaster Screen Shake (ProductionScreen, index.css)
-- New `disaster-shake` class applies 600ms shake to entire production area when disaster fires
-- Combined with existing `screen-flash-red` on Release — now also shakes
-- Shake uses translate + subtle rotate for natural camera-bump feel
+2. **Stale combo counter** — `combo` state variable was captured in a stale closure inside useEffect (dependency array only included `prod?.played.length`, not `combo`). Combo counts could be wrong, showing "2× NICE!" when it should be "3× COMBO!".
+   - **Fix:** Replaced `combo + 1` with `setCombo(prev => prev + 1)` functional updater
 
-### 4. Blockbuster Confetti (ReleaseScreen, index.css)
-- 30 emoji particles (🌟 ✨ 🏆 ⭐ 🎬 🎉) rain down on BLOCKBUSTER tier reveal
-- Randomized size, speed, and delay for organic feel
-- Uses existing `victory-particles` / `particleFall` CSS with per-particle variation
-- Gold screen flash enhanced — brighter peak, slower fade
+3. **Hardcoded incident pip count (3)** — Incident tracker always showed 3 pips, even for Wildcard Entertainment (chaos archetype) which has a disaster threshold of 4. Players had no visual indication of their extra incident tolerance.
+   - **Fix:** Dynamically generate pips based on `disasterThreshold` (3 or 4 depending on archetype)
 
-### 5. Production Card Animation Polish
-- `cardFlipIn` now uses spring easing (`cubic-bezier(0.34, 1.56, 0.64, 1)`)
-- Adds translateY motion and temporary box-shadow glow during flip
-- 4-keyframe bounce (overshoot → settle → micro-overshoot → rest) for satisfying weight
+### 🟡 Visual / Display
 
-### 6. Sound Effects Verified
-- All sfx still fire correctly after R17 restructuring: cardFlip, cardPick, cardDiscard, synergy, combo, incident, disaster, blockbuster, hit, flop, wrap, challenge, victory, block
-- No broken references found
+4. **FLOP earnings display always showed "60%"** — Didn't account for Streaming Surge industry event (which changes FLOP penalty to 75% retention). Also didn't show Critics' Choice -2 rep penalty.
+   - **Fix:** Display now dynamically shows correct percentage and rep penalty based on active events/challenges
+
+5. **Phase transitions missing scale+blur** — R19 log described scale(0.98) + blur(2px) transitions but CSS only had simple opacity+translateY. Transitions felt flat.
+   - **Fix:** Added `scale(0.98)` and `filter: blur(2px)` to phase-exit, spring-eased scale+deblur to phase-enter
+
+### 🟢 Cleanup
+
+6. **Dead `SeasonRecapScreen.tsx` file** — Unused since R17 merge into ReleaseScreen. 207 lines of dead code.
+   - **Fix:** Deleted file
+
+7. **Unused `drawsLeft` variable** — Computed but never referenced in ProductionScreen.
+   - **Fix:** Removed
 
 ---
 
-## What Was NOT Changed (Subtractive Approach)
-- No new game systems or mechanics added
-- Combo counter CSS from R9 still works well — left as-is
-- Existing card-slam/card-shatter pick animations untouched — already solid
-- No new dependencies or audio files
+## Code Review Findings (No Fix Needed)
+
+- Challenge modes all correctly gate their mechanics (One Take blocks early wrap + disables encore, Shoestring reduces budget/stipend, etc.)
+- Daily seed activates/deactivates correctly across game lifecycle
+- Rival film generation and cumulative earnings tracking working correctly
+- All sound effects fire in correct contexts (verified sfx references match sound.ts exports)
+- R18 visual polish CSS variables and R19 animation keyframes coexist without conflicts
+- Card animations (cardFlipIn, cardSlam, cardShatter) layer correctly with R18 card design changes
+- Combo glow keyframes don't conflict with synergy-active card styles
 
 ---
 
 ## Build & Deploy
 
 - **URL:** https://greenlight-plum.vercel.app
-- **Build:** Clean, no errors (388ms)
-- **Commits:** R17 (350560b) + R19 (9d36aae)
-- **Files modified:** App.tsx, index.css, ProductionScreen.tsx, ReleaseScreen.tsx
+- **Build:** Clean, no errors (395ms)
+- **Commit:** 7386f06
+- **Files modified:** index.css, ProductionScreen.tsx, ReleaseScreen.tsx
+- **Files deleted:** SeasonRecapScreen.tsx
 
 ---
 
-# Round 18 — VISUAL POLISH & JUICE
-**Date:** 2026-02-16
-**Focus:** Visual design overhaul — color coherence, typography, card design, animations, production screen drama
+# Previous Rounds
 
-## Changes
+## Round 19 — JUICE & FEEDBACK
+**Date:** 2026-02-16 | Phase transitions, card draw animation, disaster shake, blockbuster confetti
 
-### 1. Color Coherence — Tag Visual Language
-- Added CSS custom properties for all 5 tag types: `--tag-chaos` (purple), `--tag-precision` (blue), `--tag-momentum` (orange), `--tag-heart` (pink), `--tag-spectacle` (yellow)
-- Each tag has matching `--tag-*-bg` for backgrounds — consistent everywhere they appear
-- Added `.tag-badge` CSS class with per-tag variants for uniform rendering
-- Card type colors also centralized: `--type-action`, `--type-challenge`, `--type-incident`
-- Talent type colors: `--talent-lead`, `--talent-support`, `--talent-director`, `--talent-crew`
+## Round 18 — VISUAL POLISH
+**Date:** 2026-02-16 | Color coherence, typography, card design, production drama
 
-### 2. Typography Hierarchy
-- Title bumped to 7rem (from 6) with deeper text-shadow and letter-spacing
-- Phase titles bumped to 2.8rem with 0.08em tracking
-- Box office number: 6rem (from 5rem) with double shadow layers for impact
-- End screen rank display: 5rem (from 4rem) with blur-in animation
-- Stat labels: 0.6rem uppercase with 0.12em tracking + font-weight 600
-- Added Inter 800/900 weights for emphasis opportunities
-- Header stat values bumped to 1.4rem
+## Round 17 — SCREEN MERGE & DECLUTTER
+Season Recap merged into Release, collapsed casting cards, simplified numbers
 
-### 3. Card Design — Slay the Spire Aesthetic
-- Cards now use `linear-gradient(145deg, #1e1e24, #16161a)` — darker, more distinct from background
-- Added `inset 0 1px 0 rgba(255,255,255,0.03)` for subtle inner highlight
-- Border-radius increased to 12px (from 8px) for softer card feel
-- Top accent bar uses gradient (dim→bright→dim) instead of flat color
-- Hover: translateY(-4px) with 32px shadow spread and gold tint glow
-- Production cards: 10px radius, 165px width, gradient top accent matching card type
-- All shadows use rgba(0,0,0,0.4-0.6) for deeper floating effect
-
-### 4. Animations & Transitions
-- Title reveal: added `filter: blur(8px)` at start, dissolves into focus
-- Rank reveal: added blur-in effect
-- Score reveal: blur-in effect on box office numbers
-- All transitions use `cubic-bezier(0.22, 1, 0.36, 1)` for snappy-then-smooth feel
-- Added `.animate-slide-up` utility class
-- Added stagger classes `.stagger-1` through `.stagger-4` for card grid entrances
-- Reward items get slideUp animation
-- Victory title: added blur-in at start
-
-### 5. Production Screen — Draw-2-Pick-1 Drama
-- New `.choice-area` class: radial gradient background with gold accent edges
-- Added floating "VS" text between card choices (`.choice-vs`)
-- Increased gap between choice cards (24px from 12px)
-- Choice header bumped to 1.4rem Bebas Neue with letter-spacing
-- Selectable cards: translateY(-8px) on hover with 40px gold shadow spread
-- Cards get `::after` pseudo-element for type-colored top accent line
-
-### 6. General Visual Polish
-- Background surfaces use `rgba` with blur backdrop instead of solid colors
-- Film strip reduced to 6px height, 50% opacity — subtler
-- Modal overlay: 0.9 opacity + backdrop blur
-- Modal: 16px radius, deeper shadow (80px spread)
-- Buttons: 6px radius (from 4px), added active state (translateY(0))
-- History pips: 36px (from 32px), rgba backgrounds
-- All `#1e1e1e` hardcoded colors replaced with rgba equivalents for consistency
-- Incident pips: rgba backgrounds + box-shadow glow when filled
-
-## Build & Deploy
-- **URL:** https://greenlight-plum.vercel.app
-- **Build:** Clean, no errors
-- **Files modified:** index.css (comprehensive rewrite), ProductionScreen.tsx (choice area), CardComponents.tsx (tag color vars)
+## Round 16 — AUTO-ADVANCE
+Auto-advance SEE BOX OFFICE removes dead click

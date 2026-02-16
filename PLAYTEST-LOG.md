@@ -1,3 +1,78 @@
+# GREENLIGHT Playtest Log — Round 33
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** Balance Tuning & Edge Case Hardening
+
+## Summary
+
+Deep audit of game balance, scoring math, edge cases, and rival AI. 11 targeted changes across 3 files with documented reasoning for every number change.
+
+## Balance Changes
+
+### 🎯 Sophie Chen Rising Star Nerf
+- **Change:** Skill cap 6 → 5
+- **Reasoning:** At $6 cost, Sophie was the best investment in the game. Over 5 seasons she could reach skill 8 (from 3), outperforming $18 Valentina Cortez. Cap at 5 means she's still great value but can't eclipse premium talent.
+
+### 🏆 Prestige Archetype Adjustment
+- **Change:** Clean wrap bonus 8 → 7
+- **Reasoning:** Prestige was clearly dominant. +8 clean wrap + precision talent + genre mastery +3 created a consistency machine. +7 is still the best archetype for clean play but leaves room for other strategies.
+
+### 🎭 Darius Knox Scene Chameleon Cap
+- **Change:** Copy bonus now capped at +4 (was unlimited)
+- **Reasoning:** Scene Chameleon copied `totalValue` of previous card with no limit. After a big synergy card (say +8), Knox would replicate the entire value. Cap at +4 keeps it useful without being degenerate.
+
+### 🛡️ Block Mechanic Cost Increase
+- **Change:** Block quality cost -2 → -3
+- **Reasoning:** Incidents range from -3 to -6 base quality (plus synergy penalties). At -2 cost, blocking was almost always correct — the decision wasn't interesting. At -3, blocking a -3 incident is break-even, so you actually have to consider letting small incidents through.
+
+### 🎵 Encore Failure Rebalance
+- **Change:** Extra penalty -5 → -3
+- **Reasoning:** Encore success gives +3 bonus on top of normal card value. Old failure was base + (-5), making expected value strongly negative. At -3 extra, encore becomes a real push-your-luck decision.
+
+### 💰 Season Stipend Scaling
+- **Change:** Flat $5M → 6/5/5/4/3 by season
+- **Reasoning:** Early game was too tight (new players short on cash), late game too comfortable. Front-loading $1 extra helps survival; tapering to $3 in season 5 creates meaningful late-game budget pressure.
+
+### 💸 Debt System Tightened
+- **Change:** Rep penalty threshold $15 → $10; added -2 rep tier at $20+
+- **Reasoning:** Old system let you freely carry ~$14 debt with no consequences. Now $10+ debt costs 1 rep, $20+ costs 2. Debt spiral is more punishing and demands earlier payoff.
+
+## Edge Case Fixes
+
+### ☠️ Rep 0 Death Spiral
+- **Change:** Rep 0 multiplier ×0 → ×0.25
+- **Reasoning:** Rep 0 with old ×0 multiplier = 0 box office = guaranteed FLOP = more rep loss. Completely unrecoverable. ×0.25 is still devastating but gives a theoretical path back.
+
+### 🎰 Chaos Archetype Missing Implementation
+- **Change:** Implemented "+1 base quality for chaos-tagged cards" for Wildcard Entertainment
+- **Reasoning:** The archetype description promised this bonus but it was never coded. Chaos builds now actually benefit from their archetype choice beyond the 4-incident disaster threshold.
+
+## Rival AI Improvements
+
+### 🤖 Stronger, Less Predictable Rivals
+- **Change:** Season quality scaling +3 → +4 per season; multiplier range widens per season
+- **Reasoning:** Old rivals were too predictable (narrow 0.8-1.6 multiplier). New system: early rivals are slightly easier (wider low range), late rivals are genuinely threatening (multiplier up to 1.7 in season 5). Creates real competitive pressure.
+
+## Scoring Analysis
+
+### Rank Thresholds (unchanged, validated)
+- FLOP: < 1.0× target
+- HIT: 1.0-1.24× target
+- SMASH: 1.25-1.49× target
+- BLOCKBUSTER: ≥ 1.5× target
+
+These feel well-calibrated. A typical well-played season produces quality 25-40, with multiplier 1.0-2.0 and rep bonus 1.0-1.5. This puts box office in the 25-120 range across seasons, which maps nicely to the 20/28/38/50/62 target curve.
+
+## Build Status
+- `npx tsc --noEmit` — ✅ PASS
+- `npm run build` — ✅ PASS (441KB JS / 36KB CSS)
+
+## Deployed
+- Commit: `4709b65` → Vercel auto-deploy
+
+---
+
 # GREENLIGHT Playtest Log — Round 32
 
 **Date:** 2026-02-16  

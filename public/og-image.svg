@@ -1,0 +1,9 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#d4a843"/>
+  <rect x="0" y="626" width="1200" height="4" fill="#d4a843"/>
+  <text x="600" y="260" font-family="sans-serif" font-size="120" font-weight="bold" fill="#d4a843" text-anchor="middle" letter-spacing="12">GREENLIGHT</text>
+  <text x="600" y="330" font-family="sans-serif" font-size="28" fill="#999" text-anchor="middle" font-style="italic" letter-spacing="6">A Movie Studio Roguelite</text>
+  <text x="600" y="420" font-family="sans-serif" font-size="22" fill="#666" text-anchor="middle" letter-spacing="2">🎬 5 Seasons · 🎭 Push Your Luck · ⭐ Build Your Studio · 🏆 Chase the Oscar</text>
+  <text x="600" y="540" font-family="sans-serif" font-size="18" fill="#444" text-anchor="middle">greenlight-plum.vercel.app</text>
+</svg>

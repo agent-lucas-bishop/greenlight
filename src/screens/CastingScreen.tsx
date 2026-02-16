@@ -32,6 +32,10 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
     <div
       className={`card talent-card ${highlight ? 'selected' : ''}`}
       onClick={onClick}
+      onKeyDown={e => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
+      tabIndex={onClick && !dimmed ? 0 : -1}
+      role={onClick ? 'button' : undefined}
+      aria-label={`${t.name}, ${t.type}, Skill ${t.skill}, Heat ${t.heat}, Cost $${t.cost}M`}
       style={{
         padding: 10,
         minHeight: 'auto',
@@ -194,6 +198,10 @@ export default function CastingScreen({ state }: { state: GameState }) {
                   if (slot.talent) unassignTalent(i);
                   setActiveSlot(i);
                 }}
+                onKeyDown={e => { if (!blocked && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (slot.talent) unassignTalent(i); setActiveSlot(i); } }}
+                tabIndex={blocked ? -1 : 0}
+                role="button"
+                aria-label={`${slot.slotType} slot${slot.talent ? ': ' + slot.talent.name : blocked ? ', blocked' : ', empty'}`}
                 style={blocked ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
               >
                 <div className="slot-label">{slot.slotType}{blocked ? ' 🔒' : ''}</div>

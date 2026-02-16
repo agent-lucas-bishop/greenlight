@@ -14,8 +14,8 @@
   --green: #27ae60;
   --green-bright: #2ecc71;
   --blue: #2980b9;
-  --gray: #666;
-  --gray-light: #999;
+  --gray: #777;
+  --gray-light: #aaa;
 
   /* Tag colors — THE visual language */
   --tag-chaos: #9b59b6;
@@ -42,6 +42,47 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Focus indicators for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+button:focus-visible, .card:focus-visible, .cast-slot:focus-visible, .selectable-card:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(240, 199, 94, 0.25);
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .spotlight { display: none; }
+}
+
+/* Skip to content link for screen readers */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--gold);
+  color: var(--black);
+  padding: 8px 16px;
+  z-index: 1000;
+  font-weight: 700;
+  border-radius: 0 0 8px 0;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}
 
 body {
   font-family: 'Inter', sans-serif;

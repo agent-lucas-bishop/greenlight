@@ -30,6 +30,10 @@ export default function NeowScreen() {
             key={i}
             className={`card neow-card ${chosen === i ? 'chosen' : ''} ${chosen !== null && chosen !== i ? 'not-chosen' : ''}`}
             onClick={() => chosen === null && handlePick(i)}
+            onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && chosen === null) { e.preventDefault(); handlePick(i); } }}
+            tabIndex={chosen === null ? 0 : -1}
+            role="button"
+            aria-label={`${c.title}: ${c.desc}`}
             onMouseEnter={() => setHoveredIdx(i)}
             onMouseLeave={() => setHoveredIdx(null)}
             style={{ 

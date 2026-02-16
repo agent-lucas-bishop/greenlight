@@ -6,9 +6,9 @@ import { isMuted, toggleMute, sfx } from '../sound';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Quick Reference">
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
-        <button className="modal-close" onClick={onClose}>✕</button>
+        <button className="modal-close" onClick={onClose} aria-label="Close dialog">✕</button>
         <h2 style={{ color: 'var(--gold)', marginBottom: 16 }}>Quick Reference</h2>
         <div className="how-to-play">
           <div className="htp-section">
@@ -46,7 +46,7 @@ export default function Header({ state }: { state: GameState }) {
   const archetype = STUDIO_ARCHETYPES.find(a => a.id === state.studioArchetype);
   const handleToggleMute = () => { const m = toggleMute(); setMutedState(m); if (!m) sfx.click(); };
   return (
-    <div className="header">
+    <header className="header" role="banner" aria-label="Game status">
       <h1>🎬 {state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT'}</h1>
       {(state.studioTagline || archetype) && (
         <div style={{ fontSize: '0.6rem', color: '#666', fontStyle: 'italic', marginTop: -4, marginBottom: 4, letterSpacing: '0.05em' }}>
@@ -112,6 +112,7 @@ export default function Header({ state }: { state: GameState }) {
         className="header-help-btn" 
         onClick={() => setShowHelp(true)}
         title="How to Play"
+        aria-label="How to Play"
       >
         ?
       </button>
@@ -119,11 +120,12 @@ export default function Header({ state }: { state: GameState }) {
         className="header-help-btn"
         onClick={handleToggleMute}
         title={muted ? 'Unmute' : 'Mute'}
+        aria-label={muted ? 'Unmute sound' : 'Mute sound'}
         style={{ right: 40 }}
       >
         {muted ? '🔇' : '🔊'}
       </button>
       {showHelp && <QuickHelp onClose={() => setShowHelp(false)} />}
-    </div>
+    </header>
   );
 }

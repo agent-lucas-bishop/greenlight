@@ -186,6 +186,10 @@ export default function StartScreen() {
               key={a.id}
               className="card"
               onClick={() => { startGame(selectedMode, selectedChallenge); pickArchetype(a.id as StudioArchetypeId); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(selectedMode, selectedChallenge); pickArchetype(a.id as StudioArchetypeId); } }}
+              tabIndex={0}
+              role="button"
+              aria-label={`${a.name}: ${a.description}`}
               style={{ cursor: 'pointer', padding: 20, flex: '1 1 180px', maxWidth: 220, textAlign: 'center', transition: 'transform 0.2s, border-color 0.2s' }}
               onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = 'var(--gold)'; (e.target as HTMLElement).style.transform = 'scale(1.05)'; }}
               onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = ''; (e.target as HTMLElement).style.transform = ''; }}

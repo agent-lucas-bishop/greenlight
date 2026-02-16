@@ -52,13 +52,14 @@ function App() {
 
   return (
     <>
-      <div className="spotlight" />
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <div className="spotlight" aria-hidden="true" />
       {state.phase !== 'start' && <Header state={state} />}
-      <div className="film-strip" />
-      <div className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`}>
+      <div className="film-strip" aria-hidden="true" />
+      <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite">
         {renderPhase()}
-      </div>
-      <div className="film-strip" />
+      </main>
+      <div className="film-strip" aria-hidden="true" />
     </>
   );
 }

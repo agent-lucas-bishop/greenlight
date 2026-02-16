@@ -71,6 +71,10 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
               key={script.id}
               className={`card ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''}`}
               onClick={() => handlePick(script)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(script); } }}
+              tabIndex={picked ? -1 : 0}
+              role="button"
+              aria-label={`${script.title}, ${script.genre} film, base score ${script.baseScore}, cost $${script.cost}M`}
               style={{ 
                 animationDelay: `${i * 0.1}s`,
               }}

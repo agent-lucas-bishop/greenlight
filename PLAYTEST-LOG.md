@@ -1,3 +1,63 @@
+# GREENLIGHT Playtest Log — Round 34
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** Accessibility & Final Polish
+
+## Summary
+
+Final round of the marathon session. Focused on making the game accessible to keyboard-only users, screen reader users, and users with motion sensitivities — plus social sharing polish.
+
+## Accessibility Changes
+
+### 🎯 Focus Indicators
+- **Change:** Added `:focus-visible` styles with gold outline + glow to all interactive elements
+- **Reasoning:** Keyboard users had no visual feedback when tabbing through cards, buttons, and slots. Now every focusable element gets a clear `2px solid var(--gold-bright)` outline with a `4px` glow ring.
+
+### 🎬 Reduced Motion Support
+- **Change:** Added `@media (prefers-reduced-motion: reduce)` that disables all animations/transitions
+- **Reasoning:** The game has extensive animations (card flips, shakes, combos, particles). Users with vestibular disorders or motion sensitivity need an escape hatch. All animation durations are set to `0.01ms` under this media query.
+
+### ♿ Screen Reader Support
+- **Change:** Added `aria-labels` to all interactive cards, buttons, cast slots; `role="button"` and `tabIndex` to clickable non-button elements; `aria-live="polite"` on main content area; `role="dialog"` and `aria-modal` on help modals; `aria-hidden` on decorative elements
+- **Reasoning:** Screen readers couldn't meaningfully navigate the game. Cards now announce their name, type, and quality value. Phase transitions are announced via `aria-live`. Decorative spotlight and film-strip elements are hidden from assistive tech.
+
+### ⌨️ Keyboard Navigation
+- **Change:** All interactive cards (Neow choices, script selection, production card picks, talent cards, cast slots, studio archetypes) now respond to `Enter` and `Space` keypress in addition to click
+- **Reasoning:** The game was mouse-only. Now every screen can be navigated and played with just a keyboard.
+
+### 🎨 Color Contrast
+- **Change:** `--gray` #666→#777, `--gray-light` #999→#aaa
+- **Reasoning:** Several text elements using these colors on the dark background (#0a0a0a) fell below WCAG AA 4.5:1 contrast ratio. The new values bring them above threshold.
+
+### 🔗 Skip Link
+- **Change:** Added a "Skip to content" link that appears on focus, letting keyboard users jump past the header
+- **Reasoning:** Standard accessibility pattern. Without it, keyboard users must tab through all header stats every phase change.
+
+## Social Sharing Polish
+
+### 📱 Meta Tags
+- **Change:** Added `og:url`, `og:image`, `twitter:image`, `theme-color`; upgraded `twitter:card` to `summary_large_image`
+- **Reasoning:** Sharing the game URL on Discord/Twitter/etc now shows a rich preview card with the game title and description.
+
+### 🖼️ OG Image
+- **Change:** Generated a 1200×630 PNG with game branding for social sharing
+- **Reasoning:** Without an OG image, shared links look bare. The image features the GREENLIGHT title, subtitle, and key features.
+
+## Semantic HTML
+
+- Header wrapped in `<header>` with `role="banner"`
+- Main content wrapped in `<main>` with `role="main"` and `id="main-content"`
+
+## Build Status
+- `npx tsc --noEmit` — ✅ PASS
+- `npm run build` — ✅ PASS (443KB JS / 37KB CSS)
+
+## Deployed
+- Commit: `5dacb88` → Vercel auto-deploy
+
+---
+
 # GREENLIGHT Playtest Log — Round 33
 
 **Date:** 2026-02-16  

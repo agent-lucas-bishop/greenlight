@@ -1,4 +1,67 @@
-# GREENLIGHT Playtest Log — Round 20
+# GREENLIGHT Playtest Log — Round 21
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** MOBILE & RESPONSIVE — Make the game fully playable on phone screens
+
+---
+
+## Changes Made
+
+### Fluid Typography (clamp-based)
+- Phase titles, start screen title, box office numbers, combo counters, tier labels, disaster banners — all use `clamp()` for smooth scaling from 360px to desktop
+- No more jarring size jumps between breakpoints
+
+### Mobile Breakpoint (≤480px)
+- **Card grids** go single-column (was 2-col at tablet, now 1-col on phone)
+- **Production cards** switch from fixed `width: 165px` to `width: 100%` — fills available space
+- **Touch targets** enforced at 44px minimum on all buttons, cast slots, pips, fire buttons
+- **Selectable cards** (draw-2-pick-1) get visible gold border + active press state instead of hover-dependent styling
+- **Modals go full-screen** — no border-radius, 100% width/height, larger close button
+- **Header** condensed: smaller title, tighter stat spacing, larger help button (36px)
+- **Production stats bar** wraps with reduced gaps
+- **Tier banners** fill width with reduced padding
+- **End screen filmography** stacks vertically
+- **How-to-play card types** go full width
+- **Casting stats** wrap with smaller text
+- **Perks bar** wraps
+
+### Small Phone Breakpoint (≤375px — iPhone SE)
+- Further reduced header, stat, and card sizes
+- Tighter padding on choice area and production stats
+- Grid gaps reduced to 10px
+
+### Tablet Breakpoint (≤768px) — Preserved
+- Existing 2-column card grids, single-column cast area unchanged
+- Added reduced main padding and end screen padding
+
+---
+
+## Build & Deploy
+
+- **URL:** https://greenlight-plum.vercel.app
+- **Build:** Clean, no errors (396ms)
+- **Commit:** c91390a
+- **Files modified:** index.css only (CSS-only changes, no component restructuring)
+
+---
+
+# Previous Rounds
+
+## Round 20 — BUG SWEEP & QA
+**Date:** 2026-02-16 | 5 bug fixes (disaster shake, stale combo, dynamic pips, FLOP display, phase transitions) + dead code cleanup
+
+## Round 19 — JUICE & FEEDBACK
+**Date:** 2026-02-16 | Phase transitions, card draw animation, disaster shake, blockbuster confetti
+
+## Round 18 — VISUAL POLISH
+**Date:** 2026-02-16 | Color coherence, typography, card design, production drama
+
+## Round 17 — SCREEN MERGE & DECLUTTER
+Season Recap merged into Release, collapsed casting cards, simplified numbers
+
+## Round 16 — AUTO-ADVANCE
+Auto-advance SEE BOX OFFICE removes dead click
 
 **Date:** 2026-02-16  
 **Tester:** Bishop (AI subagent)  

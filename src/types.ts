@@ -259,6 +259,7 @@ export interface GameState {
   gameMode: GameMode;
   challengeId?: string;
   dailySeed?: string;
+  dailyModifierId?: string; // daily modifier active for this run
   lockedGenre?: string; // for Typecast challenge
   maxSeasons: number; // normally 5, Speed Run = 3
   maxStrikes: number; // normally 3, Speed Run = 2

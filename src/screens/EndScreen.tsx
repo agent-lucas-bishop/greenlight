@@ -6,6 +6,7 @@ import { sfx } from '../sound';
 import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
+import { getModifierById } from '../dailyModifiers';
 
 // ─── Helpers ───
 
@@ -199,6 +200,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
   const [phase, setPhase] = useState(0); // 0=title, 1=summary, 2=stats, 3=filmography, 4=achievements, 5=share
   const [copied, setCopied] = useState(false);
+  const [dailyCopied, setDailyCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
   const ending = getEndingForRank(rank, isVictory);
@@ -278,6 +280,27 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
     });
   }, [shareText]);
 
+  const dailyModifier = state.dailyModifierId ? getModifierById(state.dailyModifierId) : null;
+  const dailyShareText = useMemo(() => {
+    if (!state.dailySeed || !dailyModifier) return '';
+    const h = state.seasonHistory;
+    const grid = h.map(s => tierEmoji(s.tier, s.quality <= 0)).join('');
+    return [
+      `🎬 GREENLIGHT Daily ${state.dailySeed}`,
+      `${dailyModifier.emoji} ${dailyModifier.name}`,
+      grid,
+      `Score: ${score} (${rank}) · $${state.totalEarnings.toFixed(1)}M`,
+      `greenlight-plum.vercel.app`,
+    ].join('\n');
+  }, [state.dailySeed, dailyModifier, score, rank]);
+
+  const handleDailyCopy = useCallback(() => {
+    navigator.clipboard.writeText(dailyShareText).then(() => {
+      setDailyCopied(true);
+      setTimeout(() => setDailyCopied(false), 2000);
+    });
+  }, [dailyShareText]);
+
   const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' };
 
   return (
@@ -308,6 +331,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       {challenge && (
         <div style={{ marginBottom: 4, fontSize: '0.85rem', color: '#e67e22' }}>
           {challenge.emoji} {challenge.name} Challenge (×{challenge.scoreMultiplier} score)
+        </div>
+      )}
+      {dailyModifier && (
+        <div style={{ marginBottom: 4, fontSize: '0.85rem', color: '#3498db' }}>
+          {dailyModifier.emoji} {dailyModifier.name} — {dailyModifier.shortDesc}
         </div>
       )}
 
@@ -495,22 +523,40 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           }}>
             {shareText}
           </div>
-          <button
-            className="btn"
-            onClick={handleCopy}
-            style={{
-              marginTop: 10,
-              background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
-              border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
-              color: copied ? '#2ecc71' : '#d4a843',
-              padding: '8px 24px',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: 'all 0.3s',
-            }}
-          >
-            {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+            <button
+              className="btn"
+              onClick={handleCopy}
+              style={{
+                background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
+                border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
+                color: copied ? '#2ecc71' : '#d4a843',
+                padding: '8px 24px',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+              }}
+            >
+              {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
+            </button>
+            {state.dailySeed && dailyModifier && (
+              <button
+                className="btn"
+                onClick={handleDailyCopy}
+                style={{
+                  background: dailyCopied ? 'rgba(46,204,113,0.2)' : 'rgba(52,152,219,0.15)',
+                  border: `1px solid ${dailyCopied ? '#2ecc71' : '#3498db'}`,
+                  color: dailyCopied ? '#2ecc71' : '#3498db',
+                  padding: '8px 24px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                }}
+              >
+                {dailyCopied ? '✅ Copied!' : `📅 Copy Daily Score`}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

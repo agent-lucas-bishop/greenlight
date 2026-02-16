@@ -10,6 +10,7 @@ import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES } from '../challenges';
 import { getDailyDateString } from '../seededRng';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
+import { getTodayModifier, getModifierForDate } from '../dailyModifiers';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
@@ -169,9 +170,10 @@ export default function StartScreen() {
   }, [firstRun]);
 
   if (showArchetypes) {
+    const todayMod = getTodayModifier();
     const modeLabel = selectedMode === 'newGamePlus' ? '⭐ NEW GAME+ — Targets ×1.4' :
       selectedMode === 'directorMode' ? '🔥 DIRECTOR MODE — Targets ×1.8' :
-      selectedMode === 'daily' ? '📅 DAILY RUN — ' + dailyDate :
+      selectedMode === 'daily' ? `📅 DAILY RUN — ${dailyDate} · ${todayMod.emoji} ${todayMod.name}` :
       selectedChallenge ? `${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.emoji} ${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.name}` : '';
     return (
       <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -261,12 +263,59 @@ export default function StartScreen() {
               NEW RUN
             </button>
             {/* Daily Run */}
-            <button className="btn btn-small" style={{ color: '#3498db', borderColor: '#3498db', opacity: dailyDone ? 0.5 : 1 }}
-              onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
-              📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
-              {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
-              {stats.dailyStreak.current > 0 && <span className="streak-bounce streak-pulse" style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
-            </button>
+            {(() => {
+              const todayMod = getTodayModifier();
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', maxWidth: 400 }}>
+                  <button className="btn btn-small" style={{ color: '#3498db', borderColor: '#3498db', opacity: dailyDone ? 0.5 : 1, width: '100%' }}
+                    onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
+                    📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
+                    {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
+                    {stats.dailyStreak.current > 0 && <span className="streak-bounce streak-pulse" style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
+                  </button>
+                  {/* Daily Modifier */}
+                  <div style={{
+                    background: 'rgba(52,152,219,0.08)', border: '1px solid rgba(52,152,219,0.25)',
+                    borderRadius: 8, padding: '8px 14px', width: '100%', textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#3498db', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Today's Modifier</div>
+                    <div style={{ fontSize: '1.4rem', marginBottom: 2 }}>{todayMod.emoji}</div>
+                    <div style={{ color: '#ccc', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{todayMod.name}</div>
+                    <div style={{ color: '#888', fontSize: '0.7rem' }}>{todayMod.description}</div>
+                  </div>
+                  {/* Weekly Calendar */}
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                    {(() => {
+                      const today = new Date();
+                      const dayOfWeek = today.getDay(); // 0=Sun
+                      const days: { label: string; dateStr: string; isToday: boolean }[] = [];
+                      for (let i = 0; i < 7; i++) {
+                        const d = new Date(today);
+                        d.setDate(today.getDate() - dayOfWeek + i);
+                        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        days.push({ label: ['S','M','T','W','T','F','S'][i], dateStr: ds, isToday: ds === dailyDate });
+                      }
+                      return days.map(day => {
+                        const done = hasDailyRun(day.dateStr);
+                        const mod = getModifierForDate(day.dateStr);
+                        return (
+                          <div key={day.dateStr} title={`${day.dateStr}: ${mod.emoji} ${mod.name}`} style={{
+                            width: 36, height: 44, borderRadius: 6,
+                            background: day.isToday ? 'rgba(52,152,219,0.15)' : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${day.isToday ? '#3498db' : done ? 'rgba(46,204,113,0.3)' : '#222'}`,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            gap: 1, cursor: 'default',
+                          }}>
+                            <span style={{ color: day.isToday ? '#3498db' : '#666', fontSize: '0.55rem', fontWeight: 600 }}>{day.label}</span>
+                            <span style={{ fontSize: '0.75rem' }}>{done ? '✅' : mod.emoji}</span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              );
+            })()}
             {stats.ngPlusUnlocked && (
               <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>

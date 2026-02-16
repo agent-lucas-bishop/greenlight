@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GameState, Talent } from '../types';
 import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason, payDebt } from '../gameStore';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
+import { sfx } from '../sound';
 
 function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void; canBuy: boolean }) {
   const [showCards, setShowCards] = useState(false);
@@ -79,6 +80,9 @@ function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void
 }
 
 export default function ShopScreen({ state }: { state: GameState }) {
+  // Debt warning sound on mount if debt is dangerous
+  useEffect(() => { if (state.debt >= 10) sfx.debtWarning(); }, []);
+
   return (
     <div className="fade-in">
       <PhaseTip phase="shop" />
@@ -102,7 +106,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
               <div
                 key={perk.id}
                 className="card"
-                onClick={() => canBuy && buyPerk(perk)}
+                onClick={() => { if (canBuy) { sfx.purchase(); buyPerk(perk); } }}
                 style={{ opacity: canBuy ? 1 : 0.4, cursor: canBuy ? 'pointer' : 'not-allowed' }}
               >
                 <div className="card-title">{perk.name}</div>
@@ -124,7 +128,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
               <TalentShopCard
                 key={t.id}
                 t={t}
-                onClick={() => hireTalent(t)}
+                onClick={() => { sfx.hire(); hireTalent(t); }}
                 canBuy={canHire}
               />
             );
@@ -209,7 +213,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
       )}
 
       <div className="btn-group" style={{ marginTop: 32 }}>
-        <button className="btn btn-primary btn-glow" onClick={nextSeason}>
+        <button className="btn btn-primary btn-glow" onClick={() => { sfx.seasonTransition(); nextSeason(); }}>
           BEGIN SEASON {state.season + 1} →
         </button>
       </div>

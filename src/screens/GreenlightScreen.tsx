@@ -5,6 +5,7 @@ import { getSeasonTarget } from '../data';
 import { getSeasonIdentity } from '../rivals';
 import PhaseTip from '../components/PhaseTip';
 import { isSimplifiedRun } from '../onboarding';
+import { sfx } from '../sound';
 
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
@@ -13,6 +14,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
 
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (picked) return;
+    sfx.scriptSelect();
     setPicked(script.id);
     setTimeout(() => pickScript(script), 500);
   };

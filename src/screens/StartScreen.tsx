@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { isMuted, toggleMute, sfx } from '../sound';
 import { startGame, pickArchetype } from '../gameStore';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
@@ -197,8 +198,23 @@ export default function StartScreen() {
     );
   }
 
+  const [muted, setMutedLocal] = useState(isMuted());
+  const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
+
   return (
-    <div className="start-screen">
+    <div className="start-screen" style={{ position: 'relative' }}>
+      <button
+        onClick={handleToggleMute}
+        title={muted ? 'Unmute' : 'Mute'}
+        style={{
+          position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%',
+          border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
+          color: 'var(--gold)', fontSize: '1rem', cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 10,
+        }}
+      >
+        {muted ? '🔇' : '🔊'}
+      </button>
       <div className="start-title animate-title">GREENLIGHT</div>
       <div className="start-subtitle">A Movie Studio Roguelite</div>
 

@@ -87,9 +87,12 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   ].sort((a, b) => b.boxOffice - a.boxOffice) : [];
 
   useEffect(() => {
+    // Rising tone during box office count-up
+    sfx.boxOfficeReveal();
     const t1 = setTimeout(() => {
       setPhase(1);
       if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); }
+      else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); }
       else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); }
       else { sfx.hit(); }
       setTimeout(() => setScreenFlash(''), 800);
@@ -183,7 +186,8 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       )}
 
       {lastResult?.nominated && phase >= 2 && (
-        <div className="nomination-banner animate-slide-down" style={{ marginTop: 12 }}>
+        <div className="nomination-banner animate-slide-down" style={{ marginTop: 12 }}
+          ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.nomination(); } }}>
           🏆 NOMINATED FOR BEST PICTURE!
         </div>
       )}

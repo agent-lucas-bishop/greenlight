@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getChallengeById } from '../challenges';
+import { isMuted, toggleMute, sfx } from '../sound';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
@@ -41,7 +42,9 @@ function QuickHelp({ onClose }: { onClose: () => void }) {
 
 export default function Header({ state }: { state: GameState }) {
   const [showHelp, setShowHelp] = useState(false);
+  const [muted, setMutedState] = useState(isMuted());
   const archetype = STUDIO_ARCHETYPES.find(a => a.id === state.studioArchetype);
+  const handleToggleMute = () => { const m = toggleMute(); setMutedState(m); if (!m) sfx.click(); };
   return (
     <div className="header">
       <h1>🎬 {state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT'}</h1>
@@ -111,6 +114,14 @@ export default function Header({ state }: { state: GameState }) {
         title="How to Play"
       >
         ?
+      </button>
+      <button
+        className="header-help-btn"
+        onClick={handleToggleMute}
+        title={muted ? 'Unmute' : 'Mute'}
+        style={{ right: 40 }}
+      >
+        {muted ? '🔇' : '🔊'}
       </button>
       {showHelp && <QuickHelp onClose={() => setShowHelp(false)} />}
     </div>

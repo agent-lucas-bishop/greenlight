@@ -1,6 +1,19 @@
 // Procedural sound effects using Web Audio API — no external files needed
 let ctx: AudioContext | null = null;
 
+// Mute state — persisted in localStorage
+let _muted = typeof localStorage !== 'undefined' ? localStorage.getItem('greenlight-muted') === 'true' : false;
+
+export function isMuted(): boolean { return _muted; }
+export function setMuted(m: boolean) {
+  _muted = m;
+  try { localStorage.setItem('greenlight-muted', String(m)); } catch {}
+}
+export function toggleMute(): boolean {
+  setMuted(!_muted);
+  return _muted;
+}
+
 function getCtx(): AudioContext {
   if (!ctx) ctx = new AudioContext();
   if (ctx.state === 'suspended') ctx.resume();
@@ -8,6 +21,7 @@ function getCtx(): AudioContext {
 }
 
 function play(fn: (c: AudioContext) => void) {
+  if (_muted) return;
   try { fn(getCtx()); } catch { /* silent fail on browsers that block audio */ }
 }
 
@@ -191,6 +205,98 @@ export const sfx = {
       note(c, 300, 0, 0.2, 0.15, 'square');
       note(c, 600, 0.02, 0.15, 0.1, 'triangle');
       noise(c, 0, 0.1, 0.12);
+    });
+  },
+
+  // ── New sounds for Round 29 ──
+
+  // Box office counting — rising shimmer tone (play at start of count-up)
+  boxOfficeReveal() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(300, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(900, c.currentTime + 1.2);
+      g.gain.setValueAtTime(0.06, c.currentTime);
+      g.gain.setValueAtTime(0.08, c.currentTime + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.4);
+      o.connect(g).connect(c.destination);
+      o.start(); o.stop(c.currentTime + 1.5);
+      // Subtle noise crackle underneath
+      noise(c, 0, 1.2, 0.03);
+    });
+  },
+
+  // Season transition — whoosh sweep
+  seasonTransition() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(150, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.15);
+      o.frequency.exponentialRampToValueAtTime(200, c.currentTime + 0.35);
+      g.gain.setValueAtTime(0.1, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+      o.connect(g).connect(c.destination);
+      o.start(); o.stop(c.currentTime + 0.45);
+      noise(c, 0, 0.25, 0.06);
+    });
+  },
+
+  // Script select — page flip
+  scriptSelect() {
+    play(c => {
+      noise(c, 0, 0.06, 0.08);
+      note(c, 500, 0.01, 0.08, 0.08, 'triangle');
+      note(c, 700, 0.05, 0.1, 0.06, 'sine');
+    });
+  },
+
+  // Talent hire — cha-ching
+  hire() {
+    play(c => {
+      note(c, 1200, 0, 0.08, 0.08, 'square');
+      note(c, 1600, 0.06, 0.12, 0.06, 'sine');
+      note(c, 2000, 0.12, 0.15, 0.04, 'sine');
+    });
+  },
+
+  // Purchase / perk buy — coin drop
+  purchase() {
+    play(c => {
+      note(c, 1400, 0, 0.06, 0.07, 'square');
+      note(c, 1800, 0.05, 0.08, 0.05, 'sine');
+    });
+  },
+
+  // Debt warning — ominous low pulse
+  debtWarning() {
+    play(c => {
+      note(c, 55, 0, 0.6, 0.15, 'sine');
+      note(c, 50, 0.1, 0.5, 0.1, 'triangle');
+      note(c, 110, 0.3, 0.3, 0.04, 'sawtooth');
+    });
+  },
+
+  // Smash tier — brighter than hit, less than blockbuster
+  smash() {
+    play(c => {
+      note(c, 523, 0, 0.25, 0.12, 'triangle');
+      note(c, 659, 0.08, 0.25, 0.12, 'triangle');
+      note(c, 784, 0.16, 0.3, 0.1, 'sine');
+      note(c, 1047, 0.24, 0.2, 0.06, 'sine');
+    });
+  },
+
+  // Nomination fanfare — brief prestige chime
+  nomination() {
+    play(c => {
+      note(c, 880, 0, 0.2, 0.08, 'sine');
+      note(c, 1047, 0.1, 0.2, 0.08, 'sine');
+      note(c, 1319, 0.2, 0.3, 0.1, 'sine');
+      note(c, 1760, 0.3, 0.3, 0.06, 'sine');
     });
   },
 };

@@ -4,6 +4,7 @@ import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction, 
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
+import { sfx } from '../sound';
 
 function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onClick?: () => void; compact?: boolean; dimmed?: boolean; highlight?: boolean }) {
   const [expanded, setExpanded] = useState(false);
@@ -124,6 +125,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
   }, 0) + (state.currentScript?.cards.filter(c => c.cardType === 'incident').length || 0);
 
   const handleAssign = (t: Talent) => {
+    sfx.cardPick();
     assignTalent(activeSlot, t);
     const nextEmpty = state.castSlots.findIndex((s, i) => i > activeSlot && !s.talent);
     if (nextEmpty >= 0) setActiveSlot(nextEmpty);
@@ -216,7 +218,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
           )}
 
           <div className="btn-group" style={{ flexDirection: 'column', marginTop: 16 }}>
-            <button className="btn btn-primary" disabled={filledCount < 2} onClick={startProduction}>
+            <button className="btn btn-primary" disabled={filledCount < 2} onClick={() => { sfx.seasonTransition(); startProduction(); }}>
               BEGIN PRODUCTION →
             </button>
             {filledCount < state.castSlots.length && (

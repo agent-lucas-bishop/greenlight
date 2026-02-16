@@ -451,3 +451,30 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 - Genre trends: display matches calculation (+0.25/-0.2 multiplier)
 - Career stats: `recordRunEnd` correctly tracks all stats including daily streak
 - Milestones: all conditions achievable (verified against LEGACY_PERKS checks)
+
+## R42 — Endgame Content & Multiple Endings (2026-02-16)
+
+### Changes
+- **6 unique endings** based on rank (S/A/B/C/D/F) with distinct titles, emojis, colors, and flavor text
+- **Season 5 escalation**: scripts get +2 base score, action cards +1, incidents -1 (higher stakes/variance)
+- **Titan Pictures mega-blockbuster**: Season 5 spawns an extra rival film (quality 50-70, ×1.5-2.0 multiplier) you must outperform
+- **Ending screen overhaul**: each ending has its own color-accented flavor text panel above the procedural career summary
+- **Endings tracker**: "Endings Discovered: X/6" on both end screen and career stats, with emoji grid showing found/unfound endings
+- **Career stats integration**: endings discovered section added to start screen career tab
+
+### Endings
+| Rank | ID | Title | Emoji |
+|------|-----|-------|-------|
+| S | hollywood_legend | HOLLYWOOD LEGEND | 👑 |
+| A | critical_darling | CRITICAL DARLING | 🎭 |
+| B | steady_hand | STEADY HAND | 🎬 |
+| C | one_hit_wonder | ONE-HIT WONDER | 💫 |
+| D | straight_to_streaming | STRAIGHT TO STREAMING | 📺 |
+| F | studio_bankruptcy | STUDIO BANKRUPTCY | 💀 |
+
+### Verification
+- `npx tsc --noEmit` — clean
+- `npm run build` — clean, deployed via Vercel
+- Endings persist via localStorage `endingsDiscovered` array in unlock state
+- Season 5 rival mega-blockbuster appears in release screen rankings
+- Score thresholds: S>800, A>500, B>300, C>150, D≤150, F=game over

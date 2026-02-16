@@ -1626,17 +1626,168 @@ h1, h2, h3, h4 {
 
 /* ===== RESPONSIVE ===== */
 
+/* Fluid typography */
+.phase-title h2 { font-size: clamp(1.6rem, 5vw, 2.8rem); }
+.start-title { font-size: clamp(3rem, 12vw, 7rem); }
+.box-office-number { font-size: clamp(3rem, 12vw, 6rem); }
+.end-screen h2 { font-size: clamp(2.2rem, 8vw, 4.5rem); }
+.rank-display { font-size: clamp(3rem, 10vw, 5rem); }
+.quality-display { font-size: clamp(2rem, 6vw, 3rem); }
+.combo-number { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+.combo-label { font-size: clamp(1rem, 3vw, 1.4rem); }
+.tier-label { font-size: clamp(2rem, 7vw, 3.5rem); }
+.tier-emoji { font-size: clamp(2.5rem, 7vw, 3.5rem); }
+.disaster-banner h3 { font-size: clamp(1.6rem, 5vw, 2.5rem); }
+
+/* Tablet — 768px */
 @media (max-width: 768px) {
   .card-grid-3, .card-grid-4 { grid-template-columns: 1fr 1fr; }
   .cast-area { grid-template-columns: 1fr; }
   .neow-choices { grid-template-columns: 1fr; }
-  .box-office-number { font-size: 3.5rem; }
-  .start-title { font-size: 4rem; }
   .header { padding: 8px 12px; }
   .header-stats { gap: 12px; }
   .production-stats-bar { gap: 16px; }
   .end-stats { gap: 16px; flex-wrap: wrap; }
   .casting-stats { gap: 12px; font-size: 0.75rem; }
-  .phase-title h2 { font-size: 2rem; }
-  .end-screen h2 { font-size: 3rem; }
+  .main { padding: 16px; }
+  .end-screen { padding: 32px 0; }
+}
+
+/* Mobile — 480px and below */
+@media (max-width: 480px) {
+  /* Layout */
+  .main { padding: 12px 10px; }
+  .header { padding: 8px 10px; gap: 6px; }
+  .header h1 { font-size: 1.2rem; }
+  .header-stats { gap: 8px; }
+  .header-stat .value { font-size: 1.1rem; }
+  .header-stat .label { font-size: 0.55rem; }
+  .header-help-btn { width: 36px; height: 36px; font-size: 1rem; top: 6px; right: 8px; }
+
+  /* Card grids — single column on narrow phones */
+  .card-grid-3, .card-grid-4, .card-grid-2 { grid-template-columns: 1fr; }
+  .neow-choices { grid-template-columns: 1fr; gap: 12px; }
+  .card { padding: 14px; }
+  .card-title { font-size: 1.2rem; }
+  .card-body { font-size: 0.82rem; }
+
+  /* Production cards — fluid width instead of fixed */
+  .prod-card-new {
+    width: 100%;
+    min-width: 0;
+    min-height: 120px;
+    padding: 10px;
+  }
+  .production-deck { gap: 8px; }
+
+  /* Choice area (draw-2-pick-1) */
+  .choice-area { padding: 16px 12px; border-radius: 12px; }
+  .choice-vs { font-size: 1.4rem; }
+
+  /* Production stats */
+  .production-stats-bar { gap: 10px; padding: 10px 12px; flex-wrap: wrap; }
+  .prod-stat .value { font-size: 1.3rem; }
+  .prod-stat .label { font-size: 0.6rem; }
+
+  /* Touch targets — minimum 44px */
+  .btn { min-height: 44px; padding: 10px 20px; font-size: 1rem; }
+  .btn-small { min-height: 44px; padding: 8px 14px; font-size: 0.85rem; }
+  .btn-tiny { min-height: 40px; padding: 8px 12px; }
+  .cast-slot { min-height: 54px; padding: 12px; }
+  .bad-pip { width: 36px; height: 36px; }
+  .history-pip { width: 32px; height: 32px; font-size: 0.8rem; }
+  .fire-btn { min-width: 36px; min-height: 36px; font-size: 0.85rem; }
+
+  /* Selectable cards — tap-friendly, no hover dependency */
+  .selectable-card {
+    border: 2px solid rgba(212,168,67,0.4) !important;
+    box-shadow: 0 4px 16px rgba(212,168,67,0.15) !important;
+  }
+  .selectable-card:active {
+    transform: scale(0.97) !important;
+    box-shadow: 0 2px 8px rgba(212,168,67,0.3) !important;
+  }
+
+  /* Modal — full screen on mobile */
+  .modal-overlay { align-items: stretch; padding: 0; }
+  .modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 20px 16px;
+    width: 100%;
+    margin: 0;
+  }
+  .modal-close { top: 10px; right: 12px; width: 40px; height: 40px; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
+
+  /* Tier banners */
+  .tier-banner { padding: 20px 16px; margin: 16px 8px; max-width: 100%; }
+
+  /* End screen */
+  .end-screen { padding: 24px 0; }
+  .end-stats { gap: 12px; }
+  .end-stat .value { font-size: 1.6rem; }
+  .filmography-row { flex-direction: column; gap: 4px; font-size: 0.82rem; }
+
+  /* Casting */
+  .casting-stats { flex-wrap: wrap; gap: 8px; font-size: 0.72rem; padding: 6px 10px; }
+
+  /* Quality breakdown */
+  .quality-breakdown { gap: 6px; font-size: 0.7rem; }
+  .qb-item { padding: 3px 8px; }
+
+  /* Start screen */
+  .start-subtitle { font-size: 0.85rem; margin-bottom: 24px; }
+  .start-screen { min-height: 70vh; padding: 0 12px; }
+
+  /* Shop */
+  .shop-section h3 { font-size: 1.2rem; }
+  .roster-chip { font-size: 0.75rem; padding: 8px 10px; }
+
+  /* Event banner */
+  .event-banner { padding: 10px 14px; font-size: 0.82rem; }
+
+  /* Phase tip */
+  .phase-tip-content { font-size: 0.8rem; padding: 10px 12px; }
+
+  /* Perks */
+  .perks-bar { flex-wrap: wrap; }
+
+  /* Button group */
+  .btn-group { gap: 8px; }
+
+  /* Disaster banner */
+  .disaster-banner { padding: 16px; margin: 12px 0; }
+
+  /* Cast summary */
+  .cast-credit { font-size: 0.75rem; padding: 6px 10px; }
+
+  /* Box office */
+  .box-office { padding: 24px 0; }
+  .box-office-target { font-size: 0.85rem; }
+
+  /* Quality summary */
+  .quality-summary { padding: 12px; margin: 12px auto; }
+
+  /* How to play */
+  .htp-flow-step { gap: 8px; padding: 8px 10px; }
+  .htp-card-type { min-width: 100%; }
+
+  /* Combo scaling for higher combos on mobile */
+  .combo-3 .combo-number { font-size: clamp(1.8rem, 5vw, 2.6rem); }
+  .combo-4 .combo-number { font-size: clamp(2rem, 5.5vw, 3rem); }
+  .combo-5 .combo-number { font-size: clamp(2.2rem, 6vw, 3.5rem); }
+}
+
+/* Small phones — 360px (iPhone SE) */
+@media (max-width: 375px) {
+  .header h1 { font-size: 1rem; }
+  .header-stats { gap: 6px; }
+  .header-stat .value { font-size: 1rem; }
+  .prod-card-name { font-size: 0.95rem; }
+  .prod-card-value { font-size: 1.2rem; }
+  .card-grid-3, .card-grid-4, .card-grid-2 { gap: 10px; }
+  .btn { padding: 10px 16px; }
+  .production-stats-bar { gap: 6px; padding: 8px 8px; }
+  .choice-area { padding: 12px 8px; }
 }

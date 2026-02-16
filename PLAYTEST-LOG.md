@@ -1,42 +1,78 @@
-# GREENLIGHT Playtest Log — Round 29
+# GREENLIGHT Playtest Log — Round 30
 
 **Date:** 2026-02-16  
 **Tester:** Bishop (AI subagent)  
-**Focus:** AUDIO & SOUND DESIGN PASS — Full audit and enhancement of Web Audio API sound layer
+**Focus:** FINAL QA PASS — Full integration audit, TypeScript check, build verification, logic audit, cosmetic polish
 
-## What Was Done
+## Summary
 
-### Audit Results
-- **Existing sounds (pre-Round 29):** cardFlip, cardPick, cardDiscard, synergy, combo, incident, disaster, blockbuster, hit, flop, click, wrap, challenge, victory, block — all 15 sounds functional and firing correctly in ProductionScreen, ReleaseScreen, EndScreen
-- **Gaps found:** No mute toggle, no sounds on Greenlight/Casting/Shop screens, no box office reveal sound, SMASH tier used same sound as HIT, no debt warning, no season transition whoosh, no nomination chime
+Round 30 is the capstone round after 29 rounds of overnight iteration. Full codebase audit of all 27 source files.
 
-### New Sounds Added (8)
-1. **boxOfficeReveal** — Rising shimmer tone during count-up animation
-2. **seasonTransition** — Whoosh sweep for screen transitions
-3. **scriptSelect** — Page flip sound for Greenlight picks
-4. **hire** — Cha-ching for talent hiring
-5. **purchase** — Coin drop for perk buying
-6. **debtWarning** — Ominous low pulse when debt ≥ $10M
-7. **smash** — Distinct ascending chime (between hit and blockbuster)
-8. **nomination** — Prestige chime for Best Picture nomination
+## Checks Performed
 
-### Mute Toggle
-- 🔊/🔇 button on Start screen (top-right) and Header (next to ? button)
-- Persisted in localStorage (`greenlight-muted`)
-- Globally respected — all sounds check mute state before playing
+### TypeScript Strict Check
+- `npx tsc --noEmit` — **PASS** (zero errors, zero warnings)
 
-### Screens Wired Up
-- **GreenlightScreen:** Script selection → scriptSelect
-- **CastingScreen:** Talent assignment → cardPick, Start production → seasonTransition
-- **ShopScreen:** Buy perk → purchase, Hire talent → hire, Begin next season → seasonTransition, Debt ≥ $10M → debtWarning on mount
-- **ReleaseScreen:** Box office count-up → boxOfficeReveal, SMASH tier → smash (was using hit), Nomination → nomination
+### Build Verification
+- `npm run build` — **PASS** (clean build, 439KB JS / 36KB CSS gzip'd to 123KB/8KB)
 
-### Technical
-- Zero external audio files — all Web Audio API oscillators + noise envelopes
-- Clean TypeScript build, zero errors
-- All sounds short (40ms–1.4s), low volume (0.04–0.15 gain), tasteful
+### Logic Audit: Talent Baggage
+- ✅ `salary_demand` (extraCost) deducted in `resolveRelease()` via `baggageCost`
+- ✅ `entourage` (budgetDrain) deducted same path
+- ✅ `schedule_conflict` (slotBlocked) enforced in `assignTalent()` — blocked slots show 🔒 in UI
+- ✅ `method_dangerous` (incidentChance) adds incident cards in `buildProductionDeck()` with proper RNG gating
 
-## Total Sound Count: 23 synthesized effects
+### Logic Audit: Genre Trends
+- ✅ Generated via `generateGenreTrends()` in `beginSeason()` — 1-2 hot, 1-2 cold, never overlapping
+- ✅ Applied in `resolveRelease()`: hot = +0.25 multiplier, cold = -0.2 multiplier
+- ✅ Rivals react to trends (50% chance to chase hot genre) in `generateRivalSeason()`
+- ✅ Gated on `isSimplifiedRun()` — first-ever run shows no trends
+- 🐛 **FIXED**: UI showed "+40%/-30%" but actual values are +25%/-20%. Corrected display text.
 
----
+### Logic Audit: Debt
+- ✅ Compounds at 20% per season in `resolveRelease()`: `debt = Math.round(debt * 1.2 * 10) / 10`
+- ✅ Paydown via `payDebt()` — UI offers $5M, $10M, and full payoff buttons
+- ✅ Rep penalty at ≥$15M: `debtRepPenalty = debt >= 15 ? -1 : 0`
+- ✅ Overspending in `pickScript()` and `hireTalent()` adds to debt when `!isSimplifiedRun()`
+- ✅ Debt display in header and casting screen
+- ✅ `debtWarning` sound plays on shop mount when debt ≥$10M
 
+### Logic Audit: Milestones
+- ✅ 9 milestones with correct thresholds checked via `getMilestoneProgress()`
+- ✅ `recordRunEnd()` updates career stats and checks for newly unlocked perks
+- ✅ New perks display on end screen with animation
+
+### Logic Audit: Simplified First Run
+- ✅ `isSimplifiedRun()` returns true until `markFirstRunComplete()` called in EndScreen
+- ✅ Gates: no debt (overspending just goes negative), no genre trends
+- ✅ Unlock toast shows on second run via `shouldShowUnlockToast()`
+
+### Logic Audit: Sound Effects
+- ✅ All 23 sounds verified wired to correct moments:
+  - cardFlip (draw), cardPick (keep), cardDiscard (reject), synergy (fired), combo (streak)
+  - incident, disaster, blockbuster, hit, flop, smash, nomination
+  - click (buttons), wrap, challenge (bet), victory, block
+  - boxOfficeReveal, seasonTransition, scriptSelect, hire, purchase, debtWarning
+
+### Cosmetic Check
+- ✅ Header shows debt display with red styling when active
+- ✅ Genre trend badges (🔥 HOT / ❄️ COLD) on greenlight screen
+- ✅ Career stats tab with grid layout, rank distribution, daily streak, milestones with progress bars
+- ✅ Mute toggle in header and start screen, persisted in localStorage
+- ✅ Mobile: flex-wrap used throughout, clamp() for font sizes, max-width constraints
+
+## Bug Fixed
+1. **Genre trend percentage mismatch** — UI claimed "+40%/-30%" but code applies +25%/-20%. Fixed display to match actual values.
+
+## Deployed
+- Git pushed to `main` → Vercel auto-deploys to https://greenlight-plum.vercel.app
+- README.md updated with comprehensive feature list and how-to-play guide
+
+## Final State
+- 27 source files, ~4700 lines of game logic + UI
+- 13 Leads, 10 Supports, 9 Directors, 9 Crew (41 unique talent)
+- 12 Scripts across 7 genres
+- 22 Chemistry pairs
+- 4 Studio Archetypes, 12 Perks, 6 Challenge Modes
+- 9 Legacy Perks, 23 Sound Effects
+- Clean TypeScript, clean build, all systems verified

@@ -144,6 +144,8 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history'>('play');
+  const [muted, setMutedLocal] = useState(isMuted());
+  const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
   const stats = getRunStats();
   const leaderboard = getLeaderboard();
   const milestones = getMilestoneProgress();
@@ -197,9 +199,6 @@ export default function StartScreen() {
       </div>
     );
   }
-
-  const [muted, setMutedLocal] = useState(isMuted());
-  const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
 
   return (
     <div className="start-screen" style={{ position: 'relative' }}>

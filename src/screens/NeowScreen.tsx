@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { pickNeow } from '../gameStore';
+import PhaseTip from '../components/PhaseTip';
 
 const CHOICES = [
   { title: 'Fading Icon', desc: 'A volatile star: Skill 5, Heat 4. "Past Their Prime" — loses 1 Skill each season. A ticking time bomb of talent.', emoji: '⭐', color: '#d4a843' },
@@ -18,6 +19,7 @@ export default function NeowScreen() {
 
   return (
     <div className="fade-in">
+      <PhaseTip phase="neow" />
       <div className="phase-title">
         <h2>Welcome to Hollywood</h2>
         <div className="subtitle">Every studio head gets one break. Choose yours.</div>

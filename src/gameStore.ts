@@ -1,10 +1,17 @@
-import { GameState, GamePhase, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, DrawChoice, PendingChallenge } from './types';
+import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, DrawChoice, PendingChallenge, ArchetypeFocus, EncoreState } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
   INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES,
 } from './data';
 import type { StudioArchetypeId } from './types';
+import { getUnlocks, getActiveLegacyPerks } from './unlocks';
+import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
+import { getChallengeById } from './challenges';
+import type { ChallengeMode } from './challenges';
+import { addLeaderboardEntry } from './leaderboard';
+import { generateRivalSeason, getSeasonIdentity } from './rivals';
+import type { RivalFilm } from './rivals';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -37,6 +44,11 @@ function createInitialState(): GameState {
     neowChoice: null,
     studioArchetype: null,
     genreMastery: {},
+    rivalHistory: [],
+    cumulativeRivalEarnings: {},
+    gameMode: 'normal' as GameMode,
+    maxSeasons: 5,
+    maxStrikes: 3,
   };
 }
 
@@ -72,6 +84,7 @@ function templateToCard(template: CardTemplate, source: string, sourceType: Prod
     challengeBet: template.challengeBet,
     budgetMod: template.budgetMod,
     special: template.special,
+    tags: template.tags,
   };
 }
 
@@ -102,14 +115,14 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
 
   // Shuffle (Fisher-Yates)
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
 
   return deck;
 }
 
-function buildSynergyContext(played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[], remainingDeck: ProductionCard[]): SynergyContext {
+function buildSynergyContext(played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[], remainingDeck: ProductionCard[], discardedCount?: number): SynergyContext {
   const leadSlot = castSlots.find(s => s.slotType === 'Lead' && s.talent);
   const leadSkill = leadSlot?.talent?.skill || 0;
   const incidentCount = played.filter(c => c.cardType === 'incident').length;
@@ -119,6 +132,26 @@ function buildSynergyContext(played: ProductionCard[], totalQuality: number, dra
   for (let i = played.length - 1; i >= 0; i--) {
     if (played[i].cardType === 'action') greenStreak++;
     else break;
+  }
+
+  // Count tags from all played cards
+  const tagsPlayed: Record<string, number> = {};
+  for (const c of played) {
+    if (c.tags) {
+      for (const tag of c.tags) {
+        tagsPlayed[tag] = (tagsPlayed[tag] || 0) + 1;
+      }
+    }
+  }
+
+  // Count consecutive same-source cards from end
+  let consecutiveSources = 0;
+  if (played.length > 0) {
+    const lastSource = played[played.length - 1].sourceType;
+    for (let i = played.length - 1; i >= 0; i--) {
+      if (played[i].sourceType === lastSource) consecutiveSources++;
+      else break;
+    }
   }
 
   return {
@@ -133,12 +166,15 @@ function buildSynergyContext(played: ProductionCard[], totalQuality: number, dra
     remainingDeck,
     actionCardsPlayed: played.filter(c => c.cardType === 'action').length,
     challengeCardsPlayed: played.filter(c => c.cardType === 'challenge').length,
+    tagsPlayed,
+    discardedCount: discardedCount || 0,
+    consecutiveSources,
   };
 }
 
-function evaluateSynergy(card: ProductionCard, played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[], remainingDeck: ProductionCard[]): SynergyResult {
+function evaluateSynergy(card: ProductionCard, played: ProductionCard[], totalQuality: number, drawNumber: number, castSlots: CastSlot[], remainingDeck: ProductionCard[], discardedCount?: number): SynergyResult {
   if (!card.synergyCondition) return { bonus: 0 };
-  const ctx = buildSynergyContext(played, totalQuality, drawNumber, castSlots, remainingDeck);
+  const ctx = buildSynergyContext(played, totalQuality, drawNumber, castSlots, remainingDeck, discardedCount);
   return card.synergyCondition(ctx);
 }
 
@@ -148,7 +184,7 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
   const played = [...p.played];
   const deck = [...p.deck];
 
-  const synResult = evaluateSynergy(card, played, p.qualityTotal, drawNumber, castSlots, deck);
+  const synResult = evaluateSynergy(card, played, p.qualityTotal, drawNumber, castSlots, deck, p.discarded.length);
   
   let cardBase = card.baseQuality;
   
@@ -197,6 +233,14 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
   let poisonNext = 0;
   let forceExtraDraw = p.forceExtraDraw;
 
+  // Track tags
+  const tagsPlayed = { ...p.tagsPlayed };
+  if (card.tags) {
+    for (const tag of card.tags) {
+      tagsPlayed[tag] = (tagsPlayed[tag] || 0) + 1;
+    }
+  }
+
   if (card.special === 'buffActors') actorBuff += 1;
   if (card.special === 'poisonNext') poisonNext = -2;
   if (card.special === 'poisonActors') actorBuff -= 1;
@@ -211,10 +255,13 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
   const disasterThreshold = state.studioArchetype === 'chaos' ? 4 : 3;
   const isDisaster = incidentCount >= disasterThreshold;
 
-  // Chaos archetype: each incident gives +2 quality
-  if (card.cardType === 'incident' && state.studioArchetype === 'chaos') {
-    totalCardValue += 2;
+  // Challenge: Chaos Reigns — incidents give +1 quality
+  if (card.cardType === 'incident' && state.challengeId === 'chaos_reigns') {
+    totalCardValue += 1;
+    newQuality += 1;
   }
+
+  // Survival Mode script: removed incident budget recovery (incidents should always hurt)
 
   // Script ability: Crowd Pleaser (consecutive Action card tracking)
   let scriptAbilityBonus = p.scriptAbilityBonus;
@@ -229,7 +276,8 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
   }
   
   // Script ability: Thriller Twist — if you have exactly 2 incidents, +8 quality (living on the edge)
-  if (state.currentScript?.genre === 'Thriller' && incidentCount === 2) {
+  // Only applies to scripts with the 'slowBurn' ability (Shadow Protocol)
+  if (state.currentScript?.ability === 'slowBurn' && incidentCount === 2) {
     scriptAbilityBonus = Math.max(scriptAbilityBonus, 8);
   }
 
@@ -254,24 +302,69 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     currentDraw: null,
     pendingChallenge: null,
     challengeBetActive: false,
-      pendingBlock: null,
+    pendingBlock: null,
+    tagsPlayed,
+    encoreState: p.encoreState,
   };
 }
 
 // ─── ACTIONS ───
 
-export function startGame() {
-  setState({ ...createInitialState(), phase: 'start' });
+export function startGame(mode: GameMode = 'normal', challengeId?: string) {
+  // Activate seeded RNG for daily runs
+  if (mode === 'daily') {
+    activateSeed(getDailySeed());
+  } else {
+    deactivateSeed();
+  }
+
+  const challenge = challengeId ? getChallengeById(challengeId) : undefined;
+  let maxSeasons = 5;
+  let maxStrikes = 3;
+
+  if (challenge?.id === 'speed_run') {
+    maxSeasons = 3;
+    maxStrikes = 2;
+  }
+
+  setState({
+    ...createInitialState(),
+    phase: 'start',
+    gameMode: mode,
+    challengeId,
+    dailySeed: mode === 'daily' ? getDailyDateString() : undefined,
+    maxSeasons,
+    maxStrikes,
+  });
+}
+
+export function getGameMode(): GameMode {
+  return state.gameMode;
+}
+
+export function getChallengeId(): string | undefined {
+  return state.challengeId;
 }
 
 export function pickArchetype(archetypeId: StudioArchetypeId) {
   let budget = 15;
   if (archetypeId === 'blockbuster') budget += 5;
+  // NG+ bonuses: start with more budget to offset harder targets
+  if (state.gameMode === 'newGamePlus') budget += 5;
+  if (state.gameMode === 'directorMode') budget += 10;
+  const legacyPerks = getActiveLegacyPerks();
+  // Challenge: Shoestring Budget
+  if (state.challengeId === 'shoestring') budget = 8;
   setState({ studioArchetype: archetypeId, budget, phase: 'neow' as GamePhase });
 }
 
 export function pickNeow(choice: number) {
   let roster = starterRoster();
+  // Moonlight Films (indie) starts with an extra Support
+  if (state.studioArchetype === 'indie') {
+    const extraSupport = generateTalentMarket(1, 1, roster).find(t => t.type === 'Support') || generateTalentMarket(4, 1, roster).find(t => t.type === 'Support');
+    if (extraSupport) roster.push({ ...extraSupport, cost: 0 });
+  }
   let budget = state.budget; // already set by archetype
   let perks: StudioPerk[] = [];
   if (choice === 0) {
@@ -281,19 +374,42 @@ export function pickNeow(choice: number) {
   } else {
     perks.push({ id: 'neow_perk', name: 'Crisis Manager', cost: 0, description: 'Incident card quality penalties halved', effect: 'crisisManager' });
   }
+  // Legacy perk: Perfectionist — start with Crisis Manager
+  const legacyPerks = getActiveLegacyPerks();
+  if (legacyPerks.some(p => p.effect === 'startCrisisManager') && !perks.some(p => p.effect === 'crisisManager')) {
+    perks.push({ id: 'legacy_crisis', name: 'Crisis Manager (Legacy)', cost: 0, description: 'Incident card quality penalties halved (Legacy Perk)', effect: 'crisisManager' });
+  }
   setState({ neowChoice: choice, roster, budget, perks, phase: 'greenlight' as GamePhase });
   beginSeason();
 }
 
 function beginSeason() {
+  // Apply season identity budget bonus (seasons 3+ give extra budget)
+  const identity = getSeasonIdentity(state.season);
+  if (identity.budgetBonus > 0 && state.season > 1) {
+    setState({ budget: state.budget + identity.budgetBonus });
+  }
   const devSlate = state.perks.some(p => p.effect === 'devSlate');
   let scripts = generateScripts(devSlate ? 4 : 3, state.season);
-  const markets = generateMarketConditions(3);
+  // Typecast challenge: only show scripts matching locked genre
+  if (state.challengeId === 'typecast' && state.lockedGenre) {
+    const locked = state.lockedGenre;
+    // Regenerate until we have enough matching scripts
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const filtered = scripts.filter(s => s.genre === locked);
+      if (filtered.length >= 2) { scripts = filtered.slice(0, devSlate ? 4 : 3); break; }
+      scripts = generateScripts(devSlate ? 8 : 6, state.season);
+    }
+  }
   
   // Apply baseBoost industry event from previous season
   if (state.industryEvent?.effect === 'baseBoost') {
     scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 2 }));
   }
+  
+  // Pass script genres so market generation guarantees at least one matching market
+  const scriptGenres = scripts.map(s => s.genre);
+  const markets = generateMarketConditions(3, scriptGenres);
   
   setState({ scriptChoices: scripts, marketConditions: markets });
 }
@@ -302,13 +418,21 @@ export function pickScript(script: Script) {
   if (state.budget < script.cost) return;
   const slots: CastSlot[] = script.slots.map(s => ({ slotType: s, talent: null }));
   const moreTalent = state.perks.some(p => p.effect === 'moreTalent');
-  const market = generateTalentMarket(moreTalent ? 6 : 4, state.season, state.roster);
+  const seasonIdentity = getSeasonIdentity(state.season);
+  const baseTalentCount = seasonIdentity.talentPoolSize;
+  let market = generateTalentMarket(moreTalent ? baseTalentCount + 2 : baseTalentCount, state.season, state.roster);
+  // Challenge: Chaos Reigns — all talent +2 Heat, incidents give +1 quality
+  if (state.challengeId === 'chaos_reigns') {
+    market = market.map(t => ({ ...t, heat: t.heat + 2 }));
+  }
   setState({
     currentScript: script,
     budget: state.budget - script.cost,
     castSlots: slots,
     talentMarket: market,
     phase: 'casting',
+    // Typecast: lock genre on first script pick
+    lockedGenre: state.lockedGenre || (state.challengeId === 'typecast' ? script.genre : undefined),
   });
 }
 
@@ -326,11 +450,15 @@ export function unassignTalent(slotIndex: number) {
 }
 
 export function hireTalent(talent: Talent) {
-  if (state.budget < talent.cost) return;
+  // Legacy perk: Talent Whisperer — all hiring costs $1 less (min $1)
+  const legacyPerks = getActiveLegacyPerks();
+  const discount = legacyPerks.some(p => p.effect === 'cheaperTalent') ? 1 : 0;
+  const actualCost = Math.max(1, talent.cost - discount);
+  if (state.budget < actualCost) return;
   if (state.roster.length >= 8) return;
   setState({
     roster: [...state.roster, talent],
-    budget: state.budget - talent.cost,
+    budget: state.budget - actualCost,
     talentMarket: state.talentMarket.filter(t => t.id !== talent.id),
   });
 }
@@ -372,6 +500,8 @@ export function startProduction() {
       pendingChallenge: null,
       challengeBetActive: false,
       pendingBlock: null,
+      tagsPlayed: {},
+      encoreState: null,
     },
   });
 }
@@ -604,8 +734,9 @@ export function resolveBlock(block: boolean) {
   const { incident, actionCard } = prod.pendingBlock!;
   
   if (block) {
-    // Sacrifice action card to block the incident — both go to discard
+    // Sacrifice action card to block the incident — both go to discard, costs 2 quality
     prod.discarded = [...prod.discarded, incident, actionCard];
+    prod.qualityTotal -= 2; // blocking costs production time
     prod.pendingBlock = null;
     setState({ production: prod });
   } else {
@@ -711,11 +842,113 @@ export function getMaxDraws(prod: ProductionState): number {
 
 export function wrapProduction() {
   if (!state.production) return;
+  // Challenge: One Take — cannot wrap early, must draw all cards
+  if (state.challengeId === 'one_take' && state.production.deck.length > 0 && !state.production.isDisaster) {
+    return; // blocked
+  }
   const maxDraws = getMaxDraws(state.production);
   if (state.production.forceExtraDraw && state.production.drawCount < maxDraws && !state.production.isDisaster) {
     return;
   }
-  setState({ production: { ...state.production, isWrapped: true } });
+  const hasCardsLeft = state.production.deck.length > 0;
+  const encoreAvailable = hasCardsLeft && state.challengeId !== 'one_take';
+  setState({
+    production: {
+      ...state.production,
+      isWrapped: true,
+      encoreState: encoreAvailable ? { available: true, used: false, card: null, result: null } : null,
+    },
+  });
+}
+
+// ─── ARCHETYPE FOCUS ───
+// Calculate if the deck/played cards are dominated by one tag type
+export function calculateArchetypeFocus(tagsPlayed: Record<string, number>): ArchetypeFocus | null {
+  const entries = Object.entries(tagsPlayed);
+  if (entries.length === 0) return null;
+  const totalTags = entries.reduce((sum, [, count]) => sum + count, 0);
+  if (totalTags < 3) return null; // Need at least 3 tags to trigger focus
+
+  const [topTag, topCount] = entries.reduce((best, curr) => curr[1] > best[1] ? curr : best);
+  const percentage = Math.round((topCount / totalTags) * 100);
+
+  if (percentage < 60) return null; // Need 60%+ dominance
+
+  const tagLabels: Record<string, string> = {
+    momentum: '🔥 MOMENTUM FOCUS',
+    precision: '🎯 PRECISION FOCUS',
+    chaos: '💀 CHAOS FOCUS',
+    heart: '💕 HEART FOCUS',
+    spectacle: '✨ SPECTACLE FOCUS',
+  };
+
+  // Bonus scales: 60-69% = +2, 70-79% = +3, 80%+ = +5 (capped)
+  const bonus = percentage >= 80 ? 5 : percentage >= 70 ? 3 : 2;
+
+  return {
+    tag: topTag,
+    percentage,
+    bonus,
+    label: tagLabels[topTag] || `${topTag.toUpperCase()} FOCUS`,
+  };
+}
+
+// ─── ENCORE (Push Your Luck at Wrap) ───
+export function attemptEncore() {
+  if (!state.production || !state.production.isWrapped || state.production.isDisaster) return;
+  if (state.production.encoreState?.used) return;
+  if (state.production.deck.length === 0) return;
+
+  const prod = { ...state.production };
+  const deck = [...prod.deck];
+  const card = deck.shift()!;
+
+  if (card.cardType === 'incident') {
+    // Encore failure: incident hits harder (-5 extra penalty) and breaks clean wrap
+    const penalty = card.baseQuality - 5;
+    prod.qualityTotal += penalty;
+    prod.incidentCount++;
+    prod.cleanWrap = false;
+    card.totalValue = penalty;
+    card.synergyBonus = -5;
+    card.synergyFired = true;
+    prod.played = [...prod.played, card];
+    prod.deck = deck;
+    prod.encoreState = { available: false, used: true, card, result: 'failure' };
+    // Check disaster
+    const disasterThreshold = state.studioArchetype === 'chaos' ? 4 : 3;
+    if (prod.incidentCount >= disasterThreshold) {
+      prod.isDisaster = true;
+    }
+  } else {
+    // Encore success: card plays with a +3 bonus on top of normal resolution
+    const synResult = evaluateSynergy(card, prod.played, prod.qualityTotal, prod.drawCount + 1, state.castSlots, deck, prod.discarded.length);
+    const totalVal = card.baseQuality + synResult.bonus + 3; // +3 encore bonus
+    card.synergyBonus = synResult.bonus + 3;
+    card.synergyFired = true;
+    card.totalValue = totalVal;
+    prod.qualityTotal += totalVal;
+    // Track tags
+    if (card.tags) {
+      const tagsPlayed = { ...prod.tagsPlayed };
+      for (const tag of card.tags) {
+        tagsPlayed[tag] = (tagsPlayed[tag] || 0) + 1;
+      }
+      prod.tagsPlayed = tagsPlayed;
+    }
+    prod.played = [...prod.played, card];
+    prod.deck = deck;
+    prod.encoreState = { available: false, used: true, card, result: 'success' };
+  }
+
+  setState({ production: prod });
+}
+
+export function declineEncore() {
+  if (!state.production) return;
+  const prod = { ...state.production };
+  prod.encoreState = { available: false, used: true, card: null, result: null };
+  setState({ production: prod });
 }
 
 export function calculateQuality(s: GameState): {
@@ -727,10 +960,13 @@ export function calculateQuality(s: GameState): {
   scriptAbilityBonus: number;
   genreMasteryBonus: number;
   chemistryBonus: number;
+  archetypeFocusBonus: number;
+  archetypeFocus: ArchetypeFocus | null;
 } {
   const script = s.currentScript!;
   const prod = s.production!;
 
+  const legacyPerks = getActiveLegacyPerks();
   const scriptBase = script.baseScore;
   const talentSkill = s.castSlots.reduce((sum, slot) => sum + (slot.talent?.skill || 0), 0);
   const productionBonus = prod.qualityTotal;
@@ -740,15 +976,36 @@ export function calculateQuality(s: GameState): {
   if (prod.cleanWrap && prod.drawCount > 0) {
     const baseCleanWrap = s.studioArchetype === 'prestige' ? 8 : 5;
     cleanWrapBonus = precisionFilm ? baseCleanWrap + 3 : baseCleanWrap;
+    // Precision Craft script doubles clean wrap
+    if (script.ability === 'precisionCraft') cleanWrapBonus *= 2;
+    // Legacy perk: Precision Master — Clean Wrap +3
+    if (legacyPerks.some(p => p.effect === 'precisionCleanWrap3')) cleanWrapBonus += 3;
   }
 
   let scriptAbilityBonus = prod.scriptAbilityBonus;
-  if (script.ability === 'finalGirl' && prod.drawCount === 5) {
-    scriptAbilityBonus += 5;
+  if (script.ability === 'finalGirl') {
+    if (prod.drawCount === 5) scriptAbilityBonus += 5;
+    // Chaos tags add +1 quality each for horror
+    scriptAbilityBonus += (prod.tagsPlayed?.['chaos'] || 0);
   }
 
-  // Genre mastery bonus: +2 per previous film in the same genre (+3 for Prestige)
-  const masteryPerFilm = s.studioArchetype === 'prestige' ? 3 : 2;
+  // Heart Engine: each Heart tag = +1 quality
+  if (script.ability === 'heartEngine') {
+    scriptAbilityBonus += (prod.tagsPlayed?.['heart'] || 0);
+  }
+
+  // Precision Craft: each Precision tag = +1 quality
+  if (script.ability === 'precisionCraft') {
+    scriptAbilityBonus += (prod.tagsPlayed?.['precision'] || 0);
+  }
+
+  // Survival Mode: each Chaos tag = +1 quality
+  if (script.ability === 'survivalMode') {
+    scriptAbilityBonus += (prod.tagsPlayed?.['chaos'] || 0);
+  }
+
+  // Genre mastery bonus: +2 per previous film in the same genre (+3 for Prestige, +3 for Typecast)
+  const masteryPerFilm = (s.studioArchetype === 'prestige' || s.challengeId === 'typecast') ? 3 : 2;
   const genreMasteryBonus = (s.genreMastery[script.genre] || 0) * masteryPerFilm;
 
   // Chemistry bonus
@@ -756,7 +1013,11 @@ export function calculateQuality(s: GameState): {
   const activeChemistry = getActiveChemistry(castNames);
   const chemistryBonus = activeChemistry.reduce((sum, c) => sum + c.qualityBonus, 0);
   
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus;
+  // Archetype Focus bonus
+  const archetypeFocus = calculateArchetypeFocus(prod.tagsPlayed || {});
+  const archetypeFocusBonus = archetypeFocus?.bonus || 0;
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus;
 
   // Industry event quality bonuses
   const ie = s.industryEvent;
@@ -773,7 +1034,7 @@ export function calculateQuality(s: GameState): {
     rawQuality = Math.floor(rawQuality * insuranceKeep);
   }
 
-  return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus };
+  return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus, archetypeFocus };
 }
 
 function getMarketMultiplier(market: MarketCondition, genre: string, quality: number): number {
@@ -807,14 +1068,31 @@ export function resolveRelease() {
         return mult > bestMult ? m : best;
       });
     } else {
-      market = state.marketConditions[Math.floor(Math.random() * state.marketConditions.length)];
+      market = state.marketConditions[Math.floor(rng() * state.marketConditions.length)];
     }
   }
 
   let multiplier = getMarketMultiplier(market, script.genre, rawQuality);
 
+  // Legacy perk: Blockbuster Factory — all market multipliers +0.1
+  const legacyPerksRelease = getActiveLegacyPerks();
+  if (legacyPerksRelease.some(p => p.effect === 'marketBoost01')) multiplier += 0.1;
+
+  // Legacy perk: Comeback Kid — after a FLOP, next film gets +5 quality
+  if (legacyPerksRelease.some(p => p.effect === 'comebackBonus')) {
+    const lastSeason = state.seasonHistory[state.seasonHistory.length - 1];
+    if (lastSeason && lastSeason.tier === 'FLOP') rawQuality += 5;
+  }
+
   if (script.ability === 'blockbusterBonus') {
     multiplier += 0.3;
+    // Spectacle tags add +0.05 each
+    multiplier += (prod.tagsPlayed?.['spectacle'] || 0) * 0.05;
+  }
+
+  // Heart Engine: 6+ hearts = ×1.2 multiplier
+  if (script.ability === 'heartEngine' && (prod.tagsPlayed?.['heart'] || 0) >= 6) {
+    multiplier *= 1.2;
   }
 
   // Apply industry event effects
@@ -841,29 +1119,34 @@ export function resolveRelease() {
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
   const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
-  const target = getSeasonTarget(state.season);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
   const tier = getTier(boxOffice, target);
 
   let repChange = 0;
   let bonusMoney = 0;
   let earnings = boxOffice;
 
+  // Baseline season income: prevents death spiral from bad seasons
+  let seasonStipend = 5; // $5M guaranteed income per season
+  if (state.challengeId === 'shoestring') seasonStipend = 3;
+  
   switch (tier) {
     case 'FLOP':
-      repChange = -1;
+      repChange = state.challengeId === 'critics_choice' ? -2 : -1;
       const streamingSafety = state.industryEvent?.effect === 'streamingSafety';
-      earnings = Math.round(boxOffice * (streamingSafety ? 0.75 : 0.5) * 10) / 10;
+      earnings = Math.round(boxOffice * (streamingSafety ? 0.75 : 0.6) * 10) / 10;
       break;
     case 'HIT':
       repChange = 0;
+      bonusMoney = 5;
       break;
     case 'SMASH':
       repChange = 1;
-      bonusMoney = 10;
+      bonusMoney = 12;
       break;
     case 'BLOCKBUSTER':
       repChange = 1;
-      bonusMoney = 20;
+      bonusMoney = state.challengeId === 'critics_choice' ? 32 : 22;
       break;
   }
 
@@ -906,17 +1189,28 @@ export function resolveRelease() {
     return t;
   }).filter(t => t.filmsLeft === undefined || t.filmsLeft > 0);
 
+  // Generate rival films for this season
+  const rivalFilms = generateRivalSeason(state.season, target);
+  const newCumulativeRivalEarnings = { ...state.cumulativeRivalEarnings };
+  for (const rf of rivalFilms) {
+    const key = `${rf.studioEmoji} ${rf.studioName}`;
+    newCumulativeRivalEarnings[key] = (newCumulativeRivalEarnings[key] || 0) + rf.boxOffice;
+  }
+  const rivalSeasonData = { season: state.season, films: rivalFilms };
+
   setState({
     phase: 'release',
     lastBoxOffice: boxOffice,
     lastQuality: rawQuality,
     lastTier: tier,
     activeMarket: market,
-    budget: state.budget + earnings + bonusMoney + prod.budgetChange,
+    budget: state.budget + earnings + bonusMoney + seasonStipend + prod.budgetChange,
     totalEarnings: state.totalEarnings + earnings,
     reputation: newRep,
     strikes: tier === 'FLOP' ? state.strikes + 1 : state.strikes,
     seasonHistory: [...state.seasonHistory, result],
+    rivalHistory: [...state.rivalHistory, rivalSeasonData],
+    cumulativeRivalEarnings: newCumulativeRivalEarnings,
     roster: newRoster,
     genreMastery: {
       ...state.genreMastery,
@@ -925,18 +1219,27 @@ export function resolveRelease() {
   });
 }
 
-export function proceedToShop() {
-  if (state.reputation <= 0 || state.strikes >= 3) {
+export function proceedToRecap() {
+  // Show season recap before proceeding
+  setState({ phase: 'seasonRecap' });
+}
+
+export function proceedFromRecap() {
+  if (state.reputation <= 0 || state.strikes >= state.maxStrikes) {
     setState({ phase: 'gameOver' });
     return;
   }
-  if (state.season >= 5) {
+  if (state.season >= state.maxSeasons) {
     setState({ phase: 'victory' });
     return;
   }
+  proceedToShop();
+}
+
+export function proceedToShop() {
   const perkMarket = generatePerkMarket(4, state.perks.map(p => p.name));
   const talentMarket = generateTalentMarket(4, state.season, state.roster);
-  const event = INDUSTRY_EVENTS[Math.floor(Math.random() * INDUSTRY_EVENTS.length)];
+  const event = INDUSTRY_EVENTS[Math.floor(rng() * INDUSTRY_EVENTS.length)];
   
   // Apply talent drought effect to market size
   let finalTalentMarket = talentMarket;
@@ -958,10 +1261,11 @@ export function proceedToShop() {
 }
 
 export function buyPerk(perk: StudioPerk) {
-  if (state.budget < perk.cost || state.perks.length >= 5) return;
+  const actualCost = state.challengeId === 'shoestring' ? perk.cost + 1 : perk.cost;
+  if (state.budget < actualCost || state.perks.length >= 5) return;
   setState({
     perks: [...state.perks, perk],
-    budget: state.budget - perk.cost,
+    budget: state.budget - actualCost,
     perkMarket: state.perkMarket.filter(p => p.id !== perk.id),
   });
 }

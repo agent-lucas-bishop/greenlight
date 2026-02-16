@@ -9,12 +9,28 @@ import ProductionScreen from './screens/ProductionScreen';
 import ReleaseScreen from './screens/ReleaseScreen';
 import ShopScreen from './screens/ShopScreen';
 import EndScreen from './screens/EndScreen';
+import SeasonRecapScreen from './screens/SeasonRecapScreen';
 import Header from './components/Header';
+import { proceedFromRecap } from './gameStore';
 
 function App() {
   const [state, setState] = useState<GameState>(getState());
+  const [transitioning, setTransitioning] = useState(false);
+  const [prevPhase, setPrevPhase] = useState<string>(state.phase);
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // Phase transition effect
+  useEffect(() => {
+    if (state.phase !== prevPhase) {
+      setTransitioning(true);
+      const t = setTimeout(() => {
+        setTransitioning(false);
+        setPrevPhase(state.phase);
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [state.phase, prevPhase]);
 
   const renderPhase = useCallback(() => {
     switch (state.phase) {
@@ -24,6 +40,15 @@ function App() {
       case 'casting': return <CastingScreen state={state} />;
       case 'production': return <ProductionScreen state={state} />;
       case 'release': return <ReleaseScreen state={state} />;
+      case 'seasonRecap': {
+        const latestRivals = state.rivalHistory[state.rivalHistory.length - 1];
+        return <SeasonRecapScreen
+          state={state}
+          rivalFilms={latestRivals?.films || []}
+          cumulativeRivalEarnings={state.cumulativeRivalEarnings}
+          onContinue={proceedFromRecap}
+        />;
+      }
       case 'shop': return <ShopScreen state={state} />;
       case 'gameOver': return <EndScreen state={state} type="gameover" />;
       case 'victory': return <EndScreen state={state} type="victory" />;
@@ -36,7 +61,7 @@ function App() {
       <div className="spotlight" />
       {state.phase !== 'start' && <Header state={state} />}
       <div className="film-strip" />
-      <div className="main">
+      <div className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`}>
         {renderPhase()}
       </div>
       <div className="film-strip" />

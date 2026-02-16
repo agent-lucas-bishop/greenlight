@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
-import { proceedToShop, calculateQuality } from '../gameStore';
+import { proceedToRecap, calculateQuality } from '../gameStore';
+import { sfx } from '../sound';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
@@ -27,25 +28,35 @@ const TIER_CONFIG: Record<RewardTier, { emoji: string; label: string; subtitle: 
 };
 
 export default function ReleaseScreen({ state }: { state: GameState }) {
-  const target = getSeasonTarget(state.season);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
   const tier = state.lastTier || 'FLOP';
   const config = TIER_CONFIG[tier];
   const lastResult = state.seasonHistory[state.seasonHistory.length - 1];
   const [phase, setPhase] = useState(0); // 0: counting, 1: tier reveal, 2: details
 
+  const [screenFlash, setScreenFlash] = useState('');
+  
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 1600);
+    const t1 = setTimeout(() => {
+      setPhase(1);
+      // Flash + sound based on tier
+      if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); }
+      else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); }
+      else if (tier === 'SMASH') { sfx.hit(); }
+      else { sfx.hit(); }
+      setTimeout(() => setScreenFlash(''), 800);
+    }, 1600);
     const t2 = setTimeout(() => setPhase(2), 2800);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus } = calculateQuality(state);
+  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus } = calculateQuality(state);
 
   // Tier rewards
-  const bonusMoney = tier === 'BLOCKBUSTER' ? 20 : tier === 'SMASH' ? 10 : 0;
+  const bonusMoney = tier === 'BLOCKBUSTER' ? 22 : tier === 'SMASH' ? 12 : tier === 'HIT' ? 5 : 0;
 
   return (
-    <div className="box-office fade-in">
+    <div className={`box-office fade-in ${screenFlash}`}>
       <div className="phase-title">
         <h2>🎞️ Release Day</h2>
         <div className="subtitle">"{state.currentScript?.title}" hits theaters!</div>
@@ -57,7 +68,7 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
       </div>
 
       {/* Box office number */}
-      <div className="box-office-number" style={{ color: config.color }}>
+      <div className="box-office-number score-reveal" style={{ color: config.color }}>
         <CountUp target={state.lastBoxOffice} />
       </div>
 
@@ -83,26 +94,29 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
           {tier === 'FLOP' && (
             <>
               <div className="reward-item negative">📉 -1 Reputation (Rep {state.reputation})</div>
-              <div className="reward-item negative">💰 Earned only 50% of box office</div>
+              <div className="reward-item negative">💰 Earned only 60% of box office</div>
               <div className="reward-item negative">⚠️ Strike {state.strikes}/3</div>
             </>
           )}
           {tier === 'HIT' && (
-            <div className="reward-item">💰 Earned ${state.lastBoxOffice.toFixed(1)}M</div>
+            <>
+              <div className="reward-item">💰 Earned ${state.lastBoxOffice.toFixed(1)}M</div>
+              <div className="reward-item positive">🎁 +$5M bonus!</div>
+            </>
           )}
           {tier === 'SMASH' && (
             <>
               <div className="reward-item positive">📈 +1 Reputation! (Rep {state.reputation})</div>
-              <div className="reward-item positive">🎁 +$10M bonus!</div>
+              <div className="reward-item positive">🎁 +$12M bonus!</div>
             </>
           )}
           {tier === 'BLOCKBUSTER' && (
             <>
               <div className="reward-item positive">📈 +1 Reputation! (Rep {state.reputation})</div>
-              <div className="reward-item positive">🎁 +$20M bonus!</div>
-              <div className="reward-item positive">🏆 Free Perk pick!</div>
+              <div className="reward-item positive">🎁 +$22M bonus!</div>
             </>
           )}
+          <div className="reward-item" style={{ color: '#888' }}>📋 Season stipend: +$5M</div>
         </div>
       )}
 
@@ -117,6 +131,7 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
           {scriptAbilityBonus > 0 && <div className="qs-row positive"><span>⭐ Script Ability</span><span>+{scriptAbilityBonus}</span></div>}
           {genreMasteryBonus > 0 && <div className="qs-row positive"><span>🎓 Genre Mastery</span><span>+{genreMasteryBonus}</span></div>}
           {chemistryBonus > 0 && <div className="qs-row positive"><span>💕 Chemistry</span><span>+{chemistryBonus}</span></div>}
+          {archetypeFocusBonus > 0 && <div className="qs-row positive"><span>⚡ Archetype Focus</span><span>+{archetypeFocusBonus}</span></div>}
           <div className="qs-row total"><span>Total</span><span>{rawQuality}</span></div>
         </div>
       )}
@@ -154,10 +169,8 @@ export default function ReleaseScreen({ state }: { state: GameState }) {
 
       {phase >= 2 && (
         <div className="btn-group">
-          <button className="btn btn-primary" onClick={proceedToShop}>
-            {state.season >= 5 || state.strikes >= 3 || state.reputation <= 0
-              ? 'SEE FINAL RESULTS →'
-              : 'OFF-SEASON →'}
+          <button className="btn btn-primary" onClick={proceedToRecap}>
+            SEASON WRAP-UP →
           </button>
         </div>
       )}

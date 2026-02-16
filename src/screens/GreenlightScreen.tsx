@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { GameState } from '../types';
 import { pickScript } from '../gameStore';
 import { getSeasonTarget } from '../data';
+import { getSeasonIdentity } from '../rivals';
+import PhaseTip from '../components/PhaseTip';
 
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
-  const target = getSeasonTarget(state.season);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
 
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (state.budget < script.cost || picked) return;
@@ -15,9 +17,13 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
 
   return (
     <div className="fade-in">
+      <PhaseTip phase="greenlight" />
       <div className="phase-title">
         <h2>🎬 Greenlight</h2>
-        <div className="subtitle">Season {state.season} — Target: <strong style={{ color: 'var(--gold)' }}>${target}M</strong> — Choose your next production</div>
+        <div style={{ fontFamily: 'Bebas Neue', fontSize: '1.1rem', color: '#d4a843', letterSpacing: 1, marginBottom: 2 }}>
+          {getSeasonIdentity(state.season).name}
+        </div>
+        <div className="subtitle">Season {state.season} — Target: <strong style={{ color: 'var(--gold)' }}>${target}M</strong> — {getSeasonIdentity(state.season).description}</div>
       </div>
 
       {state.industryEvent && (

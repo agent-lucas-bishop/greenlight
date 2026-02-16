@@ -1,36 +1,9 @@
 import { useState } from 'react';
-import { GameState, Talent, CardTemplate } from '../types';
+import { GameState, Talent, CardTemplate, CardTag } from '../types';
 import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction } from '../gameStore';
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
-
-function CardTypeBadge({ type }: { type: string }) {
-  const config: Record<string, { label: string; color: string; bg: string }> = {
-    action: { label: 'ACTION', color: '#fff', bg: '#2ecc71' },
-    challenge: { label: 'CHALLENGE', color: '#000', bg: '#f1c40f' },
-    incident: { label: 'INCIDENT', color: '#fff', bg: '#e74c3c' },
-  };
-  const c = config[type] || config.action;
-  return (
-    <span style={{ background: c.bg, color: c.color, padding: '1px 6px', borderRadius: 3, fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.05em' }}>
-      {c.label}
-    </span>
-  );
-}
-
-function CardPreview({ card }: { card: CardTemplate }) {
-  return (
-    <div className="card-preview" style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <CardTypeBadge type={card.cardType} />
-        <span className="cp-name" style={{ fontWeight: 600 }}>{card.name}</span>
-        <span className="cp-value">{card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}</span>
-      </div>
-      {card.synergyText && (
-        <div style={{ fontSize: '0.65rem', color: '#9b59b6', paddingLeft: 4 }}>✨ {card.synergyText}</div>
-      )}
-    </div>
-  );
-}
+import { CardTypeBadge, CardPreview } from '../components/CardComponents';
+import PhaseTip from '../components/PhaseTip';
 
 function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onClick?: () => void; compact?: boolean; dimmed?: boolean; highlight?: boolean }) {
   const [showCards, setShowCards] = useState(true);
@@ -129,6 +102,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
 
   return (
     <div className="fade-in">
+      <PhaseTip phase="casting" />
       <div className="phase-title">
         <h2>🎭 Casting</h2>
         <div className="subtitle">
@@ -156,6 +130,37 @@ export default function CastingScreen({ state }: { state: GameState }) {
         <span style={{ color: incidentCards >= 3 ? '#e74c3c' : actionCards > incidentCards * 2 ? '#2ecc71' : '#f39c12' }}>
           {incidentCards >= 3 ? '⚠️ High Risk — 3 Incidents = Disaster!' : actionCards > incidentCards * 2 ? '✨ Strong Synergy Potential' : '⚡ Balanced'}
         </span>
+        {/* Tag summary */}
+        {(() => {
+          const tagCounts: Record<string, number> = {};
+          const allCards = [
+            ...(state.currentScript?.cards || []),
+            ...state.castSlots.flatMap(s => s.talent ? [...s.talent.cards, ...(s.talent.heat >= 4 && s.talent.heatCards ? s.talent.heatCards : [])] : []),
+          ];
+          for (const c of allCards) {
+            if (c.tags) for (const tag of c.tags) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          }
+          const tagConfig: Record<string, { emoji: string; color: string }> = {
+            momentum: { emoji: '🔥', color: '#e67e22' },
+            precision: { emoji: '🎯', color: '#3498db' },
+            chaos: { emoji: '💀', color: '#9b59b6' },
+            heart: { emoji: '💕', color: '#e91e63' },
+            spectacle: { emoji: '✨', color: '#f1c40f' },
+          };
+          const entries = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+          if (entries.length === 0) return null;
+          const dominant = entries[0];
+          return (
+            <>
+              <span style={{ color: '#888' }}>|</span>
+              {entries.map(([tag, count]) => {
+                const tc = tagConfig[tag] || { emoji: '•', color: '#888' };
+                return <span key={tag} style={{ color: tc.color, fontWeight: count >= 3 ? 700 : 400 }}>{tc.emoji}{count}</span>;
+              })}
+              {dominant[1] >= 4 && <span style={{ color: tagConfig[dominant[0]]?.color || '#fff', fontWeight: 700 }}>⚡ {dominant[0].toUpperCase()} DECK!</span>}
+            </>
+          );
+        })()}
       </div>
 
       {/* Chemistry indicators */}

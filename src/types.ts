@@ -23,6 +23,7 @@ export interface ProductionCard {
   synergyCondition: ((ctx: SynergyContext) => SynergyResult) | null;
   riskTag: RiskTag; // legacy, derived from cardType
   challengeBet?: ChallengeBet;
+  tags?: CardTag[];
   // Runtime state
   synergyBonus?: number;
   synergyFired?: boolean;
@@ -30,6 +31,8 @@ export interface ProductionCard {
   budgetMod?: number;
   special?: string;
 }
+
+export type CardTag = 'momentum' | 'precision' | 'chaos' | 'heart' | 'spectacle';
 
 export interface SynergyContext {
   playedCards: ProductionCard[];
@@ -43,6 +46,10 @@ export interface SynergyContext {
   remainingDeck: ProductionCard[];
   actionCardsPlayed: number;
   challengeCardsPlayed: number;
+  // Tag tracking for keyword synergies
+  tagsPlayed: Record<string, number>; // tag -> count of cards with that tag played
+  discardedCount: number; // cards discarded (from draw-2-keep-1)
+  consecutiveSources: number; // how many cards in a row from the same source type
 }
 
 export interface SynergyResult {
@@ -62,6 +69,7 @@ export interface CardTemplate {
   challengeBet?: ChallengeBet;
   budgetMod?: number;
   special?: string;
+  tags?: CardTag[]; // keyword tags for cross-talent synergies
 }
 
 export interface Script {
@@ -120,6 +128,7 @@ export type GamePhase =
   | 'release'
   | 'awards'
   | 'shop'
+  | 'seasonRecap'
   | 'gameOver'
   | 'victory';
 
@@ -174,9 +183,31 @@ export interface ProductionState {
   pendingChallenge: PendingChallenge | null;
   challengeBetActive: boolean;
   pendingBlock: PendingBlock | null;
+  // Tag tracking
+  tagsPlayed: Record<string, number>;
+  // Encore push-your-luck
+  encoreState: EncoreState | null;
 }
 
 export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';
+
+export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'challenge';
+
+// Archetype Focus — rewarded when deck is dominated by one tag
+export interface ArchetypeFocus {
+  tag: string;
+  percentage: number; // 0-100
+  bonus: number; // quality bonus applied
+  label: string; // e.g. "MOMENTUM FOCUS"
+}
+
+// Encore — push-your-luck after wrapping
+export interface EncoreState {
+  available: boolean;
+  used: boolean;
+  card: ProductionCard | null;
+  result: 'pending' | 'success' | 'failure' | null;
+}
 
 export interface GameState {
   phase: GamePhase;
@@ -205,6 +236,19 @@ export interface GameState {
   neowChoice: number | null;
   studioArchetype: StudioArchetypeId | null;
   genreMastery: Record<string, number>; // genre -> count of films made in that genre
+  rivalHistory: RivalSeasonData[]; // rival films per season
+  cumulativeRivalEarnings: Record<string, number>; // rival studio name -> total earnings
+  gameMode: GameMode;
+  challengeId?: string;
+  dailySeed?: string;
+  lockedGenre?: string; // for Typecast challenge
+  maxSeasons: number; // normally 5, Speed Run = 3
+  maxStrikes: number; // normally 3, Speed Run = 2
+}
+
+export interface RivalSeasonData {
+  season: number;
+  films: { studioName: string; studioEmoji: string; title: string; genre: Genre; boxOffice: number; tier: RewardTier; quality: number }[];
 }
 
 export interface Chemistry {

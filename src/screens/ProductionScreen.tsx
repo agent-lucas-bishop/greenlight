@@ -1,7 +1,54 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut, attemptEncore, declineEncore } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
+import { sfx } from '../sound';
+import PhaseTip from '../components/PhaseTip';
+
+// Auto-advance component: shows a button with a filling progress bar, auto-clicks after delay
+function AutoAdvance({ onAdvance, delayMs, label }: { onAdvance: () => void; delayMs: number; label: string }) {
+  const [progress, setProgress] = useState(0);
+  const called = useRef(false);
+  useEffect(() => {
+    const start = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const p = Math.min(elapsed / delayMs, 1);
+      setProgress(p);
+      if (p >= 1 && !called.current) {
+        called.current = true;
+        onAdvance();
+      } else if (p < 1) {
+        requestAnimationFrame(tick);
+      }
+    };
+    requestAnimationFrame(tick);
+  }, [onAdvance, delayMs]);
+  return (
+    <button className="btn btn-primary btn-glow" onClick={() => { if (!called.current) { called.current = true; onAdvance(); } }}
+      style={{ position: 'relative', overflow: 'hidden' }}>
+      <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${progress * 100}%`, background: 'rgba(255,255,255,0.15)', transition: 'width 0.1s linear' }} />
+      <span style={{ position: 'relative' }}>{label}</span>
+    </button>
+  );
+}
+
+// Narrative flavor text based on production state
+function getProductionNarrative(drawCount: number, incidentCount: number, qualityTotal: number, cleanWrap: boolean, isDisaster: boolean, lastCard?: ProductionCard | null): string {
+  if (isDisaster) return '';
+  if (drawCount === 0) return '"Quiet on set... and... ACTION!" 🎬';
+  if (lastCard?.cardType === 'incident' && incidentCount === 2) return '⚠️ The studio execs are getting nervous...';
+  if (lastCard?.cardType === 'incident' && incidentCount === 1) return 'A setback on set, but the show must go on...';
+  if (lastCard?.synergyFired && (lastCard?.synergyBonus || 0) >= 4) return '✨ Magic is happening on set!';
+  if (lastCard?.synergyFired) return 'The pieces are coming together...';
+  if (cleanWrap && drawCount >= 4 && qualityTotal > 10) return '🌟 Clean wrap — the crew is in the zone!';
+  if (drawCount === 1) return 'Cameras are rolling...';
+  if (drawCount === 2) return 'The production is finding its rhythm...';
+  if (qualityTotal > 20) return '🔥 This could be something special...';
+  if (qualityTotal > 10) return 'Looking good so far...';
+  if (qualityTotal < 0) return 'It\'s rough out there. Keep pushing...';
+  return '';
+}
 
 function CardTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; color: string; bg: string }> = {
@@ -37,7 +84,7 @@ function SourceBadge({ type }: { type: string }) {
   );
 }
 
-function ProductionCardDisplay({ card, isNew, onClick, selectable }: { card: ProductionCard; isNew: boolean; onClick?: () => void; selectable?: boolean }) {
+function ProductionCardDisplay({ card, isNew, onClick, selectable, className }: { card: ProductionCard; isNew: boolean; onClick?: () => void; selectable?: boolean; className?: string }) {
   const [showSynergy, setShowSynergy] = useState(false);
 
   useEffect(() => {
@@ -55,7 +102,7 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable }: { card: Pro
 
   return (
     <div
-      className={`prod-card-new ${isNew ? 'card-enter' : ''} ${isIncident ? 'red-card' : ''} ${selectable ? 'selectable-card' : ''}`}
+      className={`prod-card-new ${isNew ? 'card-enter' : ''} ${isIncident ? 'red-card' : ''} ${selectable ? 'selectable-card' : ''} ${card.synergyFired && showSynergy ? 'synergy-active' : ''} ${className || ''}`}
       onClick={onClick}
       style={selectable ? { cursor: 'pointer', border: '2px solid var(--gold)', boxShadow: '0 0 12px rgba(212,168,67,0.4)' } : {}}
     >
@@ -65,6 +112,26 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable }: { card: Pro
       </div>
       <div className="prod-card-name">{card.name}</div>
       <div className="prod-card-source">{card.source}</div>
+      {card.tags && card.tags.length > 0 && (
+        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 2 }}>
+          {[...new Set(card.tags)].map((tag, i) => {
+            const tagConfig: Record<string, { emoji: string; color: string }> = {
+              momentum: { emoji: '🔥', color: '#e67e22' },
+              precision: { emoji: '🎯', color: '#3498db' },
+              chaos: { emoji: '💀', color: '#9b59b6' },
+              heart: { emoji: '💕', color: '#e91e63' },
+              spectacle: { emoji: '✨', color: '#f1c40f' },
+            };
+            const tc = tagConfig[tag] || { emoji: '•', color: '#888' };
+            const count = card.tags!.filter(t => t === tag).length;
+            return (
+              <span key={i} style={{ fontSize: '0.55rem', color: tc.color, fontWeight: 600 }}>
+                {tc.emoji}{tag.toUpperCase()}{count > 1 ? ` ×${count}` : ''}
+              </span>
+            );
+          })}
+        </div>
+      )}
       <div className={`prod-card-value ${isGood ? 'positive' : isBad ? 'negative' : ''}`}>
         {card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}
         {card.synergyFired && showSynergy && (
@@ -97,6 +164,12 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const [lastDrawn, setLastDrawn] = useState<string | null>(null);
   const [showDiscard, setShowDiscard] = useState(false);
   const [dcOrder, setDcOrder] = useState<number[]>([0, 1, 2]);
+  const [combo, setCombo] = useState(0);
+  const [comboVisible, setComboVisible] = useState(false);
+  const [qualityPunch, setQualityPunch] = useState(false);
+  const [pickedCardId, setPickedCardId] = useState<string | null>(null);
+  const [rejectedCardId, setRejectedCardId] = useState<string | null>(null);
+  const prevPlayedCount = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   if (!prod) return null;
@@ -108,33 +181,97 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const mustDraw = prod.forceExtraDraw && prod.drawCount < maxDraws && !prod.isDisaster;
   const drawsLeft = maxDraws - prod.drawCount;
 
-  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus } = calculateQuality(state);
+  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus } = calculateQuality(state);
 
   // Chemistry display
   const castNames = state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[];
   const activeChemistry = getActiveChemistry(castNames);
 
-  const incidentInDeck = prod.deck.filter(c => c.cardType === 'incident').length;
-  const actionInDeck = prod.deck.filter(c => c.cardType === 'action').length;
-  const challengeInDeck = prod.deck.filter(c => c.cardType === 'challenge').length;
+  // Deck composition hidden from player to make Encore a real gamble
 
   const handleDraw = () => {
+    sfx.cardFlip();
     setIsDrawing(true);
+    setPickedCardId(null);
+    setRejectedCardId(null);
     setTimeout(() => {
       drawProductionCards();
       setIsDrawing(false);
       setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 50);
     }, 400);
   };
+  
+  const handlePick = (idx: 0 | 1) => {
+    if (!prod?.currentDraw) return;
+    const chosen = prod.currentDraw.choosable[idx];
+    const rejected = prod.currentDraw.choosable[idx === 0 ? 1 : 0];
+    setPickedCardId(chosen.id);
+    setRejectedCardId(rejected?.id || null);
+    sfx.cardPick();
+    if (rejected) setTimeout(() => sfx.cardDiscard(), 150);
+    // Delay actual pick to let animation play
+    setTimeout(() => {
+      pickCard(idx);
+      setPickedCardId(null);
+      setRejectedCardId(null);
+    }, 350);
+  };
+  
+  const handleWrap = () => {
+    sfx.wrap();
+    wrapProduction();
+  };
+  
+  const handleBlock = (block: boolean) => {
+    if (block) sfx.block(); else sfx.cardFlip();
+    resolveBlock(block);
+  };
+  
+  const handleBet = (accept: boolean) => {
+    if (accept) sfx.challenge(); else sfx.click();
+    resolveChallengeBet(accept);
+  };
 
+  // Track combo and trigger sounds when new cards are played
   useEffect(() => {
-    if (prod.played.length > 0) {
-      setLastDrawn(prod.played[prod.played.length - 1].id);
+    if (!prod) return;
+    const count = prod.played.length;
+    if (count > prevPlayedCount.current && count > 0) {
+      const newCard = prod.played[count - 1];
+      setLastDrawn(newCard.id);
+      
+      // Sound effects based on card type
+      if (newCard.cardType === 'incident') {
+        sfx.incident();
+        setCombo(0);
+        setComboVisible(false);
+      } else if (newCard.synergyFired) {
+        const newCombo = combo + 1;
+        setCombo(newCombo);
+        setComboVisible(true);
+        sfx.combo(newCombo);
+        // Hide combo after 2s of no activity
+        setTimeout(() => setComboVisible(false), 2500);
+      } else {
+        sfx.cardFlip();
+        setCombo(0);
+      }
+      
+      // Quality punch animation
+      setQualityPunch(true);
+      setTimeout(() => setQualityPunch(false), 300);
+      
+      // Disaster sound
+      if (prod.isDisaster) {
+        setTimeout(() => sfx.disaster(), 200);
+      }
     }
-  }, [prod.played.length]);
+    prevPlayedCount.current = count;
+  }, [prod?.played.length]);
 
   return (
     <div className="production-area fade-in">
+      <PhaseTip phase="production" />
       <div className="phase-title">
         <h2>🎥 Production</h2>
         <div className="subtitle">
@@ -144,15 +281,19 @@ export default function ProductionScreen({ state }: { state: GameState }) {
 
       {/* Movie quality meter — shows progress toward target */}
       {(() => {
-        const target = getSeasonTarget(state.season);
-        const neededQuality = Math.ceil(target / 1.2); // rough estimate
+        const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
+        // Estimate needed quality based on available market multipliers and rep
+        const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][state.reputation] || 1.0;
+        const bestMarketMult = Math.max(...state.marketConditions.map(m => m.multiplier), 1.0);
+        const estimatedMult = Math.max(bestMarketMult * repBonus, 0.5);
+        const neededQuality = Math.ceil(target / estimatedMult);
         const progress = Math.min(rawQuality / neededQuality, 1.5);
         const progressColor = progress >= 1.25 ? '#2ecc71' : progress >= 1.0 ? '#f1c40f' : progress >= 0.7 ? '#e67e22' : '#e74c3c';
         const meterLabel = progress >= 1.25 ? '🔥 SMASH!' : progress >= 1.0 ? '✅ On Target' : progress >= 0.7 ? '⚠️ Needs More' : '🚨 Danger Zone';
         return (
           <div style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4 }}>
-              <span style={{ color: '#888' }}>Quality: <strong style={{ color: '#d4a843' }}>{rawQuality}</strong> / ~{neededQuality} needed</span>
+              <span style={{ color: '#888' }}>Quality: <strong className={qualityPunch ? 'quality-punch' : ''} style={{ color: '#d4a843', display: 'inline-block' }}>{rawQuality}</strong> / ~{neededQuality} needed</span>
               <span style={{ color: progressColor, fontWeight: 600 }}>{meterLabel}</span>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 8, overflow: 'hidden' }}>
@@ -171,51 +312,93 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       {/* Stats bar — compact layout */}
       <div className="production-stats-bar">
         <div className="prod-stat">
-          <span className="label">Deck</span>
-          <span className="value">
-            <span style={{ color: '#2ecc71' }}>{actionInDeck}</span>
-            {' / '}
-            <span style={{ color: '#f1c40f' }}>{challengeInDeck}</span>
-            {' / '}
-            <span style={{ color: '#e74c3c' }}>{incidentInDeck}</span>
-          </span>
-        </div>
-        <div className="prod-stat">
           <span className="label">Draws</span>
           <span className="value">{prod.drawCount}/{maxDraws}</span>
         </div>
         <div className="prod-stat">
-          <span className="label">Discard</span>
-          <span className="value" style={{ color: '#888' }}>{prod.discarded.length}</span>
+          <span className="label">Incidents</span>
+          <span className="value" style={{ color: prod.incidentCount >= 2 ? '#e74c3c' : '#888' }}>{prod.incidentCount}/{state.studioArchetype === 'chaos' ? 4 : 3}</span>
         </div>
       </div>
 
-      {/* Deck forecast — shows what's left */}
+      {/* Tag tracker */}
+      {prod.tagsPlayed && Object.keys(prod.tagsPlayed).length > 0 && (
+        <div style={{ 
+          display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 8, 
+          background: 'rgba(255,255,255,0.02)', borderRadius: 6, padding: '4px 12px',
+          fontSize: '0.75rem', flexWrap: 'wrap'
+        }}>
+          {Object.entries(prod.tagsPlayed).sort((a, b) => b[1] - a[1]).map(([tag, count]) => {
+            const tc: Record<string, { emoji: string; color: string }> = {
+              momentum: { emoji: '🔥', color: '#e67e22' },
+              precision: { emoji: '🎯', color: '#3498db' },
+              chaos: { emoji: '💀', color: '#9b59b6' },
+              heart: { emoji: '💕', color: '#e91e63' },
+              spectacle: { emoji: '✨', color: '#f1c40f' },
+            };
+            const cfg = tc[tag] || { emoji: '•', color: '#888' };
+            return (
+              <span key={tag} className={count >= 3 ? 'tag-milestone' : ''} style={{ color: cfg.color, fontWeight: count >= 3 ? 700 : 400 }}>
+                {cfg.emoji} {tag}: {count}{count >= 3 ? ' ⚡' : count >= 2 ? ' ↗' : ''}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Archetype Focus indicator */}
+      {(() => {
+        const focus = calculateArchetypeFocus(prod.tagsPlayed || {});
+        if (!focus) return null;
+        const focusColors: Record<string, string> = {
+          momentum: '#e67e22', precision: '#3498db', chaos: '#9b59b6',
+          heart: '#e91e63', spectacle: '#f1c40f',
+        };
+        const color = focusColors[focus.tag] || '#d4a843';
+        return (
+          <div style={{
+            background: `${color}15`,
+            border: `2px solid ${color}`,
+            borderRadius: 8,
+            padding: '6px 16px',
+            marginBottom: 8,
+            textAlign: 'center',
+            animation: 'comboAppear 0.3s ease',
+          }}>
+            <span style={{ color, fontFamily: 'Bebas Neue', fontSize: '1rem', letterSpacing: '0.05em' }}>
+              {focus.label} ({focus.percentage}%) — +{focus.bonus} Quality
+            </span>
+            <span style={{ color: '#888', fontSize: '0.7rem', marginLeft: 8 }}>
+              Specialization rewarded!
+            </span>
+          </div>
+        );
+      })()}
+
+      {/* Combo counter */}
+      {comboVisible && combo >= 2 && (
+        <div className={`combo-counter combo-${Math.min(combo, 5)}`} key={combo}>
+          <span className="combo-number">{combo}×</span>
+          <span className="combo-label">
+            {combo >= 5 ? 'LEGENDARY!' : combo >= 4 ? 'ON FIRE!' : combo >= 3 ? 'COMBO!' : 'NICE!'}
+          </span>
+        </div>
+      )}
+
+      {/* Deck remaining count (simplified — no composition breakdown) */}
       {deckSize > 0 && !prod.isWrapped && (
         <div style={{ 
           background: 'rgba(255,255,255,0.03)', 
           borderRadius: 8, 
-          padding: '8px 16px', 
+          padding: '6px 16px', 
           marginBottom: 12, 
-          display: 'flex', 
-          gap: 12, 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          fontSize: '0.8rem' 
+          textAlign: 'center',
+          fontSize: '0.8rem',
+          color: '#888',
         }}>
-          <span style={{ color: '#888' }}>📊 Remaining:</span>
-          <span style={{ color: '#2ecc71' }}>
-            {actionInDeck} Action ({deckSize > 0 ? Math.round(actionInDeck/deckSize*100) : 0}%)
-          </span>
-          <span style={{ color: '#f1c40f' }}>
-            {challengeInDeck} Challenge ({deckSize > 0 ? Math.round(challengeInDeck/deckSize*100) : 0}%)
-          </span>
-          <span style={{ color: '#e74c3c' }}>
-            {incidentInDeck} Incident ({deckSize > 0 ? Math.round(incidentInDeck/deckSize*100) : 0}%)
-          </span>
-          {incidentInDeck >= 2 && prod.incidentCount >= 1 && (
-            <span style={{ color: '#e74c3c', fontWeight: 600 }}>⚠️ Disaster risk!</span>
+          📦 {deckSize} cards remaining in deck
+          {prod.incidentCount >= 2 && (
+            <span style={{ color: '#e74c3c', fontWeight: 600, marginLeft: 8 }}>⚠️ Disaster risk!</span>
           )}
         </div>
       )}
@@ -228,7 +411,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           </div>
         ))}
         <span className="bad-label">
-          {prod.incidentCount >= 2 ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 ? '⚠️ Careful — one more and you\'re on the edge...' : prod.cleanWrap && prod.drawCount > 0 ? `✨ Clean Wrap active (+${state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!)` : 'No Incidents yet'}
+          {prod.incidentCount >= 2 ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 ? '⚠️ Careful — one more and you\'re on the edge...' : prod.cleanWrap && prod.drawCount > 0 ? <span className="clean-wrap-badge">✨ Clean Wrap active (+{state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!)</span> : 'No Incidents yet'}
         </span>
       </div>
 
@@ -241,9 +424,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         {scriptAbilityBonus > 0 && <span className="qb-item" style={{ color: '#9b59b6' }}>⭐ Ability: +{scriptAbilityBonus}</span>}
         {genreMasteryBonus > 0 && <span className="qb-item" style={{ color: '#2ecc71' }}>🎓 Genre Mastery: +{genreMasteryBonus}</span>}
         {chemistryBonus > 0 && <span className="qb-item" style={{ color: '#e91e63' }}>💕 Chemistry: +{chemistryBonus}</span>}
-        <span className="qb-item" style={{ color: rawQuality >= getSeasonTarget(state.season) / 1.5 ? '#2ecc71' : rawQuality >= getSeasonTarget(state.season) / 2.5 ? '#f1c40f' : '#e74c3c' }}>
-          🎯 Need ~{Math.ceil(getSeasonTarget(state.season) / 1.2)} quality
-        </span>
+        {archetypeFocusBonus > 0 && <span className="qb-item" style={{ color: '#d4a843' }}>⚡ Focus: +{archetypeFocusBonus}</span>}
       </div>
 
       {prod.budgetChange !== 0 && (
@@ -252,10 +433,16 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       )}
 
+      {/* Production narrative */}
+      <div className="prod-narrative" key={prod.drawCount}>
+        {getProductionNarrative(prod.drawCount, prod.incidentCount, prod.qualityTotal, prod.cleanWrap, prod.isDisaster, prod.played.length > 0 ? prod.played[prod.played.length - 1] : null)}
+      </div>
+
       {/* Drawing animation */}
       {isDrawing && (
         <div className="draw-animation">
-          <div className="card-back spinning">🎬</div>
+          <div className="card-back">🎬</div>
+          <div className="card-back">🎬</div>
         </div>
       )}
 
@@ -279,6 +466,9 @@ export default function ProductionScreen({ state }: { state: GameState }) {
                   remainingDeck: prod.deck,
                   actionCardsPlayed: prod.played.filter(c => c.cardType === 'action').length,
                   challengeCardsPlayed: prod.played.filter(c => c.cardType === 'challenge').length,
+                  tagsPlayed: prod.tagsPlayed || {},
+                  discardedCount: prod.discarded.length,
+                  consecutiveSources: 0,
                 };
                 const result = card.synergyCondition!(ctx);
                 return result.bonus !== 0 ? `Will fire: +${result.bonus}` : null;
@@ -290,7 +480,8 @@ export default function ProductionScreen({ state }: { state: GameState }) {
                     card={card}
                     isNew={true}
                     selectable={true}
-                    onClick={() => pickCard(i as 0 | 1)}
+                    className={card.id === pickedCardId ? 'card-slam' : card.id === rejectedCardId ? 'card-shatter' : ''}
+                    onClick={() => handlePick(i as 0 | 1)}
                   />
                   {wouldFire && (
                     <div style={{ color: '#2ecc71', fontSize: '0.75rem', fontWeight: 600, marginTop: 4 }}>
@@ -315,7 +506,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           {prod.pendingChallenge.bet.oddsHint && (
             <p style={{ color: '#888', fontSize: '0.75rem', marginBottom: 12, fontStyle: 'italic' }}>
               💡 {prod.pendingChallenge.bet.oddsHint(
-                { playedCards: prod.played, totalQuality: prod.qualityTotal, drawNumber: prod.drawCount, leadSkill: 0, redCount: prod.incidentCount, incidentCount: prod.incidentCount, previousCard: null, greenStreak: 0, remainingDeck: prod.deck, actionCardsPlayed: 0, challengeCardsPlayed: 0 }
+                { playedCards: prod.played, totalQuality: prod.qualityTotal, drawNumber: prod.drawCount, leadSkill: 0, redCount: prod.incidentCount, incidentCount: prod.incidentCount, previousCard: null, greenStreak: 0, remainingDeck: prod.deck, actionCardsPlayed: 0, challengeCardsPlayed: 0, tagsPlayed: prod.tagsPlayed || {}, discardedCount: prod.discarded.length, consecutiveSources: 0 }
               )}
             </p>
           )}
@@ -325,10 +516,10 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             <span style={{ color: '#e74c3c', fontWeight: 600 }}>Lose: {prod.pendingChallenge.bet.failPenalty}</span>
           </div>
           <div className="btn-group" style={{ justifyContent: 'center' }}>
-            <button className="btn btn-primary" onClick={() => resolveChallengeBet(true)}>
+            <button className="btn btn-primary" onClick={() => handleBet(true)}>
               🎲 TAKE THE BET
             </button>
-            <button className="btn" onClick={() => resolveChallengeBet(false)}>
+            <button className="btn" onClick={() => handleBet(false)}>
               🚫 DECLINE (keep base value)
             </button>
           </div>
@@ -343,13 +534,13 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             <strong style={{ color: '#e74c3c' }}>{prod.pendingBlock.incident.name}</strong> ({prod.pendingBlock.incident.baseQuality}) was drawn alongside <strong style={{ color: '#2ecc71' }}>{prod.pendingBlock.actionCard.name}</strong>.
           </p>
           <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: 12 }}>
-            Sacrifice your Action card to block the Incident? Both cards are discarded.
+            Sacrifice your Action card to block the Incident? Both cards are discarded. <strong style={{ color: '#e74c3c' }}>Costs 2 quality.</strong>
           </p>
           <div className="btn-group" style={{ justifyContent: 'center' }}>
-            <button className="btn btn-primary" onClick={() => resolveBlock(false)} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
+            <button className="btn btn-primary" onClick={() => handleBlock(false)} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
               🎬 KEEP BOTH (Incident fires, keep Action)
             </button>
-            <button className="btn" onClick={() => resolveBlock(true)} style={{ background: 'rgba(231,76,60,0.2)', borderColor: '#e74c3c', color: '#e74c3c' }}>
+            <button className="btn" onClick={() => handleBlock(true)} style={{ background: 'rgba(231,76,60,0.2)', borderColor: '#e74c3c', color: '#e74c3c' }}>
               🛡️ BLOCK (Sacrifice Action, discard Incident)
             </button>
           </div>
@@ -404,9 +595,10 @@ export default function ProductionScreen({ state }: { state: GameState }) {
 
       {/* Disaster banner */}
       {prod.isDisaster && (
-        <div className="disaster-banner animate-shake">
-          <h3>💥 DISASTER!</h3>
-          <p>3 Incidents! ALL production quality lost!</p>
+        <div className="disaster-banner">
+          <h3 style={{ fontSize: '2.5rem', marginBottom: 8 }}>💥 DISASTER! 💥</h3>
+          <p style={{ fontSize: '1rem' }}>3 Incidents! ALL production quality lost!</p>
+          <p style={{ color: '#e74c3c', fontSize: '0.85rem', marginTop: 8, opacity: 0.8 }}>The studio insurance department is on the phone...</p>
         </div>
       )}
 
@@ -461,12 +653,12 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       {/* Actions */}
       <div className="btn-group">
         {canDraw && !isDrawing && (
-          <button className="btn btn-primary btn-glow" onClick={handleDraw}>
+          <button className={`btn btn-primary btn-glow ${prod.incidentCount >= 2 ? 'btn-draw-dramatic' : ''}`} onClick={handleDraw}>
             🎬 {prod.drawCount === 0 ? 'DRAW FIRST CARDS' : `DRAW 2 (${prod.drawCount}/${maxDraws} draws)`}
           </button>
         )}
         {canWrap && !mustDraw && (
-          <button className="btn" onClick={wrapProduction}>
+          <button className="btn" onClick={handleWrap}>
             ✂️ WRAP — Call "CUT!"
           </button>
         )}
@@ -480,10 +672,57 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             🔄 RESHOOTS
           </button>
         )}
-        {prod.isWrapped && (
-          <button className="btn btn-primary btn-glow" onClick={resolveRelease}>
-            📊 SEE BOX OFFICE →
-          </button>
+        {/* Encore: Push Your Luck after wrapping */}
+        {prod.isWrapped && !prod.isDisaster && prod.encoreState?.available && !prod.encoreState.used && (
+          <div style={{
+            background: 'rgba(212,168,67,0.1)',
+            border: '2px solid var(--gold)',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 12,
+            textAlign: 'center',
+          }}>
+            <h3 style={{ color: 'var(--gold)', marginBottom: 8, fontSize: '1rem' }}>🎬 ENCORE?</h3>
+            <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: 4 }}>
+              Draw one more card for a <strong style={{ color: '#2ecc71' }}>+3 bonus</strong> on top of its value.
+            </p>
+            <p style={{ color: '#e74c3c', fontSize: '0.75rem', marginBottom: 12 }}>
+              ⚠️ But if it's an Incident: <strong>-5 extra penalty</strong> and lose Clean Wrap!
+            </p>
+            <p style={{ color: '#888', fontSize: '0.7rem', marginBottom: 12 }}>
+              🎲 {prod.deck.length} cards remain. Do you feel lucky?
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => { sfx.challenge(); attemptEncore(); }}>
+                🎲 ENCORE! (Risk it)
+              </button>
+              <button className="btn" onClick={() => { sfx.click(); declineEncore(); }}>
+                ✂️ No thanks, wrap it up
+              </button>
+            </div>
+          </div>
+        )}
+        {prod.isWrapped && prod.encoreState?.used && prod.encoreState.result && (
+          <div style={{
+            background: prod.encoreState.result === 'success' ? 'rgba(46,204,113,0.1)' : 'rgba(231,76,60,0.1)',
+            border: `2px solid ${prod.encoreState.result === 'success' ? '#2ecc71' : '#e74c3c'}`,
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 12,
+            textAlign: 'center',
+          }}>
+            <span style={{ fontSize: '1.2rem' }}>
+              {prod.encoreState.result === 'success' ? '🎉 ENCORE SUCCESS!' : '💥 ENCORE BACKFIRED!'}
+            </span>
+            {prod.encoreState.card && (
+              <span style={{ color: '#888', fontSize: '0.8rem', marginLeft: 8 }}>
+                {prod.encoreState.card.name}: {(prod.encoreState.card.totalValue || 0) >= 0 ? '+' : ''}{prod.encoreState.card.totalValue}
+              </span>
+            )}
+          </div>
+        )}
+        {prod.isWrapped && (!prod.encoreState?.available || prod.encoreState.used) && (
+          <AutoAdvance onAdvance={resolveRelease} delayMs={1800} label="📊 SEE BOX OFFICE →" />
         )}
       </div>
     </div>

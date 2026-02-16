@@ -352,3 +352,17 @@ Round 30 is the capstone round after 29 rounds of overnight iteration. Full code
 - **Bottom sheet**: HowToPlay and QuickHelp modals slide up from bottom on mobile with drag handle pill, 85vh max height
 - **Mobile card carousel**: Single-card view on narrow screens with swipe navigation instead of cramped 3-column grid
 - **`-webkit-tap-highlight-color: transparent`** on all interactive elements to remove blue flash
+
+## R37 — Performance & Bundle Optimization (2026-02-16)
+
+**Bundle before:** 446KB JS (single chunk) / 39KB CSS
+**Bundle after:** 236KB initial JS + lazy-loaded chunks / 39KB CSS
+
+**Changes:**
+- **Code-split all screens** via `React.lazy` — only StartScreen loads eagerly; all other screens (Neow, Greenlight, Casting, Production, Release, Shop, End) lazy-load on navigation
+- **Manual chunks** in Vite config — separated `game-data` (106KB: data.ts, narrative.ts, rivals.ts) and `game-engine` (34KB: gameStore.ts, unlocks.ts, challenges.ts) from UI code
+- **Font optimization** — trimmed Google Fonts from 7 weights (300-900) to 4 weights (400-700), only loading what CSS actually uses
+- **Preconnect hints** — added `preconnect` for fonts.googleapis.com and fonts.gstatic.com to index.html
+- **Suspense boundary** — loading fallback for lazy screens during phase transitions
+
+**Result:** 47% reduction in initial JS payload (446KB → 236KB). Total code unchanged but loaded on-demand as players progress through game phases.

@@ -212,7 +212,25 @@ export default function ShopScreen({ state }: { state: GameState }) {
         </div>
       )}
 
-      <div className="btn-group" style={{ marginTop: 32 }}>
+      {/* Season readiness summary */}
+      <div style={{
+        marginTop: 32, padding: '12px 16px', background: 'rgba(212,168,67,0.06)',
+        border: '1px solid rgba(212,168,67,0.15)', borderRadius: 10, textAlign: 'center',
+        maxWidth: 500, margin: '32px auto 0',
+      }}>
+        <div style={{ fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: 'var(--gold)', letterSpacing: '0.05em', marginBottom: 6 }}>
+          HEADING INTO SEASON {state.season + 1}
+        </div>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', fontSize: '0.78rem', color: '#999', flexWrap: 'wrap' }}>
+          <span>💰 ${state.budget.toFixed(1)}M budget</span>
+          <span>🎭 {state.roster.length} talent</span>
+          <span>⭐ {state.perks.length} perks</span>
+          <span>{'★'.repeat(state.reputation)}{'☆'.repeat(5 - state.reputation)} rep</span>
+          {state.debt > 0 && <span style={{ color: '#e74c3c' }}>⚠️ ${state.debt.toFixed(1)}M debt</span>}
+        </div>
+      </div>
+
+      <div className="btn-group" style={{ marginTop: 16 }}>
         <button className="btn btn-primary btn-glow" onClick={() => { sfx.seasonTransition(); nextSeason(); }}>
           BEGIN SEASON {state.season + 1} →
         </button>

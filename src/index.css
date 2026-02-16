@@ -517,15 +517,21 @@ h1, h2, h3, h4 {
   border-color: rgba(212,168,67,0.4);
 }
 
-/* Selectable card (draw-2-pick-1) — dramatic hover */
+/* Selectable card (draw-2-pick-1) — dramatic hover + pulse */
 .selectable-card {
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s !important;
   cursor: pointer !important;
+  animation: selectablePulse 2s ease-in-out infinite !important;
+}
+@keyframes selectablePulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(212,168,67,0.2); }
+  50% { box-shadow: 0 0 20px rgba(212,168,67,0.35), 0 0 8px rgba(212,168,67,0.15); }
 }
 .selectable-card:hover {
   transform: translateY(-8px) scale(1.04) !important;
   box-shadow: 0 12px 40px rgba(212,168,67,0.4), 0 0 20px rgba(212,168,67,0.2) !important;
   border-color: var(--gold) !important;
+  animation: none !important;
 }
 
 .prod-card-header {
@@ -1387,15 +1393,15 @@ h1, h2, h3, h4 {
 /* ===== PHASE TRANSITIONS ===== */
 .phase-exit {
   opacity: 0;
-  transform: translateY(6px) scale(0.98);
-  filter: blur(2px);
-  transition: opacity 0.22s ease, transform 0.22s ease, filter 0.22s ease;
+  transform: translateY(8px) scale(0.97);
+  filter: blur(3px);
+  transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
 }
 .phase-enter {
   opacity: 1;
   transform: translateY(0) scale(1);
   filter: blur(0);
-  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.05s, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.05s, filter 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s, filter 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
 }
 .card-deck-info {
   margin-top: 4px;

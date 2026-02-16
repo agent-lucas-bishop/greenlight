@@ -217,6 +217,30 @@ export default function CastingScreen({ state }: { state: GameState }) {
             <ScriptCardsCollapsible cards={state.currentScript.cards} />
           )}
 
+          {/* Deck preview summary */}
+          {filledCount >= 2 && (
+            <div style={{
+              marginTop: 16, padding: '10px 14px', background: 'rgba(212,168,67,0.06)',
+              border: '1px solid rgba(212,168,67,0.15)', borderRadius: 8, fontSize: '0.78rem', color: '#999',
+            }}>
+              <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.85rem', marginBottom: 4, letterSpacing: '0.05em' }}>
+                📦 PRODUCTION DECK PREVIEW
+              </div>
+              <span style={{ color: '#2ecc71' }}>{actionCards} Actions</span>
+              {' · '}
+              <span style={{ color: '#f1c40f' }}>{challengeCards} Challenges</span>
+              {' · '}
+              <span style={{ color: '#e74c3c' }}>{incidentCards} Incidents</span>
+              {' · '}
+              <span>{totalDeckCards} total</span>
+              {incidentCards >= 3 && (
+                <div style={{ color: '#e74c3c', fontSize: '0.7rem', marginTop: 4 }}>
+                  ⚠️ High incident count — disaster risk is elevated!
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="btn-group" style={{ flexDirection: 'column', marginTop: 16 }}>
             <button className="btn btn-primary" disabled={filledCount < 2} onClick={() => { sfx.seasonTransition(); startProduction(); }}>
               BEGIN PRODUCTION →

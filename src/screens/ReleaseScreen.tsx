@@ -137,6 +137,11 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
 
       <div className={`box-office-target ${phase >= 1 ? 'revealed' : 'hidden'}`}>
         Target: ${target}M
+        {phase >= 1 && (
+          <span style={{ marginLeft: 8, color: state.lastBoxOffice >= target ? '#2ecc71' : '#e74c3c', fontWeight: 600 }}>
+            {state.lastBoxOffice >= target ? '✓ HIT' : '✗ MISSED'}
+          </span>
+        )}
       </div>
 
       {/* TIER BANNER */}

@@ -22,10 +22,12 @@ function App() {
   useEffect(() => {
     if (state.phase !== prevPhase) {
       setTransitioning(true);
+      // Scroll to top on phase change
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
       const t = setTimeout(() => {
         setTransitioning(false);
         setPrevPhase(state.phase);
-      }, 220);
+      }, 300);
       return () => clearTimeout(t);
     }
   }, [state.phase, prevPhase]);

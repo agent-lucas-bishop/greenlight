@@ -92,8 +92,11 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
               </div>
               <div className="card-body">
                 Slots: {script.slots.join(', ')}
+                <div style={{ marginTop: 6, fontSize: '0.75rem', color: '#666' }}>
+                  📦 {script.cards?.length || 0} script cards added to production deck
+                </div>
                 {script.abilityDesc && (
-                  <div style={{ marginTop: 8, color: '#d4a843', fontStyle: 'italic', fontSize: '0.8rem' }}>
+                  <div style={{ marginTop: 6, color: '#d4a843', fontStyle: 'italic', fontSize: '0.8rem' }}>
                     ✨ {script.abilityDesc}
                   </div>
                 )}

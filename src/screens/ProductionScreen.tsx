@@ -650,8 +650,9 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       {/* Actions */}
       <div className="btn-group">
         {canDraw && !isDrawing && (
-          <button className={`btn btn-primary btn-glow ${prod.incidentCount >= 2 ? 'btn-draw-dramatic' : ''}`} onClick={handleDraw}>
-            🎬 {prod.drawCount === 0 ? 'DRAW FIRST CARDS' : `DRAW 2 (${prod.drawCount}/${maxDraws} draws)`}
+          <button className={`btn btn-primary btn-glow ${prod.incidentCount >= 2 ? 'btn-draw-dramatic' : ''}`} onClick={handleDraw}
+            style={prod.drawCount === 0 ? { fontSize: '1.3rem', padding: '14px 36px' } : undefined}>
+            🎬 {prod.drawCount === 0 ? 'ACTION! — DRAW FIRST CARDS' : `DRAW 2 (${prod.drawCount}/${maxDraws} draws)`}
           </button>
         )}
         {canWrap && !mustDraw && (
@@ -719,7 +720,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           </div>
         )}
         {prod.isWrapped && (!prod.encoreState?.available || prod.encoreState.used) && (
-          <AutoAdvance onAdvance={resolveRelease} delayMs={1800} label="📊 SEE BOX OFFICE →" />
+          <AutoAdvance onAdvance={resolveRelease} delayMs={2500} label="📊 SEE BOX OFFICE →" />
         )}
       </div>
     </div>

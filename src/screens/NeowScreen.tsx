@@ -35,9 +35,10 @@ export default function NeowScreen() {
             style={{ 
               animationDelay: `${i * 0.15}s`,
               borderColor: hoveredIdx === i ? c.color : undefined,
+              boxShadow: hoveredIdx === i ? `0 0 24px ${c.color}30, 0 8px 32px rgba(0,0,0,0.6)` : undefined,
             }}
           >
-            <div style={{ fontSize: '2.5rem', marginBottom: 12, transition: 'transform 0.2s', transform: hoveredIdx === i ? 'scale(1.2)' : 'scale(1)' }}>{c.emoji}</div>
+            <div style={{ fontSize: '2.5rem', marginBottom: 12, transition: 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)', transform: hoveredIdx === i ? 'scale(1.25) rotate(-3deg)' : 'scale(1)' }}>{c.emoji}</div>
             <div className="card-title" style={{ color: c.color }}>{c.title}</div>
             <div className="card-body" style={{ fontSize: '0.85rem' }}>{c.desc}</div>
           </div>

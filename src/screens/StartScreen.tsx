@@ -5,7 +5,7 @@ import { hasSaveGame, getSaveInfo } from '../savegame';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
 import { getRunStats, getMilestoneProgress, getEndingsDiscovered, ENDINGS } from '../unlocks';
-import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown } from '../onboarding';
+import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES } from '../challenges';
 import { getDailyDateString } from '../seededRng';
@@ -140,6 +140,7 @@ function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?
 
 export default function StartScreen() {
   const firstRun = isFirstRun();
+  const preFirstComplete = isSimplifiedRun(); // true until player completes first full run
   const [showHelp, setShowHelp] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
@@ -156,10 +157,7 @@ export default function StartScreen() {
   const dailyBest = getDailyBest(dailyDate);
 
   useEffect(() => {
-    if (firstRun) {
-      const t = setTimeout(() => setShowHelp(true), 600);
-      return () => clearTimeout(t);
-    }
+    // No longer auto-open static modal on first run — interactive tutorial handles it
     if (shouldShowUnlockToast()) {
       markUnlockToastShown();
       setShowUnlockToast(true);
@@ -224,8 +222,8 @@ export default function StartScreen() {
       <div className="start-title animate-title">GREENLIGHT</div>
       <div className="start-subtitle">A Movie Studio Roguelite</div>
 
-      {/* Tab navigation */}
-      {stats.runs > 0 && (
+      {/* Tab navigation — advanced tabs hidden until first run complete */}
+      {stats.runs > 0 && !preFirstComplete && (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
           {(['play', 'career', 'history', 'challenges', 'leaderboard'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
@@ -244,7 +242,9 @@ export default function StartScreen() {
       {tab === 'play' && (
         <>
           <p style={{ color: '#888', maxWidth: 500, margin: '0 auto 32px', lineHeight: 1.6 }}>
-            You're a freshly hired studio head. Make movies, build your reputation, survive the chaos of Hollywood.
+            {firstRun
+              ? 'Welcome to Hollywood. You\'ve just been handed the keys to a studio. Make movies, survive 5 seasons, and build your legacy.'
+              : 'You\'re a freshly hired studio head. Make movies, build your reputation, survive the chaos of Hollywood.'}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
             {hasSaveGame() && (() => {
@@ -261,8 +261,8 @@ export default function StartScreen() {
             <button className={`btn ${hasSaveGame() ? 'btn-small' : 'btn-primary btn-glow'}`} onClick={() => { markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
               NEW RUN
             </button>
-            {/* Daily Run */}
-            {(() => {
+            {/* Daily Run — hidden until first run complete */}
+            {!preFirstComplete && (() => {
               const todayMod = getTodayModifier();
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', maxWidth: 400 }}>
@@ -315,12 +315,12 @@ export default function StartScreen() {
                 </div>
               );
             })()}
-            {stats.ngPlusUnlocked && (
+            {!preFirstComplete && stats.ngPlusUnlocked && (
               <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { markRunStarted(); setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>
               </button>
             )}
-            {stats.directorUnlocked && (
+            {!preFirstComplete && stats.directorUnlocked && (
               <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { markRunStarted(); setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 🔥 DIRECTOR MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.8 targets)</span>
               </button>
@@ -637,7 +637,7 @@ export default function StartScreen() {
           🔓 New Systems Unlocked! Genre trends & debt are now active.
         </div>
       )}
-      {showHelp && <HowToPlay onClose={() => { setShowHelp(false); if (firstRun) markRunStarted(); }} isFirstTime={firstRun} />}
+      {showHelp && <HowToPlay onClose={() => setShowHelp(false)} isFirstTime={firstRun} />}
     </div>
   );
 }

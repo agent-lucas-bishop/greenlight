@@ -9,6 +9,7 @@ interface OnboardingState {
   tipsDissmissed: Record<string, boolean>;
   runCount: number;
   shownUnlockToast: boolean; // true after showing "new systems" toast
+  narrativeShown: boolean; // true after studio founding narrative played
 }
 
 function getOnboarding(): OnboardingState {
@@ -19,10 +20,11 @@ function getOnboarding(): OnboardingState {
       // Migrate old state
       if (parsed.firstRunComplete === undefined) parsed.firstRunComplete = parsed.runCount > 1;
       if (parsed.shownUnlockToast === undefined) parsed.shownUnlockToast = false;
+      if (parsed.narrativeShown === undefined) parsed.narrativeShown = false;
       return parsed;
     }
   } catch {}
-  return { hasPlayedBefore: false, firstRunComplete: false, phasesVisited: {}, tipsDissmissed: {}, runCount: 0, shownUnlockToast: false };
+  return { hasPlayedBefore: false, firstRunComplete: false, phasesVisited: {}, tipsDissmissed: {}, runCount: 0, shownUnlockToast: false, narrativeShown: false };
 }
 
 function saveOnboarding(s: OnboardingState) {
@@ -94,6 +96,19 @@ export function dismissTip(tipId: string) {
 
 export function getRunCount(): number {
   return getOnboarding().runCount;
+}
+
+/** Should we show the studio founding narrative? (first-ever run only) */
+export function shouldShowNarrative(): boolean {
+  const s = getOnboarding();
+  return !s.narrativeShown;
+}
+
+/** Mark the studio founding narrative as shown */
+export function markNarrativeShown() {
+  const s = getOnboarding();
+  s.narrativeShown = true;
+  saveOnboarding(s);
 }
 
 // Phase-specific contextual tips shown on first visit

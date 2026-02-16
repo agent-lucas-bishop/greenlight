@@ -3,6 +3,10 @@ import { getState, subscribe } from './gameStore';
 import { GameState } from './types';
 import StartScreen from './screens/StartScreen';
 import Header from './components/Header';
+import TutorialOverlay from './components/TutorialOverlay';
+import StudioFoundingNarrative from './components/StudioFoundingNarrative';
+import { shouldShowNarrative, markNarrativeShown, isFirstRun } from './onboarding';
+import { isTutorialActive } from './tutorial';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -17,8 +21,17 @@ function App() {
   const [state, setState] = useState<GameState>(getState());
   const [transitioning, setTransitioning] = useState(false);
   const [prevPhase, setPrevPhase] = useState<string>(state.phase);
+  const [showNarrative, setShowNarrative] = useState(false);
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // Show narrative on first-ever neow entry
+  useEffect(() => {
+    if (state.phase === 'neow' && shouldShowNarrative()) {
+      setShowNarrative(true);
+      markNarrativeShown();
+    }
+  }, [state.phase]);
 
   // Phase transition effect
   useEffect(() => {
@@ -74,6 +87,15 @@ function App() {
         </Suspense>
       </main>
       <div className="film-strip" aria-hidden="true" />
+      {showNarrative && (
+        <StudioFoundingNarrative
+          studioName={state.studioName || 'Your Studio'}
+          onComplete={() => setShowNarrative(false)}
+        />
+      )}
+      {state.phase !== 'start' && isTutorialActive() && (
+        <TutorialOverlay phase={state.phase} />
+      )}
     </>
   );
 }

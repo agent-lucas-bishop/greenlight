@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GameState, Talent } from '../types';
-import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason } from '../gameStore';
+import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason, payDebt } from '../gameStore';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 
@@ -188,6 +188,25 @@ export default function ShopScreen({ state }: { state: GameState }) {
           })}
         </div>
       </div>
+
+      {/* Debt paydown section */}
+      {state.debt > 0 && (
+        <div style={{ background: 'rgba(231,76,60,0.08)', borderRadius: 8, padding: 12, marginTop: 16 }}>
+          <h4 style={{ color: '#e74c3c', margin: '0 0 8px' }}>💳 Debt: ${state.debt.toFixed(1)}M</h4>
+          <div style={{ fontSize: '0.75rem', color: '#e74c3c', marginBottom: 8 }}>
+            20% interest compounds each season. ≥$15M = reputation penalty. Pay it down now!
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[5, 10, Math.ceil(state.debt)].filter((v, i, a) => v <= state.budget && v <= state.debt && a.indexOf(v) === i).map(amt => (
+              <button key={amt} className="btn btn-small" onClick={() => payDebt(amt)}
+                style={{ background: 'rgba(231,76,60,0.2)', border: '1px solid #e74c3c', color: '#e74c3c' }}>
+                Pay ${amt}M
+              </button>
+            ))}
+            {state.budget < 1 && <span style={{ fontSize: '0.7rem', color: '#888' }}>No budget to pay debt</span>}
+          </div>
+        </div>
+      )}
 
       <div className="btn-group" style={{ marginTop: 32 }}>
         <button className="btn btn-primary btn-glow" onClick={nextSeason}>

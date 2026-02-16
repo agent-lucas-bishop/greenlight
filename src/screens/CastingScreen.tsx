@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GameState, Talent, CardTemplate } from '../types';
-import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction } from '../gameStore';
+import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction, isSlotBlocked } from '../gameStore';
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
@@ -181,27 +181,33 @@ export default function CastingScreen({ state }: { state: GameState }) {
         <div>
           <h4 style={{ color: '#999', marginBottom: 8, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cast Slots</h4>
           <div className="cast-slots">
-            {state.castSlots.map((slot, i) => (
+            {state.castSlots.map((slot, i) => {
+              const blocked = !slot.talent && isSlotBlocked(slot.slotType, state.castSlots);
+              return (
               <div
                 key={i}
-                className={`cast-slot ${slot.talent ? 'filled' : ''} ${i === activeSlot ? 'active' : ''}`}
+                className={`cast-slot ${slot.talent ? 'filled' : ''} ${i === activeSlot ? 'active' : ''} ${blocked ? 'blocked' : ''}`}
                 onClick={() => {
+                  if (blocked) return;
                   if (slot.talent) unassignTalent(i);
                   setActiveSlot(i);
                 }}
+                style={blocked ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
               >
-                <div className="slot-label">{slot.slotType}</div>
+                <div className="slot-label">{slot.slotType}{blocked ? ' 🔒' : ''}</div>
                 {slot.talent ? (
                   <div className="slot-talent">
                     {slot.talent.name}
                     <span style={{ fontSize: '0.75rem', color: '#999' }}> S{slot.talent.skill}/H{slot.talent.heat}</span>
                     <span style={{ marginLeft: 4, fontSize: '0.6rem', color: '#666' }}>✕</span>
                   </div>
+                ) : blocked ? (
+                  <div style={{ color: '#e67e22', fontSize: '0.75rem' }}>📅 Blocked by schedule conflict</div>
                 ) : (
                   <div style={{ color: '#444', fontSize: '0.8rem' }}>Empty — select talent →</div>
                 )}
               </div>
-            ))}
+            );})}
           </div>
 
           {/* Script cards — collapsed by default */}

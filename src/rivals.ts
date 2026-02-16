@@ -107,11 +107,11 @@ export function generateRivalSeason(season: number, target: number, hotGenres?: 
       film.genre = hotGenres[Math.floor(rng() * hotGenres.length)];
       film.title = generateRivalTitle(film.genre);
       // Hot genre bonus for rivals too
-      film.boxOffice = Math.round(film.boxOffice * 1.3 * 10) / 10;
+      film.boxOffice = Math.round(film.boxOffice * 1.2 * 10) / 10;
     }
     // Cold genre penalty for rivals
     if (coldGenres && coldGenres.includes(film.genre)) {
-      film.boxOffice = Math.round(film.boxOffice * 0.7 * 10) / 10;
+      film.boxOffice = Math.round(film.boxOffice * 0.8 * 10) / 10;
     }
     film.tier = getTier(film.boxOffice, target);
     return film;

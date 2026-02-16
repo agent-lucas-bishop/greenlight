@@ -472,9 +472,16 @@ export function pickScript(script: Script) {
 
 export function assignTalent(slotIndex: number, talent: Talent) {
   const slots = [...state.castSlots];
+  // Enforce schedule_conflict baggage: block Wild slots when talent with slotBlocked is in cast
+  if (talent.baggage?.slotBlocked && slots[slotIndex].slotType === talent.baggage.slotBlocked) return;
   slots.forEach((s, i) => { if (s.talent?.id === talent.id) slots[i] = { ...s, talent: null }; });
   slots[slotIndex] = { ...slots[slotIndex], talent };
   setState({ castSlots: slots });
+}
+
+// Check if a slot is blocked by any cast talent's baggage
+export function isSlotBlocked(slotType: string, castSlots: { talent: Talent | null }[]): boolean {
+  return castSlots.some(s => s.talent?.baggage?.slotBlocked === slotType);
 }
 
 export function unassignTalent(slotIndex: number) {
@@ -1140,9 +1147,9 @@ export function resolveRelease() {
     if (ie.effect === 'comedyBoost' && script.genre === 'Comedy') multiplier += 0.3;
   }
 
-  // Genre trend multipliers
-  if (state.hotGenres.includes(script.genre as Genre)) multiplier += 0.4;
-  if (state.coldGenres.includes(script.genre as Genre)) multiplier -= 0.3;
+  // Genre trend multipliers (tuned R26: reduced from +0.4/-0.3 to +0.25/-0.2 — meaningful but not game-deciding)
+  if (state.hotGenres.includes(script.genre as Genre)) multiplier += 0.25;
+  if (state.coldGenres.includes(script.genre as Genre)) multiplier -= 0.2;
 
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
   // Studio archetype effects
@@ -1363,6 +1370,16 @@ export function trainTalent(talentId: string, mode: 'removeIncident' | 'upgradeA
   });
   
   setState({ roster, budget: state.budget - cost });
+}
+
+// Pay down debt with available budget (shop phase action)
+export function payDebt(amount: number) {
+  const maxPayable = Math.min(amount, state.budget, state.debt);
+  if (maxPayable <= 0) return;
+  setState({
+    budget: state.budget - maxPayable,
+    debt: Math.round((state.debt - maxPayable) * 10) / 10,
+  });
 }
 
 export function nextSeason() {

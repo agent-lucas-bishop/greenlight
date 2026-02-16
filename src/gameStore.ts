@@ -961,6 +961,47 @@ export function buyPerk(perk: StudioPerk) {
   });
 }
 
+// Train a talent: costs $5M, removes their worst incident card OR upgrades an action card
+export function trainTalent(talentId: string, mode: 'removeIncident' | 'upgradeAction') {
+  const cost = 5;
+  if (state.budget < cost) return;
+  
+  const roster = state.roster.map(t => {
+    if (t.id !== talentId) return t;
+    const newCards = [...t.cards];
+    
+    if (mode === 'removeIncident') {
+      // Remove the worst incident card (lowest base quality)
+      const incidentIdx = newCards.reduce((worstIdx, card, idx) => {
+        if (card.cardType !== 'incident') return worstIdx;
+        if (worstIdx === -1) return idx;
+        return card.baseQuality < newCards[worstIdx].baseQuality ? idx : worstIdx;
+      }, -1);
+      if (incidentIdx >= 0) {
+        newCards.splice(incidentIdx, 1);
+      } else {
+        return t; // no incidents to remove
+      }
+    } else {
+      // Upgrade the weakest action card (+1 base quality)
+      const actionIdx = newCards.reduce((worstIdx, card, idx) => {
+        if (card.cardType !== 'action') return worstIdx;
+        if (worstIdx === -1) return idx;
+        return card.baseQuality < newCards[worstIdx].baseQuality ? idx : worstIdx;
+      }, -1);
+      if (actionIdx >= 0) {
+        newCards[actionIdx] = { ...newCards[actionIdx], baseQuality: newCards[actionIdx].baseQuality + 1 };
+      } else {
+        return t;
+      }
+    }
+    
+    return { ...t, cards: newCards };
+  });
+  
+  setState({ roster, budget: state.budget - cost });
+}
+
 export function nextSeason() {
   setState({
     season: state.season + 1,

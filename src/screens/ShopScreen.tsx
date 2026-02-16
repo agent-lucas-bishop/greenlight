@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GameState, Talent, CardTemplate } from '../types';
-import { buyPerk, hireTalent, fireTalent, nextSeason } from '../gameStore';
+import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason } from '../gameStore';
 
 function CardTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; color: string; bg: string }> = {
@@ -150,21 +150,43 @@ export default function ShopScreen({ state }: { state: GameState }) {
           </div>
         )}
         
-        <h4 style={{ color: '#999', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Roster ({state.roster.length}/8)</h4>
+        <h4 style={{ color: '#999', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Roster ({state.roster.length}/8) — Train for $5M</h4>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {state.roster.map(t => (
-            <div key={t.id} className="roster-chip">
-              <span className={`talent-type ${t.type}`} style={{ marginRight: 4, fontSize: '0.55rem' }}>{t.type}</span>
-              <span style={{ color: 'var(--gold)' }}>{t.name}</span>
-              <span style={{ color: '#666', marginLeft: 4 }}>S{t.skill}/H{t.heat}</span>
-              {t.trait && <span style={{ color: '#888', marginLeft: 4, fontSize: '0.7rem', fontStyle: 'italic' }}>"{t.trait}"</span>}
-              <button 
-                className="fire-btn"
-                onClick={() => fireTalent(t.id)}
-                title="Fire talent"
-              >✕</button>
-            </div>
-          ))}
+          {state.roster.map(t => {
+            const hasIncident = t.cards.some(c => c.cardType === 'incident');
+            const hasAction = t.cards.some(c => c.cardType === 'action');
+            const canTrain = state.budget >= 5;
+            return (
+              <div key={t.id} className="roster-chip" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '8px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
+                  <span className={`talent-type ${t.type}`} style={{ marginRight: 4, fontSize: '0.55rem' }}>{t.type}</span>
+                  <span style={{ color: 'var(--gold)' }}>{t.name}</span>
+                  <span style={{ color: '#666', marginLeft: 4 }}>S{t.skill}/H{t.heat}</span>
+                  {t.trait && <span style={{ color: '#888', marginLeft: 4, fontSize: '0.7rem', fontStyle: 'italic' }}>"{t.trait}"</span>}
+                  <button className="fire-btn" onClick={() => fireTalent(t.id)} title="Fire talent">✕</button>
+                </div>
+                <div style={{ display: 'flex', gap: 4, marginTop: 4, fontSize: '0.65rem' }}>
+                  <span style={{ color: '#2ecc71' }}>{t.cards.filter(c => c.cardType === 'action').length}A</span>
+                  <span style={{ color: '#f1c40f' }}>{t.cards.filter(c => c.cardType === 'challenge').length}C</span>
+                  <span style={{ color: '#e74c3c' }}>{t.cards.filter(c => c.cardType === 'incident').length}I</span>
+                </div>
+                <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                  {hasIncident && canTrain && (
+                    <button className="btn-tiny" onClick={() => trainTalent(t.id, 'removeIncident')}
+                      style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(231,76,60,0.15)', border: '1px solid #e74c3c', color: '#e74c3c' }}>
+                      🗑️ Remove Incident ($5M)
+                    </button>
+                  )}
+                  {hasAction && canTrain && (
+                    <button className="btn-tiny" onClick={() => trainTalent(t.id, 'upgradeAction')}
+                      style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(46,204,113,0.15)', border: '1px solid #2ecc71', color: '#2ecc71' }}>
+                      ⬆️ Upgrade Action ($5M)
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

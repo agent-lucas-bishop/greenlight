@@ -142,7 +142,33 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       </div>
 
-      {/* Stats bar — compact 3-item layout */}
+      {/* Movie quality meter — shows progress toward target */}
+      {(() => {
+        const target = getSeasonTarget(state.season);
+        const neededQuality = Math.ceil(target / 1.2); // rough estimate
+        const progress = Math.min(rawQuality / neededQuality, 1.5);
+        const progressColor = progress >= 1.25 ? '#2ecc71' : progress >= 1.0 ? '#f1c40f' : progress >= 0.7 ? '#e67e22' : '#e74c3c';
+        const meterLabel = progress >= 1.25 ? '🔥 SMASH!' : progress >= 1.0 ? '✅ On Target' : progress >= 0.7 ? '⚠️ Needs More' : '🚨 Danger Zone';
+        return (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4 }}>
+              <span style={{ color: '#888' }}>Quality: <strong style={{ color: '#d4a843' }}>{rawQuality}</strong> / ~{neededQuality} needed</span>
+              <span style={{ color: progressColor, fontWeight: 600 }}>{meterLabel}</span>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+              <div style={{ 
+                width: `${Math.min(progress * 100, 100)}%`, 
+                height: '100%', 
+                background: progressColor, 
+                borderRadius: 6, 
+                transition: 'width 0.5s ease, background 0.5s ease' 
+              }} />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Stats bar — compact layout */}
       <div className="production-stats-bar">
         <div className="prod-stat">
           <span className="label">Deck</span>
@@ -155,12 +181,12 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           </span>
         </div>
         <div className="prod-stat">
-          <span className="label">Discard</span>
-          <span className="value" style={{ color: '#888' }}>{prod.discarded.length}</span>
+          <span className="label">Draws</span>
+          <span className="value">{prod.drawCount}/{maxDraws}</span>
         </div>
         <div className="prod-stat">
-          <span className="label">Quality</span>
-          <span className="value" style={{ color: '#d4a843' }}>{rawQuality}</span>
+          <span className="label">Discard</span>
+          <span className="value" style={{ color: '#888' }}>{prod.discarded.length}</span>
         </div>
       </div>
 
@@ -202,7 +228,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           </div>
         ))}
         <span className="bad-label">
-          {prod.incidentCount >= 2 ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 ? '⚠️ Careful...' : prod.cleanWrap && prod.drawCount > 0 ? '✨ Clean Wrap active (+5 bonus)' : 'No Incidents yet'}
+          {prod.incidentCount >= 2 ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 ? '⚠️ Careful — one more and you\'re on the edge...' : prod.cleanWrap && prod.drawCount > 0 ? `✨ Clean Wrap active (+${state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!)` : 'No Incidents yet'}
         </span>
       </div>
 

@@ -50,6 +50,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   const [phase, setPhase] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
   const [screenFlash, setScreenFlash] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const season = state.seasonHistory.length;
   const identity = getSeasonIdentity(season);
@@ -74,7 +75,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   useEffect(() => {
     const t1 = setTimeout(() => {
       setPhase(1);
-      if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); }
+      if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); }
       else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); }
       else { sfx.hit(); }
       setTimeout(() => setScreenFlash(''), 800);
@@ -88,6 +89,20 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
 
   return (
     <div className={`box-office fade-in ${screenFlash}`}>
+      {showConfetti && (
+        <div className="victory-particles">
+          {Array.from({ length: 30 }, (_, i) => (
+            <span key={i} className="particle" style={{
+              left: `${Math.random() * 100}%`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+              animationDelay: `${Math.random() * 1.5}s`,
+              fontSize: `${0.8 + Math.random() * 1.2}rem`,
+            }}>
+              {['🌟', '✨', '🏆', '⭐', '🎬', '🎉'][Math.floor(Math.random() * 6)]}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="phase-title">
         <h2>🎞️ Release Day</h2>
         <div className="subtitle">"{state.currentScript?.title}" hits theaters!</div>

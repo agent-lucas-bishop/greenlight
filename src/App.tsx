@@ -25,7 +25,7 @@ function App() {
       const t = setTimeout(() => {
         setTransitioning(false);
         setPrevPhase(state.phase);
-      }, 150);
+      }, 220);
       return () => clearTimeout(t);
     }
   }, [state.phase, prevPhase]);

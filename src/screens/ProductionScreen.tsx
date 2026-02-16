@@ -167,6 +167,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const [combo, setCombo] = useState(0);
   const [comboVisible, setComboVisible] = useState(false);
   const [qualityPunch, setQualityPunch] = useState(false);
+  const [disasterShake, setDisasterShake] = useState(false);
   const [pickedCardId, setPickedCardId] = useState<string | null>(null);
   const [rejectedCardId, setRejectedCardId] = useState<string | null>(null);
   const prevPlayedCount = useRef(0);
@@ -198,7 +199,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       drawProductionCards();
       setIsDrawing(false);
       setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 50);
-    }, 400);
+    }, 550);
   };
   
   const handlePick = (idx: 0 | 1) => {
@@ -261,16 +262,18 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       setQualityPunch(true);
       setTimeout(() => setQualityPunch(false), 300);
       
-      // Disaster sound
+      // Disaster sound + shake
       if (prod.isDisaster) {
         setTimeout(() => sfx.disaster(), 200);
+        setDisasterShake(true);
+        setTimeout(() => setDisasterShake(false), 700);
       }
     }
     prevPlayedCount.current = count;
   }, [prod?.played.length]);
 
   return (
-    <div className="production-area fade-in">
+    <div className={`production-area fade-in ${disasterShake ? 'disaster-shake' : ''}`}>
       <PhaseTip phase="production" />
       <div className="phase-title">
         <h2>🎥 Production</h2>
@@ -448,9 +451,10 @@ export default function ProductionScreen({ state }: { state: GameState }) {
 
       {/* Draw-2-Pick-1 Choice UI */}
       {prod.currentDraw && prod.currentDraw.choosable.length >= 2 && !prod.pendingChallenge && (
-        <div style={{ background: 'rgba(212,168,67,0.1)', border: '2px solid var(--gold)', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'center' }}>
-          <h3 style={{ color: 'var(--gold)', marginBottom: 12, fontSize: '1rem' }}>🎬 CHOOSE ONE CARD</h3>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div className="choice-area" style={{ textAlign: 'center' }}>
+          <h3 style={{ color: 'var(--gold)', marginBottom: 16, fontSize: '1.4rem', fontFamily: 'Bebas Neue', letterSpacing: '0.12em', position: 'relative', zIndex: 2 }}>🎬 CHOOSE YOUR CARD</h3>
+          <div className="choice-vs">VS</div>
+          <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
             {prod.currentDraw.choosable.map((card, i) => {
               // Preview what synergy would fire for each choice
               const wouldFire = card.synergyCondition ? (() => {

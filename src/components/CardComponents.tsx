@@ -1,11 +1,11 @@
 import { CardTemplate, CardTag } from '../types';
 
 const TAG_CONFIG: Record<string, { emoji: string; color: string }> = {
-  momentum: { emoji: '🔥', color: '#e67e22' },
-  precision: { emoji: '🎯', color: '#3498db' },
-  chaos: { emoji: '💀', color: '#9b59b6' },
-  heart: { emoji: '💕', color: '#e91e63' },
-  spectacle: { emoji: '✨', color: '#f1c40f' },
+  momentum: { emoji: '🔥', color: 'var(--tag-momentum, #e67e22)' },
+  precision: { emoji: '🎯', color: 'var(--tag-precision, #3498db)' },
+  chaos: { emoji: '💀', color: 'var(--tag-chaos, #9b59b6)' },
+  heart: { emoji: '💕', color: 'var(--tag-heart, #e91e63)' },
+  spectacle: { emoji: '✨', color: 'var(--tag-spectacle, #f1c40f)' },
 };
 
 export function CardTypeBadge({ type }: { type: string }) {

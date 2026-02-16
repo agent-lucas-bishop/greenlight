@@ -278,7 +278,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       {(() => {
         const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
         // Estimate needed quality based on available market multipliers and rep
-        const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][state.reputation] || 1.0;
+        const repBonus = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5][state.reputation] || 1.0;
         const bestMarketMult = Math.max(...state.marketConditions.map(m => m.multiplier), 1.0);
         const estimatedMult = Math.max(bestMarketMult * repBonus, 0.5);
         const neededQuality = Math.ceil(target / estimatedMult);
@@ -410,7 +410,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
               </div>
             ))}
             <span className="bad-label">
-              {nearDisaster && prod.incidentCount < disasterThreshold ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 && !nearDisaster ? '⚠️ Careful — incidents are piling up...' : prod.cleanWrap && prod.drawCount > 0 ? <span className="clean-wrap-badge">✨ Clean Wrap active (+{state.studioArchetype === 'prestige' ? 8 : 5} bonus quality!) <StatTooltip tip="Finish production with zero incidents to keep the Clean Wrap bonus. Any incident breaks it." /></span> : 'No Incidents yet'}
+              {nearDisaster && prod.incidentCount < disasterThreshold ? '⚠️ NEXT INCIDENT = DISASTER! (Lose ALL quality!)' : prod.incidentCount >= 1 && !nearDisaster ? '⚠️ Careful — incidents are piling up...' : prod.cleanWrap && prod.drawCount > 0 ? <span className="clean-wrap-badge">✨ Clean Wrap active (+{state.studioArchetype === 'prestige' ? 7 : 5} bonus quality!) <StatTooltip tip="Finish production with zero incidents to keep the Clean Wrap bonus. Any incident breaks it." /></span> : 'No Incidents yet'}
             </span>
           </div>
         );
@@ -536,7 +536,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             <strong style={{ color: '#e74c3c' }}>{prod.pendingBlock.incident.name}</strong> ({prod.pendingBlock.incident.baseQuality}) was drawn alongside <strong style={{ color: '#2ecc71' }}>{prod.pendingBlock.actionCard.name}</strong>.
           </p>
           <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: 12 }}>
-            Sacrifice your Action card to block the Incident? Both cards are discarded. <strong style={{ color: '#e74c3c' }}>Costs 2 quality.</strong>
+            Sacrifice your Action card to block the Incident? Both cards are discarded. <strong style={{ color: '#e74c3c' }}>Costs 3 quality.</strong>
           </p>
           <div className="btn-group" style={{ justifyContent: 'center' }}>
             <button className="btn btn-primary" onClick={() => handleBlock(false)} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
@@ -690,7 +690,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
               Draw one more card for a <strong style={{ color: '#2ecc71' }}>+3 bonus</strong> on top of its value.
             </p>
             <p style={{ color: '#e74c3c', fontSize: '0.75rem', marginBottom: 12 }}>
-              ⚠️ But if it's an Incident: <strong>-5 extra penalty</strong> and lose Clean Wrap!
+              ⚠️ But if it's an Incident: <strong>-3 extra penalty</strong> and lose Clean Wrap!
             </p>
             <p style={{ color: '#888', fontSize: '0.7rem', marginBottom: 12 }}>
               🎲 {prod.deck.length} cards remain. Do you feel lucky?

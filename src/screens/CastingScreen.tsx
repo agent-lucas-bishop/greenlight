@@ -293,7 +293,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
           </h4>
           {state.debt > 0 && (
             <div style={{ fontSize: '0.7rem', color: '#e74c3c', marginBottom: 8, padding: '4px 8px', background: 'rgba(231,76,60,0.1)', borderRadius: 4 }}>
-              ⚠️ In debt! 20% interest per season. Debt ≥$15M = reputation penalty. You can still spend — but it hurts.
+              ⚠️ In debt! 20% interest per season. Debt ≥$10M = reputation penalty (-1 rep). ≥$20M = -2 rep. Pay it down!
             </div>
           )}
           <div className="card-grid card-grid-2">

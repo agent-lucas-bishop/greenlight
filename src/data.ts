@@ -3458,7 +3458,7 @@ ALL_SCRIPTS.push(
     cost: 3,
     cards: SAVAGE_LANDS_CARDS,
     ability: 'survivalMode',
-    abilityDesc: 'Survival Mode: Each Chaos tag adds +1 quality. Each Incident adds +$1M budget. Embrace the wild.',
+    abilityDesc: 'Survival Mode: Each Chaos tag adds +1 quality. Embrace the wild.',
   },
 );
 

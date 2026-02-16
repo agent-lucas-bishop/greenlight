@@ -198,7 +198,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
         <div style={{ background: 'rgba(231,76,60,0.08)', borderRadius: 8, padding: 12, marginTop: 16 }}>
           <h4 style={{ color: '#e74c3c', margin: '0 0 8px' }}>💳 Debt: ${state.debt.toFixed(1)}M</h4>
           <div style={{ fontSize: '0.75rem', color: '#e74c3c', marginBottom: 8 }}>
-            20% interest compounds each season. ≥$15M = reputation penalty. Pay it down now!
+            20% interest compounds each season. ≥$10M = -1 rep. ≥$20M = -2 rep. Pay it down now!
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[5, 10, Math.ceil(state.debt)].filter((v, i, a) => v <= state.budget && v <= state.debt && a.indexOf(v) === i).map(amt => (

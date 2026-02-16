@@ -68,8 +68,8 @@ function setState(partial: Partial<GameState>) {
   const prevPhase = state.phase;
   state = { ...state, ...partial };
   listeners.forEach(l => l());
-  // Auto-save on phase transitions (skip start screen and end states handled below)
-  if (state.phase !== prevPhase && state.phase !== 'start') {
+  // Auto-save on phase transitions (skip start screen and end states)
+  if (state.phase !== prevPhase && state.phase !== 'start' && state.phase !== 'gameOver' && state.phase !== 'victory') {
     saveGame(state);
   }
 }

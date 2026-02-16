@@ -6,14 +6,14 @@ import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
 import { getRunStats, getMilestoneProgress, getEndingsDiscovered, ENDINGS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
-import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
+import { getLeaderboard, hasDailyRun, getDailyBest, hasWeeklyRun, getWeeklyBest } from '../leaderboard';
 import type { FilmDetail } from '../leaderboard';
 import { getHallOfFame } from '../hallOfFame';
 import { CHALLENGE_MODES } from '../challenges';
 import AchievementGallery from '../components/AchievementGallery';
 import { hasGoldBorder, getStudioPrefix } from '../achievements';
-import { getDailyDateString } from '../seededRng';
-import { getTodayModifier, getModifierForDate } from '../dailyModifiers';
+import { getDailyDateString, getWeeklyDateString } from '../seededRng';
+import { getTodayModifier, getModifierForDate, getWeeklyModifiers } from '../dailyModifiers';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
@@ -300,7 +300,7 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
                   <span>{entry.films.length} film{entry.films.length !== 1 ? 's' : ''}</span>
                   {entry.mode !== 'normal' && (
                     <span style={{ color: '#f39c12' }}>
-                      {entry.mode === 'newGamePlus' ? '⭐ NG+' : entry.mode === 'directorMode' ? '🔥 Dir' : entry.mode === 'daily' ? '📅 Daily' : '⚡ Ch'}
+                      {entry.mode === 'newGamePlus' ? '⭐ NG+' : entry.mode === 'directorMode' ? '🔥 Dir' : entry.mode === 'daily' ? '📅 Daily' : entry.mode === 'weekly' ? '📆 Wkly' : entry.mode === 'seeded' ? '🌱 Seed' : '⚡ Ch'}
                     </span>
                   )}
                 </div>
@@ -360,6 +360,8 @@ export default function StartScreen() {
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'achievements'>('play');
   const [muted, setMutedLocal] = useState(isMuted());
+  const [customSeedInput, setCustomSeedInput] = useState('');
+  const [showCustomSeed, setShowCustomSeed] = useState(false);
   const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
   const stats = getRunStats();
   const leaderboard = getLeaderboard();
@@ -367,6 +369,10 @@ export default function StartScreen() {
   const dailyDate = getDailyDateString();
   const dailyDone = hasDailyRun(dailyDate);
   const dailyBest = getDailyBest(dailyDate);
+  const weeklyDate = getWeeklyDateString();
+  const weeklyDone = hasWeeklyRun(weeklyDate);
+  const weeklyBest = getWeeklyBest(weeklyDate);
+  const weeklyMods = getWeeklyModifiers();
 
   useEffect(() => {
     // No longer auto-open static modal on first run — interactive tutorial handles it
@@ -383,6 +389,8 @@ export default function StartScreen() {
     const modeLabel = selectedMode === 'newGamePlus' ? '⭐ NEW GAME+ — Targets ×1.4' :
       selectedMode === 'directorMode' ? '🔥 DIRECTOR MODE — Targets ×1.8' :
       selectedMode === 'daily' ? `📅 DAILY RUN — ${dailyDate} · ${todayMod.emoji} ${todayMod.name}` :
+      selectedMode === 'weekly' ? `📆 WEEKLY CHALLENGE — ${weeklyDate} · ${weeklyMods[0].emoji} ${weeklyMods[0].name} + ${weeklyMods[1].emoji} ${weeklyMods[1].name}` :
+      selectedMode === 'seeded' ? `🌱 CUSTOM SEED — ${customSeedInput}` :
       selectedChallenge ? `${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.emoji} ${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.name}` : '';
     return (
       <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -398,8 +406,8 @@ export default function StartScreen() {
             <div
               key={a.id}
               className="card"
-              onClick={() => { startGame(selectedMode, selectedChallenge); pickArchetype(a.id as StudioArchetypeId); }}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(selectedMode, selectedChallenge); pickArchetype(a.id as StudioArchetypeId); } }}
+              onClick={() => { startGame(selectedMode, selectedChallenge, customSeedInput || undefined); pickArchetype(a.id as StudioArchetypeId); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(selectedMode, selectedChallenge, customSeedInput || undefined); pickArchetype(a.id as StudioArchetypeId); } }}
               tabIndex={0}
               role="button"
               aria-label={`${a.name}: ${a.description}`}
@@ -535,6 +543,87 @@ export default function StartScreen() {
                 </div>
               );
             })()}
+            {/* Weekly Challenge — harder than daily, two modifiers */}
+            {!preFirstComplete && (() => {
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%', maxWidth: 400 }}>
+                  <button className="btn btn-small" style={{ color: '#9b59b6', borderColor: '#9b59b6', opacity: weeklyDone ? 0.5 : 1, width: '100%' }}
+                    onClick={() => { if (!weeklyDone) { markRunStarted(); setSelectedMode('weekly'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
+                    📆 WEEKLY CHALLENGE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(Week of {weeklyDate})</span>
+                    {weeklyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {weeklyBest?.score || 0}pts</span>}
+                    {stats.weeklyStreak.current > 0 && <span className="streak-bounce streak-pulse" style={{ fontSize: '0.65rem', marginLeft: 6, color: '#9b59b6' }}>🔥{stats.weeklyStreak.current}w</span>}
+                  </button>
+                  <div style={{
+                    background: 'rgba(155,89,182,0.08)', border: '1px solid rgba(155,89,182,0.25)',
+                    borderRadius: 8, padding: '8px 14px', width: '100%', textAlign: 'center',
+                  }}>
+                    <div style={{ color: '#9b59b6', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>This Week's Modifiers (×2)</div>
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                      {weeklyMods.map((mod, i) => (
+                        <div key={i} style={{ flex: 1 }}>
+                          <div style={{ fontSize: '1.2rem' }}>{mod.emoji}</div>
+                          <div style={{ color: '#ccc', fontFamily: 'Bebas Neue', fontSize: '0.85rem' }}>{mod.name}</div>
+                          <div style={{ color: '#888', fontSize: '0.6rem' }}>{mod.shortDesc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            {/* Custom Seed */}
+            {!preFirstComplete && (
+              <div style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
+                {!showCustomSeed ? (
+                  <button className="btn btn-small" style={{ color: '#888', borderColor: '#555' }} onClick={() => setShowCustomSeed(true)}>
+                    🌱 CUSTOM SEED
+                  </button>
+                ) : (
+                  <div style={{
+                    background: 'rgba(255,255,255,0.03)', border: '1px solid #444',
+                    borderRadius: 8, padding: '12px 14px', display: 'flex', gap: 8, alignItems: 'center',
+                  }}>
+                    <input
+                      type="text"
+                      placeholder="Enter seed (e.g. BISHOP-42)"
+                      value={customSeedInput}
+                      onChange={e => setCustomSeedInput(e.target.value.toUpperCase())}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && customSeedInput.trim()) {
+                          markRunStarted();
+                          setSelectedMode('seeded');
+                          setSelectedChallenge(undefined);
+                          setShowArchetypes(true);
+                        }
+                      }}
+                      style={{
+                        flex: 1, background: 'transparent', border: '1px solid #555',
+                        borderRadius: 4, padding: '6px 10px', color: '#ccc', fontFamily: 'monospace',
+                        fontSize: '0.85rem', outline: 'none',
+                      }}
+                    />
+                    <button
+                      className="btn btn-small"
+                      style={{ color: '#2ecc71', borderColor: '#2ecc71', padding: '4px 12px' }}
+                      disabled={!customSeedInput.trim()}
+                      onClick={() => {
+                        if (customSeedInput.trim()) {
+                          markRunStarted();
+                          setSelectedMode('seeded');
+                          setSelectedChallenge(undefined);
+                          setShowArchetypes(true);
+                        }
+                      }}
+                    >GO</button>
+                    <button
+                      className="btn btn-small"
+                      style={{ color: '#888', borderColor: '#555', padding: '4px 8px' }}
+                      onClick={() => { setShowCustomSeed(false); setCustomSeedInput(''); }}
+                    >✕</button>
+                  </div>
+                )}
+              </div>
+            )}
             {!preFirstComplete && stats.ngPlusUnlocked && (
               <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { markRunStarted(); setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>
@@ -725,19 +814,35 @@ export default function StartScreen() {
             ) : null;
           })()}
 
-          {/* Daily Streak */}
-          {stats.dailyStreak.best > 0 && (
+          {/* Daily & Weekly Streaks */}
+          {(stats.dailyStreak.best > 0 || stats.weeklyStreak.best > 0) && (
             <div style={{ marginBottom: 24, padding: 16, background: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.2)', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1rem', marginBottom: 4 }}>📅 DAILY STREAK</div>
-              <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
-                <div>
-                  <div className="streak-bounce streak-pulse" style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>🔥 {stats.dailyStreak.current}</div>
-                  <div style={{ color: '#888', fontSize: '0.65rem' }}>Current</div>
-                </div>
-                <div>
-                  <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>⭐ {stats.dailyStreak.best}</div>
-                  <div style={{ color: '#888', fontSize: '0.65rem' }}>Best</div>
-                </div>
+              <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1rem', marginBottom: 4 }}>🔥 CHALLENGE STREAKS</div>
+              <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {stats.dailyStreak.best > 0 && (
+                  <>
+                    <div>
+                      <div className="streak-bounce streak-pulse" style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>📅 {stats.dailyStreak.current}</div>
+                      <div style={{ color: '#888', fontSize: '0.65rem' }}>Daily Current</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>⭐ {stats.dailyStreak.best}</div>
+                      <div style={{ color: '#888', fontSize: '0.65rem' }}>Daily Best</div>
+                    </div>
+                  </>
+                )}
+                {stats.weeklyStreak.best > 0 && (
+                  <>
+                    <div>
+                      <div className="streak-bounce streak-pulse" style={{ color: '#9b59b6', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>📆 {stats.weeklyStreak.current}</div>
+                      <div style={{ color: '#888', fontSize: '0.65rem' }}>Weekly Current</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#8e44ad', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>⭐ {stats.weeklyStreak.best}</div>
+                      <div style={{ color: '#888', fontSize: '0.65rem' }}>Weekly Best</div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

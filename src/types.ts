@@ -204,7 +204,7 @@ export interface ProductionState {
 
 export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';
 
-export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'challenge';
+export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'weekly' | 'challenge' | 'seeded';
 
 // Archetype Focus — rewarded when deck is dominated by one tag
 export interface ArchetypeFocus {
@@ -258,6 +258,9 @@ export interface GameState {
   challengeId?: string;
   dailySeed?: string;
   dailyModifierId?: string; // daily modifier active for this run
+  dailyModifierId2?: string; // second modifier for weekly challenge
+  customSeed?: string; // display string for custom/weekly seeds
+  seedDisplay?: string; // human-readable seed label for header
   lockedGenre?: string; // for Typecast challenge
   maxSeasons: number; // normally 5, Speed Run = 3
   maxStrikes: number; // normally 3, Speed Run = 2

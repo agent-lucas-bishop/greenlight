@@ -21,7 +21,7 @@ export function getDailyDateString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function hashString(str: string): number {
+export function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -29,6 +29,25 @@ function hashString(str: string): number {
     hash |= 0;
   }
   return Math.abs(hash);
+}
+
+// Get weekly seed based on current week's Monday (YYYY-MM-DD)
+export function getWeeklySeed(): number {
+  return hashString(getWeeklyDateString());
+}
+
+export function getWeeklyDateString(): string {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  const monday = new Date(d);
+  monday.setDate(diff);
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+}
+
+// Hash a custom seed string to a numeric seed
+export function hashCustomSeed(seed: string): number {
+  return hashString(`custom:${seed}`);
 }
 
 // Global RNG state — when a seed is active, Math.random is replaced

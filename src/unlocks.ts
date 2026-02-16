@@ -34,6 +34,12 @@ export interface UnlockState {
     best: number;
     lastDate: string; // YYYY-MM-DD of last daily played
   };
+  // Weekly challenge streak
+  weeklyStreak: {
+    current: number;
+    best: number;
+    lastWeek: string; // YYYY-MM-DD of last weekly Monday
+  };
 }
 
 const STORAGE_KEY = 'greenlight_unlocks';
@@ -59,6 +65,10 @@ function defaultDailyStreak() {
   return { current: 0, best: 0, lastDate: '' };
 }
 
+function defaultWeeklyStreak() {
+  return { current: 0, best: 0, lastWeek: '' };
+}
+
 export function getUnlocks(): UnlockState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -78,6 +88,7 @@ export function getUnlocks(): UnlockState {
         endingsDiscovered: parsed.endingsDiscovered || [],
         careerStats: { ...defaultCareerStats(), ...(parsed.careerStats || {}) },
         dailyStreak: { ...defaultDailyStreak(), ...(parsed.dailyStreak || {}) },
+        weeklyStreak: { ...defaultWeeklyStreak(), ...(parsed.weeklyStreak || {}) },
       };
     }
   } catch {}
@@ -95,6 +106,7 @@ export function getUnlocks(): UnlockState {
     endingsDiscovered: [],
     careerStats: defaultCareerStats(),
     dailyStreak: defaultDailyStreak(),
+    weeklyStreak: defaultWeeklyStreak(),
   };
 }
 
@@ -204,7 +216,7 @@ export function getActiveLegacyPerks(): LegacyPerk[] {
   return LEGACY_PERKS.filter(p => p.check(u));
 }
 
-export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string }) {
+export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string; weeklySeed?: string }) {
   const u = getUnlocks();
   u.totalRuns++;
   if (won) {
@@ -268,6 +280,25 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
       u.dailyStreak.lastDate = today;
       u.dailyStreak.best = Math.max(u.dailyStreak.best, u.dailyStreak.current);
     }
+    // Weekly streak tracking
+    if (extras.weeklySeed) {
+      const thisWeek = extras.weeklySeed;
+      const lastWeek = u.weeklyStreak.lastWeek;
+      if (lastWeek && lastWeek !== thisWeek) {
+        const last = new Date(lastWeek);
+        const curr = new Date(thisWeek);
+        const diffDays = Math.round((curr.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 7) {
+          u.weeklyStreak.current++;
+        } else if (diffDays > 7) {
+          u.weeklyStreak.current = 1;
+        }
+      } else if (!lastWeek) {
+        u.weeklyStreak.current = 1;
+      }
+      u.weeklyStreak.lastWeek = thisWeek;
+      u.weeklyStreak.best = Math.max(u.weeklyStreak.best, u.weeklyStreak.current);
+    }
   }
 
   // Check for newly unlocked legacy perks
@@ -280,7 +311,7 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
   saveUnlocks(u);
 }
 
-export function getRunStats(): { wins: number; runs: number; bestScore: number; winRate: string; ngPlusUnlocked: boolean; directorUnlocked: boolean; legacyPerks: LegacyPerk[]; careerStats: UnlockState['careerStats']; dailyStreak: UnlockState['dailyStreak'] } {
+export function getRunStats(): { wins: number; runs: number; bestScore: number; winRate: string; ngPlusUnlocked: boolean; directorUnlocked: boolean; legacyPerks: LegacyPerk[]; careerStats: UnlockState['careerStats']; dailyStreak: UnlockState['dailyStreak']; weeklyStreak: UnlockState['weeklyStreak'] } {
   const u = getUnlocks();
   return {
     wins: u.totalWins,
@@ -292,6 +323,7 @@ export function getRunStats(): { wins: number; runs: number; bestScore: number; 
     legacyPerks: getActiveLegacyPerks(),
     careerStats: u.careerStats,
     dailyStreak: u.dailyStreak,
+    weeklyStreak: u.weeklyStreak,
   };
 }
 

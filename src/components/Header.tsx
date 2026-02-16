@@ -89,7 +89,7 @@ export default function Header({ state }: { state: GameState }) {
         </div>
         <div className="header-stat">
           <span className="label">Target <StatTooltip tip="Earn at least this much at the box office to avoid a strike. Increases each season." /></span>
-          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId)}M</span>
+          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2)}M</span>
         </div>
         <div className="header-stat">
           <span className="label">Strikes <StatTooltip tip="Miss the box office target and you get a strike. 3 strikes = game over!" /></span>
@@ -100,8 +100,8 @@ export default function Header({ state }: { state: GameState }) {
         {state.gameMode !== 'normal' && (
           <div className="header-stat">
             <span className="label">Mode</span>
-            <span className="value" style={{ color: state.gameMode === 'directorMode' ? '#e74c3c' : state.gameMode === 'daily' ? '#3498db' : 'var(--gold)', fontSize: '0.9rem' }}>
-              {state.gameMode === 'newGamePlus' ? '⭐ NG+' : state.gameMode === 'directorMode' ? '🔥 Director' : state.gameMode === 'daily' ? '📅 Daily' : state.gameMode === 'challenge' ? '⚡ Challenge' : ''}
+            <span className="value" style={{ color: state.gameMode === 'directorMode' ? '#e74c3c' : state.gameMode === 'daily' ? '#3498db' : state.gameMode === 'weekly' ? '#9b59b6' : state.gameMode === 'seeded' ? '#888' : 'var(--gold)', fontSize: '0.9rem' }}>
+              {state.gameMode === 'newGamePlus' ? '⭐ NG+' : state.gameMode === 'directorMode' ? '🔥 Director' : state.gameMode === 'daily' ? '📅 Daily' : state.gameMode === 'weekly' ? '📆 Weekly' : state.gameMode === 'seeded' ? '🌱 Seeded' : state.gameMode === 'challenge' ? '⚡ Challenge' : ''}
             </span>
           </div>
         )}
@@ -111,6 +111,12 @@ export default function Header({ state }: { state: GameState }) {
             <span className="value" style={{ color: '#e67e22', fontSize: '0.85rem' }}>{ch.emoji} {ch.name}</span>
           </div>
         ) : null; })()}
+        {state.seedDisplay && (
+          <div className="header-stat">
+            <span className="label">Seed</span>
+            <span className="value" style={{ color: '#888', fontSize: '0.75rem', fontFamily: 'monospace' }}>🌱 {state.seedDisplay}</span>
+          </div>
+        )}
       </div>
       {state.perks.length > 0 && (
         <div className="perks-bar">

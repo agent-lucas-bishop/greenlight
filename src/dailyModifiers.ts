@@ -1,6 +1,6 @@
 // Daily Modifiers — each day gets a unique rule modifier for daily challenge runs
 
-import { mulberry32, getDailySeed } from './seededRng';
+import { mulberry32, getDailySeed, getWeeklySeed } from './seededRng';
 
 export interface DailyModifier {
   id: string;
@@ -93,4 +93,14 @@ export function getModifierForDate(dateStr: string): DailyModifier {
 
 export function getModifierById(id: string): DailyModifier | undefined {
   return DAILY_MODIFIERS.find(m => m.id === id);
+}
+
+/** Get this week's TWO weekly modifiers using the weekly seed */
+export function getWeeklyModifiers(): [DailyModifier, DailyModifier] {
+  const seed = getWeeklySeed();
+  const modRng = mulberry32(seed + 77777);
+  const idx1 = Math.floor(modRng() * DAILY_MODIFIERS.length);
+  let idx2 = Math.floor(modRng() * (DAILY_MODIFIERS.length - 1));
+  if (idx2 >= idx1) idx2++; // ensure different
+  return [DAILY_MODIFIERS[idx1], DAILY_MODIFIERS[idx2]];
 }

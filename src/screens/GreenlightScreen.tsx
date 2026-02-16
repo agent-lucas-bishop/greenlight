@@ -11,7 +11,7 @@ import { useSwipe } from '../hooks/useSwipe';
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
   const [mobileIdx, setMobileIdx] = useState(0);
-  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const simplified = isSimplifiedRun();
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
   const swipeHandlers = useSwipe(

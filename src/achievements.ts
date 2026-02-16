@@ -183,6 +183,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // ─── Fun ───
   {
+    id: 'streak_7',
+    name: 'Dedicated Player',
+    emoji: '🔥',
+    category: 'milestone',
+    description: 'Achieve a 7-day daily challenge streak',
+    hint: 'Play the daily challenge every day for a week',
+    check: (_s, u) => u.dailyStreak.best >= 7,
+  },
+  {
+    id: 'weekly_warrior',
+    name: 'Weekly Warrior',
+    emoji: '📆',
+    category: 'milestone',
+    description: 'Complete 4 weekly challenges',
+    hint: 'The weekly challenge is tougher — two modifiers at once',
+    check: (_s, u) => u.weeklyStreak.best >= 4,
+  },
+  {
     id: 'debt_lord',
     name: 'Debt Lord',
     emoji: '💸',

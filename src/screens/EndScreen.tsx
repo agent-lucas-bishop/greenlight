@@ -9,6 +9,8 @@ import { getRunStats, getMilestoneProgress } from '../unlocks';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { getModifierById } from '../dailyModifiers';
+import { getSeedLeaderboard } from '../leaderboard';
+import { getWeeklyDateString } from '../seededRng';
 
 // ─── Helpers ───
 
@@ -252,6 +254,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         archetype: state.studioArchetype || undefined,
         challengeId: state.challengeId,
         dailySeed: state.dailySeed,
+        weeklySeed: state.gameMode === 'weekly' ? getWeeklyDateString() : undefined,
       });
       const afterPerks = getActiveLegacyPerks();
       const newlyUnlocked = afterPerks.filter(p => !beforePerks.includes(p.id));
@@ -360,7 +363,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
       {state.gameMode !== 'normal' && (
         <div style={{ marginBottom: 4, fontSize: '0.85rem', color: state.gameMode === 'directorMode' ? '#e74c3c' : 'var(--gold)' }}>
-          {state.gameMode === 'newGamePlus' ? '⭐ New Game+' : state.gameMode === 'directorMode' ? '🔥 Director Mode' : state.gameMode === 'daily' ? '📅 Daily Run' : ''}
+          {state.gameMode === 'newGamePlus' ? '⭐ New Game+' : state.gameMode === 'directorMode' ? '🔥 Director Mode' : state.gameMode === 'daily' ? '📅 Daily Run' : state.gameMode === 'weekly' ? '📆 Weekly Challenge' : state.gameMode === 'seeded' ? `🌱 Seed: ${state.customSeed}` : ''}
         </div>
       )}
       {challenge && (
@@ -601,6 +604,33 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           <p style={{ color: '#888', fontSize: '0.75rem', marginTop: 8 }}>Legacy perks apply to all future runs!</p>
         </div>
       )}
+
+      {/* ─── SEED LEADERBOARD ─── */}
+      {phase >= 4 && state.dailySeed && (() => {
+        const seedRuns = getSeedLeaderboard(state.dailySeed);
+        if (seedRuns.length <= 1) return null;
+        return (
+          <div className="animate-slide-down" style={{ marginTop: 24 }}>
+            <h3 style={{ color: '#3498db', marginBottom: 12, letterSpacing: 1 }}>🌱 SEED LEADERBOARD</h3>
+            <p style={{ color: '#666', fontSize: '0.7rem', marginBottom: 8 }}>Your attempts on this seed</p>
+            <div style={{ maxWidth: 400, margin: '0 auto' }}>
+              {seedRuns.slice(0, 8).map((entry, i) => (
+                <div key={entry.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
+                  background: entry.score === score ? 'rgba(52,152,219,0.1)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${entry.score === score ? '#3498db' : '#222'}`,
+                  borderRadius: 6, marginBottom: 4,
+                }}>
+                  <span style={{ color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#555', fontFamily: 'Bebas Neue', fontSize: '1rem', width: 24 }}>#{i + 1}</span>
+                  <span style={{ flex: 1, color: '#ccc', fontSize: '0.8rem' }}>{entry.studioName || entry.archetype}</span>
+                  <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.95rem' }}>{entry.score}pts</span>
+                  <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.7rem' }}>{entry.won ? '✓' : '✗'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ─── SHARE BLOCK ─── */}
       {phase >= 5 && (

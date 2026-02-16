@@ -6,9 +6,9 @@ import {
   INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES,
 } from './data';
 import { getActiveLegacyPerks } from './unlocks';
-import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
+import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, getWeeklySeed, getWeeklyDateString, hashCustomSeed } from './seededRng';
 import { getChallengeById } from './challenges';
-import { getTodayModifier } from './dailyModifiers';
+import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { generateRivalSeason, getSeasonIdentity } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
@@ -17,6 +17,11 @@ import { track } from './analytics';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
+
+// Helper: check if a modifier is active (either primary or secondary for weekly)
+function hasModifier(modId: string): boolean {
+  return state.dailyModifierId === modId || state.dailyModifierId2 === modId;
+}
 
 function createInitialState(): GameState {
   return {
@@ -226,7 +231,7 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     cardBase += 1;
   }
   // Daily modifier: Method Madness — every card gets +1 base quality
-  if (state.dailyModifierId === 'method_madness') {
+  if (hasModifier('method_madness')) {
     cardBase += 1;
   }
   
@@ -355,12 +360,16 @@ export function resumeGame(): boolean {
   return true;
 }
 
-export function startGame(mode: GameMode = 'normal', challengeId?: string) {
+export function startGame(mode: GameMode = 'normal', challengeId?: string, customSeed?: string) {
   // Clear any existing mid-run save
   clearSave();
-  // Activate seeded RNG for daily runs
+  // Activate seeded RNG for daily/weekly/seeded runs
   if (mode === 'daily') {
     activateSeed(getDailySeed());
+  } else if (mode === 'weekly') {
+    activateSeed(getWeeklySeed());
+  } else if (mode === 'seeded' && customSeed) {
+    activateSeed(hashCustomSeed(customSeed));
   } else {
     deactivateSeed();
   }
@@ -375,13 +384,24 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string) {
   }
 
   const dailyModifier = mode === 'daily' ? getTodayModifier() : undefined;
+  const weeklyMods = mode === 'weekly' ? getWeeklyModifiers() : undefined;
+  
+  // Determine seed display string
+  let seedDisplay: string | undefined;
+  if (mode === 'daily') seedDisplay = getDailyDateString();
+  else if (mode === 'weekly') seedDisplay = `W:${getWeeklyDateString()}`;
+  else if (mode === 'seeded' && customSeed) seedDisplay = customSeed;
+
   setState({
     ...createInitialState(),
     phase: 'start',
     gameMode: mode,
     challengeId,
-    dailySeed: mode === 'daily' ? getDailyDateString() : undefined,
-    dailyModifierId: dailyModifier?.id,
+    dailySeed: mode === 'daily' ? getDailyDateString() : mode === 'weekly' ? `weekly:${getWeeklyDateString()}` : mode === 'seeded' && customSeed ? `seed:${customSeed}` : undefined,
+    dailyModifierId: dailyModifier?.id || weeklyMods?.[0].id,
+    dailyModifierId2: weeklyMods?.[1].id,
+    customSeed: customSeed,
+    seedDisplay,
     maxSeasons,
     maxStrikes,
   });
@@ -403,7 +423,7 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   // Challenge: Shoestring Budget
   if (state.challengeId === 'shoestring') budget = 8;
   // Daily modifier: Budget Crunch — start with 30% less money
-  if (state.dailyModifierId === 'budget_crunch') budget = Math.round(budget * 0.7);
+  if (hasModifier('budget_crunch')) budget = Math.round(budget * 0.7);
   const studio = generateStudioName();
   track('game_start', { mode: state.gameMode, archetype: archetypeId });
   setState({ studioArchetype: archetypeId, budget, studioName: studio.name, studioTagline: studio.tagline, phase: 'neow' as GamePhase });
@@ -477,7 +497,7 @@ function beginSeason() {
     scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 2 }));
   }
   // Daily modifier: Blockbuster Summer — Action/Sci-Fi +2, others -1
-  if (state.dailyModifierId === 'blockbuster_summer') {
+  if (hasModifier('blockbuster_summer')) {
     scripts = scripts.map(s => ({
       ...s,
       baseScore: (s.genre === 'Action' || s.genre === 'Sci-Fi') ? s.baseScore + 2 : s.baseScore - 1,
@@ -506,15 +526,15 @@ export function pickScript(script: Script) {
     market = market.map(t => ({ ...t, heat: t.heat + 2 }));
   }
   // Daily modifier: Indie Spirit — no S-tier talent (skill 5+), costs halved
-  if (state.dailyModifierId === 'indie_spirit') {
+  if (hasModifier('indie_spirit')) {
     market = market.filter(t => t.skill < 5).map(t => ({ ...t, cost: Math.max(1, Math.floor(t.cost / 2)) }));
   }
   // Daily modifier: Method Madness — all talent Heat +1
-  if (state.dailyModifierId === 'method_madness') {
+  if (hasModifier('method_madness')) {
     market = market.map(t => ({ ...t, heat: t.heat + 1 }));
   }
   // Daily modifier: Indie Spirit — all costs halved
-  const scriptCost = state.dailyModifierId === 'indie_spirit' ? Math.max(1, Math.floor(script.cost / 2)) : script.cost;
+  const scriptCost = hasModifier('indie_spirit') ? Math.max(1, Math.floor(script.cost / 2)) : script.cost;
   // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - scriptCost;
   let newDebt = state.debt;
@@ -944,7 +964,7 @@ export function getMaxDraws(prod: ProductionState): number {
   const totalDeckSize = prod.deck.length + prod.played.length + prod.discarded.length;
   let baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
   // Daily modifier: Producer's Cut — max draws reduced by 2
-  if (state.dailyModifierId === 'producers_cut') baseDraw = Math.max(3, baseDraw - 2);
+  if (hasModifier('producers_cut')) baseDraw = Math.max(3, baseDraw - 2);
   return baseDraw + (prod.forceExtraDraw ? 2 : 0);
 }
 
@@ -1090,7 +1110,7 @@ export function calculateQuality(s: GameState): {
     // Legacy perk: Precision Master — Clean Wrap +3
     if (legacyPerks.some(p => p.effect === 'precisionCleanWrap3')) cleanWrapBonus += 3;
     // Daily modifier: Producer's Cut — clean wrap bonus doubled
-    if (s.dailyModifierId === 'producers_cut') cleanWrapBonus *= 2;
+    if (s.dailyModifierId === 'producers_cut' || s.dailyModifierId2 === 'producers_cut') cleanWrapBonus *= 2;
   }
 
   let scriptAbilityBonus = prod.scriptAbilityBonus;
@@ -1131,7 +1151,7 @@ export function calculateQuality(s: GameState): {
   let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus;
 
   // Daily modifier: Critics' Darling — quality bonuses doubled (excluding base)
-  if (s.dailyModifierId === 'critics_darling') {
+  if (s.dailyModifierId === 'critics_darling' || s.dailyModifierId2 === 'critics_darling') {
     const bonusPortion = cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus;
     rawQuality += bonusPortion; // effectively doubles the bonus portion
   }
@@ -1241,15 +1261,15 @@ export function resolveRelease() {
   const repBonus = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
   // Daily modifier: Critics' Darling — box office -20%
-  if (state.dailyModifierId === 'critics_darling') multiplier *= 0.8;
+  if (hasModifier('critics_darling')) multiplier *= 0.8;
   // Daily modifier: Sequel Mania — same genre twice in a row = +30% BO
-  if (state.dailyModifierId === 'sequel_mania' && state.seasonHistory.length > 0) {
+  if (hasModifier('sequel_mania') && state.seasonHistory.length > 0) {
     const lastGenre = state.seasonHistory[state.seasonHistory.length - 1].genre;
     if (lastGenre === script.genre) multiplier *= 1.3;
   }
 
   const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
-  let target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId);
+  let target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const tier = getTier(boxOffice, target);
 
   let repChange = 0;
@@ -1283,7 +1303,7 @@ export function resolveRelease() {
   }
 
   // Daily modifier: Award Season — reputation gains doubled
-  if (state.dailyModifierId === 'award_season' && repChange > 0) repChange *= 2;
+  if (hasModifier('award_season') && repChange > 0) repChange *= 2;
   const newRep = Math.max(0, Math.min(5, currentRep + repChange));
   const nominated = rawQuality > 25 + state.season * 5;
 

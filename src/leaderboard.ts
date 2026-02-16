@@ -62,3 +62,19 @@ export function getDailyBest(dateStr: string): LeaderboardEntry | null {
 export function hasDailyRun(dateStr: string): boolean {
   return getLeaderboard().some(e => e.dailySeed === dateStr);
 }
+
+/** Get all runs for a specific seed (daily, weekly, or custom), sorted by score */
+export function getSeedLeaderboard(seed: string): LeaderboardEntry[] {
+  const lb = getLeaderboard();
+  return lb.filter(e => e.dailySeed === seed).sort((a, b) => b.score - a.score);
+}
+
+export function hasWeeklyRun(weekStr: string): boolean {
+  return getLeaderboard().some(e => e.dailySeed === `weekly:${weekStr}`);
+}
+
+export function getWeeklyBest(weekStr: string): LeaderboardEntry | null {
+  const lb = getLeaderboard();
+  const weekly = lb.filter(e => e.dailySeed === `weekly:${weekStr}`).sort((a, b) => b.score - a.score);
+  return weekly.length > 0 ? weekly[0] : null;
+}

@@ -1,3 +1,62 @@
+# GREENLIGHT Playtest Log — Round 23
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** END-OF-RUN SUMMARY & SHARING — Make the ending feel like a proper send-off
+
+---
+
+## Changes Made
+
+### Rich Career Summary
+- Procedurally generated paragraph summarizing the player's run
+- References studio name, favorite genre, best/worst films, total earnings, and outcome
+- Tone adapts: triumphant for S-rank victories, cautionary for flop-heavy losses
+- Examples: "Crimson Pictures didn't just survive Hollywood — it conquered it. Known primarily for horror, the studio built a reputation..."
+
+### Enhanced Filmography
+- Each film shown with season number, tier emoji (🟩🟨🟧🟥💀), title, genre badge, box office, and hit/nomination markers
+- Clean tabular layout with color-coded tiers
+- Scrollable on mobile
+
+### Expanded Career Stats
+- Total box office, films made, score, final reputation, blockbusters count, nominations, favorite genre
+- Best film highlighted with title and earnings (spans 2 columns)
+
+### Shareable Text Block (Wordle-style)
+- Emoji grid encoding each season: 🟩 blockbuster, 🟨 smash, 🟧 hit, 🟥 flop, 💀 disaster
+- Includes studio name, season count, score/rank, total earnings, and game URL
+- One-click "Copy to Clipboard" button with ✅ feedback
+- Example output:
+  ```
+  🎬 GREENLIGHT 🏆
+  Crimson Pictures · 5 seasons
+  🟩🟨🟧🟩🟨
+  Score: 420 (B) · $87.3M
+  greenlight-plum.vercel.app
+  ```
+
+### Cinematic Staggered Reveals
+- 6-phase animation: title → career summary → stats → filmography → achievements → share block
+- Each section slides in with 600-800ms delays for dramatic pacing
+- Studio name shown above title as a subtitle
+
+### Visual Polish
+- Career summary in a warm gold-bordered card with italic styling
+- Share block in dark monospace box for readability
+- Responsive: all sections use clamp() sizing, filmography wraps on mobile
+
+---
+
+## Build & Deploy
+
+- **URL:** https://greenlight-plum.vercel.app
+- **Build:** Clean, no errors (405ms)
+- **Commit:** 44c7b2e
+- **Files modified:** EndScreen.tsx (rewritten)
+
+---
+
 # GREENLIGHT Playtest Log — Round 22
 
 **Date:** 2026-02-16  

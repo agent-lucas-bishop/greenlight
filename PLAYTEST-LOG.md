@@ -1,3 +1,46 @@
+# GREENLIGHT Playtest Log — Round 35
+
+**Date:** 2026-02-16  
+**Tester:** Bishop (AI subagent)  
+**Focus:** Tutorial & New Player Experience
+
+## Summary
+
+Improved the new player experience with contextual hints, strategy nudges, and hoverable stat explanations — without over-tutorializing. The game should still feel like discovery, but new players won't be lost.
+
+## Changes
+
+### 💡 Strategy Nudges in Phase Tips
+- **Change:** Added italic "Tip:" sub-lines to every phase tip with lightweight strategic guidance
+- **Reasoning:** The existing phase tips explained *what* each phase was but not *what to look for*. Nudges like "At 2 incidents, seriously consider wrapping" give new players actionable guidance without being prescriptive.
+
+### ❓ StatTooltip Component
+- **Change:** New `StatTooltip` component — small "?" icons that reveal explanations on hover/tap
+- **Reasoning:** Stats like Reputation, Heat, and Deck composition (A/C/I) are non-obvious to new players. Tooltips provide on-demand explanations without cluttering the UI. Works on both desktop (hover) and mobile (tap).
+
+### 🎯 Tooltips Applied To
+- **Header:** Reputation ("Stars multiply box office earnings"), Target ("Earn at least this much..."), Strikes ("Miss target = strike, 3 = game over")
+- **Casting:** Skill ("Higher = better action cards"), Heat ("Heat 4+ adds incident cards"), Deck composition ("A = Action, C = Challenge, I = Incident")
+- **Production:** Clean Wrap badge ("Finish with zero incidents to keep bonus"), Deck remaining ("When deck runs out, production wraps automatically")
+
+### 📝 Improved Phase Tip Copy
+- **Change:** Rewrote all 6 phase tips for clarity and precision
+- **Reasoning:** Original tips were good but could be tighter. E.g., Greenlight tip now explicitly mentions Hot trends and market conditions; Casting tip now points to deck preview; Production tip emphasizes the 2-incident danger zone.
+
+## Design Philosophy
+- **Non-intrusive:** Tooltips only appear on hover/tap, phase tips dismiss on click, all shown only first 3 runs
+- **Helpful not patronizing:** Strategy nudges are suggestions, not commands
+- **Discovery preserved:** No mandatory tutorials, no blocking modals, no forced walkthroughs
+
+## Build Status
+- `npx tsc --noEmit` — ✅ PASS
+- `npm run build` — ✅ PASS (445KB JS / 38KB CSS)
+
+## Deployed
+- Commit: `ba2cfa8` → Vercel auto-deploy
+
+---
+
 # GREENLIGHT Playtest Log — Round 34
 
 **Date:** 2026-02-16  

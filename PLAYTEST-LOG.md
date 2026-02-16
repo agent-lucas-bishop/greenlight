@@ -1,3 +1,28 @@
+# PLAYTEST-LOG — Round 52: Weekly Challenges & Seeded Runs
+
+## Date: 2026-02-16
+
+### What Was Added
+- **Weekly Challenge**: Rotates every Monday, combines TWO daily modifiers simultaneously with a fixed weekly seed. Purple-themed button on start screen (progressive disclosure — only after first run).
+- **Custom Seed Runs**: Enter any seed string (e.g. "BISHOP-42") for deterministic, shareable runs. Seed displayed in header.
+- **Seed-Based Leaderboard**: EndScreen shows local leaderboard for the specific seed, so players compare their own attempts.
+- **Streak Tracking**: Daily streak (existing) + new weekly streak. Both shown on career tab. New achievements: "Dedicated Player" (7-day daily streak), "Weekly Warrior" (4-week weekly streak).
+- **Dual Modifier Support**: Weekly runs apply two modifiers simultaneously via `hasModifier()` helper throughout game logic.
+
+### Technical Notes
+- `GameMode` type extended: `'weekly' | 'seeded'`
+- `GameState` new fields: `dailyModifierId2`, `customSeed`, `seedDisplay`
+- `UnlockState` new field: `weeklyStreak` (mirrors `dailyStreak` structure)
+- `seededRng.ts`: exported `hashString`, added `getWeeklySeed`, `getWeeklyDateString`, `hashCustomSeed`
+- `leaderboard.ts`: added `getSeedLeaderboard`, `hasWeeklyRun`, `getWeeklyBest`
+- All `state.dailyModifierId === 'xxx'` checks converted to `hasModifier('xxx')` for dual modifier support
+
+### Build Status
+- `tsc --noEmit`: ✅ Clean
+- `npm run build`: ✅ Clean
+
+---
+
 # PLAYTEST-LOG — Round 49: Full Quality Pass & Integration Audit
 
 ## Date: 2026-02-16

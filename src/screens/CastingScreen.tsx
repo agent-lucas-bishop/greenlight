@@ -58,6 +58,11 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
           📝 {t.filmsLeft} film{t.filmsLeft !== 1 ? 's' : ''} left
         </div>
       )}
+      {t.baggage && (
+        <div style={{ fontSize: '0.65rem', color: '#e67e22', marginTop: 2, fontWeight: 600 }}>
+          {t.baggage.label}
+        </div>
+      )}
 
       {/* Expand/collapse for full details */}
       <button
@@ -243,16 +248,26 @@ export default function CastingScreen({ state }: { state: GameState }) {
           </div>
 
           <h4 style={{ color: '#999', marginBottom: 8, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Talent Market (Budget: ${state.budget.toFixed(1)}M)
+            Talent Market (Budget: ${state.budget.toFixed(1)}M{state.debt > 0 ? ` · ⚠️ Debt: $${state.debt.toFixed(1)}M` : ''})
           </h4>
+          {state.debt > 0 && (
+            <div style={{ fontSize: '0.7rem', color: '#e74c3c', marginBottom: 8, padding: '4px 8px', background: 'rgba(231,76,60,0.1)', borderRadius: 4 }}>
+              ⚠️ In debt! 20% interest per season. Debt ≥$15M = reputation penalty. You can still spend — but it hurts.
+            </div>
+          )}
           <div className="card-grid card-grid-2">
             {state.talentMarket.map(t => (
               <div key={t.id}>
                 <TalentCard
                   t={t}
                   onClick={() => hireTalent(t)}
-                  dimmed={state.budget < t.cost || state.roster.length >= 8}
+                  dimmed={state.roster.length >= 8}
                 />
+                {state.budget < t.cost && state.roster.length < 8 && (
+                  <div style={{ fontSize: '0.65rem', color: '#e67e22', textAlign: 'center', marginTop: 2 }}>
+                    ⚠️ Goes into debt (+${(t.cost - state.budget).toFixed(0)}M)
+                  </div>
+                )}
               </div>
             ))}
           </div>

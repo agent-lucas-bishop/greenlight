@@ -1,4 +1,4 @@
-import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag } from './types';
+import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag, TalentBaggage } from './types';
 import { rng } from './seededRng';
 
 let _id = 0;
@@ -198,7 +198,8 @@ const VALENTINA_CORTEZ: Omit<Talent, 'id'> = {
   cost: 18,
   filmsLeft: 3,
   trait: 'Diva',
-  traitDesc: 'Incredible talent. Absolute chaos magnet.',
+  traitDesc: 'Incredible talent. Absolute chaos magnet. 💸 Demands $3M per film on top of hiring cost.',
+  baggage: { type: 'salary_demand', label: '💸 Salary Demand', description: 'Demands $3M per film beyond hiring cost', extraCost: 3 },
   cards: [
     {
       name: 'Iconic Performance',
@@ -266,7 +267,8 @@ const MARCUS_WEBB: Omit<Talent, 'id'> = {
   heat: 3,
   cost: 15,
   trait: 'Method Actor',
-  traitDesc: 'Disappears into roles. Incredible when directed well.',
+  traitDesc: 'Disappears into roles. Incredible when directed well. 📅 Schedule conflicts block one Wild slot.',
+  baggage: { type: 'schedule_conflict', label: '📅 Schedule Conflict', description: 'Blocks one Wild slot — limited availability', slotBlocked: 'Wild' },
   cards: [
     {
       name: 'Transformative Performance',
@@ -604,7 +606,8 @@ const OLIVER_CROSS: Omit<Talent, 'id'> = {
   cost: 16,
   filmsLeft: 2,
   trait: 'Method Extremist',
-  traitDesc: 'British method actor. 💀 CHAOS specialist — turns disasters into art. Incidents fuel his power.',
+  traitDesc: 'British method actor. 💀 CHAOS specialist — turns disasters into art. ⚠️ Dangerous method acting adds incident to deck.',
+  baggage: { type: 'method_dangerous', label: '⚠️ Dangerous Method', description: 'Adds 1 extra Incident card to production deck', incidentChance: 1.0 },
   cards: [
     {
       name: 'Oscar-Worthy Take',
@@ -870,7 +873,8 @@ const EZRA_BLACKWOOD: Omit<Talent, 'id'> = {
   filmsLeft: 2,
   genreBonus: { genre: 'Horror', bonus: 2 },
   trait: 'The Gambler',
-  traitDesc: '🎲 All-in or nothing. Challenge cards become dramatically more powerful. Loves risk.',
+  traitDesc: '🎲 All-in or nothing. Challenge cards become dramatically more powerful. 👥 Entourage drains $2M per film.',
+  baggage: { type: 'entourage', label: '👥 Entourage', description: 'Personal entourage costs $2M per film in extras', budgetDrain: 2 },
   cards: [
     {
       name: 'All Or Nothing',
@@ -1336,7 +1340,8 @@ const NIKOLAI_VOLKOV: Omit<Talent, 'id'> = {
   heat: 2,
   cost: 8,
   trait: 'Intense',
-  traitDesc: 'High base values but contributes extra Incidents.',
+  traitDesc: 'High base values but contributes extra Incidents. ⚠️ Method danger — may add incident to deck.',
+  baggage: { type: 'method_dangerous', label: '⚠️ Volatile', description: '50% chance of adding extra Incident to deck', incidentChance: 0.5 },
   cards: [
     {
       name: 'Terrifying Presence',
@@ -1737,7 +1742,8 @@ const FRANK_DELUCA: Omit<Talent, 'id'> = {
   cost: 14,
   filmsLeft: 2,
   trait: 'Old School Blockbuster',
-  traitDesc: 'Big swings. ✨ SPECTACLE specialist — massive payoffs from big, expensive productions.',
+  traitDesc: 'Big swings. ✨ SPECTACLE specialist — massive payoffs. 💸 Demands $4M per film salary.',
+  baggage: { type: 'salary_demand', label: '💸 Salary Demand', description: 'Demands $4M per film beyond hiring cost', extraCost: 4 },
   cards: [
     {
       name: 'Spectacular Set Piece',

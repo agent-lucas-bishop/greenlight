@@ -1,4 +1,4 @@
-import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus } from './types';
+import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre } from './types';
 import type { StudioArchetypeId } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
@@ -50,6 +50,9 @@ function createInitialState(): GameState {
     gameMode: 'normal' as GameMode,
     maxSeasons: 5,
     maxStrikes: 3,
+    hotGenres: [],
+    coldGenres: [],
+    debt: 0,
   };
 }
 
@@ -111,6 +114,21 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
       for (const template of t.heatCards) {
         deck.push(templateToCard(template, t.name, sourceType));
       }
+    }
+
+    // Baggage: method_dangerous adds extra incident card to deck
+    if (t.baggage?.incidentChance && rng() < t.baggage.incidentChance) {
+      deck.push({
+        id: cardUid(),
+        name: `${t.name}'s Baggage`,
+        source: t.name,
+        sourceType,
+        cardType: 'incident',
+        baseQuality: -4,
+        synergyText: `${t.baggage.label} — ${t.baggage.description}`,
+        synergyCondition: null,
+        riskTag: '🔴',
+      });
     }
   }
 
@@ -377,6 +395,18 @@ export function pickNeow(choice: number) {
   beginSeason();
 }
 
+// Generate genre market trends for the season
+function generateGenreTrends(): { hot: Genre[]; cold: Genre[] } {
+  const genres: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'];
+  // Shuffle and pick 1-2 hot, 1-2 cold (never overlapping)
+  const shuffled = [...genres].sort(() => rng() - 0.5);
+  const hotCount = rng() < 0.4 ? 2 : 1;
+  const coldCount = rng() < 0.4 ? 2 : 1;
+  const hot = shuffled.slice(0, hotCount);
+  const cold = shuffled.slice(hotCount, hotCount + coldCount);
+  return { hot, cold };
+}
+
 function beginSeason() {
   // Apply season identity budget bonus (seasons 3+ give extra budget)
   const identity = getSeasonIdentity(state.season);
@@ -405,11 +435,13 @@ function beginSeason() {
   const scriptGenres = scripts.map(s => s.genre);
   const markets = generateMarketConditions(3, scriptGenres);
   
-  setState({ scriptChoices: scripts, marketConditions: markets });
+  // Generate genre trends for this season
+  const trends = generateGenreTrends();
+  
+  setState({ scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold });
 }
 
 export function pickScript(script: Script) {
-  if (state.budget < script.cost) return;
   const slots: CastSlot[] = script.slots.map(s => ({ slotType: s, talent: null }));
   const moreTalent = state.perks.some(p => p.effect === 'moreTalent');
   const seasonIdentity = getSeasonIdentity(state.season);
@@ -419,9 +451,17 @@ export function pickScript(script: Script) {
   if (state.challengeId === 'chaos_reigns') {
     market = market.map(t => ({ ...t, heat: t.heat + 2 }));
   }
+  // Allow overspending — excess goes to debt
+  let newBudget = state.budget - script.cost;
+  let newDebt = state.debt;
+  if (newBudget < 0) {
+    newDebt += Math.abs(newBudget);
+    newBudget = 0;
+  }
   setState({
     currentScript: script,
-    budget: state.budget - script.cost,
+    budget: newBudget,
+    debt: newDebt,
     castSlots: slots,
     talentMarket: market,
     phase: 'casting',
@@ -448,11 +488,18 @@ export function hireTalent(talent: Talent) {
   const legacyPerks = getActiveLegacyPerks();
   const discount = legacyPerks.some(p => p.effect === 'cheaperTalent') ? 1 : 0;
   const actualCost = Math.max(1, talent.cost - discount);
-  if (state.budget < actualCost) return;
   if (state.roster.length >= 8) return;
+  // Allow overspending — excess goes to debt
+  let newBudget = state.budget - actualCost;
+  let newDebt = state.debt;
+  if (newBudget < 0) {
+    newDebt += Math.abs(newBudget);
+    newBudget = 0;
+  }
   setState({
     roster: [...state.roster, talent],
-    budget: state.budget - actualCost,
+    budget: newBudget,
+    debt: newDebt,
     talentMarket: state.talentMarket.filter(t => t.id !== talent.id),
   });
 }
@@ -1093,6 +1140,10 @@ export function resolveRelease() {
     if (ie.effect === 'comedyBoost' && script.genre === 'Comedy') multiplier += 0.3;
   }
 
+  // Genre trend multipliers
+  if (state.hotGenres.includes(script.genre as Genre)) multiplier += 0.4;
+  if (state.coldGenres.includes(script.genre as Genre)) multiplier -= 0.3;
+
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
   // Studio archetype effects
   if (state.studioArchetype === 'blockbuster') multiplier += 0.2;
@@ -1178,8 +1229,8 @@ export function resolveRelease() {
     return t;
   }).filter(t => t.filmsLeft === undefined || t.filmsLeft > 0);
 
-  // Generate rival films for this season
-  const rivalFilms = generateRivalSeason(state.season, target);
+  // Generate rival films for this season (rivals chase hot genres)
+  const rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres);
   const newCumulativeRivalEarnings = { ...state.cumulativeRivalEarnings };
   for (const rf of rivalFilms) {
     const key = `${rf.studioEmoji} ${rf.studioName}`;
@@ -1190,6 +1241,20 @@ export function resolveRelease() {
   // Generate procedural film title based on genre + tags
   const filmTitle = generateFilmTitle(script.genre, prod.tagsPlayed);
 
+  // Debt interest: 20% per season compounding
+  let debt = state.debt;
+  if (debt > 0) {
+    debt = Math.round(debt * 1.2 * 10) / 10;
+  }
+  // Baggage salary demands: deduct per-film costs for cast talent with baggage
+  let baggageCost = 0;
+  for (const slot of state.castSlots) {
+    if (slot.talent?.baggage?.extraCost) baggageCost += slot.talent.baggage.extraCost;
+    if (slot.talent?.baggage?.budgetDrain) baggageCost += slot.talent.baggage.budgetDrain;
+  }
+  // Debt reputation penalty: lose 1 rep if in significant debt
+  let debtRepPenalty = debt >= 15 ? -1 : 0;
+
   setState({
     phase: 'release',
     lastFilmTitle: filmTitle,
@@ -1197,9 +1262,10 @@ export function resolveRelease() {
     lastQuality: rawQuality,
     lastTier: tier,
     activeMarket: market,
-    budget: state.budget + earnings + bonusMoney + seasonStipend + prod.budgetChange,
+    debt,
+    budget: state.budget + earnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost,
     totalEarnings: state.totalEarnings + earnings,
-    reputation: newRep,
+    reputation: Math.max(0, Math.min(5, newRep + debtRepPenalty)),
     strikes: tier === 'FLOP' ? state.strikes + 1 : state.strikes,
     seasonHistory: [...state.seasonHistory, result],
     rivalHistory: [...state.rivalHistory, rivalSeasonData],

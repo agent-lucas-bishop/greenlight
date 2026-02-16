@@ -61,6 +61,12 @@ export default function Header({ state }: { state: GameState }) {
           <span className="label">Budget</span>
           <span className="value">${state.budget.toFixed(1)}M</span>
         </div>
+        {state.debt > 0 && (
+          <div className="header-stat">
+            <span className="label">Debt</span>
+            <span className="value" style={{ color: '#e74c3c' }}>-${state.debt.toFixed(1)}M</span>
+          </div>
+        )}
         <div className="header-stat">
           <span className="label">Reputation</span>
           <span className="value">

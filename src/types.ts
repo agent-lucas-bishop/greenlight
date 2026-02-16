@@ -87,6 +87,20 @@ export interface Script {
 export type SlotType = 'Lead' | 'Support' | 'Director' | 'Crew' | 'Wild';
 export type TalentType = 'Lead' | 'Support' | 'Director' | 'Crew';
 
+export type BaggageType = 'salary_demand' | 'diva' | 'schedule_conflict' | 'entourage' | 'method_dangerous';
+
+export interface TalentBaggage {
+  type: BaggageType;
+  label: string;
+  description: string;
+  // Mechanical effects
+  extraCost?: number; // additional per-film salary on top of hire cost
+  qualityPenalty?: number; // flat quality penalty if baggage triggers
+  budgetDrain?: number; // $M drained during production
+  slotBlocked?: SlotType; // blocks a specific slot type (schedule conflict)
+  incidentChance?: number; // 0-1, chance of adding an extra incident card to deck
+}
+
 export interface Talent {
   id: string;
   name: string;
@@ -100,6 +114,7 @@ export interface Talent {
   heatCards?: CardTemplate[];
   cost: number;
   filmsLeft?: number;
+  baggage?: TalentBaggage;
 }
 
 export interface StudioPerk {
@@ -247,6 +262,11 @@ export interface GameState {
   lockedGenre?: string; // for Typecast challenge
   maxSeasons: number; // normally 5, Speed Run = 3
   maxStrikes: number; // normally 3, Speed Run = 2
+  // Genre market trends
+  hotGenres: Genre[]; // 1-2 genres with box office bonus this season
+  coldGenres: Genre[]; // 1-2 genres with box office penalty this season
+  // Budget debt
+  debt: number; // accumulated debt from overspending ($M)
 }
 
 export interface RivalSeasonData {

@@ -98,8 +98,24 @@ function generateRivalFilm(studio: RivalStudio, season: number, target: number):
 }
 
 // Generate all rival films for a season
-export function generateRivalSeason(season: number, target: number): RivalFilm[] {
-  return RIVAL_STUDIOS.map(studio => generateRivalFilm(studio, season, target));
+// hotGenres: rivals are more likely to chase trends (50% chance to switch to a hot genre)
+export function generateRivalSeason(season: number, target: number, hotGenres?: Genre[], coldGenres?: Genre[]): RivalFilm[] {
+  return RIVAL_STUDIOS.map(studio => {
+    const film = generateRivalFilm(studio, season, target);
+    // Rivals chase hot genres 50% of the time
+    if (hotGenres && hotGenres.length > 0 && rng() < 0.5) {
+      film.genre = hotGenres[Math.floor(rng() * hotGenres.length)];
+      film.title = generateRivalTitle(film.genre);
+      // Hot genre bonus for rivals too
+      film.boxOffice = Math.round(film.boxOffice * 1.3 * 10) / 10;
+    }
+    // Cold genre penalty for rivals
+    if (coldGenres && coldGenres.includes(film.genre)) {
+      film.boxOffice = Math.round(film.boxOffice * 0.7 * 10) / 10;
+    }
+    film.tier = getTier(film.boxOffice, target);
+    return film;
+  });
 }
 
 // ─── SEASON IDENTITY ───

@@ -1,3 +1,11 @@
+# GREENLIGHT Playtest Log — Round 48
+
+## R48: Rival Studios & Competition Polish (2026-02-16)
+- **Expanded rival studios**: 5 named rivals now (Apex Global, Lumière Collective, Fright Factory, Nova Pictures, Ironclad Entertainment) each with distinct genre tendencies and personality
+- **Richer rival film titles**: Doubled word pools per genre for procedural title generation — titles like "Storm Vengeance", "Whispered Grace", "Quantum Nexus"
+- **Season narrative flavor text**: New `getSeasonNarrative()` generates reactive text based on your rank vs rivals ("Your film dominated!", "Lost in a crowded field...", "A nail-biter finish!")
+- **Box office chart polish**: Renamed to "Weekend Box Office" leaderboard, narrative text appears above rankings for better storytelling flow
+
 # GREENLIGHT Playtest Log — Round 45
 
 ## R45: Tutorial & New Player Experience (2026-02-16)

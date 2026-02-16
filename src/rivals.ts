@@ -29,7 +29,7 @@ const RIVAL_STUDIOS: RivalStudio[] = [
     emoji: '🦅',
     style: 'Big-budget blockbuster factory',
     qualityRange: [15, 45],
-    genrePool: ['Action', 'Sci-Fi', 'Thriller', 'Action', 'Sci-Fi'], // weighted toward action/sci-fi
+    genrePool: ['Action', 'Sci-Fi', 'Thriller', 'Action', 'Sci-Fi'],
   },
   {
     name: 'Lumière Collective',
@@ -45,17 +45,52 @@ const RIVAL_STUDIOS: RivalStudio[] = [
     qualityRange: [12, 42],
     genrePool: ['Horror', 'Thriller', 'Comedy', 'Horror', 'Horror'],
   },
+  {
+    name: 'Nova Pictures',
+    emoji: '✨',
+    style: 'Crowd-pleasing populist studio',
+    qualityRange: [14, 38],
+    genrePool: ['Comedy', 'Romance', 'Action', 'Comedy', 'Romance'],
+  },
+  {
+    name: 'Ironclad Entertainment',
+    emoji: '🛡️',
+    style: 'Franchise-obsessed tentpole machine',
+    qualityRange: [16, 44],
+    genrePool: ['Action', 'Sci-Fi', 'Action', 'Thriller', 'Sci-Fi'],
+  },
 ];
 
 // Film title templates per genre
 const TITLE_PARTS: Record<Genre, string[][]> = {
-  Action: [['Iron', 'Steel', 'Shadow', 'Final', 'Lethal', 'Crimson'], ['Protocol', 'Strike', 'Fury', 'Judgment', 'Dawn', 'Horizon']],
-  Comedy: [['My Big', 'Totally', 'Operation', 'The Last', 'Super'], ['Weekend', 'Disaster', 'Reunion', 'Oops', 'Chaos']],
-  Drama: [['The Weight of', 'Still', 'Between', 'After the', 'All the'], ['Silence', 'Water', 'Everything', 'Storm', 'Light']],
-  Horror: [['The', 'Last', 'Don\'t', 'They', 'Below the'], ['Hollow', 'Whisper', 'Look', 'Watch', 'Surface']],
-  'Sci-Fi': [['Neon', 'Beyond', 'The Last', 'Zero', 'Star'], ['Frontier', 'Orbit', 'Signal', 'Point', 'Colony']],
-  Romance: [['Before', 'Letters to', 'One More', 'The Way', 'Always'], ['Sunrise', 'Paris', 'Chance', 'Home', 'You']],
-  Thriller: [['The', 'No', 'Behind', 'Red', 'Silent'], ['Informant', 'Exit', 'Closed Doors', 'Line', 'Witness']],
+  Action: [
+    ['Iron', 'Steel', 'Shadow', 'Final', 'Lethal', 'Crimson', 'Storm', 'Rogue', 'Black', 'Rapid', 'Dark', 'Burning', 'Thunder', 'Titan', 'Savage'],
+    ['Protocol', 'Strike', 'Fury', 'Judgment', 'Dawn', 'Horizon', 'Vengeance', 'Operative', 'Pursuit', 'Impact', 'Zone', 'Assault', 'Recon', 'Command', 'Siege'],
+  ],
+  Comedy: [
+    ['My Big', 'Totally', 'Operation', 'The Last', 'Super', 'Accidentally', 'Mostly', 'Uncle', 'Camp', 'Project'],
+    ['Weekend', 'Disaster', 'Reunion', 'Oops', 'Chaos', 'Fiasco', 'Getaway', 'Meltdown', 'Honeymoon', 'Disaster Zone'],
+  ],
+  Drama: [
+    ['The Weight of', 'Still', 'Between', 'After the', 'All the', 'Whispered', 'Ordinary', 'The Last', 'Broken', 'Quiet'],
+    ['Silence', 'Water', 'Everything', 'Storm', 'Light', 'Truths', 'Grace', 'Letter', 'Bridges', 'Hours'],
+  ],
+  Horror: [
+    ['The', 'Last', 'Don\'t', 'They', 'Below the', 'It Came from', 'Beneath', 'Unholy', 'Dead', 'Bone'],
+    ['Hollow', 'Whisper', 'Look', 'Watch', 'Surface', 'Descent', 'Parish', 'Harvest', 'Echo', 'Cellar'],
+  ],
+  'Sci-Fi': [
+    ['Neon', 'Beyond', 'The Last', 'Zero', 'Star', 'Quantum', 'Deep', 'Omega', 'Cryo', 'Astral'],
+    ['Frontier', 'Orbit', 'Signal', 'Point', 'Colony', 'Protocol', 'Drift', 'Threshold', 'Gate', 'Nexus'],
+  ],
+  Romance: [
+    ['Before', 'Letters to', 'One More', 'The Way', 'Always', 'Meet Me in', 'Falling for', 'Written in', 'Close to', 'A Year in'],
+    ['Sunrise', 'Paris', 'Chance', 'Home', 'You', 'December', 'Florence', 'Starlight', 'Tomorrow', 'Your Eyes'],
+  ],
+  Thriller: [
+    ['The', 'No', 'Behind', 'Red', 'Silent', 'Double', 'Final', 'Buried', 'Blind', 'Cold'],
+    ['Informant', 'Exit', 'Closed Doors', 'Line', 'Witness', 'Cross', 'Trace', 'Alibi', 'Angle', 'Case'],
+  ],
 };
 
 function generateRivalTitle(genre: Genre): string {
@@ -140,6 +175,44 @@ export function generateRivalSeason(season: number, target: number, hotGenres?: 
     film.tier = getTier(film.boxOffice, target);
     return film;
   })];
+}
+
+// ─── SEASON NARRATIVE (flavor text for how you did vs rivals) ───
+
+export function getSeasonNarrative(
+  playerBoxOffice: number,
+  playerTier: RewardTier,
+  rivalFilms: RivalFilm[],
+): string {
+  const allBoxOffice = [playerBoxOffice, ...rivalFilms.map(f => f.boxOffice)].sort((a, b) => b - a);
+  const rank = allBoxOffice.indexOf(playerBoxOffice) + 1;
+  const total = allBoxOffice.length;
+  const topRival = rivalFilms.length > 0 ? rivalFilms.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
+
+  if (rank === 1 && playerTier === 'BLOCKBUSTER') {
+    return '🎆 Your film dominated the box office! No one came close.';
+  }
+  if (rank === 1) {
+    const margin = topRival ? playerBoxOffice - topRival.boxOffice : 0;
+    if (margin < 3) return '😅 A nail-biter finish — you barely edged out the competition!';
+    return '💪 Your film topped the charts this season!';
+  }
+  if (rank === 2 && topRival) {
+    return `📈 A strong showing, but ${topRival.studioEmoji} ${topRival.studioName} took the crown.`;
+  }
+  if (playerTier === 'FLOP' && total >= 4) {
+    return '📉 Lost in a crowded field of releases...';
+  }
+  if (playerTier === 'FLOP') {
+    return '💀 A tough season. The audience stayed home.';
+  }
+  if (rank <= Math.ceil(total / 2)) {
+    return '🎬 A respectable mid-pack finish. Room to grow.';
+  }
+  if (playerTier === 'HIT' && rank > 2 && rivalFilms.some(f => f.tier === 'BLOCKBUSTER')) {
+    return '⚡ A surprise upset against the blockbusters!';
+  }
+  return '📊 The competition was fierce this season.';
 }
 
 // ─── SEASON IDENTITY ───

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
 import { proceedFromRecap, calculateQuality } from '../gameStore';
-import { RivalFilm, getSeasonIdentity } from '../rivals';
+import { RivalFilm, getSeasonIdentity, getSeasonNarrative } from '../rivals';
 import { generateCriticQuote, generateDetailedHeadline } from '../narrative';
 import { sfx } from '../sound';
 
@@ -275,9 +275,21 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
             </div>
           </div>
 
+          {/* Season narrative */}
+          {lastResult && (
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#ccc',
+              marginBottom: 12,
+              textAlign: 'center',
+            }}>
+              {getSeasonNarrative(lastResult.boxOffice, lastResult.tier, rivalFilms)}
+            </div>
+          )}
+
           {/* Box office rankings */}
           <div style={{ fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: '#888', marginBottom: 8, letterSpacing: 1 }}>
-            📊 BOX OFFICE RANKINGS
+            📊 WEEKEND BOX OFFICE
           </div>
           {allFilms.map((film, i) => (
             <div key={i} style={{

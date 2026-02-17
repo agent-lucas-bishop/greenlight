@@ -5,6 +5,7 @@ import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDisco
 import { sfx } from '../sound';
 import { spawnConfetti } from '../visualEffects';
 import { addLeaderboardEntry, isNewHighScore, getEntryRank, getPlayerName, type LeaderboardEntry } from '../leaderboard';
+import { recordRunToHistory } from '../runHistory';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
@@ -621,6 +622,27 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         directorStyle: directorProfile.styleTitle,
       });
       setLeaderboardEntry(lbEntry);
+      // R296: Record to gl_leaderboard run history
+      {
+        const bestFilmForHistory = history.length > 0
+          ? history.reduce((a, b) => a.quality > b.quality ? a : b)
+          : null;
+        recordRunToHistory({
+          date: new Date().toISOString().slice(0, 10),
+          score,
+          rank,
+          totalBoxOffice: state.totalEarnings,
+          filmsProduced: history.length,
+          highestRatedFilm: bestFilmForHistory?.title || '—',
+          highestRatedFilmScore: bestFilmForHistory?.quality || 0,
+          studioLevel: currentPrestigeLevel.level,
+          won: isVictory,
+          studioName: studioIdentity?.name || state.studioName || undefined,
+          difficulty: state.difficulty || 'studio',
+          mode: state.gameMode,
+          archetype: state.studioArchetype || undefined,
+        });
+      }
       if (isHighScore) {
         const entryRank = getEntryRank(lbEntry);
         setHighScoreRank(entryRank);

@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
 import { getLeaderboard, getLeaderboardByDifficulty, getPersonalBestByDifficulty, generateRunCard, type LeaderboardEntry } from '../leaderboard';
 import { fetchGlobalLeaderboard, getCacheAge, type GlobalScore } from '../leaderboardApi';
+import { getLeaderboardStats, getTop50, getAllRunHistory, getBestRunId, type RunHistoryEntry } from '../runHistory';
 import { sfx } from '../sound';
 import { DIFFICULTIES } from '../difficulty';
 
-type SortKey = 'score' | 'earnings' | 'films' | 'date';
+type SortKey = 'score' | 'earnings' | 'films' | 'date' | 'bestFilm';
 type SortDir = 'asc' | 'desc';
 type TabMode = 'global' | 'local';
 
@@ -16,16 +17,173 @@ interface Props {
   currentRunId?: string;
 }
 
+// ─── Stats Summary (R296) ───
+
+function StatsSummary() {
+  const stats = getLeaderboardStats();
+  if (stats.totalRuns === 0) return null;
+
+  const pb = stats.personalBests;
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      {/* Overview stats */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 8,
+        marginBottom: 16,
+      }}>
+        {[
+          { label: 'Total Runs', value: stats.totalRuns.toString(), color: '#ccc', emoji: '🎬' },
+          { label: 'Avg Score', value: stats.averageScore.toString(), color: '#3498db', emoji: '📊' },
+          { label: 'Best Score', value: stats.bestScore.toString(), color: '#ffd700', emoji: '⭐' },
+          { label: 'Lifetime BO', value: `$${stats.totalLifetimeBoxOffice.toFixed(0)}M`, color: 'var(--gold)', emoji: '💰' },
+          { label: 'Win Rate', value: `${stats.winRate}%`, color: stats.winRate >= 50 ? '#2ecc71' : '#e74c3c', emoji: '🏆' },
+        ].map((s, i) => (
+          <div key={i} style={{
+            background: 'rgba(212,168,67,0.06)', border: '1px solid rgba(212,168,67,0.15)',
+            borderRadius: 8, padding: '10px 8px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '0.7rem', marginBottom: 2 }}>{s.emoji}</div>
+            <div style={{ color: s.color, fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{s.value}</div>
+            <div style={{ color: '#888', fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Personal Bests */}
+      <h4 style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: 1, marginBottom: 8 }}>
+        🏅 PERSONAL BESTS
+      </h4>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+        {pb.bestScore && (
+          <div style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.25)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+            <div style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>⭐ {pb.bestScore.value}</div>
+            <div style={{ color: '#888', fontSize: '0.55rem' }}>Best Score · {pb.bestScore.date}</div>
+          </div>
+        )}
+        {pb.bestBoxOffice && (
+          <div style={{ background: 'rgba(46,204,113,0.08)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+            <div style={{ color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>💰 ${pb.bestBoxOffice.value}M</div>
+            <div style={{ color: '#888', fontSize: '0.55rem' }}>Best Box Office · {pb.bestBoxOffice.date}</div>
+          </div>
+        )}
+        {pb.mostFilms && (
+          <div style={{ background: 'rgba(52,152,219,0.08)', border: '1px solid rgba(52,152,219,0.25)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+            <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>🎥 {pb.mostFilms.value} Films</div>
+            <div style={{ color: '#888', fontSize: '0.55rem' }}>Most Films · {pb.mostFilms.date}</div>
+          </div>
+        )}
+        {pb.highestRatedFilm && (
+          <div style={{ background: 'rgba(155,89,182,0.08)', border: '1px solid rgba(155,89,182,0.25)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+            <div style={{ color: '#bb86fc', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>🎭 Q{pb.highestRatedFilm.quality}</div>
+            <div style={{ color: '#888', fontSize: '0.55rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>"{pb.highestRatedFilm.value}"</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Run History Section (R296) ───
+
+function RunHistorySection() {
+  const [expanded, setExpanded] = useState(false);
+  const history = getAllRunHistory();
+
+  if (history.length === 0) return null;
+
+  // Show most recent first
+  const sorted = [...history].reverse();
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '12px 16px', background: 'rgba(212,168,67,0.06)',
+          border: '1px solid rgba(212,168,67,0.2)', borderRadius: expanded ? '8px 8px 0 0' : 8,
+          cursor: 'pointer', transition: 'all 0.2s',
+        }}
+      >
+        <h4 style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.9rem', letterSpacing: 1, margin: 0 }}>
+          📜 RUN HISTORY ({history.length} runs)
+        </h4>
+        <span style={{ color: '#888', fontSize: '0.9rem', transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : '' }}>▾</span>
+      </div>
+      {expanded && (
+        <div style={{
+          maxHeight: 400, overflowY: 'auto', border: '1px solid rgba(212,168,67,0.2)',
+          borderTop: 'none', borderRadius: '0 0 8px 8px',
+          background: 'rgba(0,0,0,0.2)',
+        }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex', gap: 4, padding: '6px 12px', fontSize: '0.6rem', color: '#666',
+            textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #222',
+            position: 'sticky', top: 0, background: '#1a1a2e', zIndex: 1,
+          }}>
+            <span style={{ width: 30 }}>#</span>
+            <span style={{ width: 70 }}>Date</span>
+            <span style={{ flex: 1 }}>Result</span>
+            <span style={{ width: 55, textAlign: 'right' }}>Score</span>
+            <span style={{ width: 55, textAlign: 'right' }}>BO</span>
+            <span style={{ width: 35, textAlign: 'right' }}>Films</span>
+          </div>
+          {sorted.map((entry) => (
+            <div key={entry.id} style={{
+              display: 'flex', gap: 4, padding: '6px 12px', alignItems: 'center',
+              borderBottom: '1px solid rgba(255,255,255,0.03)',
+              background: entry.id === getBestRunId() ? 'rgba(255,215,0,0.08)' : 'transparent',
+            }}>
+              <span style={{ width: 30, color: '#555', fontSize: '0.75rem', fontFamily: 'Bebas Neue' }}>
+                {entry.runNumber}
+              </span>
+              <span style={{ width: 70, color: '#888', fontSize: '0.7rem' }}>{entry.date}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{
+                  color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.7rem', fontWeight: 600,
+                }}>
+                  {entry.won ? '🏆' : '💀'} {entry.rank}-Rank
+                </span>
+                {entry.studioName && (
+                  <span style={{ color: '#666', fontSize: '0.6rem', marginLeft: 6 }}>{entry.studioName}</span>
+                )}
+              </div>
+              <span style={{
+                width: 55, textAlign: 'right', fontFamily: 'Bebas Neue', fontSize: '0.85rem',
+                color: entry.id === getBestRunId() ? '#ffd700' : 'var(--gold)',
+              }}>
+                {entry.score}
+              </span>
+              <span style={{ width: 55, textAlign: 'right', color: '#aaa', fontSize: '0.7rem' }}>
+                ${entry.totalBoxOffice.toFixed(0)}M
+              </span>
+              <span style={{ width: 35, textAlign: 'right', color: '#888', fontSize: '0.7rem' }}>
+                {entry.filmsProduced}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Memoized local leaderboard row ───
-const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, copiedId, onShare }: {
-  entry: LeaderboardEntry; index: number; isCurrent: boolean; copiedId: string | null; onShare: (e: LeaderboardEntry) => void;
+const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, isBestRun, copiedId, onShare }: {
+  entry: LeaderboardEntry; index: number; isCurrent: boolean; isBestRun: boolean; copiedId: string | null; onShare: (e: LeaderboardEntry) => void;
 }) {
+  const bestFilm = entry.films.length > 0
+    ? entry.films.reduce((a, b) => (b.quality || 0) > (a.quality || 0) ? b : a)
+    : null;
+
   return (
     <div style={{
       display: 'flex', gap: 4, padding: '8px 12px', alignItems: 'center',
-      background: isCurrent ? 'rgba(212,168,67,0.12)' : index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
-      border: isCurrent ? '1px solid var(--gold-dim)' : '1px solid transparent',
-      borderRadius: isCurrent ? 6 : 0, transition: 'background 0.2s', contain: 'content',
+      background: isBestRun ? 'rgba(255,215,0,0.1)' : isCurrent ? 'rgba(212,168,67,0.12)' : index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+      border: isBestRun ? '1px solid rgba(255,215,0,0.4)' : isCurrent ? '1px solid var(--gold-dim)' : '1px solid transparent',
+      borderRadius: (isBestRun || isCurrent) ? 6 : 0, transition: 'background 0.2s', contain: 'content',
     }}>
       <span style={{ width: 30, fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: index < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][index] : '#555' }}>
         {index < 3 ? MEDAL[index] : `#${index + 1}`}
@@ -34,20 +192,24 @@ const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, c
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ color: RANK_COLORS[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>{entry.rank}</span>
           <span style={{
-            color: isCurrent ? 'var(--gold)' : '#ccc', fontSize: '0.8rem', fontWeight: isCurrent ? 700 : 400,
+            color: isBestRun ? '#ffd700' : isCurrent ? 'var(--gold)' : '#ccc', fontSize: '0.8rem', fontWeight: (isCurrent || isBestRun) ? 700 : 400,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {entry.playerName || entry.studioName || 'Anonymous'}
           </span>
           <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.6rem' }}>{entry.won ? '✓' : '✗'}</span>
+          {isBestRun && <span style={{ fontSize: '0.6rem', color: '#ffd700', background: 'rgba(255,215,0,0.15)', padding: '1px 5px', borderRadius: 3 }}>👑 BEST</span>}
         </div>
         <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
           {entry.films.map((f, j) => <span key={j} style={{ fontSize: '0.6rem' }}>{TIER_EMOJI[f.tier] || '⬜'}</span>)}
         </div>
       </div>
-      <span style={{ width: 70, textAlign: 'right', color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{entry.score}</span>
+      <span style={{ width: 70, textAlign: 'right', color: isBestRun ? '#ffd700' : 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{entry.score}</span>
       <span style={{ width: 60, textAlign: 'right', color: '#aaa', fontSize: '0.75rem' }}>${entry.earnings.toFixed(0)}M</span>
       <span style={{ width: 40, textAlign: 'right', color: '#888', fontSize: '0.75rem' }}>{entry.films.length}</span>
+      <span style={{ width: 80, textAlign: 'right', color: '#999', fontSize: '0.65rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {bestFilm ? `"${bestFilm.title}"` : '—'}
+      </span>
       <span style={{ width: 70, textAlign: 'right', color: '#666', fontSize: '0.65rem' }}>{entry.date}</span>
       <button onClick={(e) => { e.stopPropagation(); onShare(entry); }}
         title="Copy run card to clipboard"
@@ -116,6 +278,7 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
   const touchStartY = useRef(0);
 
   const allEntries = getLeaderboard();
+  const bestRunId = useMemo(() => getBestRunId(), [allEntries.length]);
 
   // ─── Fetch global scores ───
   const loadGlobal = useCallback(async (diff: string) => {
@@ -172,6 +335,11 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
         case 'score': va = a.score; vb = b.score; break;
         case 'earnings': va = a.earnings; vb = b.earnings; break;
         case 'films': va = a.films.length; vb = b.films.length; break;
+        case 'bestFilm': {
+          const bestA = a.films.length > 0 ? Math.max(...a.films.map(f => f.quality || 0)) : 0;
+          const bestB = b.films.length > 0 ? Math.max(...b.films.map(f => f.quality || 0)) : 0;
+          va = bestA; vb = bestB; break;
+        }
         case 'date': va = new Date(a.date).getTime(); vb = new Date(b.date).getTime(); break;
         default: va = a.score; vb = b.score;
       }
@@ -242,7 +410,7 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
   }
 
   return (
-    <div ref={containerRef} style={{ maxWidth: 640, margin: '0 auto' }}
+    <div ref={containerRef} style={{ maxWidth: 680, margin: '0 auto' }}
       onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
 
       {/* Pull to refresh indicator */}
@@ -254,6 +422,9 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
           {pullDistance > 60 ? '↻ Release to refresh' : '↓ Pull to refresh'}
         </div>
       )}
+
+      {/* R296: Stats Summary */}
+      <StatsSummary />
 
       {/* Global / Local Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 16, justifyContent: 'center' }}>
@@ -271,10 +442,10 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
         ))}
       </div>
 
-      {/* Personal Bests (local tab only) */}
+      {/* Personal Bests by Difficulty (local tab only) */}
       {tab === 'local' && (
         <div style={{ marginBottom: 24 }}>
-          <h4 style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.9rem', letterSpacing: 1, marginBottom: 10 }}>👑 PERSONAL BESTS</h4>
+          <h4 style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.9rem', letterSpacing: 1, marginBottom: 10 }}>👑 PERSONAL BESTS BY DIFFICULTY</h4>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {personalBests.map(pb => (
               <div key={pb.id} style={{
@@ -390,18 +561,30 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
                 <span style={{ width: 70, textAlign: 'right', cursor: 'pointer' }} onClick={() => handleSort('score')}>Score{sortArrow('score')}</span>
                 <span style={{ width: 60, textAlign: 'right', cursor: 'pointer' }} onClick={() => handleSort('earnings')}>BO{sortArrow('earnings')}</span>
                 <span style={{ width: 40, textAlign: 'right', cursor: 'pointer' }} onClick={() => handleSort('films')}>Films{sortArrow('films')}</span>
+                <span style={{ width: 80, textAlign: 'right', cursor: 'pointer' }} onClick={() => handleSort('bestFilm')}>Best Film{sortArrow('bestFilm')}</span>
                 <span style={{ width: 70, textAlign: 'right', cursor: 'pointer' }} onClick={() => handleSort('date')}>Date{sortArrow('date')}</span>
                 <span style={{ width: 32 }}></span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {board.map((entry, i) => (
-                  <LeaderboardRow key={entry.id} entry={entry} index={i} isCurrent={currentRunId === entry.id} copiedId={copiedId} onShare={handleShare} />
+                  <LeaderboardRow
+                    key={entry.id}
+                    entry={entry}
+                    index={i}
+                    isCurrent={currentRunId === entry.id}
+                    isBestRun={i === 0 && sortKey === 'score' && sortDir === 'desc'}
+                    copiedId={copiedId}
+                    onShare={handleShare}
+                  />
                 ))}
               </div>
             </>
           )}
         </>
       )}
+
+      {/* R296: Run History (all runs, expandable) */}
+      <RunHistorySection />
     </div>
   );
 }

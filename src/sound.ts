@@ -2282,6 +2282,335 @@ export const sfx = {
     }, 'scoreSubmit');
   },
 
+  // ── R214: Achievement Gallery (R209) sounds ──
+
+  // Trophy unlock fanfare — celebratory ascending brass + shimmer
+  trophyUnlockFanfare() {
+    play(c => {
+      // Brass fanfare: C5 → E5 → G5 → C6
+      note(c, 523, 0, 0.2, 0.14, 'sawtooth');
+      note(c, 659, 0.1, 0.2, 0.14, 'sawtooth');
+      note(c, 784, 0.2, 0.2, 0.14, 'triangle');
+      note(c, 1047, 0.3, 0.4, 0.18, 'sine');
+      // Victory shimmer
+      note(c, 1568, 0.35, 0.35, 0.07, 'sine');
+      note(c, 2093, 0.4, 0.3, 0.05, 'sine');
+      note(c, 2637, 0.45, 0.25, 0.04, 'sine');
+      // Warm bass
+      note(c, 262, 0.3, 0.5, 0.1, 'triangle');
+      noise(c, 0.3, 0.15, 0.06);
+    }, 'trophyFanfare');
+  },
+
+  // Category filter click — subtle UI click
+  categoryFilterClick() {
+    play(c => {
+      note(c, 1400, 0, 0.035, 0.06, 'square');
+      note(c, 1100, 0.025, 0.03, 0.04, 'triangle');
+    }, 'catFilter');
+  },
+
+  // Gallery open whoosh — sweeping reveal
+  galleryOpenWhoosh() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(120, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(900, c.currentTime + 0.15);
+      o.frequency.exponentialRampToValueAtTime(250, c.currentTime + 0.3);
+      g.gain.setValueAtTime(0.1, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.4);
+      noise(c, 0, 0.2, 0.07);
+    }, 'galleryWhoosh');
+  },
+
+  // Rarity-specific unlock tones
+  rarityUnlockCommon() {
+    play(c => {
+      // Subtle single chime
+      note(c, 880, 0, 0.15, 0.06, 'sine');
+      note(c, 1175, 0.08, 0.12, 0.04, 'sine');
+    }, 'rarityCommon');
+  },
+
+  rarityUnlockUncommon() {
+    play(c => {
+      note(c, 880, 0, 0.15, 0.08, 'sine');
+      note(c, 1175, 0.07, 0.15, 0.08, 'sine');
+      note(c, 1568, 0.14, 0.18, 0.06, 'sine');
+    }, 'rarityUncommon');
+  },
+
+  rarityUnlockRare() {
+    play(c => {
+      note(c, 784, 0, 0.15, 0.1, 'sine');
+      note(c, 988, 0.08, 0.15, 0.1, 'sine');
+      note(c, 1319, 0.16, 0.2, 0.12, 'sine');
+      note(c, 1760, 0.24, 0.2, 0.06, 'sine');
+    }, 'rarityRare');
+  },
+
+  rarityUnlockEpic() {
+    play(c => {
+      note(c, 55, 0, 0.5, 0.15, 'sine');
+      note(c, 659, 0.05, 0.2, 0.1, 'sawtooth');
+      note(c, 880, 0.12, 0.2, 0.1, 'triangle');
+      note(c, 1175, 0.2, 0.25, 0.12, 'sine');
+      note(c, 1568, 0.28, 0.25, 0.08, 'sine');
+      note(c, 2637, 0.33, 0.2, 0.05, 'sine');
+      noise(c, 0.05, 0.15, 0.08);
+    }, 'rarityEpic');
+  },
+
+  rarityUnlockLegendary() {
+    play(c => {
+      // Deep bass impact
+      note(c, 55, 0, 0.8, 0.28, 'sine');
+      note(c, 82, 0, 0.6, 0.2, 'triangle');
+      // Brass stab
+      note(c, 220, 0.02, 0.5, 0.16, 'sawtooth');
+      note(c, 330, 0.04, 0.45, 0.14, 'sawtooth');
+      note(c, 440, 0.06, 0.4, 0.12, 'sawtooth');
+      // Resolve chord
+      note(c, 523, 0.15, 0.5, 0.12, 'triangle');
+      note(c, 659, 0.2, 0.45, 0.1, 'triangle');
+      note(c, 784, 0.25, 0.45, 0.1, 'triangle');
+      note(c, 1047, 0.3, 0.5, 0.08, 'sine');
+      // Cymbal wash
+      noise(c, 0.05, 0.4, 0.14);
+      // Shimmer cascade
+      note(c, 2093, 0.35, 0.5, 0.06, 'sine');
+      note(c, 2637, 0.4, 0.45, 0.05, 'sine');
+      note(c, 3520, 0.45, 0.4, 0.04, 'sine');
+      note(c, 4186, 0.5, 0.35, 0.03, 'sine');
+    }, 'rarityLegendary');
+  },
+
+  // ── R214: Seasonal Events (R210) sounds ──
+
+  // Seasonal banner appear chime — gentle attention-grabbing chime
+  seasonalBannerChime() {
+    play(c => {
+      note(c, 1047, 0, 0.12, 0.08, 'sine');
+      note(c, 1319, 0.06, 0.12, 0.07, 'sine');
+      note(c, 1568, 0.12, 0.18, 0.06, 'sine');
+    }, 'seasonBanner');
+  },
+
+  // Season-specific ambient tones
+  seasonAmbientSpring() {
+    play(c => {
+      // Light birdsong chirps
+      note(c, 1568, 0, 0.06, 0.06, 'sine');
+      note(c, 2093, 0.05, 0.05, 0.05, 'sine');
+      note(c, 1760, 0.09, 0.08, 0.05, 'sine');
+      note(c, 784, 0.15, 0.2, 0.04, 'triangle');
+    }, 'seasonAmbSpring');
+  },
+
+  seasonAmbientSummer() {
+    play(c => {
+      // Warm swell
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(220, c.currentTime);
+      o.frequency.linearRampToValueAtTime(350, c.currentTime + 0.3);
+      g.gain.setValueAtTime(0.001, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.08, c.currentTime + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.45);
+      note(c, 440, 0.1, 0.25, 0.04, 'sine');
+    }, 'seasonAmbSummer');
+  },
+
+  seasonAmbientAutumn() {
+    play(c => {
+      // Rustling leaves — gentle filtered noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.3, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 2000;
+      bp.Q.value = 0.8;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.05, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime); src.stop(c.currentTime + 0.3);
+      note(c, 300, 0, 0.2, 0.03, 'sine');
+    }, 'seasonAmbAutumn');
+  },
+
+  seasonAmbientWinter() {
+    play(c => {
+      // Ice crystal pings
+      note(c, 2093, 0, 0.15, 0.05, 'sine');
+      note(c, 2637, 0.06, 0.15, 0.04, 'sine');
+      note(c, 3136, 0.12, 0.15, 0.04, 'sine');
+      note(c, 523, 0, 0.25, 0.03, 'triangle');
+    }, 'seasonAmbWinter');
+  },
+
+  seasonAmbientAwards() {
+    play(c => {
+      // Orchestral swell hint
+      note(c, 220, 0, 0.3, 0.08, 'sawtooth');
+      note(c, 330, 0.05, 0.25, 0.06, 'triangle');
+      note(c, 440, 0.1, 0.2, 0.06, 'triangle');
+      note(c, 880, 0.15, 0.2, 0.03, 'sine');
+    }, 'seasonAmbAwards');
+  },
+
+  seasonAmbientHoliday() {
+    play(c => {
+      // Sleigh bell chime
+      note(c, 1568, 0, 0.1, 0.08, 'sine');
+      note(c, 2093, 0.05, 0.1, 0.07, 'sine');
+      note(c, 1568, 0.1, 0.08, 0.06, 'sine');
+      note(c, 2637, 0.16, 0.15, 0.05, 'sine');
+      noise(c, 0, 0.08, 0.04);
+    }, 'seasonAmbHoliday');
+  },
+
+  // ── R214: Replay System (R211) sounds ──
+
+  // Replay step forward tick
+  replayStepForward() {
+    play(c => {
+      note(c, 1200, 0, 0.03, 0.06, 'square');
+      note(c, 1600, 0.02, 0.025, 0.04, 'sine');
+    }, 'replayFwd');
+  },
+
+  // Replay step back tick
+  replayStepBack() {
+    play(c => {
+      note(c, 1600, 0, 0.03, 0.06, 'square');
+      note(c, 1200, 0.02, 0.025, 0.04, 'sine');
+    }, 'replayBack');
+  },
+
+  // Timeline scrub sound — quick filtered swoosh
+  replayTimelineScrub() {
+    play(c => {
+      noise(c, 0, 0.04, 0.05);
+      note(c, 800, 0, 0.025, 0.04, 'triangle');
+    }, 'replayScrub');
+  },
+
+  // Key moment highlight ding — bright attention ping
+  replayKeyMomentDing() {
+    play(c => {
+      note(c, 1568, 0, 0.15, 0.1, 'sine');
+      note(c, 2093, 0.06, 0.12, 0.08, 'sine');
+      note(c, 2637, 0.12, 0.15, 0.05, 'sine');
+    }, 'replayMoment');
+  },
+
+  // Replay comparison open — panel slide sound
+  replayComparisonOpen() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(200, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(700, c.currentTime + 0.12);
+      o.frequency.exponentialRampToValueAtTime(350, c.currentTime + 0.22);
+      g.gain.setValueAtTime(0.08, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.3);
+      noise(c, 0, 0.1, 0.05);
+    }, 'replayCompare');
+  },
+
+  // ── R214: Story Events (R212) sounds ──
+
+  // Typewriter tick per character
+  storyTypewriterTick() {
+    play(c => {
+      note(c, 1800 + Math.random() * 400, 0, 0.012, 0.025, 'square');
+      noise(c, 0, 0.008, 0.015);
+    }, 'storyType');
+  },
+
+  // Choice hover tone — subtle warm tone
+  storyChoiceHover() {
+    play(c => {
+      note(c, 600, 0, 0.08, 0.04, 'sine');
+      note(c, 800, 0.03, 0.06, 0.03, 'triangle');
+    }, 'storyHover');
+  },
+
+  // Choice select confirmation — decisive click + tone
+  storyChoiceSelect() {
+    play(c => {
+      noise(c, 0, 0.03, 0.08);
+      note(c, 523, 0.02, 0.15, 0.1, 'sine');
+      note(c, 659, 0.08, 0.15, 0.08, 'sine');
+      note(c, 784, 0.14, 0.2, 0.06, 'sine');
+    }, 'storySelect');
+  },
+
+  // Story event appear — dramatic sting (minor chord + tension)
+  storyEventSting() {
+    play(c => {
+      // Dark dramatic minor chord: Am
+      note(c, 220, 0, 0.5, 0.14, 'sawtooth');
+      note(c, 262, 0.02, 0.45, 0.12, 'sawtooth');
+      note(c, 330, 0.05, 0.4, 0.1, 'triangle');
+      // Sub bass
+      note(c, 110, 0, 0.6, 0.1, 'sine');
+      // Tension sweep
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(100, c.currentTime);
+      o.frequency.linearRampToValueAtTime(250, c.currentTime + 0.4);
+      g.gain.setValueAtTime(0.001, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.08, c.currentTime + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.55);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.6);
+      noise(c, 0, 0.12, 0.06);
+    }, 'storySting');
+  },
+
+  // Outcome reveal — positive (uplifting major resolution)
+  storyOutcomePositive() {
+    play(c => {
+      // Warm major chord: C E G ascending
+      note(c, 523, 0, 0.2, 0.12, 'triangle');
+      note(c, 659, 0.08, 0.2, 0.12, 'triangle');
+      note(c, 784, 0.16, 0.25, 0.14, 'sine');
+      note(c, 1047, 0.24, 0.3, 0.1, 'sine');
+      // Gentle shimmer
+      note(c, 1568, 0.3, 0.2, 0.05, 'sine');
+      note(c, 2093, 0.35, 0.15, 0.03, 'sine');
+    }, 'storyOutPos');
+  },
+
+  // Outcome reveal — negative (somber minor descend)
+  storyOutcomeNegative() {
+    play(c => {
+      // Somber minor descend: Am → E → low resolve
+      note(c, 440, 0, 0.2, 0.1, 'triangle');
+      note(c, 392, 0.1, 0.2, 0.09, 'triangle');
+      note(c, 330, 0.2, 0.25, 0.08, 'triangle');
+      note(c, 262, 0.3, 0.35, 0.07, 'sine');
+      // Dark undertone
+      note(c, 110, 0.15, 0.4, 0.06, 'sine');
+    }, 'storyOutNeg');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

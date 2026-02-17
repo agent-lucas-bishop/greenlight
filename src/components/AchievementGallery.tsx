@@ -10,6 +10,7 @@ import {
 import { getUnlocks } from '../unlocks';
 import { getState } from '../gameStore';
 import { getLeaderboard } from '../leaderboard';
+import { sfx } from '../sound';
 
 // ─── Shimmer keyframes (injected once) ───
 const SHIMMER_ID = 'ach-gallery-shimmer';
@@ -262,7 +263,7 @@ function AchievementCard({ achievement }: { achievement: GalleryAchievement }) {
 export default function AchievementGallery({ onClose, inline }: { onClose: () => void; inline?: boolean }) {
   const [filter, setFilter] = useState<GalleryCategory | 'all'>('all');
 
-  useEffect(() => { ensureShimmerStyle(); }, []);
+  useEffect(() => { ensureShimmerStyle(); sfx.galleryOpenWhoosh(); }, []);
 
   useEffect(() => {
     if (inline) return;
@@ -363,7 +364,7 @@ export default function AchievementGallery({ onClose, inline }: { onClose: () =>
         display: 'flex', gap: 6, marginBottom: 20, justifyContent: 'center', flexWrap: 'wrap',
       }}>
         <button
-          onClick={() => setFilter('all')}
+          onClick={() => { setFilter('all'); sfx.categoryFilterClick(); }}
           style={{
             padding: '6px 14px', borderRadius: 8, fontSize: '0.75rem', fontFamily: 'Bebas Neue',
             letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.2s',
@@ -380,7 +381,7 @@ export default function AchievementGallery({ onClose, inline }: { onClose: () =>
           return (
             <button
               key={gc.id}
-              onClick={() => setFilter(gc.id)}
+              onClick={() => { setFilter(gc.id); sfx.categoryFilterClick(); }}
               style={{
                 padding: '6px 14px', borderRadius: 8, fontSize: '0.75rem', fontFamily: 'Bebas Neue',
                 letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.2s',

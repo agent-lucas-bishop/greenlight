@@ -6,6 +6,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type { ReplayData, ReplayEvent, ReplayMoment } from '../replay';
 import { loadReplays, deleteReplay, describeEvent, exportReplay, importReplay, addImportedReplay } from '../replay';
+import { sfx } from '../sound';
 
 // ─── Styles ───
 
@@ -282,8 +283,8 @@ function ReplayPlayback({ replay, onBack }: { replay: ReplayData; onBack: () => 
     setCurrentIdx(Math.max(0, Math.min(idx, totalEvents - 1)));
   }, [totalEvents]);
 
-  const prev = () => goTo(currentIdx - 1);
-  const next = () => goTo(currentIdx + 1);
+  const prev = () => { goTo(currentIdx - 1); sfx.replayStepBack(); };
+  const next = () => { goTo(currentIdx + 1); sfx.replayStepForward(); };
 
   // Keyboard nav
   useEffect(() => {
@@ -307,6 +308,7 @@ function ReplayPlayback({ replay, onBack }: { replay: ReplayData; onBack: () => 
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = (e.clientX - rect.left) / rect.width;
     goTo(Math.round(pct * (totalEvents - 1)));
+    sfx.replayTimelineScrub();
   };
 
   // Season boundaries for timeline markers
@@ -387,7 +389,7 @@ function ReplayPlayback({ replay, onBack }: { replay: ReplayData; onBack: () => 
               border: '2px solid #1a1a2e',
             }}
             title={m.label}
-            onClick={(e) => { e.stopPropagation(); goTo(m.eventIndex); }}
+            onClick={(e) => { e.stopPropagation(); goTo(m.eventIndex); sfx.replayKeyMomentDing(); }}
           />
         ))}
       </div>
@@ -578,6 +580,7 @@ export default function ReplayViewer({ onClose }: { onClose: () => void }) {
     setCompareA(a);
     setCompareB(b);
     setMode('compare');
+    sfx.replayComparisonOpen();
   };
 
   const handleImport = () => {

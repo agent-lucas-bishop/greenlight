@@ -4,13 +4,35 @@
  * Subtle top banner showing current real-world seasonal events.
  * Dismissible with a close button.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getActiveSeasonalEvents, type SeasonalEvent } from '../seasonalEvents';
+import { sfx } from '../sound';
 
 export default function SeasonalBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   const activeEvents = useMemo(() => getActiveSeasonalEvents(), []);
+
+  // Play banner chime + season-specific ambient on mount
+  useEffect(() => {
+    if (activeEvents.length === 0 || dismissed) return;
+    sfx.seasonalBannerChime();
+    // Play season-specific ambient after a short delay
+    const timer = setTimeout(() => {
+      const id = activeEvents[0]?.id;
+      if (id === 'awards_season') sfx.seasonAmbientAwards();
+      else if (id === 'holiday_season') sfx.seasonAmbientHoliday();
+      else {
+        // Determine by month
+        const m = new Date().getMonth();
+        if (m >= 2 && m <= 4) sfx.seasonAmbientSpring();
+        else if (m >= 5 && m <= 7) sfx.seasonAmbientSummer();
+        else if (m >= 8 && m <= 10) sfx.seasonAmbientAutumn();
+        else sfx.seasonAmbientWinter();
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [activeEvents.length > 0 && !dismissed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (activeEvents.length === 0 || dismissed) return null;
 

@@ -29,6 +29,7 @@ import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionPro
 import TradingCardToast from '../components/TradingCardToast';
 import ShareCard from '../components/ShareCard';
 import { extractShareData, type RunShareData } from '../sharing';
+import { checkCommunityChallenges, type RunSummary, type CommunityChallenge } from '../challenges';
 import ReplayViewer from '../components/ReplayViewer';
 
 // ─── Helpers ───

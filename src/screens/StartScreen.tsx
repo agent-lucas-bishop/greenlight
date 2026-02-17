@@ -35,6 +35,7 @@ const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
 const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
+const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
@@ -427,6 +428,7 @@ export default function StartScreen() {
   const firstRun = isFirstRun();
   const simplified = isSimplifiedRun(); // true until first run complete
   const [showHelp, setShowHelp] = useState(false);
+  const [showChallengeBoard, setShowChallengeBoard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -948,6 +950,18 @@ export default function StartScreen() {
 
       {tab === 'challenges' && (() => {
         const unlockStats = { totalWins: stats.wins, challengesCompleted: stats.careerStats.challengesCompleted || [] };
+        // Community challenges button at top
+        const communitySection = (
+          <div style={{ marginBottom: 16, textAlign: 'center' }}>
+            <button
+              className="btn"
+              onClick={() => setShowChallengeBoard(true)}
+              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: 700, padding: '10px 24px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+            >
+              🏅 Community Challenges
+            </button>
+          </div>
+        );
         const challengeBests: Record<string, { score: number; won: boolean }> = {};
         for (const entry of leaderboard) {
           if (entry.challenge && (!challengeBests[entry.challenge] || entry.score > challengeBests[entry.challenge].score)) {
@@ -956,6 +970,7 @@ export default function StartScreen() {
         }
         return (
           <div style={{ maxWidth: 600, margin: '0 auto' }}>
+            {communitySection}
             <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: 8 }}>
               Unique rule modifiers that change how you play. Each challenge has a score multiplier.
             </p>
@@ -1465,6 +1480,11 @@ export default function StartScreen() {
       {showGlossary && <Suspense fallback={null}><Glossary onClose={() => setShowGlossary(false)} /></Suspense>}
       {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
       {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
+      {showChallengeBoard && (
+        <Suspense fallback={null}>
+          <ChallengeBoard onClose={() => setShowChallengeBoard(false)} />
+        </Suspense>
+      )}
 
       {/* Player Name Prompt */}
       {showNamePrompt && (

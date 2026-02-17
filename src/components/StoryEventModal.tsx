@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { StoryEvent, StoryEventChoice, StoryEventOutcome } from '../storyEvents';
+import { sfx } from '../sound';
 
 interface Props {
   event: StoryEvent;
@@ -34,6 +35,7 @@ function useTypewriter(lines: string[], speed = 30) {
       }
       i++;
       setDisplayed(full.slice(0, i));
+      if (full[i - 1] && full[i - 1] !== ' ' && full[i - 1] !== '\n') sfx.storyTypewriterTick();
       if (i >= full.length) {
         setDone(true);
         clearInterval(tick);
@@ -77,7 +79,7 @@ function ChoiceButton({ choice, onClick }: { choice: StoryEventChoice; onClick: 
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => { setHovered(true); sfx.storyChoiceHover(); }}
       onMouseLeave={() => setHovered(false)}
       style={{
         display: 'block',
@@ -106,6 +108,9 @@ function ChoiceButton({ choice, onClick }: { choice: StoryEventChoice; onClick: 
 
 export default function StoryEventModal({ event, onChoice }: Props) {
   const { displayed, done, skip } = useTypewriter(event.dialog);
+
+  // Play dramatic sting on mount
+  useEffect(() => { sfx.storyEventSting(); }, []);
 
   return (
     <div
@@ -192,7 +197,13 @@ export default function StoryEventModal({ event, onChoice }: Props) {
               <ChoiceButton
                 key={i}
                 choice={choice}
-                onClick={() => onChoice(choice.outcome)}
+                onClick={() => {
+                  sfx.storyChoiceSelect();
+                  // Play outcome tone after a brief pause
+                  const net = (choice.outcome.reputation || 0) + (choice.outcome.budget || 0) + (choice.outcome.morale || 0);
+                  setTimeout(() => { net >= 0 ? sfx.storyOutcomePositive() : sfx.storyOutcomeNegative(); }, 300);
+                  onChoice(choice.outcome);
+                }}
               />
             ))}
           </div>

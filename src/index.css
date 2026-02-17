@@ -508,6 +508,25 @@ h1, h2, h3, h4 {
   min-height: 80px;
 }
 
+/* Horizontal carousel for played cards */
+.production-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 4px 14px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,168,67,0.3) transparent;
+}
+.production-carousel::-webkit-scrollbar { height: 6px; }
+.production-carousel::-webkit-scrollbar-track { background: transparent; }
+.production-carousel::-webkit-scrollbar-thumb { background: rgba(212,168,67,0.3); border-radius: 3px; }
+.production-carousel .carousel-card {
+  flex: 0 0 auto;
+}
+
 /* ===== PRODUCTION CARDS — refined ===== */
 
 .prod-card-new {

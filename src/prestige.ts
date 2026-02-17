@@ -39,10 +39,13 @@ export function getPrestige(): PrestigeState {
   return { xp: 0, level: 0 };
 }
 
+// Callback to notify data.ts cache when prestige changes (avoids circular import)
+let _onPrestigeChange: (() => void) | null = null;
+export function setPrestigeChangeCallback(cb: () => void) { _onPrestigeChange = cb; }
+
 function savePrestige(state: PrestigeState) {
   try { localStorage.setItem(PRESTIGE_KEY, JSON.stringify(state)); } catch {}
-  // Update in-memory cache so getSeasonTarget doesn't re-read localStorage
-  try { const { refreshPrestigeLevelCache } = require('./data'); refreshPrestigeLevelCache(); } catch {}
+  _onPrestigeChange?.();
 }
 
 export function getPrestigeLevel(xp: number): PrestigeLevel {

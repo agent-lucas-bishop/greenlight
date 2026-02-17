@@ -298,6 +298,9 @@ export interface GameState {
   streamingDealActive: boolean; // next film -×0.3 mult from streaming deal
   rosterCap?: number; // max roster size (default 8), reduced by studio merger
   pendingSequelScript?: Script | null; // franchise sequel script for next season
+  // R136: Franchise/Sequel system
+  franchises: Record<string, FranchiseEntry>; // franchise root title -> franchise data
+  sequelOrigins: Record<string, string>; // film title -> franchise root title (maps sequels to their franchise)
   // R106: Advanced strategy
   completionBond: boolean; // one-use: next FLOP → MISS (no strike)
   extendedCutAvailable: boolean; // after HIT+, can do extended cut
@@ -337,6 +340,18 @@ export interface StudioArchetype {
   emoji: string;
   description: string;
   effect: string; // key used by game logic
+}
+
+// R136: Franchise tracking
+export interface FranchiseEntry {
+  rootTitle: string; // original film title
+  genre: Genre;
+  films: { title: string; season: number; quality: number; boxOffice: number; tier: RewardTier }[];
+  totalBoxOffice: number;
+  sequelNumber: number; // how many films in franchise so far
+  lastQuality: number; // quality of most recent entry
+  lastCost: number; // cost of most recent entry
+  lastMarketMultiplier: number; // market multiplier of most recent entry
 }
 
 export interface SeasonResult {

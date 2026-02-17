@@ -154,6 +154,8 @@ function createInitialState(): GameState {
     activeSeasonEvent: null,
     streamingDealActive: false,
     pendingSequelScript: null,
+    franchises: {},
+    sequelOrigins: {},
     completionBond: false,
     extendedCutAvailable: false,
     extendedCutUsed: false,

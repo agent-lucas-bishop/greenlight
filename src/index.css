@@ -3482,3 +3482,270 @@ body {
 .shop-section + .shop-section {
   margin-top: 32px;
 }
+
+/* ===== R137: MOBILE POLISH PASS 3 — Touch UX & Performance ===== */
+
+/* --- 1. Touch-action: eliminate 300ms tap delay on all interactive elements --- */
+button, a, .btn, .card, .cast-slot, .selectable-card, .prod-card-new,
+.roster-chip, .tab-btn, .fire-btn, .header-help-btn, .modal-close,
+.phase-tip, .perk-badge, .btn-tiny, .start-icon-btn, .settings-toggle,
+.settings-slider, .history-pip, .bad-pip, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* --- 2. Scroll performance — GPU-accelerated scrollable containers --- */
+.production-carousel,
+.modal,
+.card-preview-list,
+.run-history-card {
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}
+.production-carousel,
+.card-preview-list {
+  contain: content;
+}
+
+/* --- 3. Font sizing — no text below 14px on mobile (prevents iOS zoom) --- */
+@media (max-width: 480px) {
+  /* Labels and micro-text: bump to 11px minimum (0.6875rem) — these are decorative labels */
+  .header-stat .label,
+  .prod-stat .label,
+  .slot-label,
+  .card-subtitle,
+  .talent-type,
+  .tag-badge,
+  .source-badge,
+  .prod-card-source,
+  .prod-card-synergy,
+  .loading-tip-label,
+  .season-headline-masthead,
+  .legendary-badge,
+  .elite-badge {
+    font-size: 0.6875rem !important; /* 11px — decorative, not input-adjacent */
+  }
+
+  /* Body text and interactive-adjacent text: minimum 14px */
+  .card-body,
+  .card-stat,
+  .phase-tip-content,
+  .casting-stats,
+  .cast-credit,
+  .roster-chip,
+  .htp-section p,
+  .htp-section li,
+  .htp-flow-desc,
+  .event-banner,
+  .box-office-target,
+  .prod-narrative,
+  .bad-label,
+  .loading-tip,
+  .quality-breakdown,
+  .qb-item,
+  .prod-card-budget,
+  .filmography-row,
+  .empty-state-desc,
+  .reward-item,
+  .qs-row {
+    font-size: max(0.875rem, 14px) !important; /* 14px minimum */
+  }
+
+  /* Inputs and selects: 16px minimum to prevent iOS zoom on focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* --- 4. Touch targets — ensure 44x44px minimum on all interactive elements --- */
+@media (max-width: 480px) {
+  /* Settings toggle needs larger hit area */
+  .settings-toggle {
+    min-width: 46px;
+    min-height: 44px;
+  }
+
+  /* Slider thumb: 44px touch target */
+  .settings-slider::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  .settings-slider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Phase tip dismiss button */
+  .phase-tip-dismiss {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  /* Stat tooltip icon: expand touch area without changing visual */
+  .stat-tooltip-icon {
+    position: relative;
+    z-index: 1;
+  }
+  .stat-tooltip-icon::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    z-index: -1;
+  }
+
+  /* Tag badges when clickable */
+  .tag-badge {
+    min-height: 28px;
+    padding: 4px 8px;
+  }
+
+  /* Fire button in roster */
+  .fire-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* History pips */
+  .history-pip {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Bad pips (incident tracker) */
+  .bad-pip {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Perk badges */
+  .perk-badge {
+    min-height: 36px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Rep stars */
+  .rep-star {
+    font-size: 1.5rem;
+    padding: 4px;
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* --- 5. Safe areas — comprehensive notch/dynamic island coverage --- */
+@supports (padding: env(safe-area-inset-top)) {
+  .sticky-action-bar {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .start-screen {
+    padding-top: env(safe-area-inset-top);
+  }
+  .end-screen {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  /* Production carousel near bottom */
+  @media (max-width: 639px) {
+    .main {
+      padding-left: max(10px, env(safe-area-inset-left));
+      padding-right: max(10px, env(safe-area-inset-right));
+    }
+  }
+}
+
+/* --- 6. Overflow prevention — no horizontal scroll 320-428px --- */
+@media (max-width: 428px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  /* Clamp wide elements */
+  .tier-banner,
+  .quality-summary,
+  .choice-area,
+  .production-stats-bar,
+  .casting-stats,
+  .disaster-banner,
+  .phase-tip-content,
+  .event-banner,
+  .htp-tldr {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  /* Ensure the production carousel doesn't escape */
+  .production-carousel {
+    max-width: 100%;
+  }
+  /* Season overlay text */
+  .season-overlay-inner {
+    max-width: calc(100vw - 24px);
+    padding: 0 12px;
+  }
+  /* Nomination banner shimmer — contain within bounds */
+  .nomination-banner {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  /* End screen stats */
+  .end-stats {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .filmography-row {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+  /* Combo counter */
+  .combo-counter {
+    max-width: 100%;
+    overflow: hidden;
+  }
+}
+
+/* --- 7. Loading screen mobile visibility --- */
+@media (max-width: 480px) {
+  .loading-screen {
+    min-height: 70vh;
+    min-height: 70dvh;
+    padding: 1.5rem 1rem;
+  }
+  .loading-clapperboard {
+    width: 64px;
+  }
+  .loading-filmstrip {
+    max-width: 250px;
+  }
+  .loading-tip {
+    max-width: 300px;
+  }
+  /* Shimmer skeleton: ensure visible on mobile */
+  .shimmer-skeleton {
+    min-height: 60px;
+    border-radius: 8px;
+  }
+}
+
+/* --- 8. Contain layout paint for performance --- */
+.card,
+.prod-card-new,
+.talent-card,
+.tier-banner,
+.cast-slot {
+  contain: layout style;
+}

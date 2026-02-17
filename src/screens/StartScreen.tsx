@@ -853,7 +853,7 @@ export default function StartScreen() {
           { id: 'dashboard', emoji: '📈', label: 'DASHBOARD', shortLabel: 'DASH' },
           { id: 'achievements', emoji: '🏆', label: 'ACHIEVEMENTS', shortLabel: 'ACHV' },
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
-          { id: 'create', emoji: '🎨', label: 'CREATE' },
+          { id: 'create', emoji: '🃏', label: 'WORKSHOP' },
           { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
           { id: 'career', emoji: '🏛️', label: 'CAREER' },
           { id: 'history', emoji: '📜', label: 'RUNS' },

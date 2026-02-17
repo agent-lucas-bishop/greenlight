@@ -5,6 +5,7 @@ import { isTalentRetired, isLoyalTalent, getAgentFee } from './talentHistory';
 import { getEnabledModScripts, getEnabledModTalent } from './modding';
 import { customCardToCardTemplate } from './customCards';
 import type { CustomScript, CustomTalent } from './customCards';
+import { getEnabledWorkshopCards, crewCardToCardTemplate } from './cardCreator';
 
 // Cache prestige level in memory to avoid localStorage reads on every render
 let _cachedPrestigeLevel = 0;

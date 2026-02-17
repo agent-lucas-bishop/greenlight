@@ -107,6 +107,7 @@ import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { careerSessionStart, careerTrackTalentHire, careerTrackFilmComplete } from './careerAnalytics';
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
+import { getEnabledWorkshopCards, crewCardToCardTemplate } from './cardCreator';
 import { getDirectorStyleBonus } from './directorProfile';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
@@ -297,6 +298,16 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
 
   for (const template of script.cards) {
     deck.push(templateToCard(template, script.title, 'script'));
+  }
+
+  // R230: Mix in enabled workshop crew cards
+  const workshopCards = getEnabledWorkshopCards();
+  for (const wc of workshopCards) {
+    // Rarity weighting: higher rarity = lower chance of appearing
+    const rarityChance: Record<string, number> = { common: 0.8, uncommon: 0.6, rare: 0.4, epic: 0.25, legendary: 0.12 };
+    if (rng() < (rarityChance[wc.rarity] || 0.5)) {
+      deck.push(templateToCard(crewCardToCardTemplate(wc), wc.name, 'crew'));
+    }
   }
 
   for (const slot of castSlots) {

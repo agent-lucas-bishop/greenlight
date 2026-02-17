@@ -515,9 +515,9 @@ function ReplayComparison({ replayA, replayB, onBack }: {
             const tierColors: Record<string, string> = { BLOCKBUSTER: '#2ecc71', SMASH: '#f1c40f', HIT: '#e67e22', FLOP: '#e74c3c' };
             return (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #222' }}>
-                <span>S{e.s}: "{e.d.title}"</span>
+                <span>S{e.s}: "{e.d.title as string}"</span>
                 <span style={{ color: tierColors[e.d.tier as string] || '#999' }}>
-                  {e.d.tier} ${e.d.boxOffice}M
+                  {e.d.tier as string} ${e.d.boxOffice as number}M
                 </span>
               </div>
             );

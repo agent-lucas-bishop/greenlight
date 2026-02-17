@@ -29,6 +29,7 @@ import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionPro
 import TradingCardToast from '../components/TradingCardToast';
 import ShareCard from '../components/ShareCard';
 import { extractShareData, type RunShareData } from '../sharing';
+import ReplayViewer from '../components/ReplayViewer';
 
 // ─── Helpers ───
 
@@ -435,6 +436,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [highScoreRank, setHighScoreRank] = useState<number | null>(null);
   const [leaderboardEntry, setLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [showReplayViewer, setShowReplayViewer] = useState(false);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
     history,
@@ -1791,8 +1793,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           <button className="btn btn-primary btn-glow" onClick={() => startGame()}>
             🎬 BACK TO THE DIRECTOR'S CHAIR
           </button>
+          <button className="btn" style={{ marginLeft: 12 }} onClick={() => setShowReplayViewer(true)}>
+            🎬 View Replays
+          </button>
         </div>
       )}
+
+      {/* R211: Replay Viewer */}
+      {showReplayViewer && <ReplayViewer onClose={() => setShowReplayViewer(false)} />}
 
       {/* R187: Trading card toast queue */}
       {newCardIds.length > 0 && phase >= 5 && (

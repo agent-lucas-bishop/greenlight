@@ -2104,6 +2104,12 @@ export function pickPostProdOption(option: PostProdOption) {
 }
 
 export function confirmPostProduction() {
+  // R211: Replay
+  recordEvent('post_prod', state.season, 'postProduction', {
+    marketing: state.postProdMarketing || 'none',
+    option: state.postProdOption || null,
+    composer: state.postProdComposer || null,
+  });
   resolveRelease();
 }
 
@@ -2446,6 +2452,12 @@ export function resolveRelease() {
     audienceScore: finalAudienceData.audienceScore,
   };
 
+  // R211: Replay — record season result
+  recordEvent('season_result', state.season, 'release', {
+    title: result.title, genre: result.genre, quality: result.quality,
+    boxOffice: result.boxOffice, tier: result.tier, state: snapshotState(state),
+  });
+
   // ─── R136: FRANCHISE / SEQUEL SYSTEM ───
   let pendingSequelScript = state.pendingSequelScript;
   let franchises = { ...state.franchises };
@@ -2694,11 +2706,13 @@ export function proceedFromRecap() {
   // Endless mode: bankrupt (budget < 0 after release) = game over
   if (state.gameMode === 'endless' && state.budget < 0) {
     clearSave();
+    finalizeReplay(false, 0, state.season, state.totalEarnings);
     setState({ phase: 'gameOver' });
     return;
   }
   if (state.reputation <= 0 || state.strikes >= state.maxStrikes) {
     clearSave();
+    finalizeReplay(false, 0, state.season, state.totalEarnings);
     setState({ phase: 'gameOver' });
     return;
   }
@@ -2706,16 +2720,19 @@ export function proceedFromRecap() {
     // Critics Only: must reach 5-star reputation to win
     if (state.challengeId === 'critics_only' && state.reputation < 5) {
       clearSave();
+      finalizeReplay(false, 0, state.season, state.totalEarnings);
       setState({ phase: 'gameOver' });
       return;
     }
     clearSave();
+    finalizeReplay(true, 0, state.season, state.totalEarnings);
     setState({ phase: 'victory' });
     return;
   }
   // Critics Only: can win early by reaching 5 stars
   if (state.challengeId === 'critics_only' && state.reputation >= 5) {
     clearSave();
+    finalizeReplay(true, 0, state.season, state.totalEarnings);
     setState({ phase: 'victory' });
     return;
   }
@@ -2821,6 +2838,8 @@ export function buyPerk(perk: StudioPerk) {
   if (perk.effect === 'completionBond') {
     updates.completionBond = true;
   }
+  // R211: Replay
+  recordEvent('perk_buy', state.season, 'shop', { name: perk.name, cost: actualCost, state: snapshotState(state) });
   setState(updates);
 }
 

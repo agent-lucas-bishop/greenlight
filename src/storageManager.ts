@@ -25,6 +25,7 @@ export const STORAGE_KEYS = [
   'greenlight_trading_cards',
   'greenlight_custom_cards',
   'greenlight_custom_card_settings',
+  'greenlight_replays',
   'greenlight_cutscenes_seen',
   'greenlight_cutscenes_enabled',
   'greenlight_daily_attempt',

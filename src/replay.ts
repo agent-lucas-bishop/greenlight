@@ -327,7 +327,7 @@ export function describeEvent(event: ReplayEvent): { icon: string; title: string
     case 'production_start':
       return { icon: '🎥', title: 'Production Started', detail: `${d.deckSize} cards in deck` };
     case 'card_play':
-      return { icon: '🃏', title: 'Card Played', detail: `${d.name} (${d.cardType}) — ${d.value > 0 ? '+' : ''}${d.value}` };
+      return { icon: '🃏', title: 'Card Played', detail: `${d.name} (${d.cardType}) — ${(d.value as number) > 0 ? '+' : ''}${d.value}` };
     case 'card_pick':
       return { icon: '✋', title: 'Card Picked', detail: `Kept "${d.kept}" over "${d.discarded}"` };
     case 'challenge_bet':

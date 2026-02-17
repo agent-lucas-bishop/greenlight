@@ -93,7 +93,7 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable, className }: 
 
   return (
     <div
-      className={`prod-card-new ${isNew ? 'card-enter' : ''} ${isIncident ? 'red-card' : ''} ${selectable ? 'selectable-card' : ''} ${card.synergyFired && showSynergy ? 'synergy-active' : ''} ${className || ''}`}
+      className={`prod-card-new ${isNew ? 'card-enter' : ''} ${isIncident ? 'red-card' : ''} ${selectable ? 'selectable-card' : ''} ${card.synergyFired && showSynergy ? 'synergy-active' : ''} ${card.abilityActivated ? 'ability-glow' : ''} ${className || ''}`}
       onClick={onClick}
       onKeyDown={e => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
       onMouseEnter={selectable ? () => sfx.cardHover() : undefined}
@@ -131,6 +131,11 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable, className }: 
               </span>
             );
           })}
+        </div>
+      )}
+      {card.ability && (
+        <div className={`card-ability-badge ${card.abilityActivated ? 'ability-activated' : ''}`}>
+          {({ combo: '🤝 COMBO', momentum: '🚀 MOMENTUM', wildcard: '🃏 WILDCARD', insurance: '🛡️ INSURANCE', spotlight: '🌟 SPOTLIGHT' } as Record<string, string>)[card.ability]}
         </div>
       )}
       <div className={`prod-card-value ${isGood ? 'positive' : isBad ? 'negative' : ''}`}>

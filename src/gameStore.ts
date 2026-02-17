@@ -107,6 +107,7 @@ import { getGenreMasteryBonus } from './genreMastery';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
+import { generateCriticReviews } from './criticReviews';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
 import { getDifficultyConfig } from './difficulty';
@@ -2269,6 +2270,9 @@ export function resolveRelease() {
   }
   const nominated = nominationQuality > 25 + state.season * 5;
 
+  // R173: Generate critic consensus for career tracking
+  const criticConsensus = generateCriticReviews(rawQuality, tier, script.genre, script.title);
+
   const result = {
     season: state.season,
     title: script.title,
@@ -2278,6 +2282,8 @@ export function resolveRelease() {
     tier,
     hitTarget: tier !== 'FLOP',
     nominated,
+    criticScore: criticConsensus.freshPercent,
+    criticStars: criticConsensus.avgStars,
   };
 
   // ─── R136: FRANCHISE / SEQUEL SYSTEM ───

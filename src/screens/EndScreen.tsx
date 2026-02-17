@@ -506,7 +506,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         challenge: state.challengeId,
         archetype: state.studioArchetype || 'unknown',
         difficulty: state.difficulty || 'studio',
-        films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice, season: s.season, nominated: s.nominated })),
+        films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice, season: s.season, nominated: s.nominated, criticScore: s.criticScore, criticStars: s.criticStars })),
         won: isVictory,
         dailySeed: state.dailySeed || state.weeklySeed ? `weekly:${state.weeklySeed}` : undefined,
         studioName: studioIdentity?.name || state.studioName || undefined,
@@ -853,6 +853,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 <span style={{ color: TIER_COLOR[r.tier], fontFamily: 'Bebas Neue', fontSize: '1rem', minWidth: 55, textAlign: 'right' }}>
                   ${r.boxOffice.toFixed(1)}M
                 </span>
+                {r.criticScore != null && (
+                  <span style={{ fontSize: '0.7rem', color: r.criticScore >= 60 ? '#e74c3c' : '#7f8c2a', minWidth: 36, textAlign: 'right' }}>
+                    {r.criticScore >= 60 ? '🍅' : '🤢'}{r.criticScore}%
+                  </span>
+                )}
                 <span style={{ width: 18, textAlign: 'center' }}>
                   {r.nominated ? '🏆' : r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
                 </span>

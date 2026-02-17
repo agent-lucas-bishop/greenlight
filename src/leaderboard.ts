@@ -11,6 +11,8 @@ export interface FilmDetail {
   director?: string;
   budgetSpent?: number;
   nominated?: boolean;
+  criticScore?: number; // R173: fresh percentage (0-100)
+  criticStars?: number; // R173: average star rating (1-5)
 }
 
 export interface LeaderboardEntry {

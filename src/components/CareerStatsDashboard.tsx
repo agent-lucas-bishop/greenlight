@@ -87,6 +87,12 @@ export default function CareerStatsDashboard() {
     { label: 'Total Seasons', value: totalSeasons.toString(), emoji: '📅', color: '#3498db' },
     { label: 'Win / Loss', value: `${wins}W – ${losses}L`, emoji: '🏆', color: wins > losses ? '#2ecc71' : '#e74c3c' },
     { label: 'Blockbuster Streak', value: longestBlockbusterStreak > 0 ? longestBlockbusterStreak.toString() : '—', sub: 'consecutive', emoji: '🔥', color: '#e67e22' },
+    ...(() => {
+      const filmsWithCritic = allFilms.filter(f => f.criticScore != null);
+      if (filmsWithCritic.length === 0) return [];
+      const avgCritic = Math.round(filmsWithCritic.reduce((s, f) => s + (f.criticScore || 0), 0) / filmsWithCritic.length);
+      return [{ label: 'Avg Critic Score', value: `${avgCritic}%`, sub: avgCritic >= 60 ? 'Fresh' : 'Rotten', emoji: avgCritic >= 60 ? '🍅' : '🤢', color: avgCritic >= 60 ? '#e74c3c' : '#7f8c2a' }];
+    })(),
   ];
 
   return (

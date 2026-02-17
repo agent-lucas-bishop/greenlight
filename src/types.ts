@@ -13,6 +13,8 @@ export interface ChallengeBet {
   oddsHint?: (ctx: SynergyContext) => string; // e.g. "3 Action cards remain in deck of 8"
 }
 
+export type CardAbility = 'combo' | 'momentum' | 'wildcard' | 'insurance' | 'spotlight';
+
 export interface ProductionCard {
   id: string;
   name: string;
@@ -33,6 +35,8 @@ export interface ProductionCard {
   budgetMod?: number;
   special?: string;
   severity?: IncidentSeverity; // incident severity level (assigned at deck build)
+  ability?: CardAbility; // R170: card ability
+  abilityActivated?: boolean; // R170: whether ability has been triggered
 }
 
 export type CardTag = 'momentum' | 'precision' | 'chaos' | 'heart' | 'spectacle';
@@ -404,4 +408,6 @@ export interface SeasonResult {
   tier: RewardTier;
   hitTarget: boolean;
   nominated: boolean;
+  criticScore?: number; // R173: fresh percentage (0-100)
+  criticStars?: number; // R173: average star rating (1-5)
 }

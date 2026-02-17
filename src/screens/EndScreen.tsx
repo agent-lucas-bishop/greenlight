@@ -30,7 +30,7 @@ import { getDailyNumber, getWeeklyNumber } from '../seededRng';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from '../challengeModifiers';
 import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
-import { getDifficultyBadge } from '../difficulty';
+import { getDifficultyBadge, saveLegacyDeck, type LegacyCard } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
 import { submitRunToHallOfFame, type SubmitResult } from '../hallOfFame';
 import HallOfFameCard from '../components/HallOfFameCard';
@@ -830,6 +830,20 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       const cardState = { ...state, _endScore: score, _tripleCrown: awardsResult?.tripleCrown };
       const newCards = checkTradingCardUnlocks(cardState);
       if (newCards.length > 0) setNewCardIds(newCards);
+      // R304: Save legacy deck for NG+ if score > 500
+      if (score > 500 && history.length > 0) {
+        // Pick the 3 best-quality films' production cards (approximate from season history)
+        const bestFilms = [...history].sort((a, b) => b.quality - a.quality).slice(0, 3);
+        const legacyCards: LegacyCard[] = bestFilms.map(f => ({
+          name: `Legacy: ${f.title}`,
+          source: f.title,
+          cardType: 'action' as const,
+          baseQuality: Math.min(8, Math.floor(f.quality / 8)),
+          synergyText: `A legendary card from "${f.title}" (${f.genre}). Carries the spirit of your best work.`,
+          tags: ['heart' as const],
+        }));
+        saveLegacyDeck(legacyCards, score, studioIdentity?.name || state.studioName || 'Unknown Studio');
+      }
       markFirstRunComplete();
       trackRunEnd(score, isVictory, {
         earningsPerSeason: history.map(s => s.boxOffice),

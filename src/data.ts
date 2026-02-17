@@ -5020,7 +5020,7 @@ export function isPerkLocked(perk: { prestigeRequired?: number }): boolean {
   return (perk.prestigeRequired ?? 0) > _cachedPrestigeLevel;
 }
 
-export function getSeasonTarget(season: number, gameMode: string = 'normal', challengeId?: string, dailyModifierId?: string, dailyModifierId2?: string): number {
+export function getSeasonTarget(season: number, gameMode: string = 'normal', challengeId?: string, dailyModifierId?: string, dailyModifierId2?: string, difficulty?: string): number {
   let adjustedSeason = season;
   // Speed Run: use seasons 2/3/4 difficulty for seasons 1/2/3 (was +2, too punishing)
   if (challengeId === 'speed_run') adjustedSeason = season + 1;
@@ -5034,6 +5034,16 @@ export function getSeasonTarget(season: number, gameMode: string = 'normal', cha
   if (challengeId === 'critics_choice') target = Math.round(target * 1.5);
   // Daily modifier: Award Season — quality targets +5
   if (dailyModifierId === 'award_season' || dailyModifierId2 === 'award_season') target += 5;
+  // R304: Difficulty quality threshold modifier (Auteur = higher thresholds, Indie = lower)
+  if (difficulty) {
+    const QUALITY_THRESHOLD_MODS: Record<string, number> = {
+      indie: 0.85, studio: 1.0, auteur: 1.2, mogul: 1.15, nightmare: 1.3, custom: 1.0,
+    };
+    const qtMod = QUALITY_THRESHOLD_MODS[difficulty] ?? 1.0;
+    if (qtMod !== 1.0) {
+      target = Math.round(target * qtMod);
+    }
+  }
   // Veteran scaling: prestige level 5+ increases targets by 5% per level above 4
   // This keeps veteran players challenged as their legacy perks accumulate
   // Use cached prestige level instead of reading localStorage every call

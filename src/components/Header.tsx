@@ -119,7 +119,7 @@ export default function Header({ state }: { state: GameState }) {
   const handleToggleMute = () => { const m = toggleMute(); setMutedState(m); if (!m) sfx.click(); };
   const handleVolume = (v: number) => { setVolume(v); setVolumeState(v); };
   return (
-    <div className="header">
+    <div className="header" style={state.gameMode === 'newGamePlus' ? { border: '2px solid rgba(255,215,0,0.5)', boxShadow: '0 0 16px rgba(255,215,0,0.12)' } : undefined}>
       <h1>{identity?.logo || '🎬'} {identity?.name?.toUpperCase() || (state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT')}
         {(() => { const m = getMetaProgression(); const ml = getMetaLevel(m.xp); const pb = getPrestigeBadgeEmoji(m.prestigeCount); return m.level > 1 ? <span style={{ fontSize: '0.5em', color: '#bb86fc', marginLeft: 8, verticalAlign: 'middle', fontWeight: 400 }}>{ml.emoji} Lv.{ml.level}{pb ? ` ${pb}` : ''}{isStudioLegend() ? ' ★' : ''}</span> : null; })()}
       </h1>
@@ -170,7 +170,7 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="The box office amount your film must earn this season. Increases each season." inline>
             <span className="label">Target</span>
           </StatTooltip>
-          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2)}M</span>
+          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2, state.difficulty)}M</span>
         </div>
         <div className="header-stat">
           <StatTooltip tip="Miss a box office target = 1 strike. 3 strikes and you're fired!" inline>

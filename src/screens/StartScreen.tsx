@@ -22,7 +22,7 @@ import { hasWeeklyRun, getWeeklyBest } from '../leaderboard';
 import { WeeklyChallengeCard } from '../components/WeeklyChallenge';
 import { getStudioIdentity, hasStudioIdentity } from '../studioIdentity';
 import { getCareerTitle, loadProfile } from '../playerProfile';
-import { DIFFICULTIES, getDifficultyConfig, getScoreMultiplier } from '../difficulty';
+import { DIFFICULTIES, getDifficultyConfig, getScoreMultiplier, isNGPlusUnlocked, loadLegacyDeck } from '../difficulty';
 import type { Difficulty, GameModifiers } from '../types';
 import DifficultySelect from '../components/DifficultySelect';
 
@@ -281,9 +281,10 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
         </select>
         <select value={filterDifficulty} onChange={e => setFilterDifficulty(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
           <option value="all">All Difficulties</option>
-          <option value="indie">🟢 Easy</option>
-          <option value="studio">🟡 Normal</option>
-          <option value="mogul">🔴 Hard</option>
+          <option value="indie">🟢 Indie</option>
+          <option value="studio">🟡 Studio</option>
+          <option value="auteur">🎬 Auteur</option>
+          <option value="mogul">🔴 Mogul</option>
           <option value="nightmare">💀 Nightmare</option>
           <option value="custom">⚙️ Custom</option>
         </select>
@@ -1065,11 +1066,19 @@ export default function StartScreen() {
                 </div>
               </div>
             )}
-            {stats.ngPlusUnlocked && (
-              <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
+            {isNGPlusUnlocked() && (() => {
+              const legacy = loadLegacyDeck();
+              return (
+              <button className="btn btn-small" style={{
+                color: '#ffd700', borderColor: 'rgba(255,215,0,0.5)',
+                background: 'rgba(255,215,0,0.08)',
+                boxShadow: '0 0 12px rgba(255,215,0,0.1)',
+              }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>
+                {legacy && <span style={{ fontSize: '0.6rem', marginLeft: 6, color: '#ffd700' }}>📦 {legacy.cards.length} legacy cards</span>}
               </button>
-            )}
+              );
+            })()}
             {stats.directorUnlocked && (
               <button className="btn btn-danger btn-small" onClick={() => { setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
                 🔥 DIRECTOR MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.8 targets)</span>

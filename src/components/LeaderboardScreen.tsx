@@ -3,7 +3,7 @@ import { getLeaderboard, getLeaderboardByDifficulty, getPersonalBestByDifficulty
 import { fetchGlobalLeaderboard, getCacheAge, type GlobalScore } from '../leaderboardApi';
 import { getLeaderboardStats, getTop50, getAllRunHistory, getBestRunId, type RunHistoryEntry } from '../runHistory';
 import { sfx } from '../sound';
-import { DIFFICULTIES } from '../difficulty';
+import { DIFFICULTIES, isNGPlusRun } from '../difficulty';
 
 type SortKey = 'score' | 'earnings' | 'films' | 'date' | 'bestFilm';
 type SortDir = 'asc' | 'desc';
@@ -198,6 +198,11 @@ const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, i
             {entry.playerName || entry.studioName || 'Anonymous'}
           </span>
           <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.6rem' }}>{entry.won ? '✓' : '✗'}</span>
+          {isNGPlusRun(entry.mode) && <span style={{ fontSize: '0.6rem', color: '#ffd700', background: 'rgba(255,215,0,0.12)', padding: '1px 5px', borderRadius: 3, border: '1px solid rgba(255,215,0,0.3)' }}>⭐ NG+</span>}
+          {entry.difficulty && entry.difficulty !== 'studio' && (() => {
+            const d = DIFFICULTIES.find(dd => dd.id === entry.difficulty);
+            return d ? <span style={{ fontSize: '0.55rem', color: d.color, background: `${d.color}12`, padding: '1px 4px', borderRadius: 3 }}>{d.emoji}</span> : null;
+          })()}
           {isBestRun && <span style={{ fontSize: '0.6rem', color: '#ffd700', background: 'rgba(255,215,0,0.15)', padding: '1px 5px', borderRadius: 3 }}>👑 BEST</span>}
         </div>
         <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
@@ -261,6 +266,7 @@ const GlobalRow = memo(function GlobalRow({ entry, index }: { entry: GlobalScore
 export default function LeaderboardScreen({ currentRunId }: Props) {
   const [tab, setTab] = useState<TabMode>('global');
   const [difficulty, setDifficulty] = useState<string>('studio');
+  const [modeFilter, setModeFilter] = useState<'all' | 'standard' | 'ngplus'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -328,7 +334,10 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
 
   // Local board
   const board = useMemo(() => {
-    const filtered = getLeaderboardByDifficulty(difficulty);
+    let filtered = getLeaderboardByDifficulty(difficulty);
+    // R304: NG+ mode filter
+    if (modeFilter === 'ngplus') filtered = filtered.filter(e => isNGPlusRun(e.mode));
+    else if (modeFilter === 'standard') filtered = filtered.filter(e => !isNGPlusRun(e.mode));
     const sorted = [...filtered].sort((a, b) => {
       let va: number, vb: number;
       switch (sortKey) {
@@ -490,6 +499,27 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
           );
         })}
       </div>
+
+      {/* R304: Mode Filter (Standard vs NG+) */}
+      {tab === 'local' && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12, justifyContent: 'center' }}>
+          {([
+            { id: 'all' as const, label: '📋 All Runs', color: '#ccc' },
+            { id: 'standard' as const, label: '🎬 Standard', color: 'var(--gold)' },
+            { id: 'ngplus' as const, label: '⭐ NG+', color: '#ffd700' },
+          ]).map(f => (
+            <button key={f.id} onClick={() => setModeFilter(f.id)} style={{
+              background: modeFilter === f.id ? 'rgba(212,168,67,0.12)' : 'transparent',
+              border: `1px solid ${modeFilter === f.id ? 'var(--gold-dim)' : '#333'}`,
+              borderRadius: 6, padding: '6px 14px', cursor: 'pointer',
+              color: modeFilter === f.id ? f.color : '#666',
+              fontFamily: 'Bebas Neue', fontSize: '0.8rem', letterSpacing: '0.05em',
+            }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ─── GLOBAL TAB ─── */}
       {tab === 'global' && (

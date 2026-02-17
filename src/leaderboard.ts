@@ -79,7 +79,7 @@ export function calculateLeaderboardScore(input: ScoreInput): number {
   const achievementBonus = input.achievementsUnlocked * 25;
   const filmBonus = input.filmsCount * 10;
   const victoryBonus = input.isVictory ? 200 : 0;
-  const diffMultiplier = input.difficulty === 'nightmare' ? 2.5 : input.difficulty === 'mogul' ? 1.5 : input.difficulty === 'indie' ? 0.8 : input.difficulty === 'custom' ? 1.0 : 1.0;
+  const diffMultiplier = input.difficulty === 'nightmare' ? 2.5 : input.difficulty === 'auteur' ? 1.75 : input.difficulty === 'mogul' ? 1.5 : input.difficulty === 'indie' ? 0.8 : input.difficulty === 'custom' ? 1.0 : 1.0;
   const base = (boScore + criticScore + audienceScore + achievementBonus + filmBonus + victoryBonus) * diffMultiplier;
   return Math.round(base * (input.challengeMultiplier || 1) * (input.modifierMultiplier || 1));
 }
@@ -127,7 +127,7 @@ export function generateRunCard(entry: LeaderboardEntry): string {
     : null;
   const tierEmoji: Record<string, string> = { BLOCKBUSTER: '🟩', SMASH: '🟨', HIT: '🟧', FLOP: '🟥' };
   const grid = entry.films.map(f => tierEmoji[f.tier] || '⬜').join('');
-  const diffBadge = entry.difficulty === 'nightmare' ? '💀 Nightmare' : entry.difficulty === 'mogul' ? '🔴 Hard' : entry.difficulty === 'indie' ? '🟢 Easy' : entry.difficulty === 'custom' ? '⚙️ Custom' : '🟡 Normal';
+  const diffBadge = entry.difficulty === 'nightmare' ? '💀 Nightmare' : entry.difficulty === 'auteur' ? '🎬 Auteur' : entry.difficulty === 'mogul' ? '🔴 Mogul' : entry.difficulty === 'indie' ? '🟢 Indie' : entry.difficulty === 'custom' ? '⚙️ Custom' : '🟡 Studio';
 
   const lines = [
     `🎬 GREENLIGHT ${entry.won ? '🏆' : '💀'} #${hash}`,

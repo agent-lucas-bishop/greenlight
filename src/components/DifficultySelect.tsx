@@ -6,6 +6,9 @@ import {
   DEFAULT_MODIFIERS,
   calculateCustomScoreMultiplier,
   ALL_GENRES,
+  isAuteurUnlocked,
+  isNGPlusUnlocked,
+  loadLegacyDeck,
 } from '../difficulty';
 import { sfx } from '../sound';
 
@@ -20,10 +23,14 @@ export default function DifficultySelect({ onSelect, onBack }: Props) {
 
   const customMult = calculateCustomScoreMultiplier(modifiers);
 
+  const auteurUnlocked = isAuteurUnlocked();
+
   const handlePresetClick = (d: (typeof DIFFICULTIES)[number]) => {
+    // Lock check: Auteur requires completing one run
+    if (d.id === 'auteur' && !auteurUnlocked) return;
     try {
       if (d.id === 'indie') sfx.difficultyIndie();
-      else if (d.id === 'mogul' || d.id === 'nightmare') sfx.difficultyMogul();
+      else if (d.id === 'mogul' || d.id === 'nightmare' || d.id === 'auteur') sfx.difficultyMogul();
       else sfx.difficultyStudio();
     } catch {}
     onSelect(d.id);
@@ -175,21 +182,26 @@ export default function DifficultySelect({ onSelect, onBack }: Props) {
       <p style={{ color: '#888', marginBottom: 16, fontSize: '0.9rem' }}>How tough do you want Hollywood to be?</p>
 
       <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 900, margin: '0 auto' }}>
-        {DIFFICULTIES.map(d => (
+        {DIFFICULTIES.map(d => {
+          const isLocked = d.id === 'auteur' && !auteurUnlocked;
+          return (
           <div
             key={d.id}
             className="card"
             onClick={() => handlePresetClick(d)}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePresetClick(d); } }}
-            tabIndex={0}
+            tabIndex={isLocked ? -1 : 0}
             role="button"
-            aria-label={`${d.name} (${d.label}): ${d.description}`}
+            aria-label={isLocked ? `${d.name} (Locked — complete one run to unlock)` : `${d.name} (${d.label}): ${d.description}`}
             style={{
-              cursor: 'pointer', padding: 20, flex: '1 1 180px', maxWidth: 210, textAlign: 'center',
+              cursor: isLocked ? 'not-allowed' : 'pointer', padding: 20, flex: '1 1 180px', maxWidth: 210, textAlign: 'center',
               transition: 'transform 0.2s, border-color 0.2s',
               borderColor: d.id === 'studio' ? 'rgba(212,168,67,0.3)' : undefined,
+              opacity: isLocked ? 0.45 : 1,
+              filter: isLocked ? 'grayscale(0.5)' : undefined,
             }}
             onMouseEnter={e => {
+              if (isLocked) return;
               try { sfx.difficultyCompareHover(); } catch {}
               (e.currentTarget as HTMLElement).style.borderColor = d.color;
               (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)';
@@ -199,12 +211,17 @@ export default function DifficultySelect({ onSelect, onBack }: Props) {
               (e.currentTarget as HTMLElement).style.transform = '';
             }}
           >
+            {isLocked && (
+              <div style={{ fontSize: '0.65rem', color: '#e74c3c', background: 'rgba(231,76,60,0.15)', border: '1px solid rgba(231,76,60,0.3)', borderRadius: 4, padding: '2px 8px', marginBottom: 8, display: 'inline-block' }}>
+                🔒 COMPLETE 1 RUN TO UNLOCK
+              </div>
+            )}
             {d.id === 'studio' && (
               <div style={{ fontSize: '0.65rem', color: 'var(--gold)', background: 'rgba(212,168,67,0.15)', border: '1px solid rgba(212,168,67,0.3)', borderRadius: 4, padding: '2px 8px', marginBottom: 8, display: 'inline-block' }}>
                 DEFAULT
               </div>
             )}
-            <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{d.emoji}</div>
+            <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{isLocked ? '🔒' : d.emoji}</div>
             <div style={{ color: d.color, fontWeight: 700, fontSize: '1.1rem', marginBottom: 4 }}>{d.name}</div>
             <div style={{ color: '#999', fontSize: '0.7rem', fontFamily: 'Bebas Neue', letterSpacing: '0.05em', marginBottom: 8 }}>{d.label.toUpperCase()}</div>
             <div style={{ color: '#aaa', fontSize: '0.8rem', lineHeight: 1.5, marginBottom: 12 }}>{d.description}</div>
@@ -235,9 +252,30 @@ export default function DifficultySelect({ onSelect, onBack }: Props) {
                 </span>
               )}
               {d.noShopDiscounts && <span style={{ color: '#e74c3c' }}>🚫 No shop discounts</span>}
+              {d.qualityThresholdMod !== 1.0 && (
+                <span style={{ color: d.qualityThresholdMod > 1 ? '#e74c3c' : '#2ecc71' }}>
+                  🎭 {d.qualityThresholdMod > 1 ? 'Harsher' : 'Forgiving'} critics
+                </span>
+              )}
+              {d.cardDrawBonus !== 0 && (
+                <span style={{ color: d.cardDrawBonus > 0 ? '#2ecc71' : '#e74c3c' }}>
+                  🃏 {d.cardDrawBonus > 0 ? `+${d.cardDrawBonus}` : d.cardDrawBonus} card draw
+                </span>
+              )}
+              {d.rerollLimit !== undefined && (
+                <span style={{ color: '#e74c3c' }}>
+                  🎲 Max {d.rerollLimit} reroll{d.rerollLimit !== 1 ? 's' : ''}
+                </span>
+              )}
+              {d.boxOfficeMarginMod > 1 && (
+                <span style={{ color: '#e74c3c' }}>
+                  📊 Tighter BO margins
+                </span>
+              )}
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {/* Custom Mode Card */}
         <div

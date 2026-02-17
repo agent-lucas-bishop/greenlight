@@ -18,17 +18,21 @@ export interface DifficultyConfig {
   marketVolatility: number;
   noShopDiscounts: boolean;
   scoreMultiplier: number;
+  qualityThresholdMod: number;   // multiplier on quality thresholds (>1 = harder)
+  cardDrawBonus: number;          // extra cards drawn per turn (negative = fewer)
+  rerollLimit?: number;           // max rerolls per production (undefined = default)
+  boxOfficeMarginMod: number;     // multiplier on box office margins (>1 = tighter)
 }
 
 export const DIFFICULTIES: DifficultyConfig[] = [
   {
     id: 'indie',
-    name: 'Easy',
+    name: 'Indie',
     label: 'For learning the ropes',
     emoji: '🟢',
     color: '#2ecc71',
-    description: 'Generous budget, weaker rivals, fewer incidents. Perfect for your first run.',
-    startBudget: 20,  // +$5M over normal
+    description: 'Generous budget (+20%), forgiving audiences, more generous card draws. Perfect for your first run.',
+    startBudget: 18,  // +20% over normal ($15)
     startReputation: 4, // +1 starting rep
     marketMultiplierBonus: 0.1,
     maxSeasons: 6,
@@ -38,10 +42,13 @@ export const DIFFICULTIES: DifficultyConfig[] = [
     marketVolatility: 1.0,
     noShopDiscounts: false,
     scoreMultiplier: 0.5,
+    qualityThresholdMod: 0.85,   // quality thresholds lowered 15%
+    cardDrawBonus: 1,             // +1 card drawn per turn
+    boxOfficeMarginMod: 1.0,
   },
   {
     id: 'studio',
-    name: 'Normal',
+    name: 'Studio',
     label: 'Balanced experience',
     emoji: '🟡',
     color: 'var(--gold)',
@@ -56,10 +63,35 @@ export const DIFFICULTIES: DifficultyConfig[] = [
     marketVolatility: 1.0,
     noShopDiscounts: false,
     scoreMultiplier: 1.0,
+    qualityThresholdMod: 1.0,
+    cardDrawBonus: 0,
+    boxOfficeMarginMod: 1.0,
+  },
+  {
+    id: 'auteur',
+    name: 'Auteur',
+    label: 'Uncompromising vision',
+    emoji: '🎬',
+    color: '#9b59b6',
+    description: 'Reduced budget (-15%), harsher critics, tighter box office margins, fewer rerolls. For seasoned directors.',
+    startBudget: 13,  // -15% (~$12.75, rounded up)
+    startReputation: 3,
+    marketMultiplierBonus: 0,
+    maxSeasons: 5,
+    maxStrikes: 3,
+    incidentFrequencyMod: 1.1,
+    rivalAggressiveness: 1.15,
+    marketVolatility: 1.2,
+    noShopDiscounts: false,
+    scoreMultiplier: 1.75,
+    qualityThresholdMod: 1.2,    // quality thresholds raised 20%
+    cardDrawBonus: 0,
+    rerollLimit: 1,               // fewer reroll opportunities
+    boxOfficeMarginMod: 1.25,    // tighter margins on box office
   },
   {
     id: 'mogul',
-    name: 'Hard',
+    name: 'Mogul',
     label: 'Cutthroat Hollywood',
     emoji: '🔴',
     color: '#e74c3c',
@@ -74,6 +106,9 @@ export const DIFFICULTIES: DifficultyConfig[] = [
     marketVolatility: 1.5,
     noShopDiscounts: false,
     scoreMultiplier: 1.5,
+    qualityThresholdMod: 1.15,
+    cardDrawBonus: 0,
+    boxOfficeMarginMod: 1.15,
   },
   {
     id: 'nightmare',
@@ -92,6 +127,9 @@ export const DIFFICULTIES: DifficultyConfig[] = [
     marketVolatility: 1.8,
     noShopDiscounts: true,
     scoreMultiplier: 2.5,
+    qualityThresholdMod: 1.3,
+    cardDrawBonus: -1,
+    boxOfficeMarginMod: 1.3,
   },
 ];
 
@@ -315,8 +353,81 @@ export function getEffectiveConfig(difficulty: Difficulty, modifiers?: GameModif
     maxStrikes: strikes,
     noShopDiscounts: false,
     scoreMultiplier: calculateCustomScoreMultiplier(modifiers),
+    qualityThresholdMod: 1.0,
+    cardDrawBonus: modifiers.cardDrawAdjustment,
+    boxOfficeMarginMod: 1.0,
   };
 }
 
 // ─── All Genres for genre restriction ───
 export const ALL_GENRES: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'];
+
+// ─── New Game+ Legacy Deck ───
+
+const NG_LEGACY_KEY = 'greenlight_ng_plus_legacy';
+
+export interface LegacyCard {
+  name: string;
+  source: string;
+  cardType: string;
+  baseQuality: number;
+  synergyText: string;
+  tags?: string[];
+}
+
+export interface LegacyDeckData {
+  cards: LegacyCard[];
+  sourceRunScore: number;
+  sourceRunDate: string;
+  sourceStudioName: string;
+}
+
+/** Save the best 3 cards from a completed run for NG+ legacy deck */
+export function saveLegacyDeck(cards: LegacyCard[], runScore: number, studioName: string): void {
+  try {
+    const existing = loadLegacyDeck();
+    // Only overwrite if this run's score is higher
+    if (existing && existing.sourceRunScore >= runScore) return;
+    const data: LegacyDeckData = {
+      cards: cards.slice(0, 3),
+      sourceRunScore: runScore,
+      sourceRunDate: new Date().toISOString().slice(0, 10),
+      sourceStudioName: studioName,
+    };
+    localStorage.setItem(NG_LEGACY_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+/** Load the legacy deck for NG+ */
+export function loadLegacyDeck(): LegacyDeckData | null {
+  try {
+    const raw = localStorage.getItem(NG_LEGACY_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+
+/** Check if NG+ is unlocked (score > 500 in any run) */
+export function isNGPlusUnlocked(): boolean {
+  try {
+    const raw = localStorage.getItem('greenlight_leaderboard');
+    if (!raw) return false;
+    const entries = JSON.parse(raw);
+    return entries.some((e: any) => e.score > 500);
+  } catch { return false; }
+}
+
+/** Check if Auteur difficulty is unlocked (completed at least one run) */
+export function isAuteurUnlocked(): boolean {
+  try {
+    const raw = localStorage.getItem('greenlight_unlocks');
+    if (!raw) return false;
+    const u = JSON.parse(raw);
+    return (u.totalRuns || 0) >= 1;
+  } catch { return false; }
+}
+
+/** Check if a run is NG+ for leaderboard filtering */
+export function isNGPlusRun(mode: string): boolean {
+  return mode === 'newGamePlus';
+}

@@ -275,7 +275,8 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
   u.totalRuns++;
   if (won) {
     u.totalWins++;
-    if (!u.newGamePlusUnlocked) u.newGamePlusUnlocked = true;
+    // R304: NG+ now unlocks at score > 500 (checked via isNGPlusUnlocked in difficulty.ts)
+    if (!u.newGamePlusUnlocked && score > 500) u.newGamePlusUnlocked = true;
     if (gameMode === 'newGamePlus') {
       u.ngPlusWins++;
       if (!u.directorModeUnlocked) u.directorModeUnlocked = true;

@@ -257,7 +257,7 @@ export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';
 
 export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'weekly' | 'challenge' | 'seeded' | 'endless';
 
-export type Difficulty = 'indie' | 'studio' | 'mogul' | 'nightmare' | 'custom';
+export type Difficulty = 'indie' | 'studio' | 'mogul' | 'nightmare' | 'auteur' | 'custom';
 
 export interface GameModifiers {
   budgetAdjustment: number;      // -10 to +10 ($M)

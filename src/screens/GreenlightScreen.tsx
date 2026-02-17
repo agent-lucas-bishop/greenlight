@@ -19,7 +19,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
   const [mobileIdx, setMobileIdx] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2, state.difficulty);
   const simplified = isSimplifiedRun();
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
   const swipeHandlers = useSwipe(

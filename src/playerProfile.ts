@@ -150,7 +150,7 @@ function defaultProfile(): PlayerProfile {
     totalBoxOffice: 0, totalBudgetSpent: 0, moviesProduced: 0, sRankCount: 0,
     genresUsed: {}, favoriteTalent: null, talentUsage: {},
     highestGrossingFilm: null,
-    difficultyStats: { indie: defaultDiffStats(), studio: defaultDiffStats(), mogul: defaultDiffStats(), nightmare: defaultDiffStats(), custom: defaultDiffStats() },
+    difficultyStats: { indie: defaultDiffStats(), studio: defaultDiffStats(), auteur: defaultDiffStats(), mogul: defaultDiffStats(), nightmare: defaultDiffStats(), custom: defaultDiffStats() },
     milestones: {},
     recentRuns: [],
     hallOfFame: [],

@@ -55,6 +55,7 @@ const DEFAULT_DATA: HallOfFameData = {
   entries: {
     indie: [],
     studio: [],
+    auteur: [],
     mogul: [],
     nightmare: [],
     custom: [],
@@ -79,7 +80,7 @@ function loadData(): HallOfFameData {
     if (raw) {
       const parsed = JSON.parse(raw);
       // Ensure all difficulty keys exist
-      for (const d of ['indie', 'studio', 'mogul', 'nightmare', 'custom'] as Difficulty[]) {
+      for (const d of ['indie', 'studio', 'auteur', 'mogul', 'nightmare', 'custom'] as Difficulty[]) {
         if (!parsed.entries[d]) parsed.entries[d] = [];
       }
       if (!parsed.personalBests) parsed.personalBests = {};
@@ -202,7 +203,7 @@ export function getHallOfFameEntries(key: HofDifficultyKey): HallOfFameEntry[] {
   const data = loadData();
   if (key === 'allTime') {
     const all: HallOfFameEntry[] = [];
-    for (const diff of ['indie', 'studio', 'mogul', 'nightmare', 'custom'] as Difficulty[]) {
+    for (const diff of ['indie', 'studio', 'auteur', 'mogul', 'nightmare', 'custom'] as Difficulty[]) {
       all.push(...data.entries[diff]);
     }
     return all.sort((a, b) => b.finalScore - a.finalScore).slice(0, MAX_PER_DIFFICULTY);

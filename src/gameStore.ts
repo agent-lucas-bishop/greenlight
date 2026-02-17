@@ -139,7 +139,7 @@ import { loadCampaignData, updateCampaignAfterFilm, getActiveCampaign, type Camp
 import { getSeasonalBOMultiplier, getSeasonalQualityBonus, applyEventModifiers } from './seasonalEvents';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
-import { getDifficultyConfig, getEffectiveConfig, getScoreMultiplier } from './difficulty';
+import { getDifficultyConfig, getEffectiveConfig, getScoreMultiplier, loadLegacyDeck } from './difficulty';
 import type { Difficulty, GameModifiers } from './types';
 import { getEndlessEscalation, calculateEndlessSeasonScore, updateEndlessPersonalBest } from './endlessMode';
 import { getEligibleFestivals, canSubmitToFestival, judgeFestival, getFestivalRepBoost, getFestivalBudgetBonus, getAwardLabel, getFestival, type FestivalResult } from './filmFestivals';
@@ -317,6 +317,28 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
 
   for (const template of script.cards) {
     deck.push(templateToCard(template, script.title, 'script'));
+  }
+
+  // R304: NG+ Legacy Deck — inject curated legacy cards from best previous run
+  if (state.gameMode === 'newGamePlus') {
+    const legacyData = loadLegacyDeck();
+    if (legacyData) {
+      for (const lc of legacyData.cards) {
+        deck.push({
+          id: cardUid(),
+          name: lc.name,
+          source: lc.source,
+          sourceType: 'script',
+          cardType: lc.cardType as any || 'action',
+          baseQuality: lc.baseQuality,
+          synergyText: lc.synergyText,
+          synergyCondition: null,
+          riskTag: '🟢',
+          tags: (lc.tags as any) || ['heart'],
+          rarity: 'epic',
+        });
+      }
+    }
   }
 
   // R230: Mix in enabled workshop crew cards
@@ -1760,7 +1782,10 @@ export function useReshoots() {
 export function getMaxDraws(prod: ProductionState): number {
   const totalDeckSize = prod.deck.length + prod.played.length + prod.discarded.length;
   const baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
-  return baseDraw + (prod.forceExtraDraw ? 2 : 0);
+  // R304: Difficulty card draw bonus (Indie = +1, Nightmare = -1)
+  const diffConfig = getDifficultyConfig(state.difficulty);
+  const diffDrawBonus = diffConfig.cardDrawBonus || 0;
+  return Math.max(3, baseDraw + diffDrawBonus + (prod.forceExtraDraw ? 2 : 0));
 }
 
 export function wrapProduction() {
@@ -2140,9 +2165,12 @@ function getTier(boxOffice: number, target: number): RewardTier {
   const ratio = boxOffice / target;
   // Critics' Darling modifier raises tier thresholds by 20%
   const cd = state.activeModifiers?.includes('critics_darling_mod') ? 1.2 : 1.0;
-  if (ratio >= 1.5 * cd) return 'BLOCKBUSTER';
-  if (ratio >= 1.25 * cd) return 'SMASH';
-  if (ratio >= 1.0 * cd) return 'HIT';
+  // R304: Difficulty box office margin modifier (Auteur/Mogul = tighter margins)
+  const diffConfig = getDifficultyConfig(state.difficulty);
+  const boMargin = diffConfig.boxOfficeMarginMod || 1.0;
+  if (ratio >= 1.5 * cd * boMargin) return 'BLOCKBUSTER';
+  if (ratio >= 1.25 * cd * boMargin) return 'SMASH';
+  if (ratio >= 1.0 * cd * boMargin) return 'HIT';
   return 'FLOP';
 }
 
@@ -2219,7 +2247,7 @@ export function pickPostProdOption(option: PostProdOption) {
     case 'testScreening': {
       // Preview tier, no bonus. Calculate what tier would be.
       const { rawQuality } = calculateQuality(state);
-      const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
+      const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2, state.difficulty);
       const mkt = state.postProdMarketingMultiplier || 1.0;
       const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][state.reputation] || 1.0;
       const estimatedBO = rawQuality * mkt * repBonus;
@@ -2554,7 +2582,7 @@ export function resolveRelease() {
     boxOffice = Math.round((boxOffice + audienceData.viralEvent.boxOfficeModifier) * 10) / 10;
   }
 
-  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2, state.difficulty);
   const tier = getTier(boxOffice, target);
 
   // R185: Re-generate audience reactions with final tier for accurate tweets

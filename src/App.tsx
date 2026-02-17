@@ -38,6 +38,8 @@ import { announcePhase, setupGlobalKeyboardListeners } from './accessibility';
 import { showTenseVignette, hideTenseVignette } from './visualEffects';
 import KeyboardHelp from './components/KeyboardHelp';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import { pickCommentary, type CommentarySnippet, type CommentaryContext } from './commentary';
+import CommentaryToast from './components/CommentaryToast';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -67,6 +69,8 @@ function App() {
   const [seasonHeadline, setSeasonHeadline] = useState('');
   const [activeCutscene, setActiveCutscene] = useState<{ data: CutsceneData; vars?: Record<string, string> } | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [activeCommentary, setActiveCommentary] = useState<CommentarySnippet | null>(null);
+  const [commentaryPhaseKey, setCommentaryPhaseKey] = useState('');
   
   useEffect(() => subscribe(() => setState(getState())), []);
 
@@ -234,6 +238,50 @@ function App() {
     }
   }, [state.phase, state.season, state.lastTier, state.nemesisStudio, state.gameMode]);
 
+  // R298: Director's Commentary triggers
+  useEffect(() => {
+    if (state.phase === 'start') return;
+    const phaseKey = `${state.phase}-${state.season}-${state.seasonHistory.length}-${state.lastTier}`;
+    if (phaseKey === commentaryPhaseKey) return;
+    setCommentaryPhaseKey(phaseKey);
+    // Don't show during cutscenes or overlays
+    if (activeCutscene || showNarrative) return;
+    // Small delay so it doesn't compete with other toasts
+    const timer = setTimeout(() => {
+      if (activeCommentary) return; // don't stack
+      const totalBO = state.seasonHistory.reduce((s, f) => s + f.boxOffice, 0);
+      const totalFilms = state.seasonHistory.length;
+      const hadBlockbuster = state.seasonHistory.some(h => h.tier === 'BLOCKBUSTER');
+      const hadFlop = state.seasonHistory.some(h => h.tier === 'FLOP');
+      const ctx: CommentaryContext = {
+        phase: state.phase,
+        genre: state.currentScript?.genre,
+        budget: state.budget,
+        lastTier: state.lastTier,
+        season: state.season,
+        totalFilms,
+        totalBoxOffice: totalBO,
+        strikes: state.strikes,
+        festivalResult: state.phase === 'festival' || !!state.festivalResult,
+        firstBlockbuster: state.lastTier === 'BLOCKBUSTER' && !hadBlockbuster,
+        firstFlop: state.lastTier === 'FLOP' && !hadFlop,
+        firstStrike: state.strikes === 1 && !state.seasonHistory.some(() => false),
+        blockbusterStreak: (() => {
+          let streak = 0;
+          for (let i = state.seasonHistory.length - 1; i >= 0; i--) {
+            if (state.seasonHistory[i].tier === 'BLOCKBUSTER') streak++;
+            else break;
+          }
+          return streak;
+        })(),
+        genreMastery: state.genreMastery ? Object.values(state.genreMastery).some((v: any) => v >= 3) : false,
+      };
+      const snippet = pickCommentary(ctx);
+      if (snippet) setActiveCommentary(snippet);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [state.phase, state.season, state.seasonHistory.length, state.lastTier]);
+
   // Season announcement overlay
   useEffect(() => {
     if (state.phase === 'greenlight' && state.season > 1 && (prevPhase === 'shop' || prevPhase === 'event' || prevPhase === 'workshop')) {
@@ -395,6 +443,9 @@ function App() {
           event={state.pendingNarrativeEvent}
           onResolve={resolveNarrativeEvent}
         />
+      )}
+      {activeCommentary && (
+        <CommentaryToast snippet={activeCommentary} onDone={() => setActiveCommentary(null)} />
       )}
       <PwaInstallPrompt />
       <BottomNav state={state} />

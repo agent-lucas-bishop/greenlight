@@ -11,6 +11,7 @@ import { getSettings, updateSettings, exportAllSaveData, importSaveData, resetAl
 import { auditStorage, clearNonEssentialStorage } from '../storageManager';
 import { resetTutorial } from '../tutorial';
 import { resetTooltips } from './TutorialTooltip';
+import { isCommentaryEnabled, setCommentaryEnabled } from '../commentary';
 
 /* ── Toggle ──────────────────────────────────────────────────── */
 
@@ -98,6 +99,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [confirmActions, setConfirmActions] = useState(settings.gameplay.confirmEndTurn);
   const [tutorialHints, setTutorialHints] = useState(settings.gameplay.tutorialHints);
   const [showTooltips, setShowTooltips] = useState(settings.gameplay.showTooltips);
+  const [commentary, setCommentary] = useState(() => isCommentaryEnabled());
   const [tutorialReset, setTutorialReset] = useState(false);
 
   // Data
@@ -143,6 +145,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   const handleConfirm = (v: boolean) => { setConfirmActions(v); updateSettings({ gameplay: { ...getSettings().gameplay, confirmEndTurn: v } }); };
   const handleTutorial = (v: boolean) => { setTutorialHints(v); updateSettings({ gameplay: { ...getSettings().gameplay, tutorialHints: v } }); };
   const handleTooltips = (v: boolean) => { setShowTooltips(v); updateSettings({ gameplay: { ...getSettings().gameplay, showTooltips: v } }); };
+  const handleCommentary = (v: boolean) => { setCommentary(v); setCommentaryEnabled(v); };
 
   // Data handlers
   const handleExport = () => {
@@ -286,6 +289,10 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
             <Row>
               <Label htmlFor="tooltips-toggle" sub="Show helpful hints on hover">Show Tooltips</Label>
               <Toggle id="tooltips-toggle" checked={showTooltips} onChange={handleTooltips} label="Show tooltips" />
+            </Row>
+            <Row>
+              <Label htmlFor="commentary-toggle" sub="Flavor text and industry insights during gameplay">Director's Commentary</Label>
+              <Toggle id="commentary-toggle" checked={commentary} onChange={handleCommentary} label="Director's Commentary" />
             </Row>
             <Row>
               <Label sub="Speed of card animations during play">Card Play Speed</Label>

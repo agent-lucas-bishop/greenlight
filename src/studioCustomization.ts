@@ -3,7 +3,7 @@
 // Persists across runs via localStorage
 
 import { getLifetimeStats, type LifetimeStats } from './studioLegacy';
-import { getUnlockedAchievements } from './achievements';
+import { getUnlockedAchievements, ACHIEVEMENTS } from './achievements';
 
 const CUSTOM_KEY = 'greenlight_studio_custom';
 
@@ -299,11 +299,12 @@ export interface OfficeTrophy {
 }
 
 export function getOfficeTrophies(): OfficeTrophy[] {
-  const achievements = getUnlockedAchievements();
+  const unlockedIds = getUnlockedAchievements();
   const trophies: OfficeTrophy[] = [];
   // Show first 8 achievements as trophies
-  for (const ach of achievements.slice(0, 8)) {
-    trophies.push({ id: ach.id, name: ach.name, emoji: ach.emoji });
+  for (const id of unlockedIds.slice(0, 8)) {
+    const ach = ACHIEVEMENTS.find(a => a.id === id);
+    if (ach) trophies.push({ id: ach.id, name: ach.name, emoji: ach.emoji });
   }
   return trophies;
 }

@@ -14,6 +14,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Redline', suffix: 'Pursuit' },
       { prefix: 'Chain', suffix: 'Reaction' },
       { prefix: 'Rush', suffix: 'Hour Protocol' },
+      { prefix: 'Overdrive', suffix: '' },
+      { prefix: 'Breakneck', suffix: 'Speed' },
+      { prefix: 'Pedal to the', suffix: 'Metal' },
     ],
     chaos: [
       { prefix: 'Blood Moon', suffix: 'Protocol' },
@@ -21,6 +24,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'When the Dust', suffix: 'Settles' },
       { prefix: 'Scorched', suffix: 'Earth' },
       { prefix: 'Wrecking', suffix: 'Crew' },
+      { prefix: 'Absolute', suffix: 'Carnage' },
+      { prefix: 'Firestorm', suffix: '' },
+      { prefix: 'No Rules', suffix: 'Left' },
     ],
     precision: [
       { prefix: 'Surgical', suffix: 'Strike' },
@@ -28,6 +34,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The', suffix: 'Operative' },
       { prefix: 'Calculated', suffix: 'Risk' },
       { prefix: 'Zero', suffix: 'Error' },
+      { prefix: 'One Shot', suffix: 'One Kill' },
+      { prefix: 'Ghost', suffix: 'Protocol' },
+      { prefix: 'Sniper\'s', suffix: 'Patience' },
     ],
     heart: [
       { prefix: 'Brothers in', suffix: 'Arms' },
@@ -35,6 +44,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Hold the', suffix: 'Line' },
       { prefix: 'One of', suffix: 'Us' },
       { prefix: 'Shield', suffix: 'and Sword' },
+      { prefix: 'No One', suffix: 'Left Behind' },
+      { prefix: 'Blood', suffix: 'Brothers' },
+      { prefix: 'The', suffix: 'Oath' },
     ],
     spectacle: [
       { prefix: 'Skyfall', suffix: 'Rising' },
@@ -42,6 +54,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Inferno', suffix: 'Protocol' },
       { prefix: 'Titan', suffix: 'Strike' },
       { prefix: 'Event', suffix: 'Horizon' },
+      { prefix: 'Detonation', suffix: 'Day' },
+      { prefix: 'Ground', suffix: 'Zero' },
+      { prefix: 'The Last', suffix: 'Explosion' },
     ],
     default: [
       { prefix: 'Iron', suffix: 'Dawn' },
@@ -49,6 +64,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Shadow', suffix: 'Force' },
       { prefix: 'Lethal', suffix: 'Edge' },
       { prefix: 'The', suffix: 'Reckoning' },
+      { prefix: 'Warpath', suffix: '' },
+      { prefix: 'Dead', suffix: 'Drop' },
+      { prefix: 'Killswitch', suffix: '' },
     ],
   },
   Comedy: {
@@ -58,6 +76,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The', suffix: 'Meltdown' },
       { prefix: 'Plan B:', suffix: 'Panic' },
       { prefix: 'Oops,', suffix: 'My Bad' },
+      { prefix: 'Catastrophe', suffix: 'Mode' },
+      { prefix: 'What Could', suffix: 'Go Wrong' },
+      { prefix: 'Trainwreck', suffix: 'Tuesday' },
     ],
     heart: [
       { prefix: 'Love,', suffix: 'Actually Terrible' },
@@ -65,6 +86,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Warm', suffix: 'Fuzzies' },
       { prefix: 'You Had Me at', suffix: 'Yikes' },
       { prefix: 'Best', suffix: 'Intentions' },
+      { prefix: 'Group', suffix: 'Hug' },
+      { prefix: 'Wholesome', suffix: 'Chaos' },
+      { prefix: 'Found', suffix: 'Family' },
     ],
     momentum: [
       { prefix: 'Non-Stop', suffix: 'Nonsense' },
@@ -72,6 +96,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Running', suffix: 'Late' },
       { prefix: 'Go Go', suffix: 'Disaster' },
       { prefix: 'Speed', suffix: 'Bumps' },
+      { prefix: 'Can\'t', suffix: 'Stop Won\'t Stop' },
+      { prefix: 'Full', suffix: 'Send' },
+      { prefix: 'No', suffix: 'Brakes' },
     ],
     spectacle: [
       { prefix: 'The Big', suffix: 'Show' },
@@ -79,6 +106,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Grand', suffix: 'Fiasco' },
       { prefix: 'Ladies and', suffix: 'Gentlemen...' },
       { prefix: 'Showtime', suffix: 'Baby' },
+      { prefix: 'Look At', suffix: 'This Mess' },
+      { prefix: 'Center', suffix: 'Stage' },
+      { prefix: 'The Main', suffix: 'Event' },
     ],
     precision: [
       { prefix: 'The Art of', suffix: 'the Insult' },
@@ -86,6 +116,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'According to', suffix: 'Plan' },
       { prefix: 'Exactly', suffix: 'Wrong' },
       { prefix: 'Methodical', suffix: 'Madness' },
+      { prefix: 'Surgical', suffix: 'Comedy' },
+      { prefix: 'Dry', suffix: 'Wit' },
+      { prefix: 'The Setup', suffix: 'and Punchline' },
     ],
     default: [
       { prefix: 'My Big', suffix: 'Weekend' },
@@ -93,6 +126,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The Last', suffix: 'Laugh' },
       { prefix: 'Awkward', suffix: 'Pause' },
       { prefix: 'No', suffix: 'Refunds' },
+      { prefix: 'It\'s', suffix: 'Complicated' },
+      { prefix: 'Laugh', suffix: 'Track' },
+      { prefix: 'Unhinged', suffix: '' },
     ],
   },
   Drama: {
@@ -102,6 +138,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The Weight of', suffix: 'Us' },
       { prefix: 'Still', suffix: 'Breathing' },
       { prefix: 'Where the Heart', suffix: 'Rests' },
+      { prefix: 'The', suffix: 'Tender Hours' },
+      { prefix: 'Closer Than', suffix: 'Blood' },
+      { prefix: 'What We', suffix: 'Owe' },
     ],
     chaos: [
       { prefix: 'Unraveling', suffix: '' },
@@ -109,6 +148,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Everything Burns', suffix: 'Slowly' },
       { prefix: 'Fractured', suffix: 'Lives' },
       { prefix: 'Coming', suffix: 'Apart' },
+      { prefix: 'House of', suffix: 'Cards' },
+      { prefix: 'Scorched', suffix: 'Bridges' },
+      { prefix: 'The', suffix: 'Ruin' },
     ],
     precision: [
       { prefix: 'The', suffix: 'Verdict' },
@@ -116,6 +158,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'A Careful', suffix: 'Life' },
       { prefix: 'The', suffix: 'Arrangement' },
       { prefix: 'Composed', suffix: '' },
+      { prefix: 'The', suffix: 'Deposition' },
+      { prefix: 'Every', suffix: 'Detail' },
+      { prefix: 'Nothing', suffix: 'Wasted' },
     ],
     momentum: [
       { prefix: 'Before It', suffix: 'Ends' },
@@ -123,6 +168,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The', suffix: 'Urgency' },
       { prefix: 'While We', suffix: 'Still Can' },
       { prefix: 'Faster Than', suffix: 'Truth' },
+      { prefix: 'Burning', suffix: 'Daylight' },
+      { prefix: 'The Clock', suffix: 'Ticks' },
+      { prefix: 'Last', suffix: 'Chance' },
     ],
     spectacle: [
       { prefix: 'The Grand', suffix: 'Opera' },
@@ -130,6 +178,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Empire', suffix: 'of Light' },
       { prefix: 'The Gilded', suffix: 'Age' },
       { prefix: 'Monuments', suffix: '' },
+      { prefix: 'A Crown', suffix: 'of Thorns' },
+      { prefix: 'Palace', suffix: 'Intrigue' },
+      { prefix: 'The', suffix: 'Dynasty' },
     ],
     default: [
       { prefix: 'The Weight of', suffix: 'Silence' },
@@ -137,6 +188,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Between', suffix: 'Everything' },
       { prefix: 'After the', suffix: 'Storm' },
       { prefix: 'Ordinary', suffix: 'Grace' },
+      { prefix: 'Inheritance', suffix: '' },
+      { prefix: 'The Quiet', suffix: 'Ones' },
+      { prefix: 'Harbour', suffix: '' },
     ],
   },
   Horror: {
@@ -146,6 +200,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Feeding', suffix: 'Frenzy' },
       { prefix: 'Viscera', suffix: '' },
       { prefix: 'All Hell', suffix: 'Breaks Loose' },
+      { prefix: 'Meat', suffix: 'Grinder' },
+      { prefix: 'The', suffix: 'Purge' },
+      { prefix: 'Feral', suffix: '' },
     ],
     heart: [
       { prefix: 'What We', suffix: 'Buried' },
@@ -153,6 +210,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Dear', suffix: 'Departed' },
       { prefix: 'Those We', suffix: 'Left Behind' },
       { prefix: 'Inherited', suffix: 'Grief' },
+      { prefix: 'Mother\'s', suffix: 'Lullaby' },
+      { prefix: 'The', suffix: 'Mourning' },
+      { prefix: 'Beloved', suffix: '' },
     ],
     precision: [
       { prefix: 'The', suffix: 'Experiment' },
@@ -160,6 +220,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Clinical', suffix: 'Terror' },
       { prefix: 'Observed', suffix: '' },
       { prefix: 'The', suffix: 'Procedure' },
+      { prefix: 'Patient', suffix: 'Zero' },
+      { prefix: 'Sterile', suffix: '' },
+      { prefix: 'Lab', suffix: 'Rats' },
     ],
     spectacle: [
       { prefix: 'The', suffix: 'Summoning' },
@@ -167,6 +230,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Apocalypse', suffix: 'Rising' },
       { prefix: 'When the Sky', suffix: 'Bleeds' },
       { prefix: 'The Great', suffix: 'Devouring' },
+      { prefix: 'Leviathan', suffix: '' },
+      { prefix: 'The', suffix: 'Rapture' },
+      { prefix: 'Armageddon', suffix: 'Eve' },
     ],
     momentum: [
       { prefix: 'It Follows', suffix: 'Still' },
@@ -174,6 +240,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Don\'t', suffix: 'Stop' },
       { prefix: 'The', suffix: 'Chase' },
       { prefix: 'Closer', suffix: 'Every Second' },
+      { prefix: 'Don\'t', suffix: 'Breathe' },
+      { prefix: 'It\'s', suffix: 'Behind You' },
+      { prefix: 'Final', suffix: 'Sprint' },
     ],
     default: [
       { prefix: 'The', suffix: 'Hollow' },
@@ -181,6 +250,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Below the', suffix: 'Surface' },
       { prefix: 'Last', suffix: 'Whisper' },
       { prefix: 'They', suffix: 'Watch' },
+      { prefix: 'The', suffix: 'Harrowing' },
+      { prefix: 'Skin', suffix: 'Deep' },
+      { prefix: 'Crawl', suffix: '' },
     ],
   },
   'Sci-Fi': {
@@ -190,6 +262,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Nebula', suffix: 'Born' },
       { prefix: 'The', suffix: 'Dyson Sphere' },
       { prefix: 'Galactic', suffix: 'Dawn' },
+      { prefix: 'The', suffix: 'Singularity' },
+      { prefix: 'Supernova', suffix: '' },
+      { prefix: 'Cosmic', suffix: 'Requiem' },
     ],
     precision: [
       { prefix: 'Algorithm', suffix: '' },
@@ -197,6 +272,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Quantum', suffix: 'Lock' },
       { prefix: 'Recursive', suffix: '' },
       { prefix: 'Probability', suffix: 'Zero' },
+      { prefix: 'Proof of', suffix: 'Concept' },
+      { prefix: 'The', suffix: 'Theorem' },
+      { prefix: 'Binary', suffix: '' },
     ],
     chaos: [
       { prefix: 'System', suffix: 'Failure' },
@@ -204,6 +282,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Entropy', suffix: '' },
       { prefix: 'Meltdown', suffix: 'Protocol' },
       { prefix: 'Unstable', suffix: 'Core' },
+      { prefix: 'Cascade', suffix: 'Event' },
+      { prefix: 'Critical', suffix: 'Mass' },
+      { prefix: 'Rogue', suffix: 'AI' },
     ],
     heart: [
       { prefix: 'Light Years', suffix: 'from Home' },
@@ -211,6 +292,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Echo of', suffix: 'Earth' },
       { prefix: 'Human', suffix: 'Signal' },
       { prefix: 'Remember', suffix: 'the Stars' },
+      { prefix: 'Letters to', suffix: 'Mars' },
+      { prefix: 'The', suffix: 'Homecoming' },
+      { prefix: 'Earth', suffix: 'Mother' },
     ],
     momentum: [
       { prefix: 'Hyperdrive', suffix: '' },
@@ -218,6 +302,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Velocity', suffix: 'Unknown' },
       { prefix: 'FTL', suffix: '' },
       { prefix: 'Breakaway', suffix: '' },
+      { prefix: 'Launch', suffix: 'Window' },
+      { prefix: 'Escape', suffix: 'Velocity' },
+      { prefix: 'Lightspeed', suffix: '' },
     ],
     default: [
       { prefix: 'Neon', suffix: 'Frontier' },
@@ -225,6 +312,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The Last', suffix: 'Signal' },
       { prefix: 'Zero', suffix: 'Point' },
       { prefix: 'Star', suffix: 'Colony' },
+      { prefix: 'Andromeda', suffix: '' },
+      { prefix: 'Terraform', suffix: '' },
+      { prefix: 'The Void', suffix: '' },
     ],
   },
   Romance: {

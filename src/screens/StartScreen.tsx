@@ -13,7 +13,7 @@ import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
 import AchievementGallery from '../components/AchievementGallery';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
-import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress } from '../prestige';
+import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
@@ -439,6 +439,30 @@ export default function StartScreen() {
                 </div>
                 <span style={{ color: '#555', fontSize: '0.6rem' }}>Lv.{level.level}</span>
               </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Studio Difficulty Indicator */}
+      {stats.runs > 0 && (() => {
+        const scaling = getVeteranScaling();
+        if (scaling.prestigeLevel < 1) return null;
+        return (
+          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: '0.7rem' }}>
+            <span style={{ color: '#666' }}>Difficulty:</span>
+            <span style={{ color: scaling.scalingPercent > 0 ? '#e74c3c' : scaling.prestigeLevel >= 3 ? '#f39c12' : '#666', fontFamily: 'Bebas Neue', letterSpacing: '0.05em' }}>
+              {scaling.difficultyLabel}
+            </span>
+            {scaling.scalingPercent > 0 && (
+              <span style={{ color: '#e74c3c', fontSize: '0.6rem' }}>
+                (+{scaling.scalingPercent}% targets)
+              </span>
+            )}
+            {scaling.activePerksCount > 0 && (
+              <span style={{ color: '#555', fontSize: '0.6rem' }}>
+                • {scaling.activePerksCount} perk{scaling.activePerksCount > 1 ? 's' : ''}
+              </span>
             )}
           </div>
         );

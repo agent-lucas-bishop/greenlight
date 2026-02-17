@@ -116,6 +116,34 @@ export function calculateRunXP(data: RunXPData): { total: number; breakdown: { l
   return { total, breakdown };
 }
 
+// Get veteran difficulty scaling info for UI display
+export function getVeteranScaling(): { prestigeLevel: number; scalingPercent: number; activePerksCount: number; difficultyLabel: string } {
+  const prestige = getPrestige();
+  const level = prestige.level;
+  const scalingPercent = level >= 5 ? (level - 4) * 5 : 0;
+  
+  // Count active legacy perks
+  let activePerksCount = 0;
+  try {
+    const saved = localStorage.getItem('greenlight_unlocks');
+    if (saved) {
+      const u = JSON.parse(saved);
+      // Count perks that pass their check (approximate by counting stored perk IDs)
+      activePerksCount = (u.legacyPerks || []).length;
+    }
+  } catch {}
+  
+  let difficultyLabel: string;
+  if (level >= 10) difficultyLabel = '🔥 LEGENDARY';
+  else if (level >= 8) difficultyLabel = '⚡ BRUTAL';
+  else if (level >= 5) difficultyLabel = '💀 VETERAN';
+  else if (level >= 3) difficultyLabel = '🎬 EXPERIENCED';
+  else if (level >= 1) difficultyLabel = '📹 LEARNING';
+  else difficultyLabel = '🎓 NEWCOMER';
+  
+  return { prestigeLevel: level, scalingPercent, activePerksCount, difficultyLabel };
+}
+
 // Award XP from a run and return level-up info
 export function awardRunXP(data: RunXPData): {
   xpGained: number;

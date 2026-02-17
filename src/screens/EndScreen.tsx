@@ -34,6 +34,7 @@ import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessL
 import { submitRunToHallOfFame, type SubmitResult } from '../hallOfFame';
 import HallOfFameCard from '../components/HallOfFameCard';
 import { updateLegacyAfterRun } from '../studioLegacy';
+import { accumulateRunStats, type StudioRunData } from '../studioProfile';
 import { updateEndlessPersonalBest, getEndlessPersonalBest } from '../endlessMode';
 import { loadCampaignData, getActiveCampaign, getCampaignById } from '../campaigns';
 import { addDailyLeaderboardEntry, addWeeklyLeaderboardEntry, calculateDailyScore, getDailyLeaderboard, getWeeklyLeaderboard } from '../dailyChallenge';
@@ -737,6 +738,24 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       const legacyUnlocks = updateLegacyAfterRun();
       if (legacyUnlocks.length > 0) {
         console.log('[Legacy] New milestones:', legacyUnlocks);
+      }
+      // R294: Studio Profile — accumulate lifetime stats into gl_studio_meta
+      {
+        const spRunData: StudioRunData = {
+          filmsProduced: history.length,
+          totalBoxOffice: state.totalEarnings,
+          awards: history.filter(s => s.nominated).length,
+          isVictory,
+          blockbusters: history.filter(s => s.tier === 'BLOCKBUSTER').length,
+          score,
+        };
+        const spResult = accumulateRunStats(spRunData);
+        if (spResult.leveledUp) {
+          console.log(`[StudioProfile] Level up! ${spResult.oldLevel} → ${spResult.newLevel}`);
+        }
+        if (spResult.newPerks.length > 0) {
+          console.log('[StudioProfile] New perks:', spResult.newPerks.map(p => p.name));
+        }
       }
       // R177: Endless Mode leaderboard
       if (state.gameMode === 'endless') {

@@ -49,7 +49,9 @@ const CraftingWorkshop = lazy(() => import('../components/CraftingWorkshop'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
 const CollectionPanel = lazy(() => import('../components/CollectionPanel'));
 const PrestigePanel = lazy(() => import('../components/PrestigePanel'));
+const StudioProfileScreen = lazy(() => import('../components/StudioProfileScreen'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
+import { getStudioMeta, calculateStudioXP, getStudioLevel } from '../studioProfile';
 import { getPrestigeShop, getPrestigeStarsDisplay, getActiveNGPPerks } from '../prestigeShop';
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
@@ -506,6 +508,7 @@ export default function StartScreen() {
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [showPrestigePanel, setShowPrestigePanel] = useState(false);
+  const [showStudioProfile, setShowStudioProfile] = useState(false);
   const [showSaveSlots, setShowSaveSlots] = useState(false);
   const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
@@ -769,6 +772,13 @@ export default function StartScreen() {
               fontFamily: 'Bebas Neue', letterSpacing: 1, borderRadius: 6,
             }}>
               ⭐ Prestige Shop{pShop.starPower > 0 ? ` (${pShop.starPower})` : ''}
+            </button>
+            <button className="btn" onClick={() => setShowStudioProfile(true)} style={{
+              background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.3)',
+              color: 'var(--gold)', padding: '3px 12px', cursor: 'pointer', fontSize: '0.7rem',
+              fontFamily: 'Bebas Neue', letterSpacing: 1, borderRadius: 6, marginLeft: 6,
+            }}>
+              🏢 Studio Profile
             </button>
           </div>
         );
@@ -1814,6 +1824,7 @@ export default function StartScreen() {
       {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
       {showChangelog && <Suspense fallback={null}><ChangelogModal onClose={() => setShowChangelog(false)} /></Suspense>}
       {showPrestigePanel && <Suspense fallback={null}><PrestigePanel onClose={() => setShowPrestigePanel(false)} /></Suspense>}
+      {showStudioProfile && <Suspense fallback={null}><StudioProfileScreen onClose={() => setShowStudioProfile(false)} /></Suspense>}
       {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
       {showChallengeBoard && (
         <Suspense fallback={null}>

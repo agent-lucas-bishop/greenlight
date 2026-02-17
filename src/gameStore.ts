@@ -113,6 +113,7 @@ import { getEnabledWorkshopCards, crewCardToCardTemplate } from './cardCreator';
 import { getDirectorStyleBonus } from './directorProfile';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
+import { getStudioProfileBudgetBonus, getStudioAudienceBonus, hasStudioBonusCard, hasStudioFreeResearch } from './studioProfile';
 import { getPrestigeShopBudgetBonus, getPrestigeRepShield, getPrestigeExtraCardDraw, getPrestigeLuckyBreakChance, getPrestigeTalentScoutBonus, getNGPBudgetPercent, getNGPReputationBonus, getNGPExtraStrikes, getNGPQualityBaselinePercent, getNGPCardDrawBonus, getNGPTalentCostMultiplier } from './prestigeShop';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { generateSoundtrackProfile, getComposerOptions, calculateThemeQualityBonus, type MusicalThemeId, type SoundtrackHistoryEntry } from './soundtrack';
@@ -812,6 +813,8 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   budget += getMetaBudgetBonus();
   // R227: Prestige shop budget bonus
   budget += getPrestigeShopBudgetBonus();
+  // R294: Studio Profile budget bonus (Level 5: +$2M)
+  budget += getStudioProfileBudgetBonus();
   // R259: New Game+ budget perk — +5% starting budget
   if (getNGPBudgetPercent() > 0) budget = Math.round(budget * (1 + getNGPBudgetPercent() / 100) * 10) / 10;
   // R128: Legacy run bonuses — $1M per 2 prestige levels

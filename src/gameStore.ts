@@ -112,6 +112,7 @@ import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeM
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
 import { getDifficultyConfig } from './difficulty';
 import type { Difficulty } from './types';
+import { getEligibleFestivals, canSubmitToFestival, judgeFestival, getFestivalRepBoost, getFestivalBudgetBonus, getAwardLabel, getFestival, type FestivalResult } from './filmFestivals';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -169,6 +170,9 @@ function createInitialState(): GameState {
     prCampaignActive: false,
     rivalActions: [],
     workshopDeck: [],
+    festivalHistory: [],
+    festivalEligible: null,
+    festivalResult: null,
     postProdMarketing: null,
     postProdOption: null,
     postProdMarketingMultiplier: undefined,
@@ -656,6 +660,12 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
   // Daily mode: fixed 3 seasons
   if (mode === 'daily') {
     maxSeasons = 3;
+  }
+
+  // Endless mode: no season limit
+  if (mode === 'endless') {
+    maxSeasons = 999;
+    maxStrikes = 999; // strikes don't end the game in endless
   }
 
   // Weekly mode has harder defaults
@@ -2510,6 +2520,12 @@ export function declineExtendedCut() {
 }
 
 export function proceedFromRecap() {
+  // Endless mode: bankrupt (budget < 0 after release) = game over
+  if (state.gameMode === 'endless' && state.budget < 0) {
+    clearSave();
+    setState({ phase: 'gameOver' });
+    return;
+  }
   if (state.reputation <= 0 || state.strikes >= state.maxStrikes) {
     clearSave();
     setState({ phase: 'gameOver' });
@@ -2717,6 +2733,73 @@ export function workshopDuplicate(cardId: string) {
 }
 
 export function skipWorkshop() {
+  proceedToFestival();
+}
+
+export function proceedToFestival() {
+  // Check if any festivals are eligible this season
+  const eligible = getEligibleFestivals(state.season, state.maxSeasons);
+  // Need at least one film to submit
+  const hasFilms = state.seasonHistory.length > 0;
+  if (!hasFilms || eligible.length === 0) {
+    nextSeason();
+    return;
+  }
+  setState({
+    phase: 'festival' as GamePhase,
+    festivalEligible: eligible.map(f => ({ id: f.id, name: f.name, emoji: f.emoji, entryCost: f.entryCost })),
+    festivalResult: null,
+  });
+}
+
+export function submitToFestival(festivalId: string, filmIndex: number) {
+  const festival = getFestival(festivalId as any);
+  if (!festival) return;
+  const film = state.seasonHistory[filmIndex];
+  if (!film) return;
+  const check = canSubmitToFestival(festival, film, state.budget);
+  if (!check.eligible) return;
+
+  // Pay entry cost
+  const newBudget = state.budget - festival.entryCost;
+
+  // Judge the film
+  const result = judgeFestival(festival, film, rng, state.festivalHistory as FestivalResult[]);
+
+  // Apply rewards
+  const repBoost = getFestivalRepBoost(result);
+  const budgetBonus = getFestivalBudgetBonus(result);
+  const newRep = Math.max(0, Math.min(5, state.reputation + repBoost));
+
+  // Update the film's festival awards in seasonHistory
+  const updatedHistory = state.seasonHistory.map((s, i) => {
+    if (i !== filmIndex) return s;
+    const existing = s.festivalAwards || [];
+    return {
+      ...s,
+      festivalAwards: [...existing, { festivalId: festival.id, award: result.award || 'entered' }],
+    };
+  });
+
+  setState({
+    budget: newBudget + budgetBonus,
+    reputation: newRep,
+    seasonHistory: updatedHistory,
+    festivalHistory: [...state.festivalHistory, result],
+    festivalResult: {
+      festivalId: festival.id,
+      festivalName: festival.name,
+      festivalEmoji: festival.emoji,
+      filmTitle: film.title,
+      award: result.award,
+      score: result.score,
+      repBoost,
+      budgetBonus,
+    },
+  });
+}
+
+export function skipFestival() {
   nextSeason();
 }
 

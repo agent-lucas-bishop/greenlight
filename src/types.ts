@@ -159,6 +159,7 @@ export type GamePhase =
   | 'shop'
   | 'workshop'
   | 'event'
+  | 'festival'
   | 'gameOver'
   | 'victory';
 
@@ -241,7 +242,7 @@ export interface ProductionState {
 
 export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';
 
-export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'weekly' | 'challenge' | 'seeded';
+export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'weekly' | 'challenge' | 'seeded' | 'endless';
 
 export type Difficulty = 'indie' | 'studio' | 'mogul';
 
@@ -336,6 +337,10 @@ export interface GameState {
   rivalActions: RivalAction[]; // rival actions applied this season
   // R162: Card Workshop — persistent deck upgrades between seasons
   workshopDeck: ProductionCard[];
+  // R176: Film Festival system
+  festivalHistory: { festivalId: string; filmTitle: string; filmGenre: Genre; season: number; award: string | null; score: number }[];
+  festivalEligible: { id: string; name: string; emoji: string; entryCost: number }[] | null; // festivals available this between-season
+  festivalResult: { festivalId: string; festivalName: string; festivalEmoji: string; filmTitle: string; award: string | null; score: number; repBoost: number; budgetBonus: number } | null;
 }
 
 // ─── RIVAL ACTIONS (R150) ───
@@ -410,4 +415,5 @@ export interface SeasonResult {
   nominated: boolean;
   criticScore?: number; // R173: fresh percentage (0-100)
   criticStars?: number; // R173: average star rating (1-5)
+  festivalAwards?: { festivalId: string; award: string }[]; // R176: festival laurels
 }

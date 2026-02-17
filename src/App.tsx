@@ -30,6 +30,7 @@ const ReleaseScreen = lazy(() => import('./screens/ReleaseScreen'));
 const ShopScreen = lazy(() => import('./screens/ShopScreen'));
 const CardWorkshop = lazy(() => import('./components/CardWorkshop'));
 const EventScreen = lazy(() => import('./screens/EventScreen'));
+const FestivalScreen = lazy(() => import('./screens/FestivalScreen'));
 const EndScreen = lazy(() => import('./screens/EndScreen'));
 
 function App() {
@@ -156,6 +157,7 @@ function App() {
       }
       case 'shop': return <ShopScreen state={state} />;
       case 'workshop': return <CardWorkshop state={state} />;
+      case 'festival': return <FestivalScreen state={state} />;
       case 'event': return <EventScreen state={state} />;
       case 'gameOver': return <EndScreen state={state} type="gameover" />;
       case 'victory': return <EndScreen state={state} type="victory" />;

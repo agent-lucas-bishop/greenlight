@@ -21,6 +21,7 @@ import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from '../challenge
 import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
 import { getDifficultyBadge } from '../difficulty';
+import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
 
 // ─── Helpers ───
 
@@ -588,6 +589,39 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         dailySeed: state.dailySeed,
         modifierNames, rank,
       });
+      // R177: Legacy Films — add best film from this run
+      if (history.length > 0) {
+        const bestFilmForLegacy = history.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b);
+        addLegacyFilm({
+          title: bestFilmForLegacy.title,
+          genre: bestFilmForLegacy.genre,
+          tier: bestFilmForLegacy.tier,
+          quality: bestFilmForLegacy.quality,
+          boxOffice: bestFilmForLegacy.boxOffice,
+          studioName: studioIdentity?.name || state.studioName || 'Unknown Studio',
+          runDate: new Date().toISOString().slice(0, 10),
+          criticScore: bestFilmForLegacy.criticScore,
+          criticStars: bestFilmForLegacy.criticStars,
+          season: bestFilmForLegacy.season,
+        });
+      }
+      // R177: Check Endless Mode unlock (win on Mogul)
+      checkEndlessUnlock(isVictory, state.difficulty || 'studio');
+      // R177: Studio Milestones
+      const freshScores = history.filter(s => (s.criticScore ?? 0) >= 60).length;
+      checkAndAwardMilestones(freshScores);
+      // R177: Endless Mode leaderboard
+      if (state.gameMode === 'endless') {
+        addEndlessLeaderboardEntry({
+          date: new Date().toISOString().slice(0, 10),
+          studioName: studioIdentity?.name || state.studioName || 'Unknown Studio',
+          seasons: history.length,
+          totalEarnings: state.totalEarnings,
+          films: history.length,
+          archetype: state.studioArchetype || 'unknown',
+          finalBudget: state.budget,
+        });
+      }
       markFirstRunComplete();
       trackRunEnd(score, isVictory);
       careerTrackRunEnd({
@@ -817,6 +851,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             <div className="label">Nominations</div>
             <div className="value">{nominations}</div>
           </div>
+          {state.festivalHistory.length > 0 && (
+            <div className="end-stat">
+              <div className="label">🎬 Festival Awards</div>
+              <div className="value" style={{ color: '#f1c40f' }}>
+                {state.festivalHistory.filter(r => r.award).length}/{state.festivalHistory.length}
+              </div>
+            </div>
+          )}
           <div className="end-stat">
             <div className="label">Favorite Genre</div>
             <div className="value" style={{ fontSize: '0.9rem' }}>{favGenre}</div>
@@ -856,6 +898,13 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 {r.criticScore != null && (
                   <span style={{ fontSize: '0.7rem', color: r.criticScore >= 60 ? '#e74c3c' : '#7f8c2a', minWidth: 36, textAlign: 'right' }}>
                     {r.criticScore >= 60 ? '🍅' : '🤢'}{r.criticScore}%
+                  </span>
+                )}
+                {r.festivalAwards && r.festivalAwards.length > 0 && (
+                  <span style={{ fontSize: '0.75rem' }} title={r.festivalAwards.map(a => `${a.festivalId}: ${a.award}`).join(', ')}>
+                    {r.festivalAwards.map((a, j) => (
+                      <span key={j}>{a.award === 'grandPrize' ? '🏆' : a.award === 'winner' ? '🏅' : a.award === 'nomination' ? '🌿' : ''}</span>
+                    ))}
                   </span>
                 )}
                 <span style={{ width: 18, textAlign: 'center' }}>

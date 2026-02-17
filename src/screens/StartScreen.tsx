@@ -27,6 +27,7 @@ const FilmArchive = lazy(() => import('../components/FilmArchive'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
+import { getAllUnlockableStatus } from '../unlockableContent';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
@@ -1127,6 +1128,36 @@ export default function StartScreen() {
                       <div style={{ width: `${m.progress * 100}%`, height: '100%', background: 'var(--gold)', borderRadius: 3, transition: 'width 0.3s' }} />
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Unlockable Content */}
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 8, letterSpacing: 1 }}>🔓 UNLOCKABLE CONTENT</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {getAllUnlockableStatus().map(item => (
+                <div key={item.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                  background: item.unlocked ? 'rgba(46,204,113,0.05)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${item.unlocked ? 'rgba(46,204,113,0.3)' : '#222'}`,
+                  borderRadius: 6,
+                }}>
+                  <span style={{ fontSize: '1.2rem', filter: item.unlocked ? 'none' : 'grayscale(1) brightness(0.3)' }}>
+                    {item.unlocked ? item.emoji : '🔒'}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: item.unlocked ? '#2ecc71' : '#666', fontWeight: 700, fontSize: '0.8rem' }}>
+                      {item.unlocked ? item.name : '???'}
+                      <span style={{ marginLeft: 6, color: '#999', fontWeight: 400, fontSize: '0.65rem' }}>
+                        {item.type === 'script' ? '📜 Script' : '🎭 Talent'}
+                      </span>
+                    </div>
+                    <div style={{ color: item.unlocked ? '#999' : '#555', fontSize: '0.65rem', marginTop: 2 }}>
+                      {item.unlocked ? '✅ Unlocked — available in random pools' : item.conditionText}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

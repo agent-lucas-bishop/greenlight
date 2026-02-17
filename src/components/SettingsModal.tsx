@@ -3,6 +3,7 @@ import { isMuted, setMuted, getVolume, setVolume, getSfxVolume, setSfxVolume } f
 import { getStudioIdentity, setStudioIdentity, getRandomDefaultName, STUDIO_LOGOS, DEFAULT_STUDIO_NAMES, type StudioLogo } from '../studioIdentity';
 import { isStoryMomentsEnabled, setStoryMomentsEnabled } from '../cutscenes';
 import { resetTutorial, isTutorialComplete } from '../tutorial';
+import { getPlayerName, setPlayerName as savePlayerName } from '../leaderboard';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -35,6 +36,32 @@ function Toggle({ checked, onChange, label, id }: { checked: boolean; onChange: 
 const SectionH3 = ({ children }: { children: React.ReactNode }) => (
   <h3 style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{children}</h3>
 );
+
+/* ── Player Name Editor ──────────────────────────────────────── */
+
+function PlayerNameEditor() {
+  const [name, setName] = useState(getPlayerName() || '');
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    savePlayerName(name.trim() || 'Anonymous');
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <input type="text" value={name} onChange={e => setName(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+        placeholder="Your name on the leaderboard..."
+        maxLength={24}
+        style={{ flex: 1, padding: '10px 14px', background: '#111', border: '1px solid #333', borderRadius: 8, color: '#eee', fontSize: '0.9rem' }} />
+      <button className="btn btn-small" onClick={handleSave} style={{ whiteSpace: 'nowrap' }}>
+        {saved ? '✓ Saved' : 'Save'}
+      </button>
+    </div>
+  );
+}
 
 /* ── Studio Identity Editor ──────────────────────────────────── */
 
@@ -342,6 +369,10 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
           <div className="settings-section" style={{ borderBottom: 'none' }}>
             <SectionH3>Studio Identity</SectionH3>
             <StudioIdentityEditor />
+            <div style={{ marginTop: 20 }}>
+              <SectionH3>Director Name</SectionH3>
+              <PlayerNameEditor />
+            </div>
           </div>
         );
       case 'data':

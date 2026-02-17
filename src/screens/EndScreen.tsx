@@ -503,7 +503,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       const afterPerks = getActiveLegacyPerks();
       const newlyUnlocked = afterPerks.filter(p => !beforePerks.includes(p.id));
       if (newlyUnlocked.length > 0) setNewPerks(newlyUnlocked);
-      addLeaderboardEntry({
+      const isHighScore = isNewHighScore(score, state.difficulty || 'studio');
+      const lbEntry = addLeaderboardEntry({
         date: new Date().toISOString().slice(0, 10),
         score,
         rank,
@@ -522,7 +523,15 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         prestigeLevel: currentPrestigeLevel.level,
         prestigeTitle: currentPrestigeLevel.title,
         legacyRating: legacy.rating,
+        playerName: getPlayerName() || undefined,
+        directorStyle: directorProfile.styleTitle,
       });
+      setLeaderboardEntry(lbEntry);
+      if (isHighScore) {
+        const entryRank = getEntryRank(lbEntry);
+        setHighScoreRank(entryRank);
+        setTimeout(() => sfx.victory(), 800);
+      }
       // Daily challenge: update streak and history
       if (state.gameMode === 'daily') {
         updateDailyStreak();
@@ -702,6 +711,34 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         );
       })()}
+
+      {/* ─── NEW HIGH SCORE ─── */}
+      {highScoreRank !== null && highScoreRank <= 10 && (
+        <div className="animate-slide-down" style={{
+          background: 'linear-gradient(135deg, rgba(255,215,0,0.2) 0%, rgba(255,107,107,0.1) 100%)',
+          border: '2px solid rgba(255,215,0,0.6)',
+          borderRadius: 16,
+          padding: '16px 24px',
+          margin: '16px auto',
+          maxWidth: 400,
+          textAlign: 'center',
+          animation: 'comboAppear 0.6s ease',
+        }}>
+          <div style={{ fontSize: '2rem', marginBottom: 4 }}>🎉</div>
+          <div style={{
+            color: '#ffd700',
+            fontFamily: 'Bebas Neue',
+            fontSize: 'clamp(1.4rem, 3.5vw, 2rem)',
+            letterSpacing: 3,
+          }}>
+            NEW HIGH SCORE!
+          </div>
+          <div style={{ color: '#ccc', fontSize: '0.9rem', marginTop: 4 }}>
+            Rank <span style={{ color: '#ffd700', fontWeight: 700 }}>#{highScoreRank}</span> on the {state.difficulty || 'studio'} leaderboard
+          </div>
+          <GoldenBurst elaborate />
+        </div>
+      )}
 
       {/* ─── LEGACY RATING + RANK ─── */}
       <div style={{ display: 'flex', gap: 32, justifyContent: 'center', alignItems: 'center', margin: '16px 0' }}>

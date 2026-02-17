@@ -6,7 +6,7 @@ import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
 import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
-import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
+import { getLeaderboard, hasDailyRun, getDailyBest, hasPlayerName, getPlayerName, setPlayerName } from '../leaderboard';
 import { CHALLENGE_MODES, isChallengeUnlocked } from '../challenges';
 import { getDailyDateString, getWeeklyDateString, getDailyNumber, getWeeklyNumber } from '../seededRng';
 import { getTodayModifier, getWeeklyModifiers } from '../dailyModifiers';
@@ -32,6 +32,7 @@ const FilmArchive = lazy(() => import('../components/FilmArchive'));
 const CareerStatsDashboard = lazy(() => import('../components/CareerStatsDashboard'));
 const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
+const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
@@ -424,6 +425,9 @@ export default function StartScreen() {
   const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards'>('play');
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [pendingNewRun, setPendingNewRun] = useState(false);
+  const [nameInput, setNameInput] = useState(getPlayerName() || '');
   const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
   const stats = getRunStats();
   const leaderboard = getLeaderboard();
@@ -767,7 +771,14 @@ export default function StartScreen() {
                 </button>
               ) : null;
             })()}
-            <button className={`btn ${hasSave() ? 'btn-small' : 'btn-primary btn-glow'}`} onClick={() => { clearSave(); markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
+            <button className={`btn ${hasSave() ? 'btn-small' : 'btn-primary btn-glow'}`} onClick={() => {
+              if (!hasPlayerName()) {
+                setPendingNewRun(true);
+                setShowNamePrompt(true);
+              } else {
+                clearSave(); markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowDifficulty(true);
+              }
+            }}>
               NEW RUN
             </button>
             {/* Daily Run — fixed setup: Studio difficulty, random archetype from seed, 3 seasons */}
@@ -979,44 +990,9 @@ export default function StartScreen() {
       })()}
 
       {tab === 'leaderboard' && (
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          {leaderboard.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">🏆</div>
-              <div className="empty-state-title">Leaderboard Empty</div>
-              <div className="empty-state-desc">Complete a run to see your scores here. Aim for that S-rank!</div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div className="leaderboard-header" style={{ display: 'none' }} />
-              {leaderboard.slice(0, 15).map((entry, i) => (
-                <div key={entry.id} style={{
-                  padding: '10px 12px', background: i === 0 ? 'rgba(212,168,67,0.08)' : 'rgba(255,255,255,0.02)',
-                  borderRadius: 8, border: `1px solid ${i === 0 ? 'var(--gold-dim)' : '#222'}`,
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#555', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>#{i + 1}</span>
-                      <span style={{ color: { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' }[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{entry.rank}</span>
-                      <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem', fontWeight: 600 }}>{entry.won ? '✓ Won' : '✗ Lost'}</span>
-                    </div>
-                    <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{entry.score} pts</span>
-                  </div>
-                  <div style={{ color: '#ccc', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.films.map(f => f.title).join(' → ')}
-                  </div>
-                  <div style={{ color: '#999', fontSize: '0.65rem', display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
-                    <span>{entry.date}</span>
-                    <span>· {entry.archetype}</span>
-                    <span>· {entry.mode === 'newGamePlus' ? 'NG+' : entry.mode === 'directorMode' ? 'Dir' : entry.mode === 'daily' ? 'Daily' : entry.mode === 'challenge' ? 'Ch' : 'Std'}</span>
-                    {entry.challenge && <span>· {CHALLENGE_MODES.find(c => c.id === entry.challenge)?.emoji || ''} {CHALLENGE_MODES.find(c => c.id === entry.challenge)?.name || entry.challenge}</span>}
-                    {entry.dailySeed && <span>· 📅 Daily</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading leaderboard...</div>}>
+          <LeaderboardScreen />
+        </Suspense>
       )}
 
       {/* ─── STATS & ANALYTICS TAB ─── */}
@@ -1451,6 +1427,55 @@ export default function StartScreen() {
       {showGlossary && <Suspense fallback={null}><Glossary onClose={() => setShowGlossary(false)} /></Suspense>}
       {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
       {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
+
+      {/* Player Name Prompt */}
+      {showNamePrompt && (
+        <div className="modal-overlay" onClick={() => { setShowNamePrompt(false); setPendingNewRun(false); }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, textAlign: 'center' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🎬</div>
+            <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>What's Your Name, Director?</h2>
+            <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: 20 }}>
+              This will appear on the leaderboard. You can change it anytime in Settings.
+            </p>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && nameInput.trim()) {
+                  setPlayerName(nameInput.trim());
+                  setShowNamePrompt(false);
+                  if (pendingNewRun) {
+                    setPendingNewRun(false);
+                    clearSave(); markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowDifficulty(true);
+                  }
+                }
+              }}
+              placeholder="Enter your name..."
+              maxLength={24}
+              autoFocus
+              style={{
+                width: '100%', padding: '12px 16px', background: '#1a1a1a', border: '1px solid var(--gold-dim)',
+                borderRadius: 8, color: '#eee', fontSize: '1rem', textAlign: 'center', marginBottom: 16,
+                fontFamily: 'inherit',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => {
+                const name = nameInput.trim() || 'Anonymous';
+                setPlayerName(name);
+                setShowNamePrompt(false);
+                if (pendingNewRun) {
+                  setPendingNewRun(false);
+                  clearSave(); markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowDifficulty(true);
+                }
+              }}>
+                {nameInput.trim() ? `I'm ${nameInput.trim()} 🎬` : 'Skip'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

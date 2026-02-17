@@ -131,7 +131,7 @@ const COMPOSERS_COST: Record<string, number> = Object.fromEntries(
 );
 import { generateCriticReviews } from './criticReviews';
 import { loadCampaignData, updateCampaignAfterFilm, getActiveCampaign, type CampaignFilmRecord } from './campaigns';
-import { getSeasonalBOMultiplier, getSeasonalQualityBonus } from './seasonalEvents';
+import { getSeasonalBOMultiplier, getSeasonalQualityBonus, applyEventModifiers } from './seasonalEvents';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
 import { getDifficultyConfig } from './difficulty';
@@ -2400,6 +2400,10 @@ export function resolveRelease() {
 
   // R210: Seasonal event quality bonus (real-world calendar)
   rawQuality += getSeasonalQualityBonus(script.genre as Genre);
+
+  // R245: Seasonal event quality multiplier (e.g. Awards Season +25%)
+  const eventMods = applyEventModifiers(script.genre as Genre);
+  rawQuality = Math.round(rawQuality * eventMods.qualityMultiplier);
 
   // Challenge: Budget Hell — box office ×1.5
   if (state.challengeId === 'budget_hell') multiplier *= 1.5;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GameState, Talent } from '../types';
 import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason, payDebt } from '../gameStore';
 import { isPerkLocked } from '../data';
@@ -90,6 +90,15 @@ function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void
 export default function ShopScreen({ state }: { state: GameState }) {
   // Debt warning sound on mount if debt is dangerous
   useEffect(() => { if (state.debt >= 10) sfx.debtWarning(); }, []);
+
+  // R159: Rising star sparkle when visible in market
+  const risingStarSounded = useRef(false);
+  useEffect(() => {
+    if (!risingStarSounded.current && state.talentMarket?.some(t => { const sb = getStatusBadge(t.name); return sb && sb.label === 'RISING STAR'; })) {
+      risingStarSounded.current = true;
+      setTimeout(() => sfx.risingStar(), 300);
+    }
+  }, [state.talentMarket]);
 
   return (
     <div className="fade-in">

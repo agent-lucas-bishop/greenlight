@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GameState, Talent, CardTemplate } from '../types';
 import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction, isSlotBlocked } from '../gameStore';
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
@@ -113,6 +113,31 @@ export default function CastingScreen({ state }: { state: GameState }) {
   const chemistryNames = new Set(activeChemistryPairs.flatMap(c => [c.talent1, c.talent2]));
   const totalHeat = state.castSlots.reduce((s, c) => s + (c.talent?.heat || 0), 0);
   const totalSkill = state.castSlots.reduce((s, c) => s + (c.talent?.skill || 0), 0);
+
+  // R159: Play mood and rising star sounds on mount
+  const moodSounded = useRef(false);
+  useEffect(() => {
+    if (moodSounded.current) return;
+    moodSounded.current = true;
+    let delay = 200;
+    // Rising star sparkle
+    const hasRisingStar = allTalent.some(t => { const sb = getStatusBadge(t.name); return sb && sb.label === 'RISING STAR'; });
+    if (hasRisingStar) { setTimeout(() => sfx.risingStar(), delay); delay += 500; }
+    // Talent mood sounds (play first unique mood found)
+    const moods = new Set<string>();
+    for (const t of allTalent) {
+      const mb = getMoodBadge(t.name);
+      if (mb && !moods.has(mb.label)) {
+        moods.add(mb.label);
+        const d = delay;
+        if (mb.label === 'CAUTIOUS') setTimeout(() => sfx.moodCautious(), d);
+        else if (mb.label === 'HOT') setTimeout(() => sfx.moodHot(), d);
+        else if (mb.label === 'HUNGRY') setTimeout(() => sfx.moodHungry(), d);
+        delay += 400;
+        if (moods.size >= 2) break; // cap at 2 mood sounds
+      }
+    }
+  }, [allTalent]);
 
   const totalDeckCards = state.castSlots.reduce((sum, s) => {
     if (!s.talent) return sum;

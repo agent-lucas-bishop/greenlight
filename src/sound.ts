@@ -893,6 +893,223 @@ export const sfx = {
     }, 'evtDocTrend');
   },
 
+  // ── R159: Rival action sounds ──
+
+  // Rival snipes talent or steals script — menacing low tone
+  rivalMenace() {
+    play(c => {
+      note(c, 65, 0, 0.5, 0.2, 'sawtooth');
+      note(c, 50, 0.05, 0.45, 0.15, 'sine');
+      note(c, 98, 0.1, 0.3, 0.08, 'triangle');
+      noise(c, 0, 0.08, 0.1);
+    }, 'rivalMenace');
+  },
+
+  // Rival releases competing film — competitive fanfare
+  rivalCompete() {
+    play(c => {
+      // Brassy minor stab
+      note(c, 220, 0, 0.3, 0.12, 'sawtooth');
+      note(c, 262, 0.05, 0.25, 0.1, 'sawtooth');
+      note(c, 330, 0.1, 0.25, 0.1, 'triangle');
+      // Resolve to tense tone
+      note(c, 196, 0.3, 0.3, 0.08, 'sine');
+      noise(c, 0, 0.1, 0.08);
+    }, 'rivalCompete');
+  },
+
+  // ── R159: Post-production sounds ──
+
+  // Marketing selection confirmation click
+  marketingConfirm() {
+    play(c => {
+      note(c, 1400, 0, 0.04, 0.08, 'square');
+      note(c, 1800, 0.03, 0.06, 0.06, 'sine');
+    }, 'mktConfirm');
+  },
+
+  // Director's Cut — dramatic orchestral hit
+  directorsCut() {
+    play(c => {
+      note(c, 110, 0, 0.5, 0.2, 'sawtooth');
+      note(c, 165, 0, 0.4, 0.15, 'sawtooth');
+      note(c, 220, 0.02, 0.35, 0.12, 'triangle');
+      note(c, 440, 0.05, 0.3, 0.08, 'sine');
+      noise(c, 0, 0.15, 0.12);
+      note(c, 880, 0.1, 0.3, 0.05, 'sine');
+    }, 'dirCut');
+  },
+
+  // Test Screening — projector whir
+  testScreening() {
+    play(c => {
+      // Projector motor
+      const buf = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 700;
+      bp.Q.value = 4;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.06, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.08, c.currentTime + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.5);
+      // Sprocket clicks
+      for (let i = 0; i < 5; i++) {
+        note(c, 450, i * 0.07, 0.02, 0.05, 'square');
+      }
+    }, 'testScreen');
+  },
+
+  // Reshoot — film splice sound
+  reshootSplice() {
+    play(c => {
+      // Tape splice snap
+      noise(c, 0, 0.05, 0.15);
+      note(c, 1000, 0, 0.03, 0.1, 'square');
+      // Rewind whir
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(400, c.currentTime + 0.05);
+      o.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.15);
+      o.frequency.exponentialRampToValueAtTime(300, c.currentTime + 0.3);
+      g.gain.setValueAtTime(0.06, c.currentTime + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      o.connect(g).connect(getMaster());
+      o.start(c.currentTime + 0.05);
+      o.stop(c.currentTime + 0.4);
+    }, 'reshoot');
+  },
+
+  // Rush Release — quick whoosh
+  rushRelease() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(300, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1200, c.currentTime + 0.1);
+      o.frequency.exponentialRampToValueAtTime(100, c.currentTime + 0.2);
+      g.gain.setValueAtTime(0.12, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.22);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.25);
+      noise(c, 0, 0.15, 0.08);
+    }, 'rush');
+  },
+
+  // ── R159: Block mechanic severity sounds ──
+
+  // Block minor incident — small thud
+  blockMinor() {
+    play(c => {
+      note(c, 250, 0, 0.12, 0.12, 'sine');
+      noise(c, 0, 0.04, 0.08);
+    }, 'blkMinor');
+  },
+
+  // Block major incident — heavy impact
+  blockMajor() {
+    play(c => {
+      note(c, 120, 0, 0.3, 0.2, 'sine');
+      note(c, 180, 0.02, 0.2, 0.12, 'triangle');
+      noise(c, 0, 0.1, 0.15);
+    }, 'blkMajor');
+  },
+
+  // Block catastrophic incident — alarm + crash
+  blockCatastrophic() {
+    play(c => {
+      // Alarm tone
+      note(c, 880, 0, 0.15, 0.12, 'square');
+      note(c, 660, 0.12, 0.15, 0.12, 'square');
+      note(c, 880, 0.24, 0.1, 0.08, 'square');
+      // Crash
+      note(c, 60, 0.1, 0.5, 0.25, 'sine');
+      noise(c, 0.1, 0.3, 0.2);
+    }, 'blkCatastrophic');
+  },
+
+  // ── R159: Difficulty selection sounds ──
+
+  // Indie — gentle chime
+  difficultyIndie() {
+    play(c => {
+      note(c, 880, 0, 0.2, 0.08, 'sine');
+      note(c, 1175, 0.1, 0.25, 0.06, 'sine');
+    }, 'diffIndie');
+  },
+
+  // Studio — neutral click
+  difficultyStudio() {
+    play(c => {
+      note(c, 1000, 0, 0.04, 0.08, 'square');
+    }, 'diffStudio');
+  },
+
+  // Mogul — ominous drum
+  difficultyMogul() {
+    play(c => {
+      note(c, 60, 0, 0.4, 0.2, 'sine');
+      note(c, 80, 0.05, 0.3, 0.12, 'triangle');
+      noise(c, 0, 0.06, 0.1);
+    }, 'diffMogul');
+  },
+
+  // ── R159: Talent mood sounds ──
+
+  // Cautious — worried tone
+  moodCautious() {
+    play(c => {
+      note(c, 350, 0, 0.2, 0.06, 'sine');
+      note(c, 300, 0.12, 0.25, 0.05, 'sine');
+    }, 'moodCautious');
+  },
+
+  // Hot — sizzle
+  moodHot() {
+    play(c => {
+      noise(c, 0, 0.15, 0.08);
+      note(c, 2000, 0, 0.1, 0.04, 'sine');
+      note(c, 3000, 0.02, 0.12, 0.03, 'sine');
+    }, 'moodHot');
+  },
+
+  // Hungry — growl
+  moodHungry() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(80, c.currentTime);
+      o.frequency.linearRampToValueAtTime(60, c.currentTime + 0.3);
+      g.gain.setValueAtTime(0.06, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.4);
+    }, 'moodHungry');
+  },
+
+  // ── R159: Rising star sparkle ──
+
+  // Rising star appears in market — sparkle/twinkle
+  risingStar() {
+    play(c => {
+      note(c, 1568, 0, 0.1, 0.08, 'sine');
+      note(c, 2093, 0.06, 0.1, 0.08, 'sine');
+      note(c, 2637, 0.12, 0.1, 0.08, 'sine');
+      note(c, 3136, 0.18, 0.15, 0.1, 'sine');
+      note(c, 3520, 0.24, 0.2, 0.06, 'sine');
+    }, 'risingStar');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

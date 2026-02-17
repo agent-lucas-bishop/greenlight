@@ -31,6 +31,20 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
     }
   }, [state.scriptChoices]);
 
+  // R159: Rival action sounds
+  const rivalSounded = useRef(false);
+  useEffect(() => {
+    if (!rivalSounded.current && state.rivalActions && state.rivalActions.length > 0) {
+      rivalSounded.current = true;
+      state.rivalActions.forEach((action, i) => {
+        setTimeout(() => {
+          if (action.actionType === 'competingFilm') sfx.rivalCompete();
+          else sfx.rivalMenace();
+        }, 300 + i * 400);
+      });
+    }
+  }, [state.rivalActions]);
+
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (picked) return;
     // Two-tap on mobile: first tap expands, second confirms

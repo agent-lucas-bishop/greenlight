@@ -24,7 +24,7 @@ export default function PostProductionScreen({ state }: { state: GameState }) {
 
   const handlePickMarketing = (tier: MarketingTier) => {
     if (MARKETING_OPTIONS.find(m => m.id === tier)!.cost > state.budget) return;
-    sfx.click();
+    sfx.marketingConfirm();
     setSelectedMarketing(tier);
     pickMarketing(tier);
     setPhase('postprod');
@@ -33,7 +33,12 @@ export default function PostProductionScreen({ state }: { state: GameState }) {
   const handlePickPostProd = (option: PostProdOption) => {
     if (option === 'reshoot' && state.budget < 3) return;
     if (option === 'directorsCut' && state.budget < 1) return;
-    sfx.click();
+    // R159: Option-specific sounds
+    if (option === 'directorsCut') sfx.directorsCut();
+    else if (option === 'testScreening') sfx.testScreening();
+    else if (option === 'reshoot') sfx.reshootSplice();
+    else if (option === 'rushRelease') sfx.rushRelease();
+    else sfx.click();
     setSelectedPostProd(option);
     pickPostProdOption(option);
     setPhase('confirm');

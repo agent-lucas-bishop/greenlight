@@ -245,7 +245,14 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   };
   
   const handleBlock = (block: boolean) => {
-    if (block) sfx.block(); else sfx.cardFlip();
+    if (block) {
+      // R159: Severity-specific block sounds
+      const severity = prod?.pendingBlock?.incident?.severity;
+      if (severity === 'catastrophic') sfx.blockCatastrophic();
+      else if (severity === 'major') sfx.blockMajor();
+      else if (severity === 'minor') sfx.blockMinor();
+      else sfx.block();
+    } else sfx.cardFlip();
     resolveBlock(block);
   };
   

@@ -27,6 +27,7 @@ const SettingsModal = lazy(() => import('../components/SettingsModal'));
 const Glossary = lazy(() => import('../components/Glossary'));
 const StatsPanel = lazy(() => import('../components/StatsPanel'));
 const FilmArchive = lazy(() => import('../components/FilmArchive'));
+const CareerStatsDashboard = lazy(() => import('../components/CareerStatsDashboard'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
@@ -413,7 +414,7 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive'>('play');
+  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard'>('play');
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
   const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
@@ -462,8 +463,8 @@ export default function StartScreen() {
             <div
               key={d.id}
               className="card"
-              onClick={() => { sfx.click(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); }}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sfx.click(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); } }}
+              onClick={() => { (d.id === 'indie' ? sfx.difficultyIndie : d.id === 'mogul' ? sfx.difficultyMogul : sfx.difficultyStudio)(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (d.id === 'indie' ? sfx.difficultyIndie : d.id === 'mogul' ? sfx.difficultyMogul : sfx.difficultyStudio)(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); } }}
               tabIndex={0}
               role="button"
               aria-label={`${d.name} (${d.label}): ${d.description}`}
@@ -669,7 +670,7 @@ export default function StartScreen() {
       {/* Tab navigation */}
       {stats.runs > 0 && (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
-          {(['play', 'stats', 'career', 'history', 'archive', ...(!simplified ? ['challenges', 'leaderboard'] as const : [])] as const).map(t => (
+          {(['play', 'stats', 'dashboard', 'achievements', 'career', 'history', 'archive', ...(!simplified ? ['challenges', 'leaderboard'] as const : [])] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               background: tab === t ? 'rgba(212,168,67,0.15)' : 'transparent',
               border: `1px solid ${tab === t ? 'var(--gold-dim)' : '#333'}`,
@@ -677,7 +678,7 @@ export default function StartScreen() {
               cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.05em',
               transition: 'all 0.2s', minHeight: 44,
             }}>
-              {t === 'play' ? '🎬 PLAY' : t === 'stats' ? '📊 STATS' : t === 'career' ? '🏛️ CAREER' : t === 'history' ? '📜 RUNS' : t === 'archive' ? '🎞️ ARCHIVE' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 HALL OF FAME'}
+              {t === 'play' ? '🎬 PLAY' : t === 'stats' ? '📊 STATS' : t === 'dashboard' ? '📈 DASHBOARD' : t === 'achievements' ? '🏆 ACHIEVEMENTS' : t === 'career' ? '🏛️ CAREER' : t === 'history' ? '📜 RUNS' : t === 'archive' ? '🎞️ ARCHIVE' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 HALL OF FAME'}
             </button>
           ))}
         </div>
@@ -954,6 +955,20 @@ export default function StartScreen() {
       {tab === 'archive' && (
         <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading archive...</div>}>
           <FilmArchive />
+        </Suspense>
+      )}
+
+      {/* ─── ACHIEVEMENTS TAB ─── */}
+      {tab === 'achievements' && (
+        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading achievements...</div>}>
+          <AchievementGallery onClose={() => setTab('play')} inline />
+        </Suspense>
+      )}
+
+      {/* ─── CAREER STATS DASHBOARD TAB ─── */}
+      {tab === 'dashboard' && (
+        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading dashboard...</div>}>
+          <CareerStatsDashboard />
         </Suspense>
       )}
 

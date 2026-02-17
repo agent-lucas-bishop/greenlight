@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameState, SeasonResult, RewardTier } from '../types';
 import { startGame } from '../gameStore';
-import { recordRunEnd, getActiveLegacyPerks } from '../unlocks';
+import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered } from '../unlocks';
 import { sfx } from '../sound';
 import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
@@ -35,29 +35,38 @@ function tierEmoji(tier: RewardTier, isDisaster: boolean) {
   return isDisaster ? '💀' : TIER_EMOJI[tier];
 }
 
+// ─── Legacy Rating ───
+
+function getLegacyRating(totalEarnings: number, reputation: number, isVictory: boolean): { rating: string; color: string } {
+  if (!isVictory) return { rating: 'F', color: '#e74c3c' };
+  const composite = totalEarnings * 0.7 + reputation * 30;
+  if (composite > 200) return { rating: 'S', color: '#ff6b6b' };
+  if (composite > 140) return { rating: 'A', color: '#ffd93d' };
+  if (composite > 90) return { rating: 'B', color: '#6bcb77' };
+  if (composite > 50) return { rating: 'C', color: '#5dade2' };
+  if (composite > 25) return { rating: 'D', color: '#999' };
+  return { rating: 'F', color: '#e74c3c' };
+}
+
 // ─── Procedural Career Summary ───
 
 function generateCareerSummary(state: GameState, isVictory: boolean, score: number, rank: string): string {
   const h = state.seasonHistory;
   const studioName = state.studioName || 'Your Studio';
 
-  // Genre stats
   const genreCounts: Record<string, number> = {};
   h.forEach(s => { genreCounts[s.genre] = (genreCounts[s.genre] || 0) + 1; });
   const favoriteGenre = Object.entries(genreCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'various';
   const genreCount = Object.keys(genreCounts).length;
 
-  // Best/worst
   const best = h.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b, h[0]);
   const worst = h.reduce((a, b) => a.boxOffice < b.boxOffice ? a : b, h[0]);
   const blockbusters = h.filter(s => s.tier === 'BLOCKBUSTER').length;
   const flops = h.filter(s => s.tier === 'FLOP').length;
   const nominations = h.filter(s => s.nominated).length;
 
-  // Build paragraphs
   const parts: string[] = [];
 
-  // Opening
   if (isVictory && rank === 'S') {
     parts.push(`${studioName} didn't just survive Hollywood — it conquered it.`);
   } else if (isVictory) {
@@ -68,7 +77,6 @@ function generateCareerSummary(state: GameState, isVictory: boolean, score: numb
     parts.push(`${studioName} burned bright but brief, leaving behind an unfinished legacy.`);
   }
 
-  // Genre identity
   if (genreCount === 1) {
     parts.push(`The studio was a pure ${favoriteGenre} house, never straying from its lane.`);
   } else if (genreCounts[favoriteGenre] >= 3) {
@@ -77,31 +85,26 @@ function generateCareerSummary(state: GameState, isVictory: boolean, score: numb
     parts.push(`A remarkably versatile studio, it dabbled in everything from ${Object.keys(genreCounts).slice(0, 3).join(' to ')}.`);
   }
 
-  // Crown jewel
   if (best) {
     parts.push(`"${best.title}" ($${best.boxOffice.toFixed(1)}M) was the crown jewel — a ${TIER_LABEL[best.tier].toLowerCase()} that ${best.tier === 'BLOCKBUSTER' ? 'defined an era' : 'turned heads'}.`);
   }
 
-  // Lowlight
   if (worst && worst !== best && (worst.tier === 'FLOP' || worst.boxOffice < 10)) {
     parts.push(`But "${worst.title}" ($${worst.boxOffice.toFixed(1)}M) is one the studio would rather forget.`);
   }
 
-  // Box office power
   if (state.totalEarnings > 100) {
     parts.push(`With $${state.totalEarnings.toFixed(1)}M in total box office, ${studioName} was a genuine money-making machine.`);
   } else if (state.totalEarnings > 50) {
     parts.push(`$${state.totalEarnings.toFixed(1)}M in career earnings — respectable, if not legendary.`);
   }
 
-  // Awards
   if (nominations >= 3) {
     parts.push(`A darling of the awards circuit with ${nominations} nominations.`);
   } else if (blockbusters >= 2) {
     parts.push(`${blockbusters} blockbusters cemented its commercial dominance.`);
   }
 
-  // Closing
   if (isVictory) {
     parts.push(`The lights dim, but the legacy endures. ★`);
   } else {
@@ -113,20 +116,25 @@ function generateCareerSummary(state: GameState, isVictory: boolean, score: numb
 
 // ─── Share Text ───
 
-function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean): string {
+function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean, legacyRating: string): string {
   const h = state.seasonHistory;
   const grid = h.map(s => {
     const isDisaster = s.quality <= 0;
     return tierEmoji(s.tier, isDisaster);
   }).join('');
 
+  const totalBO = state.totalEarnings;
+  const bestFilm = h.length > 0 ? h.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
+
   const lines = [
     `🎬 GREENLIGHT ${isVictory ? '🏆' : '💀'}`,
     `${state.studioName || 'Studio'} · ${h.length} seasons`,
     grid,
-    `Score: ${score} (${rank}) · $${state.totalEarnings.toFixed(1)}M`,
+    `Score: ${score} (${rank}) · $${totalBO.toFixed(1)}M`,
+    `Legacy: ${legacyRating} · Films: ${h.length}`,
+    bestFilm ? `Best: "${bestFilm.title}" $${bestFilm.boxOffice.toFixed(1)}M` : '',
     `greenlight-plum.vercel.app`,
-  ];
+  ].filter(Boolean);
   return lines.join('\n');
 }
 
@@ -197,13 +205,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const rank = score > 800 ? 'S' : score > 500 ? 'A' : score > 300 ? 'B' : score > 150 ? 'C' : 'D';
   const achievements = getAchievements(state);
   const history = state.seasonHistory;
+  const legacy = getLegacyRating(state.totalEarnings, state.reputation, isVictory);
+  const ending = getEndingForRank(rank, isVictory);
 
-  const [phase, setPhase] = useState(0); // 0=title, 1=summary, 2=stats, 3=filmography, 4=achievements, 5=share
+  const [phase, setPhase] = useState(0);
   const [copied, setCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
 
-  // Career stats
   const totalBO = state.totalEarnings;
   const bestFilm = history.length > 0 ? history.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
   const worstFilm = history.length > 0 ? history.reduce((a, b) => a.boxOffice < b.boxOffice ? a : b) : null;
@@ -213,18 +222,37 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const nominations = history.filter(s => s.nominated).length;
   const blockbusters = history.filter(s => s.tier === 'BLOCKBUSTER').length;
 
+  // Rival standings
+  const rivalStandings = useMemo(() => {
+    const standings: { name: string; emoji: string; earnings: number }[] = [];
+    const seen = new Set<string>();
+    for (const rd of state.rivalHistory) {
+      for (const f of rd.films) {
+        if (!seen.has(f.studioName)) {
+          seen.add(f.studioName);
+          standings.push({ name: f.studioName, emoji: f.studioEmoji, earnings: 0 });
+        }
+      }
+    }
+    for (const s of standings) {
+      s.earnings = state.cumulativeRivalEarnings[s.name] || 0;
+    }
+    standings.sort((a, b) => b.earnings - a.earnings);
+    return standings;
+  }, [state.rivalHistory, state.cumulativeRivalEarnings]);
+
   const careerSummary = useMemo(() => generateCareerSummary(state, isVictory, score, rank), []);
-  const shareText = useMemo(() => generateShareText(state, score, rank, isVictory), []);
+  const shareText = useMemo(() => generateShareText(state, score, rank, isVictory, legacy.rating), []);
 
   useEffect(() => {
     if (isVictory) sfx.victory(); else sfx.flop();
-    // Stagger reveals
     const timers = [
       setTimeout(() => setPhase(1), 600),
       setTimeout(() => setPhase(2), 1400),
       setTimeout(() => setPhase(3), 2200),
       setTimeout(() => setPhase(4), 3000),
       setTimeout(() => setPhase(5), 3600),
+      setTimeout(() => setPhase(6), 4200),
     ];
     if (!recorded) {
       const beforePerks = getActiveLegacyPerks().map(p => p.id);
@@ -246,6 +274,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         challengeId: state.challengeId,
         dailySeed: state.dailySeed,
       });
+      recordEndingDiscovered(ending.id);
       const afterPerks = getActiveLegacyPerks();
       const newlyUnlocked = afterPerks.filter(p => !beforePerks.includes(p.id));
       if (newlyUnlocked.length > 0) setNewPerks(newlyUnlocked);
@@ -259,9 +288,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         mode: state.gameMode,
         challenge: state.challengeId,
         archetype: state.studioArchetype || 'unknown',
-        films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier })),
+        films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice, season: s.season, nominated: s.nominated })),
         won: isVictory,
         dailySeed: state.dailySeed,
+        studioName: state.studioName || undefined,
       });
       markFirstRunComplete();
       trackRunEnd(score, isVictory);
@@ -291,8 +321,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         )}
         <h2 style={{ color: isVictory ? '#d4a843' : '#e74c3c', margin: 0 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>
-          {isVictory ? '🏆 LEGENDARY PRODUCER' : '💀 FIRED'}
+          {ending.emoji} {ending.title}
         </h2>
+        <div style={{ color: ending.color, fontSize: '0.85rem', fontStyle: 'italic', marginTop: 4 }}>
+          {ending.subtitle}
+        </div>
       </div>
 
       {state.gameMode !== 'normal' && (
@@ -306,12 +339,23 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
-      {/* ─── RANK ─── */}
-      <div className="rank-display score-reveal" style={{ color: rankColors[rank] || '#d4a843', margin: '12px 0' }}>
-        RANK: {rank}
+      {/* ─── LEGACY RATING + RANK ─── */}
+      <div style={{ display: 'flex', gap: 32, justifyContent: 'center', alignItems: 'center', margin: '16px 0' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: '#888', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Score Rank</div>
+          <div className="rank-display score-reveal" style={{ color: rankColors[rank] || '#d4a843', fontSize: '2.5rem', fontFamily: 'Bebas Neue' }}>
+            {rank}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: '#888', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Studio Legacy</div>
+          <div className="score-reveal" style={{ color: legacy.color, fontSize: '2.5rem', fontFamily: 'Bebas Neue' }}>
+            {legacy.rating}
+          </div>
+        </div>
       </div>
 
-      {/* ─── CAREER SUMMARY ─── */}
+      {/* ─── ENDING FLAVOR TEXT ─── */}
       {phase >= 1 && (
         <div className="animate-slide-down" style={{
           background: 'rgba(212,168,67,0.06)',
@@ -325,7 +369,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           fontSize: 'clamp(0.8rem, 2.2vw, 0.95rem)',
           lineHeight: 1.6,
         }}>
-          {careerSummary}
+          {ending.flavorText}
         </div>
       )}
 
@@ -362,8 +406,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
           {bestFilm && (
             <div className="end-stat" style={{ gridColumn: 'span 2' }}>
-              <div className="label">Best Film</div>
-              <div className="value" style={{ fontSize: '0.85rem' }}>"{bestFilm.title}" (${bestFilm.boxOffice.toFixed(1)}M)</div>
+              <div className="label">👑 Best Film</div>
+              <div className="value" style={{ fontSize: '0.85rem', color: '#2ecc71' }}>"{bestFilm.title}" (${bestFilm.boxOffice.toFixed(1)}M)</div>
+            </div>
+          )}
+          {worstFilm && worstFilm !== bestFilm && (
+            <div className="end-stat" style={{ gridColumn: 'span 2' }}>
+              <div className="label">💀 Worst Film</div>
+              <div className="value" style={{ fontSize: '0.85rem', color: '#e74c3c' }}>"{worstFilm.title}" (${worstFilm.boxOffice.toFixed(1)}M)</div>
             </div>
           )}
         </div>
@@ -376,24 +426,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           <div style={{ maxWidth: 540, margin: '0 auto' }}>
             {history.map((r, i) => (
               <div key={i} className="filmography-row" style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                flexWrap: 'wrap',
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                borderBottom: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap',
               }}>
                 <span style={{ color: '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
                 <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
                 <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
                 <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
-                <span style={{
-                  color: TIER_COLOR[r.tier],
-                  fontFamily: 'Bebas Neue',
-                  fontSize: '1rem',
-                  minWidth: 55,
-                  textAlign: 'right',
-                }}>
+                <span style={{ color: TIER_COLOR[r.tier], fontFamily: 'Bebas Neue', fontSize: '1rem', minWidth: 55, textAlign: 'right' }}>
                   ${r.boxOffice.toFixed(1)}M
                 </span>
                 <span style={{ width: 18, textAlign: 'center' }}>
@@ -405,19 +445,45 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
+      {/* ─── RIVAL STANDINGS ─── */}
+      {phase >= 3 && rivalStandings.length > 0 && (
+        <div style={{ marginTop: 24 }} className="animate-slide-down">
+          <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏢 RIVAL STANDINGS</h3>
+          <div style={{ maxWidth: 400, margin: '0 auto' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+              background: 'rgba(212,168,67,0.1)', border: '1px solid var(--gold-dim)', borderRadius: 6, marginBottom: 4,
+            }}>
+              <span style={{ fontSize: '1rem' }}>⭐</span>
+              <span style={{ flex: 1, color: '#d4a843', fontWeight: 700, fontSize: '0.85rem' }}>{state.studioName || 'Your Studio'}</span>
+              <span style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>${totalBO.toFixed(1)}M</span>
+            </div>
+            {rivalStandings.map((r, i) => {
+              const isAhead = r.earnings > totalBO;
+              return (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px',
+                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+                }}>
+                  <span style={{ fontSize: '1rem' }}>{r.emoji}</span>
+                  <span style={{ flex: 1, color: isAhead ? '#e74c3c' : '#888', fontSize: '0.8rem' }}>{r.name}</span>
+                  <span style={{ color: isAhead ? '#e74c3c' : '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>${r.earnings.toFixed(1)}M</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ─── ACHIEVEMENTS ─── */}
       {phase >= 4 && achievements.length > 0 && (
         <div style={{ marginTop: 24 }} className="animate-slide-down">
-          <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏅 ACHIEVEMENTS</h3>
+          <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏅 ACHIEVEMENTS ({achievements.length})</h3>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             {achievements.map((a, i) => (
               <div key={i} style={{
-                background: 'rgba(212,168,67,0.1)',
-                border: '1px solid var(--gold-dim)',
-                borderRadius: 8,
-                padding: '8px 14px',
-                textAlign: 'center',
-                minWidth: 110,
+                background: 'rgba(212,168,67,0.1)', border: '1px solid var(--gold-dim)',
+                borderRadius: 8, padding: '8px 14px', textAlign: 'center', minWidth: 110,
               }}>
                 <div style={{ fontSize: '1.4rem' }}>{a.icon}</div>
                 <div style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '0.85rem' }}>{a.name}</div>
@@ -435,12 +501,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {newPerks.map((p, i) => (
               <div key={i} style={{
-                background: 'rgba(46,204,113,0.15)',
-                border: '2px solid #2ecc71',
-                borderRadius: 8,
-                padding: '12px 16px',
-                textAlign: 'center',
-                minWidth: 130,
+                background: 'rgba(46,204,113,0.15)', border: '2px solid #2ecc71',
+                borderRadius: 8, padding: '12px 16px', textAlign: 'center', minWidth: 130,
                 animation: 'comboAppear 0.5s ease',
               }}>
                 <div style={{ fontSize: '1.6rem' }}>{p.emoji}</div>
@@ -453,47 +515,43 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
-      {/* ─── SHARE BLOCK ─── */}
+      {/* ─── CAREER NARRATIVE ─── */}
       {phase >= 5 && (
+        <div className="animate-slide-down" style={{
+          background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 12, padding: '16px 20px', margin: '20px auto', maxWidth: 520,
+          color: '#999', fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', lineHeight: 1.6, fontStyle: 'italic',
+        }}>
+          {careerSummary}
+        </div>
+      )}
+
+      {/* ─── SHARE BLOCK ─── */}
+      {phase >= 6 && (
         <div className="animate-slide-down" style={{ marginTop: 28 }}>
           <h3 style={{ color: '#d4a843', marginBottom: 10, letterSpacing: 1 }}>📋 SHARE YOUR RUN</h3>
           <div style={{
-            background: 'rgba(0,0,0,0.4)',
-            border: '1px solid rgba(212,168,67,0.3)',
-            borderRadius: 10,
-            padding: '14px 18px',
-            maxWidth: 340,
-            margin: '0 auto',
-            fontFamily: 'monospace',
-            fontSize: 'clamp(0.75rem, 2vw, 0.9rem)',
-            lineHeight: 1.7,
-            whiteSpace: 'pre-line',
-            color: '#ddd',
-            textAlign: 'left',
+            background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(212,168,67,0.3)',
+            borderRadius: 10, padding: '14px 18px', maxWidth: 340, margin: '0 auto',
+            fontFamily: 'monospace', fontSize: 'clamp(0.75rem, 2vw, 0.9rem)',
+            lineHeight: 1.7, whiteSpace: 'pre-line', color: '#ddd', textAlign: 'left',
           }}>
             {shareText}
           </div>
-          <button
-            className="btn"
-            onClick={handleCopy}
-            style={{
-              marginTop: 10,
-              background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
-              border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
-              color: copied ? '#2ecc71' : '#d4a843',
-              padding: '8px 24px',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: 'all 0.3s',
-            }}
-          >
+          <button className="btn" onClick={handleCopy} style={{
+            marginTop: 10,
+            background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
+            border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
+            color: copied ? '#2ecc71' : '#d4a843',
+            padding: '8px 24px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.3s',
+          }}>
             {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
           </button>
         </div>
       )}
 
       {/* ─── PLAY AGAIN ─── */}
-      {phase >= 5 && (
+      {phase >= 6 && (
         <div className="btn-group animate-slide-down" style={{ marginTop: 36 }}>
           <button className="btn btn-primary btn-glow" onClick={() => startGame()}>
             🎬 NEW RUN

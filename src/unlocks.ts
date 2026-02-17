@@ -213,6 +213,42 @@ export const LEGACY_PERKS: LegacyPerk[] = [
     check: (u) => u.dailyStreak.best >= 7,
     effect: 'dailyBudget3',
   },
+  {
+    id: 'talent_scout',
+    name: 'Talent Scout',
+    emoji: '🔍',
+    description: 'Shop always includes one 4+ skill talent. Guaranteed quality in every market.',
+    requirement: 'Hire 20 unique talent across all runs',
+    check: (u) => (u.careerStats.uniqueTalentHired?.length || 0) >= 20,
+    effect: 'guaranteeEliteTalent',
+  },
+  {
+    id: 'triple_threat',
+    name: 'Triple Threat',
+    emoji: '🎪',
+    description: 'Events offer 3 choices instead of 2. More options, more control.',
+    requirement: 'Complete 3 different challenge modes',
+    check: (u) => (u.careerStats.challengesCompleted?.length || 0) >= 3,
+    effect: 'extraEventChoice',
+  },
+  {
+    id: 'rival_nemesis',
+    name: 'Rival Nemesis',
+    emoji: '👊',
+    description: 'Rival studios start with -10% box office. Your reputation precedes you.',
+    requirement: 'Achieve 3 S-rank runs',
+    check: (u) => (u.careerStats.ranksAchieved?.['S'] || 0) >= 3,
+    effect: 'rivalHandicap',
+  },
+  {
+    id: 'franchise_king',
+    name: 'Franchise King',
+    emoji: '👑',
+    description: 'Making 2+ films in the same genre in one run gives +3 quality each. Sequels pay off.',
+    requirement: 'Win with 3+ films of the same genre in a single run',
+    check: (u) => (u.careerStats.tagFocusWins?.['franchise'] || 0) >= 1,
+    effect: 'franchiseBonus',
+  },
 ];
 
 export function getActiveLegacyPerks(): LegacyPerk[] {
@@ -236,6 +272,14 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
     // Track tag focus wins
     if (dominantTag) {
       u.careerStats.tagFocusWins[dominantTag] = (u.careerStats.tagFocusWins[dominantTag] || 0) + 1;
+    }
+    // Track franchise wins (3+ same genre in one run)
+    if (seasonHistory) {
+      const gc: Record<string, number> = {};
+      for (const s of seasonHistory) { gc[s.genre] = (gc[s.genre] || 0) + 1; }
+      if (Object.values(gc).some(c => c >= 3)) {
+        u.careerStats.tagFocusWins['franchise'] = (u.careerStats.tagFocusWins['franchise'] || 0) + 1;
+      }
     }
   }
   u.bestScore = Math.max(u.bestScore, score);
@@ -495,6 +539,27 @@ export function getMilestoneProgress(): MilestoneProgress[] {
       progress: Math.min(1, (u.careerStats.tagFocusWins['precision'] || 0) / 2),
       progressText: `${u.careerStats.tagFocusWins['precision'] || 0}/2 precision wins`,
       unlocked: (u.careerStats.tagFocusWins['precision'] || 0) >= 2,
+    },
+    {
+      id: 'talent_scout', name: 'Talent Scout', emoji: '🔍',
+      description: 'Shop guarantees 4+ skill talent', requirement: 'Hire 20 unique talent',
+      progress: Math.min(1, (u.careerStats.uniqueTalentHired?.length || 0) / 20),
+      progressText: `${u.careerStats.uniqueTalentHired?.length || 0}/20 unique talent`,
+      unlocked: (u.careerStats.uniqueTalentHired?.length || 0) >= 20,
+    },
+    {
+      id: 'triple_threat', name: 'Triple Threat', emoji: '🎪',
+      description: 'Events offer 3 choices', requirement: '3 challenge modes completed',
+      progress: Math.min(1, (u.careerStats.challengesCompleted?.length || 0) / 3),
+      progressText: `${u.careerStats.challengesCompleted?.length || 0}/3 challenges`,
+      unlocked: (u.careerStats.challengesCompleted?.length || 0) >= 3,
+    },
+    {
+      id: 'rival_nemesis', name: 'Rival Nemesis', emoji: '👊',
+      description: 'Rivals start -10% BO', requirement: '3 S-rank runs',
+      progress: Math.min(1, (u.careerStats.ranksAchieved?.['S'] || 0) / 3),
+      progressText: `${u.careerStats.ranksAchieved?.['S'] || 0}/3 S-ranks`,
+      unlocked: (u.careerStats.ranksAchieved?.['S'] || 0) >= 3,
     },
   ];
   return milestones;

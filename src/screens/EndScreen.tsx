@@ -55,6 +55,8 @@ import { getReviewArchive, starsToDisplay } from '../criticReviews';
 import { calculateFilmAwards, saveRunAwards, type FilmAward } from '../filmAwards';
 import { checkRivalBeaten, type Rival } from '../rivalries';
 import AwardsCeremony from '../components/AwardsCeremony';
+import FilmPoster from '../components/FilmPoster';
+import { generatePosterSeed } from '../directorCommentary';
 
 // ─── Helpers ───
 
@@ -1360,38 +1362,86 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
-      {/* ─── FILMOGRAPHY ─── */}
+      {/* ─── FILMOGRAPHY WITH POSTERS (R309) ─── */}
       {phase >= 4 && endTab === 'overview' && (
         <div style={{ marginTop: 28 }} className="animate-slide-down">
-          <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>📜 FILMOGRAPHY</h3>
+          <h3 style={{ color: '#d4a843', marginBottom: 16, letterSpacing: 1 }}>📜 FILMOGRAPHY</h3>
+
+          {/* Poster strip */}
+          <div style={{
+            display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap',
+            marginBottom: 20, maxWidth: 600, margin: '0 auto 20px',
+          }}>
+            {history.map((r, i) => (
+              <FilmPoster
+                key={i}
+                title={r.title}
+                genre={r.genre}
+                tier={r.tier}
+                quality={r.quality}
+                boxOffice={r.boxOffice}
+                season={r.season}
+                nominated={r.nominated}
+                seed={r.posterSeed || generatePosterSeed(r.title, r.genre, r.season)}
+                size="small"
+              />
+            ))}
+          </div>
+
+          {/* Detailed filmography with director's commentary */}
           <div style={{ maxWidth: 540, margin: '0 auto' }}>
             {history.map((r, i) => (
-              <div key={i} className="filmography-row" style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap',
+              <div key={i} style={{
+                padding: '12px',
+                marginBottom: 8,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 8,
               }}>
-                <span style={{ color: '#999', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
-                <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
-                <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
-                <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
-                <span style={{ color: TIER_COLOR[r.tier], fontFamily: 'Bebas Neue', fontSize: '1rem', minWidth: 55, textAlign: 'right' }}>
-                  ${r.boxOffice.toFixed(1)}M
-                </span>
-                {r.criticScore != null && (
-                  <span style={{ fontSize: '0.7rem', color: r.criticScore >= 60 ? '#e74c3c' : '#7f8c2a', minWidth: 36, textAlign: 'right' }}>
-                    {r.criticScore >= 60 ? '🍅' : '🤢'}{r.criticScore}%
+                <div className="filmography-row" style={{
+                  display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                }}>
+                  <span style={{ color: '#999', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
+                  <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
+                  <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
+                  <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
+                  <span style={{ color: TIER_COLOR[r.tier], fontFamily: 'Bebas Neue', fontSize: '1rem', minWidth: 55, textAlign: 'right' }}>
+                    ${r.boxOffice.toFixed(1)}M
                   </span>
-                )}
-                {r.festivalAwards && r.festivalAwards.length > 0 && (
-                  <span style={{ fontSize: '0.75rem' }} title={r.festivalAwards.map(a => `${a.festivalId}: ${a.award}`).join(', ')}>
-                    {r.festivalAwards.map((a, j) => (
-                      <span key={j}>{a.award === 'grandPrize' ? '🏆' : a.award === 'winner' ? '🏅' : a.award === 'nomination' ? '🌿' : ''}</span>
-                    ))}
+                  {r.criticScore != null && (
+                    <span style={{ fontSize: '0.7rem', color: r.criticScore >= 60 ? '#e74c3c' : '#7f8c2a', minWidth: 36, textAlign: 'right' }}>
+                      {r.criticScore >= 60 ? '🍅' : '🤢'}{r.criticScore}%
+                    </span>
+                  )}
+                  {r.festivalAwards && r.festivalAwards.length > 0 && (
+                    <span style={{ fontSize: '0.75rem' }} title={r.festivalAwards.map(a => `${a.festivalId}: ${a.award}`).join(', ')}>
+                      {r.festivalAwards.map((a, j) => (
+                        <span key={j}>{a.award === 'grandPrize' ? '🏆' : a.award === 'winner' ? '🏅' : a.award === 'nomination' ? '🌿' : ''}</span>
+                      ))}
+                    </span>
+                  )}
+                  <span style={{ width: 18, textAlign: 'center' }}>
+                    {r.nominated ? '🏆' : r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
                   </span>
+                </div>
+                {/* Director's Commentary */}
+                {r.directorCommentary && (
+                  <div style={{
+                    marginTop: 8,
+                    padding: '8px 12px',
+                    background: 'rgba(212,168,67,0.04)',
+                    borderLeft: '2px solid rgba(212,168,67,0.3)',
+                    borderRadius: '0 6px 6px 0',
+                    fontSize: '0.72rem',
+                    color: '#999',
+                    fontStyle: 'italic',
+                    lineHeight: 1.5,
+                  }}>
+                    🎬 <span style={{ color: 'rgba(212,168,67,0.5)', fontSize: '0.6rem', fontStyle: 'normal', letterSpacing: '0.05em' }}>DIRECTOR'S COMMENTARY</span>
+                    <br />
+                    {r.directorCommentary}
+                  </div>
                 )}
-                <span style={{ width: 18, textAlign: 'center' }}>
-                  {r.nominated ? '🏆' : r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
-                </span>
               </div>
             ))}
           </div>

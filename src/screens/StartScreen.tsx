@@ -85,6 +85,7 @@ const DailyLeaderboard = lazy(() => import('../components/DailyLeaderboard'));
 const SaveSlotsPanel = lazy(() => import('../components/SaveSlotsPanel'));
 const MultiplayerLobby = lazy(() => import('../components/MultiplayerLobby'));
 const AnalyticsDashboard = lazy(() => import('../components/AnalyticsDashboard'));
+const PosterWall = lazy(() => import('../components/PosterWall'));
 import MiniStats from '../components/MiniStats';
 import { hasUnseenChanges } from '../components/ChangelogModal';
 
@@ -523,7 +524,7 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [showTrophyRoom, setShowTrophyRoom] = useState(false);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'deckGallery' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio' | 'mods' | 'analytics'>('play');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'deckGallery' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio' | 'mods' | 'analytics' | 'posters'>('play');
   const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
   const [modsSubView, setModsSubView] = useState<'manage' | 'create'>('manage');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
@@ -929,6 +930,7 @@ export default function StartScreen() {
           { id: 'career', emoji: '📋', label: 'CAREER' },
           { id: 'history', emoji: '📜', label: 'RUNS' },
           { id: 'archive', emoji: '🎞️', label: 'ARCHIVE' },
+          { id: 'posters' as const, emoji: '🖼️', label: 'POSTERS' },
           { id: 'hallOfFame', emoji: '🏛️', label: 'HALL OF FAME', shortLabel: 'HOF' },
           ...(!simplified ? [
             { id: 'challenges' as const, emoji: '⚡', label: 'CHALLENGES', shortLabel: 'CHAL' },
@@ -1315,6 +1317,13 @@ export default function StartScreen() {
       {tab === 'archive' && (
         <Suspense fallback={<SkeletonLoader />}>
           <FilmArchive />
+        </Suspense>
+      )}
+
+      {/* ─── POSTER WALL TAB (R309) ─── */}
+      {tab === 'posters' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <PosterWall inline />
         </Suspense>
       )}
 

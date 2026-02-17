@@ -5404,3 +5404,12 @@ body {
   from { transform: translateX(120%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+
+/* R309: Film Poster hover effects */
+.film-poster {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.film-poster:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+}

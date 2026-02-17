@@ -100,6 +100,7 @@ import { getChallengeById } from './challenges';
 import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand, generateRivalActions, selectActiveRivals, initRivalStats, updateRivalStats } from './rivals';
 import { AI_DIRECTORS, produceDirectorFilms, detectShowdowns, calculateStandings } from './aiDirectors';
 import { generateStudioName, generateFilmTitle } from './narrative';
+import { generateDirectorCommentary, generatePosterSeed } from './directorCommentary';
 import { addFilmToArchive, getCurrentRunNumber } from './filmArchive';
 import { isSimplifiedRun } from './onboarding';
 import { resetAgingState, ageTalentOnMarket, recordHire, recordFilmResult, tickPeakCounters, checkHungryMood, applyAgingToTalent, getMoodQualityBonus, generateRisingStar, resetRisingStarNames, getAgingData } from './talentAging';
@@ -2696,6 +2697,24 @@ export function resolveRelease() {
     themeId: state.selectedThemeId || undefined,
     themeBonusPercent: themeBonusPercent || undefined,
     audienceScore: finalAudienceData.audienceScore,
+    directorCommentary: generateDirectorCommentary({
+      title: script.title,
+      genre: script.genre as Genre,
+      quality: rawQuality,
+      boxOffice,
+      tier,
+      budget: state.budget,
+      season: state.season,
+      hitTarget: tier !== 'FLOP',
+      nominated,
+      criticScore: criticConsensus.freshPercent,
+      isDisaster: rawQuality <= 0,
+      totalFilms: state.seasonHistory.length + 1,
+      hadPreviousFlop: state.seasonHistory.some(s => s.tier === 'FLOP'),
+      hadPreviousBlockbuster: state.seasonHistory.some(s => s.tier === 'BLOCKBUSTER'),
+      isFirstFilm: state.seasonHistory.length === 0,
+    }),
+    posterSeed: generatePosterSeed(script.title, script.genre as Genre, state.season),
   };
 
   // R211: Replay — record season result

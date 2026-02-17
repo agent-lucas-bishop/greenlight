@@ -80,7 +80,9 @@ const SaveSlotsPanel = lazy(() => import('../components/SaveSlotsPanel'));
 const MultiplayerLobby = lazy(() => import('../components/MultiplayerLobby'));
 const AnalyticsDashboard = lazy(() => import('../components/AnalyticsDashboard'));
 import MiniStats from '../components/MiniStats';
+import { hasUnseenChanges } from '../components/ChangelogModal';
 
+const ChangelogModal = lazy(() => import('../components/ChangelogModal'));
 const EventCalendar = lazy(() => import('../components/EventCalendar'));
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
@@ -506,6 +508,7 @@ export default function StartScreen() {
   const [showPrestigePanel, setShowPrestigePanel] = useState(false);
   const [showSaveSlots, setShowSaveSlots] = useState(false);
   const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('studio');
   const [selectedGameModifiers, setSelectedGameModifiers] = useState<GameModifiers | undefined>(undefined);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
@@ -653,6 +656,21 @@ export default function StartScreen() {
           className="start-icon-btn"
         >
           📖
+        </button>
+        <button
+          onClick={() => setShowChangelog(true)}
+          title="What's New"
+          aria-label="What's New"
+          className="start-icon-btn"
+          style={{ position: 'relative' }}
+        >
+          📋
+          {hasUnseenChanges() && (
+            <span style={{
+              position: 'absolute', top: -2, right: -2, width: 8, height: 8,
+              background: '#22c55e', borderRadius: '50%', border: '2px solid #1a1a2e',
+            }} />
+          )}
         </button>
         <button
           onClick={() => setShowSettings(true)}
@@ -1794,6 +1812,7 @@ export default function StartScreen() {
       {showAchievements && <Suspense fallback={null}><AchievementGallery onClose={() => setShowAchievements(false)} /></Suspense>}
       {showGlossary && <Suspense fallback={null}><Glossary onClose={() => setShowGlossary(false)} /></Suspense>}
       {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
+      {showChangelog && <Suspense fallback={null}><ChangelogModal onClose={() => setShowChangelog(false)} /></Suspense>}
       {showPrestigePanel && <Suspense fallback={null}><PrestigePanel onClose={() => setShowPrestigePanel(false)} /></Suspense>}
       {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
       {showChallengeBoard && (

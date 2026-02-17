@@ -9,6 +9,7 @@ import { runMigrations, trimLargeData } from './storageManager'
 import './index.css'
 import './settings' // R241: Initialize centralized settings (applies CSS classes + audio on load)
 import App from './App.tsx'
+import LandingPage from './components/LandingPage'
 
 // Wire prestige → data cache sync (avoids circular import)
 setPrestigeChangeCallback(refreshPrestigeLevelCache)
@@ -36,10 +37,12 @@ if (localStorage.getItem('greenlight-colorblind') === 'true') {
   if (as) document.documentElement.style.setProperty('--animation-speed', as);
 }
 
+const isLanding = new URLSearchParams(window.location.search).get('landing') === 'true';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      {isLanding ? <LandingPage /> : <App />}
       <Analytics />
       <SpeedInsights />
     </ErrorBoundary>

@@ -56,9 +56,24 @@ const SECTIONS = [
     entries: [
       { term: 'Encore', desc: 'After wrapping production, risk ONE more card draw. Success = bonus quality. Failure = lose some quality. High risk, high reward.' },
       { term: 'Director\'s Cut', desc: 'Once per production, peek at the top 3 cards in your deck and rearrange them. Helps you plan your draws.' },
+      { term: 'Director\'s Vision', desc: 'A conditional goal set each production (e.g. "play 3+ Momentum cards"). Fulfilling it grants +5 quality; failing costs −2.' },
+      { term: 'Script Rewrite', desc: 'Spend $3M mid-production to swap one card in your deck for a new random card. Useful for ditching a known bad draw.' },
+      { term: 'Reshoots (Perk)', desc: 'The Reshoots Budget perk lets you redraw 1 production card per film during production — a safety net for bad draws.' },
+      { term: 'Reshoots ($5M)', desc: 'After wrapping, spend $5M to re-roll all incident cards. 45% become good footage, 30% mild issues, 25% worse. Risky but can save a bad shoot.' },
+      { term: 'Extended Cut', desc: 'After a HIT or better, spend $3M to release a Director\'s Extended Cut for 30-50% of original box office. Uses your next film slot.' },
+      { term: 'Completion Bond', desc: 'Insurance perk: if your next film FLOPs, it\'s upgraded to a MISS (no strike). One-use — consumed when triggered.' },
       { term: 'Archetype Focus', desc: 'When 50%+ of your played cards share a keyword tag, you get escalating quality bonuses. The higher the percentage, the bigger the bonus.' },
       { term: 'Season Events', desc: 'Between seasons, industry news shakes things up. Pick one event to shape your next season — they add strategic variety to every run.' },
       { term: 'Daily Runs', desc: 'A daily seeded challenge with special modifiers. Everyone gets the same seed — compete for the best score. Builds a daily streak.' },
+    ],
+  },
+  {
+    title: '🏟️ Competition',
+    entries: [
+      { term: 'Rival Studios', desc: 'Three AI-controlled rival studios compete alongside you each season. Their films affect market conditions and season narrative.' },
+      { term: 'Rivalry Leaderboard', desc: 'Cumulative box office rankings across all seasons. Finishing ahead of rivals earns bonus prestige XP.' },
+      { term: 'Legendary Scripts', desc: 'Rare scripts with unique abilities and higher base scores. They cost more and appear randomly — a powerful but risky pick.' },
+      { term: 'Elite Talent', desc: 'Top-tier talent with unique powerful cards but very high Heat. Worth it if you can handle the extra incident risk.' },
     ],
   },
   {

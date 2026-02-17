@@ -6,6 +6,7 @@ import { sfx } from '../sound';
 import { getCardBackColor } from '../achievements';
 import { CardTypeBadge } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
+import MechanicTip from '../components/MechanicTip';
 import StatTooltip from '../components/StatTooltip';
 
 // Auto-advance component: shows a button with a filling progress bar, auto-clicks after delay
@@ -489,6 +490,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
               {directorVisionBonus > 0 ? `✅ Vision fulfilled! +${directorVisionBonus} quality` : `❌ Vision unfulfilled: ${directorVisionBonus} quality`}
             </div>
           )}
+          {!prod.isWrapped && <MechanicTip id="directorVision" />}
           {!prod.isWrapped && (
             <div style={{ color: '#888', fontSize: '0.7rem', marginTop: 2 }}>
               Meet this condition for +5 quality. Fail it for -2.
@@ -757,6 +759,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             textAlign: 'center',
           }}>
             <h3 style={{ color: '#e67e22', marginBottom: 8, fontSize: '1rem' }}>🎬 RESHOOTS ($5M)</h3>
+            <MechanicTip id="reshoots" />
             <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: 4 }}>
               Spend $5M to re-roll all <strong style={{ color: '#e74c3c' }}>{prod.incidentCount} incident{prod.incidentCount !== 1 ? 's' : ''}</strong> with new footage.
             </p>

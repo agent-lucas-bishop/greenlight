@@ -5,6 +5,7 @@ import { proceedFromRecap, calculateQuality, doExtendedCut, declineExtendedCut }
 import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary, calculateRubberBand } from '../rivals';
 import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
 import { sfx } from '../sound';
+import MechanicTip from '../components/MechanicTip';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
@@ -320,6 +321,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       {/* Rival rankings — merged from SeasonRecapScreen */}
       {phase >= 3 && rivalFilms.length > 0 && (
         <div className="animate-slide-down" style={{ marginTop: 24 }}>
+          <MechanicTip id="rivals" />
           {/* Headline */}
           <div style={{
             background: 'rgba(212,168,67,0.08)',
@@ -497,6 +499,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
           textAlign: 'center',
         }}>
           <h3 style={{ color: '#9b59b6', marginBottom: 8, fontSize: '1rem' }}>🎬 EXTENDED CUT ($3M)</h3>
+          <MechanicTip id="extendedCut" />
           <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: 4 }}>
             Release a Director's Extended Cut for <strong style={{ color: '#d4a843' }}>30-50%</strong> of the original ${state.lastBoxOffice.toFixed(1)}M box office.
           </p>

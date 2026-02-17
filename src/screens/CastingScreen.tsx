@@ -4,6 +4,7 @@ import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction, 
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
+import MechanicTip from '../components/MechanicTip';
 import StatTooltip from '../components/StatTooltip';
 import { sfx } from '../sound';
 import { useSwipe } from '../hooks/useSwipe';
@@ -144,6 +145,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
   return (
     <div className="fade-in">
       <PhaseTip phase="casting" />
+      {state.talentMarket.some((t: any) => t.elite) && <MechanicTip id="eliteTalent" />}
       <div className="phase-title">
         <h2>🎭 Casting</h2>
         <div className="subtitle">

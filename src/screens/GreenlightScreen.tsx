@@ -4,6 +4,7 @@ import { pickScript } from '../gameStore';
 import { getSeasonTarget } from '../data';
 import { getSeasonIdentity } from '../rivals';
 import PhaseTip from '../components/PhaseTip';
+import MechanicTip from '../components/MechanicTip';
 import { isSimplifiedRun } from '../onboarding';
 import { sfx } from '../sound';
 import { useSwipe } from '../hooks/useSwipe';
@@ -94,6 +95,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           <span style={{ fontSize: '0.7rem', color: '#999', marginLeft: 4 }}>← swipe →</span>
         </div>
       )}
+      {state.scriptChoices.some((s: any) => s.legendary) && <MechanicTip id="legendaryScript" />}
       <div className="card-grid card-grid-3" {...swipeHandlers}>
         {state.scriptChoices.map((script, i) => {
           const canAfford = state.budget >= script.cost;

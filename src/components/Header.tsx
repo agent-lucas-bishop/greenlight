@@ -8,7 +8,7 @@ import StatTooltip from './StatTooltip';
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 540, maxHeight: '85vh', overflow: 'auto' }}>
         <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         <h2 style={{ color: 'var(--gold)', marginBottom: 16 }}>Quick Reference</h2>
         <div className="how-to-play">
@@ -23,16 +23,43 @@ function QuickHelp({ onClose }: { onClose: () => void }) {
               <li>Incidents & Challenges auto-play</li>
               <li><strong style={{ color: '#e74c3c' }}>3 Incidents = DISASTER</strong> (lose all quality!)</li>
               <li>Wrap anytime to lock in quality</li>
-              <li>Director's Cut: peek at top 3 cards, rearrange</li>
+              <li>Director's Cut: peek at top 3, rearrange</li>
+              <li>Director's Vision: meet the condition for +5 quality (fail = −2)</li>
+            </ul>
+          </div>
+          <div className="htp-section">
+            <h3>🔧 Mid-Production Options</h3>
+            <ul>
+              <li>Script Rewrite ($3M): swap a deck card mid-shoot</li>
+              <li>Reshoots (perk): redraw 1 card per film</li>
+              <li>Encore: after wrap, risk one more draw for bonus quality</li>
+              <li>$5M Reshoots: after wrap, re-roll all incidents (risky!)</li>
+            </ul>
+          </div>
+          <div className="htp-section">
+            <h3>📊 After Release</h3>
+            <ul>
+              <li>Extended Cut ($3M): re-release for 30-50% extra box office (uses next film slot)</li>
+              <li>Completion Bond (perk): upgrades next FLOP to MISS (one-use insurance)</li>
+              <li>Rival Studios: 3 AI competitors — their films affect the season narrative</li>
+            </ul>
+          </div>
+          <div className="htp-section">
+            <h3>⭐ Progression</h3>
+            <ul>
+              <li>Prestige XP: earned across runs, unlocks cosmetics and legacy bonuses</li>
+              <li>Genre Mastery: repeated genres earn mastery tiers (Bronze→Platinum) with quality bonuses</li>
+              <li>Elite Talent: powerful but high-Heat — manage the incident risk</li>
+              <li>Legendary Scripts: rare, unique abilities, higher base scores</li>
             </ul>
           </div>
           <div className="htp-section">
             <h3>💡 Quick Tips</h3>
             <ul>
-              <li>Match genre to market for $$$ multiplier</li>
+              <li>Match genre to 🔥 Hot trends + 📈 market for huge multipliers</li>
               <li>💕 Chemistry pairs = free quality</li>
-              <li>Focus on one tag type (60%+) for bonus quality</li>
-              <li>Wrap early rather than risk disaster</li>
+              <li>Focus on one tag type (60%+) for archetype focus bonus</li>
+              <li>At 2 incidents, seriously consider wrapping</li>
             </ul>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
 import { proceedFromRecap, calculateQuality } from '../gameStore';
 import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary } from '../rivals';
-import { generateCriticQuote, generateDetailedHeadline } from '../narrative';
+import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
 import { sfx } from '../sound';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
@@ -104,6 +104,14 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
     state.strikes,
     state.reputation,
     state.castSlots,
+    state.studioName,
+  ) : '';
+
+  // Generate studio headline (newspaper-style)
+  const studioHeadline = lastResult ? generateStudioHeadline(
+    lastResult.tier,
+    filmTitle,
+    lastResult.genre,
     state.studioName,
   ) : '';
 
@@ -273,6 +281,11 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
             <div style={{ fontFamily: 'Bebas Neue', fontSize: '1.1rem', color: '#d4a843', lineHeight: 1.3 }}>
               {headline}
             </div>
+            {studioHeadline && (
+              <div style={{ fontSize: '0.8rem', color: '#999', marginTop: 6, fontStyle: 'italic' }}>
+                📰 {studioHeadline}
+              </div>
+            )}
           </div>
 
           {/* Season narrative */}

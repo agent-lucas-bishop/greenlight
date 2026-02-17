@@ -84,23 +84,32 @@ const AGGRESSIVE_TAUNTS: Record<string, string[]> = {
     "We heard about your little... disaster. Don't worry, we'll keep the lights on in Hollywood.",
     "Flopping is a choice. We choose to dominate.",
     "Our marketing budget alone is bigger than your entire film.",
+    "Our intern's short film outgrossed your feature. Awkward.",
+    "We considered sending flowers. Then we greenlit another hit instead.",
+    "The only thing your film opened was the door to an early exit.",
   ],
   playerBehind: [
     "Check the scoreboard. Actually, don't. It'll just make you sad.",
     "We're not even trying and we're ahead of you.",
     "This isn't a competition anymore. It's an exhibition.",
     "You're playing checkers. We're playing 4D chess with a $200M budget.",
+    "We can see you from up here. You look small.",
+    "Our B-team makes your A-game look like a student film.",
   ],
   playerAhead: [
     "Enjoy the lead while it lasts. We've got three tentpoles in the pipeline.",
     "Lucky streak. That's all it is. We'll see who's standing in Season 5.",
     "You're ahead? Good. We perform better as the underdog. Ask anyone.",
     "The bigger they are...",
+    "Cute numbers. Wait till you see what we're cooking.",
+    "Savor it. Seriously. This doesn't last.",
   ],
   neutral: [
     "Every dollar you earn is a dollar we're coming for.",
     "We don't make films. We make events.",
     "Sleep well. We won't.",
+    "Our next trailer drops tomorrow. Clear your social feeds.",
+    "Bigger budgets. Bigger stars. Bigger everything. That's Titan.",
   ],
 };
 
@@ -109,21 +118,29 @@ const STEADY_COMMENTS: Record<string, string[]> = {
     "Tough break. Consistency is what separates the studios that last.",
     "We've all been there. The key is not to panic and overspend.",
     "A flop stings, but it's the rebounds that define a studio.",
+    "We keep a reserve fund for moments like these. Do you?",
+    "Volatility is the enemy. We eliminated it years ago.",
   ],
   playerBehind: [
     "Steady wins the race. We're not flashy, but we're profitable.",
     "We don't chase trends. We set the standard.",
     "Our shareholders are happy. Are yours?",
+    "Our quarterly earnings call was very boring. That's the point.",
+    "Slow and steady doesn't make for good headlines. It does make for good returns.",
   ],
   playerAhead: [
     "Well played. But there's a lot of season left.",
     "Impressive run. We respect the craft, even from competitors.",
     "You're having a moment. We're building a legacy.",
+    "Enjoy the spotlight. We prefer the steady glow of profitability.",
+    "A lead is just a number. Sustainability is a philosophy.",
   ],
   neutral: [
     "Another season, another reliable slate. That's the Lumière way.",
     "We'll be here long after the flash-in-the-pans burn out.",
     "No drama off-screen. All of it on-screen.",
+    "Our five-year plan is on track. As always.",
+    "Prestige doesn't shout. It whispers, and the world leans in.",
   ],
 };
 
@@ -132,22 +149,30 @@ const SCRAPPY_COMMENTS: Record<string, string[]> = {
     "Hey, at least you can afford to flop! We literally can't.",
     "Join the club. We've flopped on a fraction of your budget.",
     "Flops build character. Or so we keep telling ourselves.",
+    "Your flop cost more than our entire annual output. Wild.",
+    "We flop for free. You paid millions for the privilege.",
   ],
   playerBehind: [
     "We're behind too, but we spent 1/10th of what you did. Who's really winning?",
     "Punching above our weight is kind of our thing.",
     "Budget doesn't equal quality. We prove it every season.",
+    "We're technically last place but we're vibing. You look stressed.",
+    "Our cost-per-quality-point ratio is incredible. Look it up.",
   ],
   playerAhead: [
     "Nice work! Honestly, we're just happy to be here.",
     "You're crushing it. We'll catch up... probably... maybe.",
     "One breakout hit and we're right back in this. Watch.",
+    "Respect! We'll name a conference room after you when we get a conference room.",
+    "Teach us your ways! (We can't afford the lesson but still.)",
   ],
   neutral: [
     "We found $200 in the couch cushions. That's our marketing budget.",
     "Who needs CGI when you have passion and a borrowed camera?",
     "Small budget, big heart. That's the Neon Vagrant promise.",
     "Our entire studio runs on coffee and delusion. It's working.",
+    "We held auditions at a bus stop. Found a star.",
+    "Our premiere was at a laundromat. Standing room only.",
   ],
 };
 

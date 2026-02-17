@@ -4565,7 +4565,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Award Season Buzz',
     emoji: '🏆',
     description: 'Your highest-rated film gets +$5M retroactive bonus.',
-    flavorText: '"And the nominees are..." Your studio\'s name keeps coming up.',
+    flavorText: 'The trades are buzzing. Your publicist can\'t stop smiling. Three separate critics used the word "masterwork."',
     effect: 'awardBuzz',
   },
   {
@@ -4573,7 +4573,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Industry Scandal',
     emoji: '📰',
     description: 'Lose 1 reputation. The whole industry looks bad.',
-    flavorText: 'A bombshell exposé rocks Hollywood. Everyone\'s scrambling for damage control.',
+    flavorText: 'A journalist with receipts, a leaked email chain, and a 12-part Twitter thread. The whole town is on fire.',
     effect: 'scandal',
   },
   {
@@ -4581,7 +4581,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Streaming Deal',
     emoji: '📺',
     description: 'Guaranteed +$10M now, but next film gets -×0.4 market multiplier (no theatrical buzz).',
-    flavorText: 'A major streamer wants exclusive rights. The money is great, but theaters won\'t be happy.',
+    flavorText: 'StreamFlix calls at 2 AM with an offer that makes your accountant weep with joy. The theater chains, however, are already drafting angry letters.',
     effect: 'streamingDeal',
   },
   {
@@ -4589,7 +4589,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Talent Showcase',
     emoji: '🌟',
     description: 'All talent in next market costs $3 less (min $1). Fresh faces emerge.',
-    flavorText: 'Film school graduates flood the market. So much raw talent to discover.',
+    flavorText: 'NYU, USC, and AFI all graduated the same week. Fifty hungry kids with demo reels and zero ego. Yet.',
     effect: 'talentShowcase',
   },
   {
@@ -4597,7 +4597,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Genre Revival',
     emoji: '🎬',
     description: 'Your most-made genre gets +×0.4 market multiplier next season.',
-    flavorText: 'Critics declare your favorite genre is "back." Audiences agree.',
+    flavorText: 'A viral essay declares your signature genre "the most important storytelling form of the decade." Suddenly everyone\'s a fan.',
     effect: 'genreRevival',
   },
   {
@@ -4605,7 +4605,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Budget Windfall',
     emoji: '💰',
     description: 'Receive +$8M from a surprise investor.',
-    flavorText: 'A tech billionaire wants to "disrupt entertainment." Their money spends fine.',
+    flavorText: 'A crypto bro turned angel investor slides into your DMs: "I believe in the power of story." His check clears. That\'s all that matters.',
     effect: 'budgetWindfall',
   },
   {
@@ -4613,7 +4613,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Creative Retreat',
     emoji: '🏔️',
     description: 'Next film gets +3 base quality. Your team bonds over a mountain retreat.',
-    flavorText: 'A week in the mountains. No phones, no emails. Just the craft.',
+    flavorText: 'A cabin in Big Bear. Whiteboard walls. Your writer cries during a trust exercise. Your DP has an epiphany at sunrise. Best $3K you ever spent.',
     effect: 'creativeRetreat',
   },
   {
@@ -4621,7 +4621,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Foreign Distribution Deal',
     emoji: '🌍',
     description: 'Next film gets +×0.3 market multiplier from international sales.',
-    flavorText: 'Your films are huge overseas. Time to capitalize.',
+    flavorText: 'Your last film broke records in South Korea. A German distributor is flying in tomorrow. Your subtitler just asked for a raise.',
     effect: 'foreignDeal',
   },
   {
@@ -4629,7 +4629,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Union Dispute',
     emoji: '✊',
     description: 'All crew costs +$2 next season. But crew cards get +1 base quality.',
-    flavorText: 'The unions are striking for better conditions. Fair, but expensive.',
+    flavorText: 'Picket signs on Sunset Blvd. Your gaffer texts: "No hard feelings, boss. See you on the other side." Fair wages aren\'t cheap.',
     effect: 'unionDispute',
   },
   {
@@ -4637,7 +4637,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Viral Marketing Campaign',
     emoji: '📱',
     description: 'Next film: if quality > 25, earn +$5M bonus.',
-    flavorText: 'Your marketing team created an ARG that broke the internet. Now deliver the goods.',
+    flavorText: 'A mysterious countdown. A fake missing persons report. 4 million views before lunch. Your marketing team is either brilliant or criminally insane.',
     effect: 'viralMarketing',
   },
   {
@@ -4645,7 +4645,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Legacy Actor Returns',
     emoji: '🎭',
     description: 'A legendary actor joins your next film free! (Adds +5 quality to next production).',
-    flavorText: '"I read the script. I\'m in." — A legend comes out of retirement.',
+    flavorText: 'The phone rings at midnight. A voice you recognize from a hundred films: "I read the script. I wept. I\'m in." You try not to scream.',
     effect: 'legacyActor',
   },
   {
@@ -4653,7 +4653,7 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     name: 'Critics\' Darling',
     emoji: '📝',
     description: 'Next film: Clean Wrap bonus doubled.',
-    flavorText: 'The critics are watching your studio with great interest. Don\'t mess this up.',
+    flavorText: 'A New Yorker profile, a Letterboxd retrospective, and three Film Twitter accounts dedicated to your output. No pressure.',
     effect: 'criticDarling',
   },
 ];

@@ -324,6 +324,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The Space', suffix: 'Between Us' },
       { prefix: 'Yours,', suffix: 'Truly' },
       { prefix: 'When You', suffix: 'Left' },
+      { prefix: 'Say', suffix: 'Something' },
+      { prefix: 'The Last', suffix: 'Love Letter' },
+      { prefix: 'Gravity', suffix: 'of Us' },
     ],
     chaos: [
       { prefix: 'Love in the Time of', suffix: 'Disaster' },
@@ -331,6 +334,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Tangled', suffix: 'Hearts' },
       { prefix: 'The Worst', suffix: 'Timing' },
       { prefix: 'Complicated', suffix: '' },
+      { prefix: 'Wreck', suffix: 'Me' },
+      { prefix: 'Ex', suffix: 'Factor' },
+      { prefix: 'Love', suffix: 'Bomb' },
     ],
     spectacle: [
       { prefix: 'A Paris', suffix: 'Affair' },
@@ -338,6 +344,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Dancing Under', suffix: 'the Stars' },
       { prefix: 'Midnight in', suffix: 'Venice' },
       { prefix: 'The', suffix: 'Gala' },
+      { prefix: 'Roman', suffix: 'Holiday' },
+      { prefix: 'Waltzing at', suffix: 'the Ritz' },
+      { prefix: 'The Last', suffix: 'Dance' },
     ],
     precision: [
       { prefix: 'The Rules of', suffix: 'Attraction' },
@@ -345,6 +354,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'By the', suffix: 'Numbers' },
       { prefix: 'A Logical', suffix: 'Heart' },
       { prefix: 'Terms of', suffix: 'Endearment' },
+      { prefix: 'The', suffix: 'Arrangement' },
+      { prefix: 'Perfectly', suffix: 'Matched' },
+      { prefix: 'Love,', suffix: 'Methodically' },
     ],
     momentum: [
       { prefix: 'Fast', suffix: 'Hearts' },
@@ -352,6 +364,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'One More', suffix: 'Night' },
       { prefix: 'Running', suffix: 'to You' },
       { prefix: 'Can\'t', suffix: 'Wait' },
+      { prefix: 'Chasing', suffix: 'You' },
+      { prefix: 'Last Flight', suffix: 'Out' },
+      { prefix: 'Now or', suffix: 'Never' },
     ],
     default: [
       { prefix: 'Before', suffix: 'Sunrise' },
@@ -359,6 +374,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'One More', suffix: 'Chance' },
       { prefix: 'The Way', suffix: 'Home' },
       { prefix: 'Always', suffix: 'You' },
+      { prefix: 'Wildflower', suffix: '' },
+      { prefix: 'Stolen', suffix: 'Glances' },
+      { prefix: 'The Promise', suffix: '' },
     ],
   },
   Thriller: {
@@ -368,6 +386,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'No Loose', suffix: 'Ends' },
       { prefix: 'Cold', suffix: 'Calculation' },
       { prefix: 'The Perfect', suffix: 'Alibi' },
+      { prefix: 'Clean', suffix: 'Getaway' },
+      { prefix: 'Without a', suffix: 'Trace' },
+      { prefix: 'The', suffix: 'Locksmith' },
     ],
     chaos: [
       { prefix: 'Unhinged', suffix: '' },
@@ -375,6 +396,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Coming', suffix: 'Undone' },
       { prefix: 'When It All', suffix: 'Falls' },
       { prefix: 'Loose', suffix: 'Cannon' },
+      { prefix: 'Off the', suffix: 'Rails' },
+      { prefix: 'Paranoia', suffix: '' },
+      { prefix: 'The', suffix: 'Breakdown' },
     ],
     heart: [
       { prefix: 'Trust', suffix: 'No One' },
@@ -382,6 +406,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Closer Than', suffix: 'You Think' },
       { prefix: 'Among', suffix: 'Friends' },
       { prefix: 'The Inner', suffix: 'Circle' },
+      { prefix: 'Family', suffix: 'Secrets' },
+      { prefix: 'Blood', suffix: 'Ties' },
+      { prefix: 'The', suffix: 'Betrayal' },
     ],
     momentum: [
       { prefix: 'Ticking', suffix: 'Clock' },
@@ -389,6 +416,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Deadline', suffix: '' },
       { prefix: 'Countdown', suffix: '' },
       { prefix: 'No Time', suffix: 'Left' },
+      { prefix: 'Final', suffix: 'Hour' },
+      { prefix: 'Before', suffix: 'Midnight' },
+      { prefix: 'Time\'s', suffix: 'Up' },
     ],
     spectacle: [
       { prefix: 'The Grand', suffix: 'Deception' },
@@ -396,6 +426,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'The Long', suffix: 'Con' },
       { prefix: 'Smoke and', suffix: 'Mirrors' },
       { prefix: 'The', suffix: 'Illusion' },
+      { prefix: 'The', suffix: 'Heist' },
+      { prefix: 'Sleight of', suffix: 'Hand' },
+      { prefix: 'Palace of', suffix: 'Lies' },
     ],
     default: [
       { prefix: 'The', suffix: 'Informant' },
@@ -403,6 +436,9 @@ const GENRE_TAG_TITLES: Record<Genre, Partial<Record<CardTag | 'default', TitleT
       { prefix: 'Behind', suffix: 'Closed Doors' },
       { prefix: 'Red', suffix: 'Line' },
       { prefix: 'Silent', suffix: 'Witness' },
+      { prefix: 'Complicit', suffix: '' },
+      { prefix: 'The', suffix: 'Confession' },
+      { prefix: 'Blindsided', suffix: '' },
     ],
   },
 };
@@ -441,6 +477,9 @@ const CRITIC_QUOTES: Record<'BLOCKBUSTER' | 'SMASH' | 'HIT' | 'FLOP', CriticTemp
     { template: '"{lead} delivers a career-defining performance in this instant classic." — ★★★★★' },
     { template: '"This {genre_adj} epic redefines what cinema can be." — ★★★★★' },
     { template: '"I haven\'t felt this alive in a theater since I was twelve." — ★★★★★' },
+    { template: '"They said {genre_adj} was dead. {title} just performed the resurrection." — ★★★★★' },
+    { template: '"Clear the shelf. {title} is taking home everything this awards season." — ★★★★★' },
+    { template: '"I walked out of the theater and immediately bought another ticket." — ★★★★★' },
   ],
   SMASH: [
     { template: '"{title} is the {genre_adj} film we\'ve been waiting for." — ★★★★' },
@@ -448,6 +487,9 @@ const CRITIC_QUOTES: Record<'BLOCKBUSTER' | 'SMASH' | 'HIT' | 'FLOP', CriticTemp
     { template: '"{lead} shines in a {genre_adj} triumph that sticks with you." — ★★★★' },
     { template: '"A masterclass in {genre_adj} tension. Don\'t miss it." — ★★★★' },
     { template: '"Confident filmmaking that knows exactly what it wants to be." — ★★★★' },
+    { template: '"This is what happens when a studio trusts its creatives. Bravo." — ★★★★' },
+    { template: '"{lead} has never been better. {title} is a genuine thrill." — ★★★★' },
+    { template: '"The kind of film that makes you forgive Hollywood for everything else." — ★★★★' },
   ],
   HIT: [
     { template: '"{title} is solid entertainment — nothing more, nothing less." — ★★★' },
@@ -455,6 +497,9 @@ const CRITIC_QUOTES: Record<'BLOCKBUSTER' | 'SMASH' | 'HIT' | 'FLOP', CriticTemp
     { template: '"{lead} does good work, even when the script doesn\'t." — ★★★' },
     { template: '"Worth your time, if not your full attention." — ★★★' },
     { template: '"A perfectly acceptable Friday night at the movies." — ★★★' },
+    { template: '"Not bad! Not great. {title} lands squarely in the middle." — ★★★' },
+    { template: '"You could do worse. You could also do better. {title} exists." — ★★★' },
+    { template: '"A film that will be enjoyed, then promptly forgotten." — ★★★' },
   ],
   FLOP: [
     { template: '"{title} is a cautionary tale in studio hubris." — ★' },
@@ -462,6 +507,9 @@ const CRITIC_QUOTES: Record<'BLOCKBUSTER' | 'SMASH' | 'HIT' | 'FLOP', CriticTemp
     { template: '"{lead} deserves better than this." — ★' },
     { template: '"Two hours of my life I\'ll never get back." — ½' },
     { template: '"The most expensive nap I\'ve ever taken." — ★' },
+    { template: '"Whoever greenlit {title} should be greenlit out of the industry." — ½' },
+    { template: '"{lead} phoned it in. Can you blame them?" — ★' },
+    { template: '"I\'ve seen better {genre_adj} storytelling in cereal commercials." — ★' },
   ],
 };
 
@@ -521,6 +569,60 @@ export function generateStudioName(): { name: string; tagline: string } {
   const suffix = pick(STUDIO_SUFFIXES);
   const tagline = pick(STUDIO_TAGLINES);
   return { name: `${prefix} ${suffix}`, tagline };
+}
+
+// ─── STUDIO HEADLINES (newspaper-style one-liners) ───
+
+const STUDIO_HEADLINES: Record<RewardTier, string[]> = {
+  BLOCKBUSTER: [
+    'CRITICS RAVE: "The best {genre_adj} film in years"',
+    'BOX OFFICE EXPLOSION: {title} shatters every record',
+    'PHENOMENON: {title} sells out every screen in the country',
+    'OVERNIGHT SENSATION: {studio} goes from unknown to unstoppable',
+    'INDUSTRY SHOCKWAVE: {title} rewrites the box office playbook',
+    'STANDING OVATION: Audiences refuse to leave the theater',
+    'GOLDEN TICKET: {title} already the frontrunner for every major award',
+    'LIGHTNING STRIKES: {studio} captures magic with {title}',
+  ],
+  SMASH: [
+    'STRONG DEBUT: {title} proves {studio} means business',
+    'CROWD PLEASER: Audiences give {title} an A+ CinemaScore',
+    'HOT STREAK: {studio} delivers another winner with {title}',
+    'WORD OF MOUTH: {title} legs look incredible heading into week two',
+    'STUDIO RISING: {studio} quietly becomes a major player',
+    'SLEEPER HIT: {title} outperforms every projection',
+  ],
+  HIT: [
+    'MODEST RETURNS: {title} performs to expectations',
+    'MIDDLE OF THE PACK: {title} holds steady in a crowded market',
+    'SOLID OPENING: {title} gives {studio} a respectable weekend',
+    'MIXED REVIEWS: Critics divided on {title}, audiences shrug',
+    'SAFE BET: {title} won\'t lose money — but won\'t make headlines either',
+  ],
+  FLOP: [
+    'BOX OFFICE BOMB: {studio} reeling after costly misfire',
+    'DISASTER: {title} tanks — audiences stay home in droves',
+    'RED INK: {title} opens to empty theaters and grim faces',
+    'STUDIO IN CRISIS: {title} could spell the end for {studio}',
+    'TOMBSTONE: {title} dead on arrival — worst opening of the year',
+    'AUTOPSY: What went wrong with {title}? Everything.',
+    'WRITE-OFF: {studio} takes massive loss on {title}',
+  ],
+};
+
+export function generateStudioHeadline(
+  tier: RewardTier,
+  title: string,
+  genre: Genre,
+  studioName?: string,
+): string {
+  const templates = STUDIO_HEADLINES[tier];
+  const template = pick(templates);
+  const genreAdj = pick(GENRE_ADJECTIVES[genre]);
+  return template
+    .replace('{title}', title)
+    .replace('{genre_adj}', genreAdj)
+    .replace('{studio}', studioName || 'Your Studio');
 }
 
 // ─── ENHANCED HEADLINES ───

@@ -437,6 +437,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [highScoreRank, setHighScoreRank] = useState<number | null>(null);
   const [leaderboardEntry, setLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [completedCommunity, setCompletedCommunity] = useState<CommunityChallenge[]>([]);
   const [showReplayViewer, setShowReplayViewer] = useState(false);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
@@ -520,6 +521,36 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         filmCount: history.length,
       });
       recordEndingDiscovered(ending.id);
+      // ─── Community Challenges (R215) ───
+      {
+        const talentHiredInSeason = history.map(() => 0); // approximate — not tracked per-season yet
+        const runSummary: RunSummary = {
+          won: isVictory,
+          difficulty: state.difficulty || 'studio',
+          genres: history.map(s => s.genre) as import('../types').Genre[],
+          totalEarnings: state.totalEarnings,
+          maxSingleFilmBO: Math.max(0, ...history.map(s => s.boxOffice)),
+          filmsProduced: history.length,
+          talentHiredInSeason,
+          maxTalentHiredInOneSeason: Math.max(0, ...talentHiredInSeason),
+          sRankCount: history.filter(s => s.tier === 'BLOCKBUSTER' && s.quality >= 90).length,
+          hitCount: history.filter(s => s.tier === 'HIT' || s.tier === 'BLOCKBUSTER').length,
+          blockbusterCount: history.filter(s => s.tier === 'BLOCKBUSTER').length,
+          flopCount: history.filter(s => s.tier === 'FLOP').length,
+          reputation: state.reputation,
+          score,
+          uniqueGenres: new Set(history.map(s => s.genre)).size,
+          streakFilmsNoFlop: history.reduce((max, s, i) => {
+            if (s.tier === 'FLOP') return max;
+            const streak = i === 0 || history[i-1].tier === 'FLOP' ? 1 : max + 1;
+            return Math.max(max, streak);
+          }, 0),
+          seasonsCompleted: history.length,
+          rank,
+        };
+        const newlyDone = checkCommunityChallenges(runSummary);
+        if (newlyDone.length > 0) setCompletedCommunity(newlyDone);
+      }
       // Track special unlock conditions
       if (isVictory) {
         const hasFlops = history.some(s => s.tier === 'FLOP');
@@ -1257,6 +1288,28 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             ))}
           </div>
           <p style={{ color: '#888', fontSize: '0.75rem', marginTop: 8 }}>Legacy perks apply to all future runs!</p>
+        </div>
+      )}
+
+      {/* ─── COMMUNITY CHALLENGES (R215) ─── */}
+      {phase >= 5 && endTab === 'progression' && completedCommunity.length > 0 && (
+        <div style={{ marginTop: 24 }} className="animate-slide-down">
+          <h3 style={{ color: '#f59e0b', marginBottom: 12 }}>🏅 COMMUNITY CHALLENGES COMPLETED!</h3>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {completedCommunity.map((c, i) => (
+              <div key={i} style={{
+                background: 'rgba(245,158,11,0.12)', border: '2px solid #f59e0b',
+                borderRadius: 8, padding: '12px 16px', textAlign: 'center', minWidth: 130,
+                animation: 'comboAppear 0.5s ease',
+              }}>
+                <div style={{ fontSize: '1.6rem' }}>{c.emoji}</div>
+                <div style={{ color: '#f59e0b', fontFamily: 'Bebas Neue', fontSize: '0.95rem' }}>{c.title}</div>
+                <div style={{ color: '#aaa', fontSize: '0.7rem' }}>{c.description}</div>
+                <div style={{ color: '#60a5fa', fontSize: '0.7rem', marginTop: 4 }}>+{c.xpReward} XP</div>
+                {c.cardVariantReward && <div style={{ color: '#c084fc', fontSize: '0.65rem', marginTop: 2 }}>🃏 Card variant unlocked!</div>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

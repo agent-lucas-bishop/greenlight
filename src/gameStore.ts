@@ -104,6 +104,7 @@ import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { careerSessionStart, careerTrackTalentHire, careerTrackFilmComplete } from './careerAnalytics';
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
+import { getDirectorStyleBonus } from './directorProfile';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
@@ -929,6 +930,11 @@ export function pickScript(script: Script) {
     } else {
       scriptCost += 2;
     }
+  }
+  // R186: Director versatility budget discount
+  const dirStyleBonus = getDirectorStyleBonus(state.seasonHistory, script.genre);
+  if (dirStyleBonus.budgetDiscount > 0) {
+    scriptCost = Math.max(1, scriptCost - dirStyleBonus.budgetDiscount);
   }
   // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - scriptCost;
@@ -1879,7 +1885,11 @@ export function calculateQuality(s: GameState): {
   // Talent Mood: quality bonuses from hot/hungry moods
   const moodBonus = s.castSlots.reduce((sum, slot) => sum + (slot.talent ? getMoodQualityBonus(slot.talent.name) : 0), 0);
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus + moodBonus;
+  // R186: Director's Chair — style streak / versatility bonus
+  const directorStyleResult = getDirectorStyleBonus(s.seasonHistory, script.genre);
+  const directorStyleQualityBonus = directorStyleResult.qualityBonus;
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus + moodBonus + directorStyleQualityBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;

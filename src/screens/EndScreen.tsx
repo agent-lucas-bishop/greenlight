@@ -22,6 +22,7 @@ import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
 import { getDifficultyBadge } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
+import { buildDirectorProfile, recordDirectorRun, getDirectorCareer, type DirectorProfile } from '../directorProfile';
 
 // ─── Helpers ───
 
@@ -412,6 +413,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
     studioIdentity?.name || state.studioName || 'Your Studio',
   ), []);
   const studioLegacy = useMemo(() => isVictory ? getStudioLegacy(state) : null, []);
+  const directorProfile = useMemo(() => buildDirectorProfile(history), []);
   const awardsResult = useMemo(() => calculateAwards(state.seasonHistory), []);
 
   const totalBO = state.totalEarnings;
@@ -622,6 +624,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           finalBudget: state.budget,
         });
       }
+      // R186: Record director profile for career tracking
+      recordDirectorRun(directorProfile);
       markFirstRunComplete();
       trackRunEnd(score, isVictory);
       careerTrackRunEnd({
@@ -875,6 +879,93 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
               <div className="value" style={{ fontSize: '0.85rem', color: '#e74c3c' }}>"{worstFilm.title}" (${worstFilm.boxOffice.toFixed(1)}M)</div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── DIRECTOR'S CHAIR (R186) ─── */}
+      {phase >= 4 && history.length > 0 && (
+        <div className="animate-slide-down" style={{
+          background: 'linear-gradient(135deg, rgba(155,89,182,0.12) 0%, rgba(212,168,67,0.08) 100%)',
+          border: '2px solid rgba(155,89,182,0.4)',
+          borderRadius: 16,
+          padding: '20px 24px',
+          margin: '20px auto',
+          maxWidth: 520,
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '2rem', marginBottom: 4 }}>{directorProfile.styleEmoji}</div>
+          <div style={{
+            color: '#bb86fc',
+            fontFamily: 'Bebas Neue',
+            fontSize: 'clamp(1.3rem, 3vw, 1.8rem)',
+            letterSpacing: 2,
+            marginBottom: 4,
+          }}>
+            {directorProfile.styleTitle}
+          </div>
+          <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: 12, fontStyle: 'italic' }}>
+            {directorProfile.signature}
+          </div>
+
+          {/* Director Rating */}
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 16 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Director Rating</div>
+              <div style={{
+                color: directorProfile.directorRating >= 75 ? '#2ecc71' : directorProfile.directorRating >= 50 ? '#f1c40f' : '#e74c3c',
+                fontFamily: 'Bebas Neue', fontSize: '2rem',
+              }}>
+                {directorProfile.directorRating}%
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Style Points</div>
+              <div style={{ color: '#bb86fc', fontFamily: 'Bebas Neue', fontSize: '2rem' }}>
+                {directorProfile.stylePoints}
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Versatility</div>
+              <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '2rem' }}>
+                {directorProfile.versatilityPoints}
+              </div>
+            </div>
+          </div>
+
+          {/* Genre Breakdown */}
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {Object.entries(
+              directorProfile.filmography.reduce((acc, f) => {
+                acc[f.genre] = (acc[f.genre] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>)
+            ).sort((a, b) => b[1] - a[1]).map(([genre, count]) => (
+              <span key={genre} style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(187,134,252,0.3)',
+                borderRadius: 6, padding: '4px 10px', fontSize: '0.75rem', color: '#ccc',
+              }}>
+                {genre} ×{count}
+              </span>
+            ))}
+          </div>
+
+          {/* Streak indicator */}
+          {directorProfile.genreStreak >= 2 && (
+            <div style={{ marginTop: 10, fontSize: '0.7rem', color: '#bb86fc' }}>
+              🔥 {directorProfile.genreStreak}-film {directorProfile.lastGenre} streak
+            </div>
+          )}
+
+          {/* Career bests */}
+          {(() => {
+            const career = getDirectorCareer();
+            if (career.totalFilms <= 0) return null;
+            return (
+              <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 8, fontSize: '0.7rem', color: '#888' }}>
+                Career: Best Rating {career.bestRating}% · Most Common Style: {career.mostCommonStyle} · {career.totalFilms} total films
+              </div>
+            );
+          })()}
         </div>
       )}
 

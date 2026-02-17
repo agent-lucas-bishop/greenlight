@@ -129,3 +129,24 @@ export function dismissTutorial() {
 export function resetTutorial() {
   saveTutorialState({ active: true, stepsCompleted: [], dismissed: false });
 }
+
+/** Alias for completeTutorialStep — matches onboarding API convention */
+export function markStepSeen(stepId: string) {
+  completeTutorialStep(stepId);
+}
+
+/** Returns true when every tutorial step has been completed (or tutorial was dismissed) */
+export function isTutorialComplete(): boolean {
+  const s = getTutorialState();
+  if (s.dismissed) return true;
+  return TUTORIAL_STEPS.every(t => s.stepsCompleted.includes(t.id));
+}
+
+/** Returns true if this is a first-time player (no tutorial state saved yet) */
+export function isFirstTimePlayer(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === null;
+  } catch {
+    return true;
+  }
+}

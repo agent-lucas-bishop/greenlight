@@ -84,6 +84,7 @@
 
 import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, CardAbility, MarketingTier, PostProdOption, SoundtrackData } from './types';
 import type { StudioArchetypeId, CardRarity } from './types';
+import { generateAudienceReactions, type AudienceReaction } from './audienceReactions';
 import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
@@ -183,6 +184,7 @@ function createInitialState(): GameState {
     activeRivalIds: [],
     rivalStats: {},
     nemesisStudio: null,
+    lastAudienceReaction: null,
     postProdMarketing: null,
     postProdOption: null,
     postProdMarketingMultiplier: undefined,
@@ -704,6 +706,7 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     activeRivalIds,
     rivalStats,
     nemesisStudio: null,
+    lastAudienceReaction: null,
   });
 }
 
@@ -2251,8 +2254,29 @@ export function resolveRelease() {
   const marketingMult = state.postProdMarketingMultiplier || 1.0;
   boxOffice = Math.round(boxOffice * marketingMult * 10) / 10;
 
+  // R185: Pre-release buzz multiplier (based on cast star power + marketing)
+  const audienceData = generateAudienceReactions(
+    script.title, script.genre as Genre, rawQuality, 'HIT', // tier not known yet, use placeholder
+    state.difficulty, state.castSlots, state.postProdMarketing, rng,
+  );
+  boxOffice = Math.round(boxOffice * audienceData.buzz.multiplier * 10) / 10;
+
+  // R185: Viral event box office modifier
+  if (audienceData.viralEvent) {
+    boxOffice = Math.round((boxOffice + audienceData.viralEvent.boxOfficeModifier) * 10) / 10;
+  }
+
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const tier = getTier(boxOffice, target);
+
+  // R185: Re-generate audience reactions with final tier for accurate tweets
+  const finalAudienceData = generateAudienceReactions(
+    script.title, script.genre as Genre, rawQuality, tier,
+    state.difficulty, state.castSlots, state.postProdMarketing, rng,
+  );
+  // Keep the buzz and viral from the pre-tier calc, but use final tweets/score
+  finalAudienceData.buzz = audienceData.buzz;
+  finalAudienceData.viralEvent = audienceData.viralEvent;
 
   let repChange = 0;
   let bonusMoney = 0;
@@ -2350,6 +2374,7 @@ export function resolveRelease() {
     criticScore: criticConsensus.freshPercent,
     criticStars: criticConsensus.avgStars,
     soundtrack,
+    audienceScore: finalAudienceData.audienceScore,
   };
 
   // ─── R136: FRANCHISE / SEQUEL SYSTEM ───
@@ -2504,6 +2529,14 @@ export function resolveRelease() {
   // Track film completion for career analytics
   careerTrackFilmComplete({ title: filmTitle, genre: script.genre, boxOffice, quality: rawQuality });
 
+  // R185: Track viral moments in career stats
+  if (finalAudienceData.viralEvent) {
+    const u = getUnlocks();
+    if (!u.careerStats.viralMoments) u.careerStats.viralMoments = 0;
+    u.careerStats.viralMoments++;
+    saveUnlocks(u);
+  }
+
   // Record to permanent film archive
   const archiveNotes: string[] = [];
   if (state.extendedCutUsed) archiveNotes.push('Extended Cut');
@@ -2535,6 +2568,7 @@ export function resolveRelease() {
     lastTier: tier,
     activeMarket: market,
     postProdSoundtrack: soundtrack,
+    lastAudienceReaction: finalAudienceData,
     debt,
     budget: state.budget + earnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost,
     totalEarnings: state.totalEarnings + earnings,

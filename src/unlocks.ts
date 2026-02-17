@@ -33,6 +33,10 @@ export interface UnlockState {
     bestSoundtrackScore: number; // highest soundtrack quality rating (1-5)
     favoriteComposer: string; // most-used composer name
     composerHireCounts: Record<string, number>; // composer name -> hire count
+    // R185: Audience reaction career stats
+    totalAudienceScore: number; // sum of all audience scores
+    audienceScoreCount: number; // number of films with audience scores
+    viralMoments: number; // total viral events (meme + controversy)
   };
   // Daily challenge streak
   dailyStreak: {
@@ -69,6 +73,9 @@ function defaultCareerStats() {
     bestSoundtrackScore: 0,
     favoriteComposer: '',
     composerHireCounts: {},
+    totalAudienceScore: 0,
+    audienceScoreCount: 0,
+    viralMoments: 0,
   };
 }
 
@@ -263,7 +270,7 @@ export function getActiveLegacyPerks(): LegacyPerk[] {
   return LEGACY_PERKS.filter(p => p.check(u));
 }
 
-export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean; soundtrack?: { composerName: string; qualityRating: number } | null }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string; weeklySeed?: string; filmCount?: number }) {
+export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean; soundtrack?: { composerName: string; qualityRating: number } | null; audienceScore?: number }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string; weeklySeed?: string; filmCount?: number }) {
   const u = getUnlocks();
   u.totalRuns++;
   if (won) {
@@ -316,6 +323,16 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
         // Update favorite composer
         const counts = u.careerStats.composerHireCounts;
         u.careerStats.favoriteComposer = Object.entries(counts).reduce((a, b) => b[1] > a[1] ? b : a, ['', 0])[0];
+      }
+    }
+
+    // R185: Track audience reaction stats
+    for (const s of seasonHistory) {
+      if (s.audienceScore != null) {
+        if (!u.careerStats.totalAudienceScore) u.careerStats.totalAudienceScore = 0;
+        if (!u.careerStats.audienceScoreCount) u.careerStats.audienceScoreCount = 0;
+        u.careerStats.totalAudienceScore += s.audienceScore;
+        u.careerStats.audienceScoreCount++;
       }
     }
   }

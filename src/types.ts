@@ -358,6 +358,8 @@ export interface GameState {
   activeRivalIds: RivalPersonalityId[]; // 2-3 rivals active this run
   rivalStats: Record<string, RivalStats>; // rival name -> persistent stats
   nemesisStudio: string | null; // rival name that became nemesis (beaten player 3+ times)
+  // R185: Audience reactions
+  lastAudienceReaction: import('./audienceReactions').AudienceReaction | null;
 }
 
 // ─── RIVAL ACTIONS (R150) ───
@@ -445,4 +447,5 @@ export interface SeasonResult {
   criticStars?: number; // R173: average star rating (1-5)
   festivalAwards?: { festivalId: string; award: string }[]; // R176: festival laurels
   soundtrack?: SoundtrackData | null; // R179: soundtrack profile
+  audienceScore?: number; // R185: audience score (0-100)
 }

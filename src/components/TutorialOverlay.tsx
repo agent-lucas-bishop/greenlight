@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getTutorialStepForPhase, completeTutorialStep, dismissTutorial } from '../tutorial';
 import { track } from '../analytics';
 import type { GamePhase } from '../types';
@@ -6,22 +6,37 @@ import type { GamePhase } from '../types';
 export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
   const [step, setStep] = useState(getTutorialStepForPhase(phase));
   const [visible, setVisible] = useState(false);
+  const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
+
+  const updateSpotlight = useCallback((selector?: string) => {
+    if (!selector) { setSpotlightRect(null); return; }
+    const el = document.querySelector(selector);
+    if (el) {
+      setSpotlightRect(el.getBoundingClientRect());
+    } else {
+      setSpotlightRect(null);
+    }
+  }, []);
 
   useEffect(() => {
     const s = getTutorialStepForPhase(phase);
     if (s) {
-      // Delay slightly so the phase renders first
-      const t = setTimeout(() => { setStep(s); setVisible(true); }, 400);
+      const t = setTimeout(() => {
+        setStep(s);
+        setVisible(true);
+        updateSpotlight(s.targetSelector);
+      }, 400);
       return () => clearTimeout(t);
     } else {
       setVisible(false);
     }
-  }, [phase]);
+  }, [phase, updateSpotlight]);
 
   if (!visible || !step) return null;
 
   const handleDismiss = () => {
     completeTutorialStep(step.id);
+    track('tutorial_step', { step: step.id });
     setVisible(false);
   };
 
@@ -31,16 +46,48 @@ export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
     setVisible(false);
   };
 
+  // Build spotlight clip-path if we have a target rect
+  const clipPath = spotlightRect
+    ? `polygon(
+        0% 0%, 0% 100%, 100% 100%, 100% 0%, 0% 0%,
+        ${spotlightRect.left - 8}px ${spotlightRect.top - 8}px,
+        ${spotlightRect.right + 8}px ${spotlightRect.top - 8}px,
+        ${spotlightRect.right + 8}px ${spotlightRect.bottom + 8}px,
+        ${spotlightRect.left - 8}px ${spotlightRect.bottom + 8}px,
+        ${spotlightRect.left - 8}px ${spotlightRect.top - 8}px
+      )`
+    : undefined;
+
   return (
     <>
-      {/* Subtle backdrop */}
+      {/* Backdrop with optional spotlight cutout */}
       <div
         style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          zIndex: 900, animation: 'fadeIn 0.3s ease',
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          zIndex: 900,
+          animation: 'fadeIn 0.3s ease',
+          clipPath,
+          transition: 'clip-path 0.4s ease',
         }}
         onClick={handleDismiss}
       />
+      {/* Spotlight glow ring */}
+      {spotlightRect && (
+        <div style={{
+          position: 'fixed',
+          left: spotlightRect.left - 10,
+          top: spotlightRect.top - 10,
+          width: spotlightRect.width + 20,
+          height: spotlightRect.height + 20,
+          border: '2px solid rgba(212,168,67,0.5)',
+          borderRadius: 12,
+          boxShadow: '0 0 20px rgba(212,168,67,0.3)',
+          zIndex: 901,
+          pointerEvents: 'none',
+          animation: 'fadeIn 0.4s ease',
+        }} />
+      )}
       {/* Tutorial card */}
       <div
         className="animate-slide-down"

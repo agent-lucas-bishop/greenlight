@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { isMuted, setMuted, getVolume, setVolume, getSfxVolume, setSfxVolume } from '../sound';
 import { getStudioIdentity, setStudioIdentity, getRandomDefaultName, STUDIO_LOGOS, DEFAULT_STUDIO_NAMES, type StudioLogo } from '../studioIdentity';
 import { isStoryMomentsEnabled, setStoryMomentsEnabled } from '../cutscenes';
+import { resetTutorial, isTutorialComplete } from '../tutorial';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -122,6 +123,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   const [confirmEndTurn, setConfirmEndTurn] = useState(() => LS.getBool('greenlight-confirm-end-turn', false));
   const [showTooltips, setShowTooltips] = useState(() => LS.getBool('greenlight-show-tooltips', true));
   const [showStoryMoments, setShowStoryMoments] = useState(() => isStoryMomentsEnabled());
+  const [tutorialReset, setTutorialReset] = useState(false);
 
   // Data
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -323,6 +325,16 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
               <Label htmlFor="story-moments-toggle" sub="Brief cinematic moments at key milestones">Show Story Moments</Label>
               <Toggle id="story-moments-toggle" checked={showStoryMoments} onChange={handleStoryMoments} label="Show story moments" />
             </Row>
+            <div style={{ borderTop: '1px solid #333', paddingTop: 12, marginTop: 8 }}>
+              <button
+                className="btn btn-small"
+                onClick={() => { resetTutorial(); setTutorialReset(true); setTimeout(() => setTutorialReset(false), 2000); }}
+                style={{ width: '100%', color: tutorialReset ? '#2ecc71' : 'var(--gold)', borderColor: tutorialReset ? '#2ecc71' : 'var(--gold-dim)' }}
+                aria-label="Replay tutorial"
+              >
+                {tutorialReset ? '✅ Tutorial will replay next game!' : '🎓 Replay Tutorial'}
+              </button>
+            </div>
           </div>
         );
       case 'studio':

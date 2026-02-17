@@ -8,6 +8,7 @@ import { formatSoundtrackRating } from '../soundtrack';
 import { sfx } from '../sound';
 import MechanicTip from '../components/MechanicTip';
 import PostFilmSummary from '../components/PostFilmSummary';
+import type { AudienceReaction } from '../audienceReactions';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
@@ -291,6 +292,85 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
           )}
         </div>
       )}
+
+      {/* R185: Audience Reactions — tweet cards */}
+      {phase >= 2 && state.lastAudienceReaction && (() => {
+        const ar: AudienceReaction = state.lastAudienceReaction;
+        return (
+          <div className="animate-slide-down" style={{ marginTop: 16, maxWidth: 420, margin: '16px auto 0' }}>
+            {/* Buzz & Audience Score header */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+              <div style={{
+                background: 'rgba(52,152,219,0.1)', border: '1px solid rgba(52,152,219,0.3)',
+                borderRadius: 8, padding: '8px 14px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '0.65rem', color: '#888', letterSpacing: 1 }}>AUDIENCE SCORE</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: ar.audienceScore >= 70 ? '#2ecc71' : ar.audienceScore >= 40 ? '#f39c12' : '#e74c3c' }}>
+                  {ar.audienceScore}%
+                </div>
+              </div>
+              <div style={{
+                background: ar.buzz.level === 'extreme' ? 'rgba(231,76,60,0.1)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${ar.buzz.level === 'extreme' ? 'rgba(231,76,60,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                borderRadius: 8, padding: '8px 14px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '0.65rem', color: '#888', letterSpacing: 1 }}>PRE-RELEASE BUZZ</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: ar.buzz.level === 'extreme' ? '#e74c3c' : ar.buzz.level === 'high' ? '#f39c12' : '#aaa' }}>
+                  {ar.buzz.label}
+                </div>
+                {ar.buzz.multiplier > 1.0 && (
+                  <div style={{ fontSize: '0.7rem', color: '#2ecc71' }}>×{ar.buzz.multiplier.toFixed(2)} opening weekend</div>
+                )}
+              </div>
+            </div>
+
+            {/* Viral event banner */}
+            {ar.viralEvent && (
+              <div style={{
+                background: ar.viralEvent.type === 'meme_boost' ? 'rgba(46,204,113,0.12)' : 'rgba(231,76,60,0.12)',
+                border: `2px solid ${ar.viralEvent.type === 'meme_boost' ? '#2ecc71' : '#e74c3c'}`,
+                borderRadius: 10, padding: '10px 14px', marginBottom: 12, textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: ar.viralEvent.type === 'meme_boost' ? '#2ecc71' : '#e74c3c' }}>
+                  {ar.viralEvent.label}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#ccc' }}>{ar.viralEvent.description}</div>
+                <div style={{ fontSize: '0.75rem', color: ar.viralEvent.boxOfficeModifier > 0 ? '#2ecc71' : '#e74c3c', marginTop: 4 }}>
+                  {ar.viralEvent.boxOfficeModifier > 0 ? '+' : ''}{ar.viralEvent.boxOfficeModifier}M box office
+                </div>
+              </div>
+            )}
+
+            {/* Tweet cards */}
+            <div style={{ fontFamily: 'Bebas Neue', fontSize: '0.8rem', color: '#888', marginBottom: 6, letterSpacing: 1 }}>
+              📱 SOCIAL MEDIA REACTIONS
+            </div>
+            {ar.tweets.map((tweet, i) => (
+              <div key={i} className="animate-slide-down" style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${tweet.sentiment === 'positive' ? 'rgba(46,204,113,0.2)' : tweet.sentiment === 'negative' ? 'rgba(231,76,60,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: 10, padding: '10px 12px', marginBottom: 6,
+                animationDelay: `${i * 0.15}s`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: '1.3rem' }}>{tweet.avatar}</span>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ddd' }}>{tweet.displayName}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#666' }}>{tweet.handle}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#bbb', lineHeight: 1.45, marginBottom: 6 }}>
+                  {tweet.text}
+                </div>
+                <div style={{ display: 'flex', gap: 16, fontSize: '0.7rem', color: '#555' }}>
+                  <span>🔁 {tweet.retweets}</span>
+                  <span>❤️ {tweet.likes}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Tier rewards - simplified */}
       {phase >= 2 && (

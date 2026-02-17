@@ -1996,6 +1996,7 @@ body {
   .btn { padding: 10px 16px; }
   .production-stats-bar { gap: 6px; padding: 8px 8px; }
   .choice-area { padding: 12px 8px; }
+  .header-stats { flex-wrap: wrap; justify-content: center; }
 }
 
 /* ===== R39: VISUAL JUICE ===== */
@@ -2276,4 +2277,86 @@ body {
   0% { transform: translate(0, 0) scale(0); opacity: 1; }
   50% { opacity: 1; }
   100% { transform: translate(var(--tx), var(--ty)) scale(1); opacity: 0; }
+}
+
+/* ===== R70: MOBILE POLISH & TOUCH UX ===== */
+
+/* Touch feedback :active states for all interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  .tab-btn:active, .fire-btn:active, .perk-badge:active,
+  .btn-tiny:active, .modal-close:active, .phase-tip:active {
+    transform: scale(0.93) !important;
+    transition: transform 0.08s ease !important;
+  }
+  /* Inline-styled buttons (achievement, mute, etc) get highlight */
+  button:active {
+    opacity: 0.7;
+  }
+}
+
+/* Header stats: scrollable on very small screens */
+@media (max-width: 480px) {
+  .header-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 4px;
+  }
+  .header-stat .value { font-size: 1rem; }
+  .header-stat .label { font-size: 0.5rem; }
+}
+
+/* Achievement gallery: smaller grid on mobile */
+@media (max-width: 480px) {
+  .modal .achievement-grid,
+  .modal div[style*="grid-template-columns: repeat(auto-fill, minmax(180px"] {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+/* Leaderboard table: stack on mobile */
+@media (max-width: 480px) {
+  .leaderboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Fix touch targets for small circular buttons (mute, achievements, help) */
+@media (max-width: 480px) {
+  .start-screen button[style*="width: 32px"],
+  .start-screen button[style*="width:32px"] {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+}
+
+/* Genre trends text wrapping on mobile */
+@media (max-width: 480px) {
+  .genre-trends {
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+}
+
+/* Prevent horizontal overflow on all screens */
+.main, .start-screen, .end-screen {
+  overflow-x: hidden;
+}
+
+/* Card stat badges: wrap properly */
+@media (max-width: 480px) {
+  .card-stat {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    margin-right: 4px;
+    margin-top: 4px;
+  }
+}
+
+/* Fix event screen cards on small screens */
+@media (max-width: 480px) {
+  .event-card-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

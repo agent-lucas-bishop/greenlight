@@ -395,9 +395,9 @@ export default function StartScreen() {
             onClick={() => setShowAchievements(true)}
             title={`Achievements (${getUnlockedAchievements().length}/${ACHIEVEMENTS.length})`}
             style={{
-              width: 32, height: 32, borderRadius: '50%',
+              width: 44, height: 44, borderRadius: '50%',
               border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
-              color: 'var(--gold)', fontSize: '1rem', cursor: 'pointer', display: 'flex',
+              color: 'var(--gold)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
             }}
           >
@@ -408,9 +408,9 @@ export default function StartScreen() {
           onClick={handleToggleMute}
           title={muted ? 'Unmute' : 'Mute'}
           style={{
-            width: 32, height: 32, borderRadius: '50%',
+            width: 44, height: 44, borderRadius: '50%',
             border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
-            color: 'var(--gold)', fontSize: '1rem', cursor: 'pointer', display: 'flex',
+            color: 'var(--gold)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
           }}
         >
@@ -451,9 +451,9 @@ export default function StartScreen() {
             <button key={t} onClick={() => setTab(t)} style={{
               background: tab === t ? 'rgba(212,168,67,0.15)' : 'transparent',
               border: `1px solid ${tab === t ? 'var(--gold-dim)' : '#333'}`,
-              borderRadius: 6, padding: '6px 12px', color: tab === t ? 'var(--gold)' : '#666',
-              cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.8rem', letterSpacing: '0.05em',
-              transition: 'all 0.2s',
+              borderRadius: 6, padding: '8px 14px', color: tab === t ? 'var(--gold)' : '#666',
+              cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.05em',
+              transition: 'all 0.2s', minHeight: 44,
             }}>
               {t === 'play' ? '🎬 PLAY' : t === 'career' ? '📊 CAREER' : t === 'history' ? '📜 RUNS' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 HALL OF FAME'}
             </button>

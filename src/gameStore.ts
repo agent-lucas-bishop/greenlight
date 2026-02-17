@@ -96,6 +96,7 @@ import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, ge
 import { getChallengeById } from './challenges';
 import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
+import { addFilmToArchive, getCurrentRunNumber } from './filmArchive';
 import { isSimplifiedRun } from './onboarding';
 import { sfx } from './sound';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
@@ -2050,6 +2051,29 @@ export function resolveRelease() {
 
   // Track film completion for career analytics
   careerTrackFilmComplete({ title: filmTitle, genre: script.genre, boxOffice, quality: rawQuality });
+
+  // Record to permanent film archive
+  const archiveNotes: string[] = [];
+  if (state.extendedCutUsed) archiveNotes.push('Extended Cut');
+  if (state.reshootsBudgetUsed) archiveNotes.push('Had reshoots');
+  if (prod.directorVision?.met) archiveNotes.push("Director's Vision met");
+  if (prod.cleanWrap) archiveNotes.push('Clean wrap');
+  if (nominated) archiveNotes.push('Award nominated');
+  if (state.completionBond && tier === 'FLOP') archiveNotes.push('Completion Bond used');
+  addFilmToArchive({
+    title: filmTitle,
+    genre: script.genre,
+    quality: rawQuality,
+    tier,
+    boxOffice,
+    cast: state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[],
+    runNumber: getCurrentRunNumber(),
+    runDate: new Date().toISOString().slice(0, 10),
+    season: state.season,
+    studioName: state.studioName || undefined,
+    archetype: state.studioArchetype || undefined,
+    notes: archiveNotes,
+  });
 
   setState({
     phase: 'release',

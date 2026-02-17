@@ -52,6 +52,47 @@ export const PRESTIGE_REWARDS: Record<number, PrestigeReward> = {
   12: { type: 'titleBadge', id: 'badge_diamond', label: '💎 Diamond Badge', value: '💎' },
 };
 
+// ─── PRESTIGE MILESTONES (R128) ───
+// Milestone rewards at specific prestige levels
+
+export interface PrestigeMilestone {
+  level: number;
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  type: 'cosmetic' | 'script' | 'budget' | 'title';
+}
+
+export const PRESTIGE_MILESTONES: PrestigeMilestone[] = [
+  { level: 3, id: 'studio_lot', name: 'Studio Lot', emoji: '🏛️', description: 'Gold border on start screen', type: 'cosmetic' },
+  { level: 5, id: 'oscar_bait', name: 'Oscar Bait Script', emoji: '🏆', description: 'Unlock exclusive "Oscar Bait" script', type: 'script' },
+  { level: 8, id: 'budget_bonus', name: 'Executive Suite', emoji: '💰', description: 'Start with +$2M bonus budget', type: 'budget' },
+  { level: 10, id: 'mogul_title', name: 'Mogul', emoji: '👑', description: '"Mogul" title displayed on start screen & in share text', type: 'title' },
+];
+
+export function getUnlockedMilestones(level: number): PrestigeMilestone[] {
+  return PRESTIGE_MILESTONES.filter(m => level >= m.level);
+}
+
+export function hasMilestone(milestoneId: string): boolean {
+  const prestige = getPrestige();
+  return PRESTIGE_MILESTONES.some(m => m.id === milestoneId && prestige.level >= m.level);
+}
+
+// ─── LEGACY RUN BONUSES (R128) ───
+// Passive bonuses that scale with prestige level
+
+export function getLegacyRunBonuses(): { reputationBonus: number; budgetBonus: number } {
+  const prestige = getPrestige();
+  const level = prestige.level;
+  // +1 starting reputation per prestige level (cap at +5)
+  const reputationBonus = Math.min(level, 5);
+  // $1M per 2 prestige levels
+  const budgetBonus = Math.floor(level / 2);
+  return { reputationBonus, budgetBonus };
+}
+
 // Get all cosmetic rewards unlocked at or below a prestige level
 export function getUnlockedPrestigeRewards(level: number): PrestigeReward[] {
   const rewards: PrestigeReward[] = [];

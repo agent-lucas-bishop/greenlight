@@ -179,7 +179,13 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
   const tierColors: Record<string, string> = { BLOCKBUSTER: '#2ecc71', SMASH: '#f1c40f', HIT: '#e67e22', FLOP: '#e74c3c' };
 
   if (leaderboard.length === 0) {
-    return <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: 600, margin: '0 auto' }}>No runs completed yet. Finish a run to see your history!</p>;
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon">🎬</div>
+        <div className="empty-state-title">No Runs Yet</div>
+        <div className="empty-state-desc">Complete your first run to see your history here. Every studio starts somewhere!</div>
+      </div>
+    );
   }
 
   // Filter

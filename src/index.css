@@ -461,8 +461,10 @@ h1, h2, h3, h4 {
   transform: translateY(0);
 }
 .btn:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
+  filter: grayscale(0.5);
+  border-style: dashed;
 }
 .btn:disabled:hover { background: transparent; color: var(--gold); box-shadow: none; transform: none; }
 
@@ -3264,4 +3266,110 @@ body {
   border-radius: 4px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+/* ===== R108: UI/UX CONSISTENCY PASS ===== */
+
+/* --- Button Hierarchy --- */
+
+/* Secondary buttons: outlined, muted */
+.btn-secondary {
+  border-color: var(--gray);
+  color: var(--gray-light);
+  background: transparent;
+}
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--white);
+  border-color: var(--gray-light);
+  box-shadow: none;
+}
+
+/* Destructive/risky actions: red-tinted */
+.btn-danger {
+  border-color: var(--red);
+  color: var(--red-bright);
+  background: rgba(192,57,43,0.08);
+}
+.btn-danger:hover {
+  background: var(--red);
+  color: var(--white);
+  box-shadow: 0 0 20px rgba(231,76,60,0.3);
+}
+
+/* Special action buttons (Director's Cut, Rewrite) */
+.btn-special {
+  border-color: var(--tag-chaos);
+  color: #c39bd3;
+  background: rgba(155,89,182,0.08);
+}
+.btn-special:hover {
+  background: rgba(155,89,182,0.2);
+  border-color: #c39bd3;
+  color: var(--white);
+}
+
+.btn-success {
+  border-color: var(--green);
+  color: var(--green-bright);
+  background: rgba(39,174,96,0.08);
+}
+.btn-success:hover {
+  background: rgba(39,174,96,0.2);
+  border-color: var(--green-bright);
+  color: var(--white);
+}
+
+/* Disabled cards (not just buttons) */
+.card.disabled-card {
+  opacity: 0.3;
+  filter: grayscale(0.5);
+  cursor: not-allowed !important;
+  border-style: dashed !important;
+}
+.card.disabled-card:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* --- Empty States --- */
+.empty-state {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--gray);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+  filter: grayscale(0.3);
+}
+.empty-state-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  color: var(--gray-light);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.empty-state-desc {
+  color: #555;
+  font-size: 0.82rem;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* --- Consistent Section Spacing --- */
+.shop-section + .shop-section {
+  margin-top: 32px;
+}
+.section-label {
+  color: #999;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-weight: 600;
 }

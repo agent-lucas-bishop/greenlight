@@ -1453,6 +1453,10 @@ export function performReshoots() {
   });
 }
 
+export function skipReshoots() {
+  setState({ reshootsBudgetUsed: true });
+}
+
 export function declineEncore() {
   if (!state.production) return;
   const prod = { ...state.production };

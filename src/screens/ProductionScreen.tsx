@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript, performReshoots } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript, performReshoots, skipReshoots } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { getCardBackColor } from '../achievements';
@@ -651,10 +651,10 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             Sacrifice your Action card to block the Incident? Both cards are discarded. <strong style={{ color: '#e74c3c' }}>Costs 3 quality.</strong>
           </p>
           <div className="btn-group" style={{ justifyContent: 'center' }}>
-            <button className="btn btn-primary" onClick={() => handleBlock(false)} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
+            <button className="btn btn-success" onClick={() => handleBlock(false)}>
               🎬 KEEP BOTH (Incident fires, keep Action)
             </button>
-            <button className="btn" onClick={() => handleBlock(true)} style={{ background: 'rgba(231,76,60,0.2)', borderColor: '#e74c3c', color: '#e74c3c' }}>
+            <button className="btn btn-danger" onClick={() => handleBlock(true)}>
               🛡️ BLOCK (Sacrifice Action, discard Incident)
             </button>
           </div>
@@ -678,17 +678,17 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           </button>
         )}
         {canWrap && !mustDraw && (
-          <button className="btn" onClick={handleWrap}>
+          <button className="btn btn-secondary" onClick={handleWrap}>
             ✂️ WRAP — Call "CUT!"
           </button>
         )}
         {!prod.directorsCutUsed && !prod.directorsCutActive && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && prod.deck.length >= 2 && prod.drawCount > 0 && (
-          <button className="btn btn-small" onClick={() => { setDcOrder([0, 1, 2]); activateDirectorsCut(); }} style={{ background: 'rgba(155,89,182,0.2)', borderColor: '#9b59b6', color: '#9b59b6' }}>
+          <button className="btn btn-special btn-small" onClick={() => { setDcOrder([0, 1, 2]); activateDirectorsCut(); }}>
             🎬 DIRECTOR'S CUT
           </button>
         )}
         {!prod.scriptRewriteUsed && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && prod.drawCount > 0 && state.budget >= 3 && (
-          <button className="btn btn-small" onClick={() => { sfx.scriptRewrite(); rewriteScript(); }} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
+          <button className="btn btn-success btn-small" onClick={() => { sfx.scriptRewrite(); rewriteScript(); }}>
             ✏️ REWRITE ($3M)
           </button>
         )}
@@ -767,7 +767,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
               <button className="btn btn-primary" onClick={() => { sfx.challenge(); performReshoots(); }}>
                 🎬 RESHOOTS ($5M)
               </button>
-              <button className="btn" onClick={() => {}}>
+              <button className="btn" onClick={() => { sfx.click(); skipReshoots(); }}>
                 Skip — keep current footage
               </button>
             </div>

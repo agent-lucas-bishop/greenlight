@@ -23,7 +23,7 @@ function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void
       tabIndex={canBuy ? 0 : -1}
       role="button"
       aria-label={`${t.name}, ${t.type}, Skill ${t.skill}, Heat ${t.heat}, Cost $${t.cost}M${canBuy ? '' : ', cannot afford'}`}
-      style={{ opacity: canBuy ? 1 : 0.4, cursor: canBuy ? 'pointer' : 'not-allowed' }}
+      style={{ opacity: canBuy ? 1 : 0.3, cursor: canBuy ? 'pointer' : 'not-allowed', filter: canBuy ? 'none' : 'grayscale(0.5)', borderStyle: canBuy ? 'solid' : 'dashed' }}
     >
       <span className="talent-type" style={{ background: typeColors[t.type] || '#666' }}>{t.type}</span>
       <div className="card-title">{t.name}</div>
@@ -103,7 +103,13 @@ export default function ShopScreen({ state }: { state: GameState }) {
       {/* Studio Perks */}
       <div className="shop-section">
         <h3>🎬 Studio Upgrades ({state.perks.length}/5)</h3>
-        {state.perks.length >= 5 && <p style={{ color: '#666', fontSize: '0.85rem' }}>The studio is fully kitted out!</p>}
+        {state.perks.length >= 5 && (
+          <div className="empty-state" style={{ padding: '16px 20px' }}>
+            <div className="empty-state-icon">🏆</div>
+            <div className="empty-state-title">Fully Upgraded</div>
+            <div className="empty-state-desc">Your studio has all 5 perks. You're running a first-class operation!</div>
+          </div>
+        )}
         <div className="card-grid card-grid-4">
           {state.perkMarket.map(perk => {
             const locked = isPerkLocked(perk as any);
@@ -117,7 +123,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
                 tabIndex={canBuy ? 0 : -1}
                 role="button"
                 aria-label={`${perk.name}, $${perk.cost}M: ${perk.description}${locked ? ', locked' : canBuy ? '' : ', cannot afford'}`}
-                style={{ opacity: locked ? 0.35 : canBuy ? 1 : 0.4, cursor: locked ? 'not-allowed' : canBuy ? 'pointer' : 'not-allowed', position: 'relative' }}
+                style={{ opacity: locked ? 0.25 : canBuy ? 1 : 0.35, cursor: locked ? 'not-allowed' : canBuy ? 'pointer' : 'not-allowed', position: 'relative', filter: !canBuy && !locked ? 'grayscale(0.4)' : locked ? 'grayscale(0.6)' : 'none', borderStyle: !canBuy || locked ? 'dashed' : 'solid' }}
               >
                 <div className="card-title">{perk.name}</div>
                 <div className="card-stat gold">${perk.cost}M</div>
@@ -174,6 +180,13 @@ export default function ShopScreen({ state }: { state: GameState }) {
         )}
         
         <h4 style={{ color: '#999', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Roster ({state.roster.length}/8) — Train for $5M</h4>
+        {state.roster.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon">🎭</div>
+            <div className="empty-state-title">No Talent on Roster</div>
+            <div className="empty-state-desc">Hire some talent above to fill your roster. You'll need them for casting!</div>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {state.roster.map(t => {
             const hasIncident = t.cards.some(c => c.cardType === 'incident');
@@ -196,13 +209,13 @@ export default function ShopScreen({ state }: { state: GameState }) {
                 <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
                   {hasIncident && canTrain && (
                     <button className="btn-tiny" onClick={() => trainTalent(t.id, 'removeIncident')}
-                      style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(231,76,60,0.15)', border: '1px solid #e74c3c', color: '#e74c3c' }}>
+                      style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(192,57,43,0.1)', border: '1px solid var(--red)', color: 'var(--red-bright)' }}>
                       🗑️ Remove Incident ($5M)
                     </button>
                   )}
                   {hasAction && canTrain && (
                     <button className="btn-tiny" onClick={() => trainTalent(t.id, 'upgradeAction')}
-                      style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(46,204,113,0.15)', border: '1px solid #2ecc71', color: '#2ecc71' }}>
+                      style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(39,174,96,0.1)', border: '1px solid var(--green)', color: 'var(--green-bright)' }}>
                       ⬆️ Upgrade Action ($5M)
                     </button>
                   )}
@@ -222,8 +235,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[5, 10, Math.ceil(state.debt)].filter((v, i, a) => v <= state.budget && v <= state.debt && a.indexOf(v) === i).map(amt => (
-              <button key={amt} className="btn btn-small" onClick={() => payDebt(amt)}
-                style={{ background: 'rgba(231,76,60,0.2)', border: '1px solid #e74c3c', color: '#e74c3c' }}>
+              <button key={amt} className="btn btn-danger btn-small" onClick={() => payDebt(amt)}>
                 Pay ${amt}M
               </button>
             ))}

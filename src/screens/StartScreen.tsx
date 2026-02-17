@@ -23,6 +23,7 @@ import { DIFFICULTIES, getDifficultyConfig } from '../difficulty';
 import type { Difficulty } from '../types';
 
 // Lazy-load heavy modals (only opened on demand)
+const StudioLot = lazy(() => import('../components/StudioLot'));
 const AchievementGallery = lazy(() => import('../components/AchievementGallery'));
 const SettingsModal = lazy(() => import('../components/SettingsModal'));
 const Glossary = lazy(() => import('../components/Glossary'));

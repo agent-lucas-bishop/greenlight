@@ -17,6 +17,7 @@ import { checkUnlockConditions, UNLOCKABLE_DEFS } from './unlockableContent';
 import type { UnlockableDef } from './unlockableContent';
 import DevStats from './components/DevStats';
 import RetirementToast from './components/RetirementToast';
+import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -44,6 +45,13 @@ function App() {
   const [seasonHeadline, setSeasonHeadline] = useState('');
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // R167: Apply seasonal theme CSS properties
+  useEffect(() => {
+    if (state.phase !== 'start') {
+      applySeasonTheme(state.season);
+    }
+  }, [state.season, state.phase]);
 
   // Check achievements on phase transitions
   useEffect(() => {
@@ -150,6 +158,14 @@ function App() {
     <>
       <a href="#main-content" className="skip-link">Skip to content</a>
       <div className="spotlight" aria-hidden="true" />
+      {state.phase !== 'start' && (
+        <div className="weather-particles" aria-hidden="true">
+          <div className="weather-particle p1" />
+          <div className="weather-particle p2" />
+          <div className="weather-particle p3" />
+          <div className="weather-particle p4" />
+        </div>
+      )}
       {state.phase !== 'start' && <Header state={state} />}
       <div className="film-strip" aria-hidden="true" />
       <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite" tabIndex={-1} style={{ outline: 'none' }}>
@@ -197,7 +213,8 @@ function App() {
                 <div className="season-headline-rule" />
               </div>
             )}
-            <div className="season-number">SEASON {seasonOverlay}</div>
+            <div className="season-theme-icon">{getSeasonTheme(seasonOverlay).icon}</div>
+            <div className="season-number">SEASON {seasonOverlay}: {getSeasonTheme(seasonOverlay).name}</div>
             {seasonTip && (
               <div style={{
                 marginTop: 16,

@@ -48,6 +48,11 @@
   --genre-drama: #d4a017;
   --genre-thriller: #5d6d7e;
   --genre-romance: #e91e63;
+
+  /* R167: Season theme (defaults, overridden by JS) */
+  --season-accent: #d4a843;
+  --season-bg-tint: rgba(212,168,67,0.06);
+  --season-glow: rgba(212,168,67,0.35);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -200,8 +205,8 @@ h1, h2, h3, h4 {
 /* ===== HEADER ===== */
 
 .header {
-  background: linear-gradient(180deg, rgba(26,26,30,0.98) 0%, rgba(17,17,19,0.98) 100%);
-  border-bottom: 1px solid rgba(212,168,67,0.2);
+  background: linear-gradient(180deg, var(--season-bg-tint) 0%, rgba(17,17,19,0.98) 100%);
+  border-bottom: 1px solid var(--season-glow);
   padding: 10px 80px 10px 24px;
   display: flex;
   justify-content: space-between;
@@ -3896,3 +3901,128 @@ button, a, .btn, .card, .cast-slot, .selectable-card, .prod-card-new,
 
 /* Settings tab button hover */
 .settings-tab-btn:hover { background: rgba(212,168,67,0.08) !important; }
+
+/* ===== R167: SEASONAL THEMES & VISUAL VARIETY ===== */
+
+/* Season accent on season overlay number */
+.season-number {
+  color: var(--season-accent, var(--gold));
+  text-shadow: 0 0 80px var(--season-glow, rgba(212,168,67,0.4));
+}
+
+.season-theme-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+  animation: seasonIconBounce 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes seasonIconBounce {
+  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* Season background tint on body */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--season-bg-tint) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Card glow uses season accent */
+.card, .prod-card, .greenlight-card, .selectable-card {
+  border-color: color-mix(in srgb, var(--season-accent) 20%, var(--dark3));
+}
+.card:hover, .prod-card:hover, .greenlight-card:hover, .selectable-card:hover {
+  box-shadow: 0 0 16px var(--season-glow);
+}
+
+/* ===== WEATHER PARTICLES ===== */
+.weather-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.weather-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+/* Spring — floating petals */
+.weather-spring .weather-particle {
+  background: radial-gradient(ellipse, rgba(255,182,193,0.7), rgba(255,105,180,0.3));
+  width: 10px; height: 6px;
+  border-radius: 50% 0 50% 0;
+  opacity: 0.6;
+  animation: petalFall 8s ease-in-out infinite;
+}
+.weather-spring .weather-particle.p1 { left: 10%; animation-delay: 0s; animation-duration: 9s; }
+.weather-spring .weather-particle.p2 { left: 35%; animation-delay: 2s; animation-duration: 11s; }
+.weather-spring .weather-particle.p3 { left: 65%; animation-delay: 4s; animation-duration: 8s; }
+.weather-spring .weather-particle.p4 { left: 85%; animation-delay: 6s; animation-duration: 10s; }
+
+@keyframes petalFall {
+  0% { transform: translateY(-20px) rotate(0deg) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(100vh) rotate(360deg) translateX(40px); opacity: 0; }
+}
+
+/* Winter — snowflakes */
+.weather-winter .weather-particle {
+  background: rgba(200,220,255,0.8);
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: snowFall 12s linear infinite;
+}
+.weather-winter .weather-particle.p1 { left: 15%; animation-delay: 0s; animation-duration: 14s; }
+.weather-winter .weather-particle.p2 { left: 40%; animation-delay: 3s; animation-duration: 11s; }
+.weather-winter .weather-particle.p3 { left: 60%; animation-delay: 6s; animation-duration: 13s; }
+.weather-winter .weather-particle.p4 { left: 80%; animation-delay: 9s; animation-duration: 10s; }
+
+@keyframes snowFall {
+  0% { transform: translateY(-10px) translateX(0); opacity: 0; }
+  5% { opacity: 0.5; }
+  95% { opacity: 0.3; }
+  100% { transform: translateY(100vh) translateX(30px); opacity: 0; }
+}
+
+/* Summer — heat shimmer on edges */
+.weather-summer .weather-particles::before,
+.weather-summer .weather-particles::after {
+  content: '';
+  position: fixed;
+  top: 0; bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, rgba(240,160,48,0.04), transparent);
+  animation: heatShimmer 3s ease-in-out infinite alternate;
+}
+.weather-summer .weather-particles::before { left: 0; }
+.weather-summer .weather-particles::after { right: 0; transform: scaleX(-1); }
+.weather-summer .weather-particle { display: none; }
+
+@keyframes heatShimmer {
+  0% { opacity: 0.3; filter: blur(1px); }
+  100% { opacity: 0.6; filter: blur(3px); }
+}
+
+/* Autumn — no particles, just warm ambient */
+.weather-autumn .weather-particle { display: none; }
+
+/* Awards — no particles, just prestigious glow */
+.weather-awards .weather-particle { display: none; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .weather-particles { display: none !important; }
+  .season-theme-icon { animation: none !important; }
+}

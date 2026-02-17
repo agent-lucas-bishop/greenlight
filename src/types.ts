@@ -364,6 +364,10 @@ export interface GameState {
   activeWorldEvents: import('./worldEvents').ActiveWorldEvent[];
   worldEventHistory: import('./worldEvents').ActiveWorldEvent[];
   worldEventEndedThisSeason: import('./worldEvents').ActiveWorldEvent[]; // events that just expired
+  // R212: Story events
+  pendingStoryEvent: import('./storyEvents').StoryEvent | null;
+  firedStoryEventIds: string[];
+  storyMoraleBonus: number; // quality bonus from morale, applied next film then cleared
 }
 
 // ─── RIVAL ACTIONS (R150) ───

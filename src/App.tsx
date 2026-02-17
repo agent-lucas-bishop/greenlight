@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { getState, subscribe, clearRetirementNotification } from './gameStore';
+import { getState, subscribe, clearRetirementNotification, resolveStoryEvent } from './gameStore';
+import StoryEventModal from './components/StoryEventModal';
 import { GameState } from './types';
 import StartScreen from './screens/StartScreen';
 import Header from './components/Header';
@@ -285,6 +286,12 @@ function App() {
           cutscene={activeCutscene.data}
           vars={activeCutscene.vars}
           onComplete={() => setActiveCutscene(null)}
+        />
+      )}
+      {state.pendingStoryEvent && (
+        <StoryEventModal
+          event={state.pendingStoryEvent}
+          onChoice={resolveStoryEvent}
         />
       )}
       <DevStats />

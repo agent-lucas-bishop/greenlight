@@ -126,6 +126,7 @@ import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee,
 import { getDifficultyConfig } from './difficulty';
 import type { Difficulty } from './types';
 import { getEligibleFestivals, canSubmitToFestival, judgeFestival, getFestivalRepBoost, getFestivalBudgetBonus, getAwardLabel, getFestival, type FestivalResult } from './filmFestivals';
+import { startReplayRecording, recordEvent, finalizeReplay, snapshotState } from './replay';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -756,6 +757,10 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   const studio = generateStudioName();
   trackRunStart(state.gameMode, state.challengeId, archetypeId);
   careerSessionStart();
+  // R211: Start replay recording
+  startReplayRecording(studio.name, state.gameMode, state.difficulty);
+  recordEvent('run_start', 1, 'start', { studioName: studio.name, gameMode: state.gameMode, difficulty: state.difficulty, archetype: archetypeId });
+  recordEvent('archetype_pick', 1, 'start', { name: archetypeId });
   setState({ studioArchetype: archetypeId, budget, studioName: studio.name, studioTagline: studio.tagline, phase: 'neow' as GamePhase });
 }
 
@@ -808,6 +813,15 @@ function generateGenreTrends(): { hot: Genre[]; cold: Genre[] } {
 }
 
 function beginSeason() {
+  // R212: Check story events at season start (e.g., first film greenlit)
+  const firedSetBegin = new Set(state.firedStoryEventIds);
+  const storyEventBegin = checkStoryEvents(state, firedSetBegin);
+  if (storyEventBegin) {
+    setState({ pendingStoryEvent: storyEventBegin });
+    // Modal will show; resolveStoryEvent → proceedToShop won't work here,
+    // so we return and let the modal resolve, then re-enter beginSeason via resolveStoryEventBeginSeason
+    return;
+  }
   // Apply season identity budget bonus (seasons 3+ give extra budget)
   const identity = getSeasonIdentity(state.season);
   if (identity.budgetBonus > 0 && state.season > 1) {
@@ -973,6 +987,8 @@ export function pickScript(script: Script) {
     newBudget = 0;
   }
   trackGenrePick(script.genre);
+  // R211: Replay
+  recordEvent('script_pick', state.season, 'greenlight', { title: script.title, genre: script.genre, cost: scriptCost, baseScore: script.baseScore, state: snapshotState(state) });
   setState({
     currentScript: script,
     budget: newBudget,
@@ -1050,6 +1066,8 @@ export function hireTalent(talent: Talent) {
 
   // Record hire for aging system
   recordHire(hiredTalent.name);
+  // R211: Replay
+  recordEvent('talent_hire', state.season, state.phase, { name: hiredTalent.name, type: hiredTalent.type, skill: hiredTalent.skill, cost: actualCost, state: snapshotState(state) });
 
   setState({
     roster: [...updatedRoster, hiredTalent],
@@ -1389,6 +1407,9 @@ export function pickCard(cardIndex: 0 | 1) {
   }
   
   prod.currentDraw = null;
+  // R211: Replay
+  const discardedName = draw.choosable.length > 1 ? draw.choosable[cardIndex === 0 ? 1 : 0].name : undefined;
+  recordEvent('card_pick', state.season, 'production', { kept: chosen.name, discarded: discardedName });
   const updatedProd = resolveCardPlay(chosen, prod, state.castSlots);
   setState({ production: updatedProd });
 }
@@ -2639,6 +2660,7 @@ export function resolveRelease() {
     // Clear season event effects after this film
     activeSeasonEvent: null,
     streamingDealActive: false,
+    storyMoraleBonus: 0, // R212: consumed morale bonus
     pendingSequelScript,
     franchises,
     sequelOrigins,
@@ -2697,7 +2719,34 @@ export function proceedFromRecap() {
     setState({ phase: 'victory' });
     return;
   }
+  // R212: Check for story events before proceeding
+  const firedSet = new Set(state.firedStoryEventIds);
+  const storyEvent = checkStoryEvents(state, firedSet);
+  if (storyEvent) {
+    setState({ pendingStoryEvent: storyEvent });
+    return; // modal will show; resolveStoryEvent() resumes flow
+  }
   proceedToShop();
+}
+
+/** R212: Resolve a story event choice and resume game flow. */
+export function resolveStoryEvent(outcome: StoryEventOutcome) {
+  const event = state.pendingStoryEvent;
+  if (!event) return;
+  const wasBeginSeason = state.phase === 'greenlight' || state.phase === 'start' || state.seasonHistory.length === 0;
+  setState({
+    pendingStoryEvent: null,
+    firedStoryEventIds: [...state.firedStoryEventIds, event.id],
+    reputation: Math.max(0, Math.min(5, state.reputation + outcome.reputation)),
+    budget: state.budget + outcome.budget,
+    storyMoraleBonus: (state.storyMoraleBonus || 0) + outcome.morale,
+  });
+  if (wasBeginSeason && state.phase !== 'release') {
+    // Resume beginSeason flow (story event fired at season start)
+    beginSeason();
+  } else {
+    proceedToShop();
+  }
 }
 
 export function proceedToShop() {

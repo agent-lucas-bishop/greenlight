@@ -19,6 +19,7 @@ import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 import { CHALLENGE_MODIFIERS, getCombinedModifierMultiplier } from '../challengeModifiers';
 import { hasWeeklyRun, getWeeklyBest } from '../leaderboard';
 import { getStudioIdentity, hasStudioIdentity } from '../studioIdentity';
+import { getCareerTitle, loadProfile } from '../playerProfile';
 import { DIFFICULTIES, getDifficultyConfig } from '../difficulty';
 import type { Difficulty } from '../types';
 
@@ -35,6 +36,7 @@ const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
 const SynergyCodex = lazy(() => import('../components/SynergyDisplay').then(m => ({ default: m.SynergyCodex })));
 const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
+const PlayerProfileModal = lazy(() => import('../components/PlayerProfile'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
@@ -430,6 +432,7 @@ export default function StartScreen() {
   const simplified = isSimplifiedRun(); // true until first run complete
   const [showHelp, setShowHelp] = useState(false);
   const [showChallengeBoard, setShowChallengeBoard] = useState(false);
+  const [showPlayerProfile, setShowPlayerProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -498,7 +501,7 @@ export default function StartScreen() {
               role="button"
               aria-label={`${d.name} (${d.label}): ${d.description}`}
               style={{ cursor: 'pointer', padding: 20, flex: '1 1 200px', maxWidth: 240, textAlign: 'center', transition: 'transform 0.2s, border-color 0.2s', borderColor: d.id === 'studio' ? 'rgba(212,168,67,0.3)' : undefined }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = d.color; (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; }}
+              onMouseEnter={e => { try { sfx.difficultyCompareHover(); } catch {} (e.currentTarget as HTMLElement).style.borderColor = d.color; (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = d.id === 'studio' ? 'rgba(212,168,67,0.3)' : ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
             >
               {d.id === 'studio' && (

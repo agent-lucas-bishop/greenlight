@@ -197,6 +197,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         setActiveSynergies(detected);
         setShowSynergyOverlay(true);
         markSynergiesDiscovered(detected.map(d => d.synergy.id));
+        try { sfx.codexEntryUnlock(); } catch {}
       }
     }
   }, [!!prod]);
@@ -922,7 +923,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       {/* R217: Synergy reveal overlay */}
       {showSynergyOverlay && (
         <Suspense fallback={null}>
-          <SynergyDisplay synergies={activeSynergies} onDismiss={() => setShowSynergyOverlay(false)} />
+          <SynergyDisplay synergies={activeSynergies} onDismiss={() => { setShowSynergyOverlay(false); try { sfx.synergyBonusApplied(); } catch {} }} />
         </Suspense>
       )}
     </div>

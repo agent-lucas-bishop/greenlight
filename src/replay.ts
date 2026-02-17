@@ -32,6 +32,11 @@ export type ReplayEventType =
   | 'season_event'
   | 'debt_payment'
   | 'extended_cut'
+  | 'loan_taken'
+  | 'loan_repaid'
+  | 'investment_bought'
+  | 'streaming_deal_accepted'
+  | 'insurance_bought'
   | 'run_end';
 
 export interface ReplayEvent {

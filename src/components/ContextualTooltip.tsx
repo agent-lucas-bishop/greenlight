@@ -34,7 +34,7 @@ export default function ContextualTooltip({ tip, onDismiss }: Props) {
     const t = setTimeout(() => {
       updatePosition();
       setVisible(true);
-      try { sfx.tutorialPing(); } catch {}
+      try { sfx.tooltipAppear(); } catch {}
     }, 300);
 
     // Update position on scroll/resize
@@ -49,7 +49,7 @@ export default function ContextualTooltip({ tip, onDismiss }: Props) {
 
   const handleDismiss = () => {
     markTipShown(tip.id);
-    try { sfx.click(); } catch {}
+    try { sfx.tooltipDismiss(); } catch {}
     setVisible(false);
     setTimeout(onDismiss, 200);
   };

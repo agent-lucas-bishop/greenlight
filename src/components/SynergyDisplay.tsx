@@ -1,6 +1,7 @@
 // R217: Synergy Display — shows discovered synergies during production
 import { useState, useEffect } from 'react';
 import type { DetectedSynergy } from '../cardSynergies';
+import { sfx } from '../sound';
 
 const RARITY_COLORS: Record<string, string> = {
   common: '#8b9dc3',
@@ -30,7 +31,10 @@ function SynergyCard({ detected, index }: { detected: DetectedSynergy; index: nu
   const glow = RARITY_GLOW[s.rarity];
 
   useEffect(() => {
-    const t = setTimeout(() => setRevealed(true), 300 + index * 400);
+    const t = setTimeout(() => {
+      setRevealed(true);
+      try { sfx.synergyRevealCard(); } catch {}
+    }, 300 + index * 400);
     return () => clearTimeout(t);
   }, [index]);
 
@@ -67,6 +71,19 @@ interface SynergyDisplayProps {
 
 export default function SynergyDisplay({ synergies, onDismiss }: SynergyDisplayProps) {
   const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (synergies.length === 0) return;
+    const hasLegendary = synergies.some(s => s.synergy.rarity === 'legendary');
+    try { hasLegendary ? sfx.synergyLegendary() : sfx.synergyDetected(); } catch {}
+    // Play connection line sounds staggered
+    synergies.forEach((_, i) => {
+      if (i > 0) {
+        const t = setTimeout(() => { try { sfx.synergyConnectionLine(); } catch {} }, 600 + i * 400);
+        return () => clearTimeout(t);
+      }
+    });
+  }, [synergies]);
 
   if (!visible || synergies.length === 0) return null;
 
@@ -144,7 +161,7 @@ export function SynergyCodex({ onClose, inline }: SynergyCodexProps) {
           <button
             key={f}
             className={`synergy-filter-btn ${filter === f ? 'active' : ''}`}
-            onClick={() => setFilter(f)}
+            onClick={() => { setFilter(f); try { sfx.codexCategorySwitch(); } catch {} }}
           >
             {f === 'all' ? '📋 All' : f === 'genre' ? '🎭 Genre' : f === 'talent' ? '⭐ Talent' : f === 'budget' ? '💰 Budget' : '🃏 Card'}
           </button>

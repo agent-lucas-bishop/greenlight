@@ -25,6 +25,7 @@ import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '.
 import { getDifficultyBadge } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
 import { buildDirectorProfile, recordDirectorRun, getDirectorCareer, type DirectorProfile } from '../directorProfile';
+import { updateProfileAfterRun } from '../playerProfile';
 import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionProgress } from '../tradingCards';
 import TradingCardToast from '../components/TradingCardToast';
 import ShareCard from '../components/ShareCard';
@@ -726,6 +727,17 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         studioName: state.studioName,
         budget: state.budget,
         startBudget: 15, // default start budget
+      });
+      // R223: Update player profile
+      updateProfileAfterRun({
+        won: isVictory,
+        score,
+        rank,
+        earnings: state.totalEarnings,
+        budgetSpent: Math.max(0, 15 - state.budget + state.totalEarnings), // approximate budget spent
+        difficulty: state.difficulty || 'studio',
+        archetype: state.studioArchetype || 'unknown',
+        films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice })),
       });
       setRecorded(true);
     }

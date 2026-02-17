@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { sfx } from '../sound';
 
 const STORAGE_KEY = 'greenlight_strategy_tips_shown';
@@ -54,6 +54,16 @@ interface Props {
 
 export default function StrategyTipsModal({ onClose }: Props) {
   const [visible, setVisible] = useState(true);
+  const didPlay = useRef(false);
+
+  useEffect(() => {
+    if (didPlay.current) return;
+    didPlay.current = true;
+    // Staggered page-turn sounds for each tip
+    TIPS.forEach((_, i) => {
+      setTimeout(() => { try { sfx.strategyTipReveal(); } catch {} }, 200 + i * 150);
+    });
+  }, []);
 
   const handleClose = () => {
     markShown();

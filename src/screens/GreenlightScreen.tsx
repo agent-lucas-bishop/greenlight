@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState } from '../types';
-import { pickScript } from '../gameStore';
+import { pickScript, toggleFinancePanel } from '../gameStore';
 import { getSeasonTarget } from '../data';
+import FinancePanel from '../components/FinancePanel';
 import { getSeasonIdentity } from '../rivals';
 import PhaseTip from '../components/PhaseTip';
 import MechanicTip from '../components/MechanicTip';
@@ -69,7 +70,14 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           {getSeasonIdentity(state.season).name}
         </div>
         <div className="subtitle">Season {state.season} — Target: <strong style={{ color: 'var(--gold)' }}>${target}M</strong> — {getSeasonIdentity(state.season).description}</div>
+        <button className="btn btn-small" onClick={toggleFinancePanel} style={{ marginTop: 6, fontSize: '0.75rem', background: 'rgba(212,168,67,0.15)', border: '1px solid rgba(212,168,67,0.3)' }}>
+          💰 Finances {state.activeLoans.length > 0 && <span style={{ color: '#e74c3c' }}> · {state.activeLoans.length} loan{state.activeLoans.length > 1 ? 's' : ''}</span>}
+          {state.activeStreamingDeal && <span style={{ color: '#2ecc71' }}> · 📺</span>}
+          {state.streamingDealOffer && !state.activeStreamingDeal && <span style={{ color: '#f39c12' }}> · 📨 offer!</span>}
+        </button>
       </div>
+
+      {state.showFinancePanel && <FinancePanel state={state} />}
 
       {state.industryEvent && (
         <div className="event-banner animate-slide-down">📰 <strong>{state.industryEvent.name}</strong> — {state.industryEvent.description}</div>

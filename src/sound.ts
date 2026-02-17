@@ -2636,4 +2636,147 @@ export const sfx = {
       note(c, 2637, 1.05, 0.45, 0.04, 'sine');
     }, 'prestige');
   },
+
+  // ─── R222: Card Synergies (R217) ───
+
+  /** Sparkly discovery chime when synergy found */
+  synergyDetected() {
+    play(c => {
+      // Ascending sparkle arpeggio
+      note(c, 1047, 0, 0.12, 0.12, 'sine');      // C6
+      note(c, 1319, 0.08, 0.12, 0.11, 'sine');   // E6
+      note(c, 1568, 0.16, 0.12, 0.10, 'sine');   // G6
+      note(c, 2093, 0.24, 0.18, 0.09, 'sine');   // C7
+      // Shimmer overtones
+      note(c, 2637, 0.20, 0.25, 0.04, 'sine');
+      note(c, 3136, 0.28, 0.20, 0.03, 'sine');
+      noise(c, 0.15, 0.15, 0.02);
+    }, 'synergyDetected');
+  },
+
+  /** Staggered whoosh for each card in synergy reveal overlay */
+  synergyRevealCard() {
+    play(c => {
+      noise(c, 0, 0.15, 0.08);
+      note(c, 400, 0, 0.08, 0.06, 'sine');
+      note(c, 800, 0.02, 0.12, 0.05, 'sine');
+      // Upward sweep
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(300, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(900, c.currentTime + 0.12);
+      g.gain.setValueAtTime(0.06, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+      o.connect(g).connect(getMaster());
+      o.start(c.currentTime);
+      o.stop(c.currentTime + 0.18);
+    }, 'synergyRevealCard');
+  },
+
+  /** Subtle electric zap as SVG lines draw between cards */
+  synergyConnectionLine() {
+    play(c => {
+      // Short crackle
+      noise(c, 0, 0.06, 0.06);
+      note(c, 1200, 0, 0.04, 0.05, 'sawtooth');
+      note(c, 1800, 0.02, 0.04, 0.04, 'square');
+      noise(c, 0.03, 0.04, 0.04);
+    }, 'synergyConnectionLine');
+  },
+
+  /** Satisfying "cha-ching" when quality/BO bonuses apply */
+  synergyBonusApplied() {
+    play(c => {
+      // Metallic ring
+      note(c, 1397, 0, 0.08, 0.12, 'square');    // F6
+      note(c, 2093, 0.06, 0.15, 0.10, 'sine');    // C7
+      // Cash register shimmer
+      note(c, 2637, 0.10, 0.20, 0.06, 'sine');
+      note(c, 3520, 0.12, 0.15, 0.04, 'sine');
+      noise(c, 0, 0.05, 0.06);
+    }, 'synergyBonusApplied');
+  },
+
+  /** Collectible unlock sound for codex entries */
+  codexEntryUnlock() {
+    play(c => {
+      // Two-note unlock chime (lower than achievement)
+      note(c, 587, 0, 0.15, 0.10, 'triangle');    // D5
+      note(c, 880, 0.10, 0.25, 0.12, 'sine');      // A5
+      note(c, 1175, 0.18, 0.20, 0.06, 'sine');     // D6 shimmer
+      noise(c, 0.08, 0.08, 0.02);
+    }, 'codexEntryUnlock');
+  },
+
+  /** Soft tab click for filtering codex categories */
+  codexCategorySwitch() {
+    play(c => {
+      note(c, 600, 0, 0.04, 0.06, 'sine');
+      noise(c, 0, 0.03, 0.04);
+    }, 'codexCategorySwitch');
+  },
+
+  /** Epic chord for legendary synergy discovery */
+  synergyLegendary() {
+    play(c => {
+      // Power chord: C major spread
+      note(c, 262, 0, 0.8, 0.12, 'sine');         // C4
+      note(c, 330, 0.05, 0.75, 0.10, 'sine');      // E4
+      note(c, 392, 0.10, 0.70, 0.10, 'sine');      // G4
+      note(c, 523, 0.15, 0.65, 0.10, 'sine');      // C5
+      // Upper shimmer
+      note(c, 1047, 0.20, 0.6, 0.06, 'sine');      // C6
+      note(c, 1319, 0.25, 0.55, 0.05, 'sine');     // E6
+      note(c, 1568, 0.30, 0.5, 0.04, 'sine');      // G6
+      note(c, 2093, 0.35, 0.5, 0.03, 'sine');      // C7
+      // Sweep
+      noise(c, 0, 0.3, 0.03);
+      noise(c, 0.3, 0.3, 0.02);
+    }, 'synergyLegendary');
+  },
+
+  // ─── R222: Tutorial V2 (R218) ───
+
+  /** Gentle pop-in for contextual tooltips */
+  tooltipAppear() {
+    play(c => {
+      note(c, 880, 0, 0.06, 0.06, 'sine');
+      note(c, 1100, 0.03, 0.08, 0.05, 'sine');
+      noise(c, 0, 0.03, 0.02);
+    }, 'tooltipAppear');
+  },
+
+  /** Soft swoosh on "Got it" click */
+  tooltipDismiss() {
+    play(c => {
+      // Downward sweep
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(600, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(200, c.currentTime + 0.12);
+      g.gain.setValueAtTime(0.05, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+      o.connect(g).connect(getMaster());
+      o.start(c.currentTime);
+      o.stop(c.currentTime + 0.18);
+      noise(c, 0, 0.08, 0.03);
+    }, 'tooltipDismiss');
+  },
+
+  /** Subtle page-turn for each tip in strategy modal */
+  strategyTipReveal() {
+    play(c => {
+      noise(c, 0, 0.10, 0.05);
+      note(c, 500, 0.02, 0.06, 0.03, 'sine');
+    }, 'strategyTipReveal');
+  },
+
+  /** Light tick when hovering difficulty comparison rows */
+  difficultyCompareHover() {
+    play(c => {
+      note(c, 700, 0, 0.03, 0.04, 'sine');
+    }, 'difficultyCompareHover');
+  },
 };

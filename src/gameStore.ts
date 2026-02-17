@@ -2250,6 +2250,10 @@ export function resolveRelease() {
   const se = state.activeSeasonEvent;
   if (se) {
     if (se.effect === 'streamingDeal' || state.streamingDealActive) multiplier -= 0.4;
+    // R221: Advanced streaming deal caps multiplier
+    if (state.activeStreamingDeal) {
+      multiplier = Math.min(multiplier, state.activeStreamingDeal.boMultiplierCap);
+    }
     if (se.effect === 'genreRevival') {
       // Boost most-made genre
       const entries = Object.entries(state.genreMastery);
@@ -2699,6 +2703,26 @@ export function resolveRelease() {
     notes: archiveNotes,
   });
 
+  // R221: Calculate merch revenue for this film
+  const franchiseRoot_ = sequelOrigins[script.title] || script.title;
+  const franchiseLen = franchises[franchiseRoot_]?.films?.length || 1;
+  const newMerch = calculateMerchRevenue(script.title, script.genre as Genre, boxOffice, tier, franchiseLen);
+  const updatedMerchStreams = [...state.merchStreams];
+  if (newMerch) updatedMerchStreams.push(newMerch);
+
+  // R221: Streaming deal guaranteed income
+  let streamingDealIncome = 0;
+  if (state.activeStreamingDeal) {
+    streamingDealIncome = state.activeStreamingDeal.guaranteedIncome;
+  }
+
+  // R221: Insurance — reduce flop penalty
+  let finalEarnings = earnings;
+  if (tier === 'FLOP' && state.insurancePolicy?.active && !state.completionBond) {
+    // Insurance: earn 85% of BO instead of 60%
+    finalEarnings = Math.round(boxOffice * state.insurancePolicy.flopProtection * 10) / 10;
+  }
+
   setState({
     phase: 'release',
     lastFilmTitle: filmTitle,
@@ -2709,14 +2733,14 @@ export function resolveRelease() {
     postProdSoundtrack: soundtrack,
     lastAudienceReaction: finalAudienceData,
     debt,
-    budget: state.budget + earnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost,
-    totalEarnings: state.totalEarnings + earnings,
+    budget: state.budget + finalEarnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost + streamingDealIncome,
+    totalEarnings: state.totalEarnings + finalEarnings + streamingDealIncome,
     reputation: Math.max(0, Math.min(5, newRep + debtRepPenalty)),
     strikes: (tier === 'FLOP' && !state.completionBond) ? state.strikes + 1 : state.strikes,
-    completionBond: (tier === 'FLOP' && state.completionBond) ? false : state.completionBond, // consume bond on FLOP
-    extendedCutAvailable: tier !== 'FLOP', // HIT or better can do extended cut
+    completionBond: (tier === 'FLOP' && state.completionBond) ? false : state.completionBond,
+    extendedCutAvailable: tier !== 'FLOP',
     extendedCutUsed: false,
-    reshootsBudgetUsed: false, // reset for next film
+    reshootsBudgetUsed: false,
     seasonHistory: [...state.seasonHistory, result],
     rivalHistory: [...state.rivalHistory, rivalSeasonData],
     cumulativeRivalEarnings: newCumulativeRivalEarnings,
@@ -2727,13 +2751,14 @@ export function resolveRelease() {
       ...state.genreMastery,
       [script.genre]: (state.genreMastery[script.genre] || 0) + 1,
     },
-    // Clear season event effects after this film
     activeSeasonEvent: null,
     streamingDealActive: false,
-    storyMoraleBonus: 0, // R212: consumed morale bonus
+    activeStreamingDeal: null, // R221: deal consumed after one film
+    storyMoraleBonus: 0,
     pendingSequelScript,
     franchises,
     sequelOrigins,
+    merchStreams: updatedMerchStreams,
   });
 }
 

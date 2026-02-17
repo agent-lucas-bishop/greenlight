@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
+// Reputation tier helper (duplicated from EndScreen to avoid circular import)
+function getRepTier(rep: number): { name: string; color: string } {
+  if (rep >= 12) return { name: 'Legendary', color: '#ff6b6b' };
+  if (rep >= 9) return { name: 'Acclaimed', color: '#ffd93d' };
+  if (rep >= 6) return { name: 'Established', color: '#6bcb77' };
+  if (rep >= 3) return { name: 'Rising', color: '#5dade2' };
+  return { name: 'Unknown', color: '#999' };
+}
 import { getChallengeById } from '../challenges';
 import { isMuted, toggleMute, sfx, getVolume, setVolume } from '../sound';
 import StatTooltip from './StatTooltip';
@@ -130,10 +138,15 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="Star rating (1-5). Multiplies box office earnings. Drops when you miss targets. 0 = game over!" inline>
             <span className="label">Reputation</span>
           </StatTooltip>
-          <span className="value">
-            {Array.from({ length: 5 }, (_, i) => (
-              <span key={i} className={`rep-star ${i < state.reputation ? 'filled rep-star-fill' : 'empty'}`}>★</span>
-            ))}
+          <span className="value" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span>
+              {Array.from({ length: 5 }, (_, i) => (
+                <span key={i} className={`rep-star ${i < state.reputation ? 'filled rep-star-fill' : 'empty'}`}>★</span>
+              ))}
+            </span>
+            <span style={{ fontSize: '0.6rem', color: getRepTier(state.reputation).color, fontFamily: 'Bebas Neue', letterSpacing: '0.05em' }}>
+              {getRepTier(state.reputation).name}
+            </span>
           </span>
         </div>
         <div className="header-stat">

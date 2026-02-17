@@ -82,6 +82,8 @@ export interface Script {
   cards: CardTemplate[];
   ability?: string;
   abilityDesc?: string;
+  legendary?: boolean;
+  keywordTags?: CardTag[]; // extra keyword tags for legendary scripts
 }
 
 export type SlotType = 'Lead' | 'Support' | 'Director' | 'Crew' | 'Wild';
@@ -115,6 +117,9 @@ export interface Talent {
   cost: number;
   filmsLeft?: number;
   baggage?: TalentBaggage;
+  elite?: boolean;
+  elitePassive?: string; // description of passive ability
+  elitePassiveEffect?: string; // key for game logic
 }
 
 export interface StudioPerk {

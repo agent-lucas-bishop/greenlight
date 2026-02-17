@@ -155,7 +155,7 @@ function App() {
       )}
       <DevStats />
       {seasonOverlay !== null && (
-        <div className={`season-overlay ${seasonOverlayExit ? 'season-overlay-exit' : ''}`}>
+        <div className={`season-overlay ${seasonOverlayExit ? 'season-overlay-exit' : ''}`} onClick={() => { setSeasonOverlayExit(true); setTimeout(() => setSeasonOverlay(null), 500); }} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setSeasonOverlayExit(true); setTimeout(() => setSeasonOverlay(null), 500); } }} style={{ cursor: 'pointer' }}>
           <div className="season-overlay-inner">
             {seasonHeadline && (
               <div className="season-headline">
@@ -179,6 +179,7 @@ function App() {
                 {seasonTip}
               </div>
             )}
+            <div style={{ marginTop: 24, color: 'rgba(255,255,255,0.25)', fontSize: '0.65rem', letterSpacing: '0.1em' }}>CLICK TO CONTINUE</div>
           </div>
         </div>
       )}

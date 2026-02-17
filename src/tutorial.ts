@@ -2,6 +2,7 @@
 // Tracks completion in localStorage under 'greenlight-tutorial'
 
 import { GamePhase } from './types';
+import { getSettings } from './settings';
 
 const STORAGE_KEY = 'greenlight-tutorial';
 
@@ -75,14 +76,34 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     action: 'cast-talent',
   },
   {
-    id: 'playing-a-card',
+    id: 'first-card-draw',
     phase: 'production',
-    title: '🎬 Production — Playing Cards',
-    text: 'Draw 2 cards, keep 1. Incidents auto-play — if you get 3, it\'s a DISASTER and you lose all quality! You can wrap early to play it safe.',
+    title: '🃏 Drawing Cards',
+    text: 'You just drew your first cards! Each round you draw 2 and pick 1 to play. Action cards boost quality, while Incident cards are risks from high-Heat talent.',
+    targetSelector: '.hand-cards, .card-choices',
+    position: 'top',
+    dismissLabel: 'Pick a card! →',
+    action: 'draw-cards',
+  },
+  {
+    id: 'first-card-play',
+    phase: 'production',
+    title: '🎬 Playing a Card',
+    text: 'Nice pick! Each card you play adds to your film\'s quality score. Some cards have bonus effects — look for synergy with your genre and cast.',
+    targetSelector: '.production-controls',
+    position: 'top',
+    dismissLabel: 'Keep shooting! 🎬',
+    action: 'play-card',
+  },
+  {
+    id: 'first-production',
+    phase: 'production',
+    title: '🎥 Production Has Begun!',
+    text: 'Your film is in production! Draw and play cards to build quality. Watch the incident counter — 3 incidents = DISASTER and you lose everything. Wrap early if it gets risky.',
     targetSelector: '.production-controls',
     position: 'top',
     dismissLabel: 'Let\'s shoot! 🎬',
-    action: 'play-card',
+    action: 'start-production',
   },
   {
     id: 'quality-vs-budget',
@@ -130,12 +151,40 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     action: 'visit-shop',
   },
   {
+    id: 'seasons-explained',
+    phase: 'shop',
+    title: '📅 Seasons & Progression',
+    text: 'Each season the box office target increases. You get a $5 stipend per season plus your earnings. Plan ahead — early investments in perks and talent pay off in later seasons!',
+    position: 'top',
+    dismissLabel: 'Strategic!',
+    action: 'click-next',
+  },
+  {
     id: 'winning-condition',
     phase: 'shop',
     title: '🏆 How to Win',
     text: 'Survive all 5 seasons without getting 3 strikes or losing all reputation. The higher your total box office and reputation at the end, the better your score. Good luck, Studio Head!',
     position: 'center',
     dismissLabel: 'Let\'s make movies! 🎬',
+    action: 'click-next',
+  },
+  {
+    id: 'first-award',
+    phase: 'festival',
+    title: '🏆 Awards & Festivals',
+    text: 'Your film has been nominated! Awards boost reputation and can unlock prestige bonuses. High-quality films with strong casts have the best chances.',
+    targetSelector: '.festival-panel, .award-panel',
+    position: 'top',
+    dismissLabel: 'Fingers crossed! 🤞',
+    action: 'view-festival',
+  },
+  {
+    id: 'endgame-tips',
+    phase: 'victory',
+    title: '🌟 Congratulations!',
+    text: 'You survived! Try again at higher prestige for tougher targets and new legacy perks. Experiment with different genres, archetypes, and strategies. Every run is different!',
+    position: 'center',
+    dismissLabel: 'One more run! 🎬',
     action: 'click-next',
   },
 ];
@@ -167,6 +216,10 @@ function saveTutorialState(s: TutorialState) {
 }
 
 export function isTutorialActive(): boolean {
+  // Respect the tutorial_hints gameplay setting toggle
+  try {
+    if (!getSettings().gameplay.tutorialHints) return false;
+  } catch {}
   const s = getTutorialState();
   return s.active && !s.dismissed;
 }

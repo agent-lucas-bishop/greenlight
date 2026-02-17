@@ -140,6 +140,7 @@ import { getEndlessEscalation, calculateEndlessSeasonScore, updateEndlessPersona
 import { getEligibleFestivals, canSubmitToFestival, judgeFestival, getFestivalRepBoost, getFestivalBudgetBonus, getAwardLabel, getFestival, type FestivalResult } from './filmFestivals';
 import { startReplayRecording, recordEvent, finalizeReplay, snapshotState } from './replay';
 import { addCardToCollection } from './cardCollection';
+import { completeTutorialStep, isTutorialActive } from './tutorial';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -1183,6 +1184,8 @@ export function hireTalent(talent: Talent) {
   try {
     addCardToCollection(talent.name, state.season);
   } catch {}
+  // R253: Tutorial trigger — first hire
+  if (isTutorialActive()) completeTutorialStep('deck-overview');
 }
 
 export function clearRetirementNotification() {
@@ -1372,6 +1375,8 @@ export function startProduction() {
       directorVision: generateDirectorVision(state.castSlots),
     },
   });
+  // R253: Tutorial trigger — first production start
+  if (isTutorialActive()) completeTutorialStep('first-production');
 }
 
 // Draw-2-Keep-1: reveals 2 cards, auto-resolves incidents/challenges, lets player pick from remaining action cards
@@ -1490,6 +1495,8 @@ export function drawProductionCards() {
 
   // No choosable cards (all were incidents/challenges, already resolved)
   setState({ production: updatedProd });
+  // R253: Tutorial trigger — first card draw
+  if (isTutorialActive()) completeTutorialStep('first-card-draw');
 }
 
 // Player picks one of two action cards
@@ -1511,6 +1518,8 @@ export function pickCard(cardIndex: 0 | 1) {
   recordEvent('card_pick', state.season, 'production', { kept: chosen.name, discarded: discardedName });
   const updatedProd = resolveCardPlay(chosen, prod, state.castSlots);
   setState({ production: updatedProd });
+  // R253: Tutorial trigger — first card play
+  if (isTutorialActive()) completeTutorialStep('first-card-play');
 }
 
 // Player accepts or declines a challenge bet

@@ -17,6 +17,11 @@ import {
   getTimeUntilWeeklyReset,
   getDailyDateString,
   getDailyNumber,
+  getDailyConfig,
+  getDailyStreak,
+  getDailyBonusObjective,
+  getDailyStartingCards,
+  BONUS_OBJECTIVE_MULTIPLIER,
   type DailyLeaderboardEntry,
   type DailyChallengeConstraints,
 } from '../dailyChallenge';
@@ -27,11 +32,26 @@ import { getWeeklyNumber } from '../seededRng';
 export function DailyChallengeCard({ onStart }: { onStart?: (type: 'daily' | 'weekly') => void }) {
   const daily = getDailyChallengeConstraints();
   const weekly = getWeeklyChallengeConstraints();
+  const config = getDailyConfig();
+  const streak = getDailyStreak();
   const [tab, setTab] = useState<'daily' | 'weekly'>('daily');
   const challenge = tab === 'daily' ? daily : weekly;
 
   return (
     <div style={{ padding: 12 }}>
+      {/* Streak banner */}
+      {streak.current > 0 && (
+        <div style={{
+          textAlign: 'center', marginBottom: 12, padding: '8px 12px',
+          background: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.2)', borderRadius: 8,
+        }}>
+          <span style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>
+            🔥 {streak.current}-Day Streak
+          </span>
+          <span style={{ color: '#888', fontSize: '0.65rem', marginLeft: 10 }}>Best: {streak.best}</span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <button
           className="btn btn-small"
@@ -50,6 +70,39 @@ export function DailyChallengeCard({ onStart }: { onStart?: (type: 'daily' | 'we
       </div>
 
       <ChallengeConstraintsDisplay constraints={challenge} type={tab} />
+
+      {/* R254: Bonus Objective & Starting Cards (daily only) */}
+      {tab === 'daily' && (
+        <div style={{
+          marginTop: 10, padding: 12, borderRadius: 8,
+          background: 'rgba(46,204,113,0.06)', border: '1px solid rgba(46,204,113,0.2)',
+        }}>
+          <div style={{ fontWeight: 'bold', fontSize: '0.85rem', color: '#2ecc71', marginBottom: 6 }}>
+            {config.bonusObjective.emoji} Bonus Objective (×{BONUS_OBJECTIVE_MULTIPLIER} score)
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#ccc', marginBottom: 8 }}>{config.bonusObjective.description}</div>
+
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+            <span style={{ fontSize: '0.7rem', color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+              🏛️ {config.archetypeName}
+            </span>
+            {config.genreRestriction && (
+              <span style={{ fontSize: '0.7rem', color: '#e67e22', background: 'rgba(230,126,34,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                🎭 {config.genreRestriction} only
+              </span>
+            )}
+          </div>
+
+          <div style={{ fontSize: '0.7rem', color: '#999' }}>
+            <strong>Starting cards:</strong> {config.startingCards.join(', ')}
+          </div>
+          <div style={{ fontSize: '0.65rem', color: '#666', marginTop: 4 }}>
+            Budget: {config.difficultyMods.budgetAdjustment >= 0 ? '+' : ''}{config.difficultyMods.budgetAdjustment}M · 
+            Incidents: ×{config.difficultyMods.incidentFrequency.toFixed(1)} · 
+            Market: ×{config.difficultyMods.marketVolatility.toFixed(1)}
+          </div>
+        </div>
+      )}
 
       <ResetCountdown type={tab} />
 

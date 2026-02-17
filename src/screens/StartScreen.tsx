@@ -56,6 +56,8 @@ import { DailyChallengeCard } from '../components/DailyChallenge';
 import { getCollectionProgress } from '../tradingCards';
 import { getCollectionStats } from '../cardCollection';
 
+const DailyLeaderboard = lazy(() => import('../components/DailyLeaderboard'));
+
 const EventCalendar = lazy(() => import('../components/EventCalendar'));
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
@@ -458,7 +460,7 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events'>('play');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events'>('play');
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
@@ -789,6 +791,7 @@ export default function StartScreen() {
       {stats.runs > 0 && (() => {
         const tabDefs: { id: typeof tab; emoji: string; label: string; shortLabel?: string }[] = [
           { id: 'play', emoji: '🎬', label: 'PLAY' },
+          { id: 'daily' as const, emoji: '🎯', label: 'DAILY' },
           { id: 'campaigns' as const, emoji: '📖', label: 'CAMPAIGNS' },
           { id: 'stats', emoji: '📊', label: 'STATS' },
           { id: 'dashboard', emoji: '📈', label: 'DASHBOARD', shortLabel: 'DASH' },
@@ -981,6 +984,29 @@ export default function StartScreen() {
             </div>
           )}
         </>
+      )}
+
+      {tab === 'daily' && (
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <DailyChallengeCard onStart={(type) => {
+            if (type === 'daily') {
+              sfx.dailyStart();
+              setTimeout(() => sfx.dailyChallengeFanfare(), 300);
+              const arch = getDailyArchetype();
+              startGame('daily', undefined, undefined, 'studio');
+              pickArchetype(arch);
+            } else {
+              setSelectedMode('weekly');
+              setSelectedChallenge(undefined);
+              setShowDifficulty(true);
+            }
+          }} />
+          <div style={{ marginTop: 24 }}>
+            <Suspense fallback={<SkeletonLoader />}>
+              <DailyLeaderboard inline />
+            </Suspense>
+          </div>
+        </div>
       )}
 
       {tab === 'challenges' && (() => {

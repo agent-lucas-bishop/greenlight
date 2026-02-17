@@ -8,7 +8,7 @@
 
 import { mulberry32, getDailySeed, getDailyDateString, getDailyNumber, getWeeklySeed, getWeeklyDateString, hashString } from './seededRng';
 import { STUDIO_ARCHETYPES } from './data';
-import type { StudioArchetypeId } from './types';
+import type { StudioArchetypeId, Genre, CardTemplate } from './types';
 
 // ─── Daily Archetype (deterministic from seed) ───
 
@@ -169,9 +169,115 @@ function getScoreTier(score: number): { stars: string; label: string } {
   return { stars: '⭐', label: 'Rookie' };
 }
 
-// ─── R233: Seeded Challenge Constraints ───
+// ─── R254: Bonus Objectives & Starting Cards ───
 
-import type { Genre } from './types';
+export interface BonusObjective {
+  id: string;
+  description: string;
+  emoji: string;
+  /** Evaluated at end of run to determine if bonus was achieved */
+  check: (ctx: BonusObjectiveContext) => boolean;
+}
+
+export interface BonusObjectiveContext {
+  totalEarnings: number;
+  filmsProduced: number;
+  genresUsed: Genre[];
+  maxLeadsHired: number; // max leads hired in a single film
+  totalStrikes: number;
+  avgQuality: number;
+  won: boolean;
+  seasonHistory: { genre: Genre; quality: number; boxOffice: number; tier: string }[];
+}
+
+const BONUS_OBJECTIVES: BonusObjective[] = [
+  { id: 'comedy_100m', description: 'Earn $100M+ total with only Comedies', emoji: '😂', check: ctx => ctx.totalEarnings >= 100 && ctx.genresUsed.every(g => g === 'Comedy') },
+  { id: 'max_2_leads', description: 'Never hire more than 2 leads in any film', emoji: '🎭', check: ctx => ctx.maxLeadsHired <= 2 },
+  { id: 'no_strikes', description: 'Complete the run with zero strikes', emoji: '🛡️', check: ctx => ctx.totalStrikes === 0 && ctx.won },
+  { id: 'horror_master', description: 'Make 3+ Horror films that are all SMASH or better', emoji: '👻', check: ctx => { const h = ctx.seasonHistory.filter(s => s.genre === 'Horror' && (s.tier === 'SMASH' || s.tier === 'BLOCKBUSTER')); return h.length >= 3; } },
+  { id: 'quality_40', description: 'Average quality ≥ 40 across all films', emoji: '⭐', check: ctx => ctx.avgQuality >= 40 },
+  { id: 'blockbuster_streak', description: 'Get 3 BLOCKBUSTERs in a row', emoji: '💥', check: ctx => { let streak = 0, best = 0; for (const s of ctx.seasonHistory) { if (s.tier === 'BLOCKBUSTER') { streak++; best = Math.max(best, streak); } else streak = 0; } return best >= 3; } },
+  { id: 'genre_variety', description: 'Use 5+ different genres across the run', emoji: '🎨', check: ctx => new Set(ctx.genresUsed).size >= 5 },
+  { id: 'budget_run', description: 'Win with total earnings under $60M', emoji: '💰', check: ctx => ctx.won && ctx.totalEarnings < 60 },
+  { id: 'drama_only', description: 'Make only Drama films and win', emoji: '🎭', check: ctx => ctx.won && ctx.genresUsed.every(g => g === 'Drama') },
+  { id: 'scifi_200m', description: 'Earn $200M+ total with Sci-Fi films only', emoji: '🚀', check: ctx => ctx.totalEarnings >= 200 && ctx.genresUsed.every(g => g === 'Sci-Fi') },
+  { id: 'perfect_run', description: 'Win with all BLOCKBUSTERs', emoji: '👑', check: ctx => ctx.won && ctx.seasonHistory.every(s => s.tier === 'BLOCKBUSTER') },
+  { id: 'thriller_no_incidents', description: 'Make a Thriller with zero incidents', emoji: '🔪', check: ctx => ctx.seasonHistory.some(s => s.genre === 'Thriller' && s.quality >= 35) },
+];
+
+export function getDailyBonusObjective(): BonusObjective {
+  const seed = getDailySeed();
+  const r = mulberry32(seed);
+  // Burn 20 values to decorrelate from other seed uses
+  for (let i = 0; i < 20; i++) r();
+  const idx = Math.floor(r() * BONUS_OBJECTIVES.length);
+  return BONUS_OBJECTIVES[idx];
+}
+
+/** 1.5x score multiplier if bonus objective completed */
+export const BONUS_OBJECTIVE_MULTIPLIER = 1.5;
+
+export function getDailyStartingCards(): string[] {
+  const seed = getDailySeed();
+  const r = mulberry32(seed);
+  // Burn 30 values
+  for (let i = 0; i < 30; i++) r();
+  // Pick 2-3 starting card names from a pool
+  const STARTING_CARD_POOL = [
+    'Script Polish', 'Method Acting', 'Lucky Break', 'Reshoot Scene',
+    'Chemistry Read', 'Stunt Double', 'VFX Enhancement', 'Focus Group',
+    'Marketing Push', 'Award Bait', 'Indie Cred', 'Star Power',
+  ];
+  const count = 2 + Math.floor(r() * 2); // 2-3 cards
+  const picks: string[] = [];
+  const available = [...STARTING_CARD_POOL];
+  for (let i = 0; i < count && available.length > 0; i++) {
+    const idx = Math.floor(r() * available.length);
+    picks.push(available.splice(idx, 1)[0]);
+  }
+  return picks;
+}
+
+export function getDailyDifficultyModifiers(): { budgetAdjustment: number; incidentFrequency: number; marketVolatility: number } {
+  const seed = getDailySeed();
+  const r = mulberry32(seed);
+  // Burn 40 values
+  for (let i = 0; i < 40; i++) r();
+  return {
+    budgetAdjustment: Math.round((r() * 10 - 5)), // -5 to +5
+    incidentFrequency: 0.8 + r() * 0.6, // 0.8 to 1.4
+    marketVolatility: 0.7 + r() * 0.8, // 0.7 to 1.5
+  };
+}
+
+/** Full daily challenge config combining all seed-derived parameters */
+export interface DailyChallengeConfig {
+  seed: number;
+  dateString: string;
+  dayNumber: number;
+  archetype: StudioArchetypeId;
+  archetypeName: string;
+  genreRestriction: Genre | null;
+  bonusObjective: BonusObjective;
+  startingCards: string[];
+  difficultyMods: { budgetAdjustment: number; incidentFrequency: number; marketVolatility: number };
+  constraints: DailyChallengeConstraints;
+}
+
+export function getDailyConfig(): DailyChallengeConfig {
+  return {
+    seed: getDailySeed(),
+    dateString: getDailyDateString(),
+    dayNumber: getDailyNumber(),
+    archetype: getDailyArchetype(),
+    archetypeName: getDailyArchetypeName(),
+    genreRestriction: getDailyChallengeConstraints().genreRestriction,
+    bonusObjective: getDailyBonusObjective(),
+    startingCards: getDailyStartingCards(),
+    difficultyMods: getDailyDifficultyModifiers(),
+    constraints: getDailyChallengeConstraints(),
+  };
+}
 
 export type ChallengeGoalType = 'total_bo' | 'survive_seasons' | 'quality_avg';
 

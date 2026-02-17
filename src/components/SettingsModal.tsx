@@ -5,6 +5,7 @@ import { getSettings, updateSettings, exportAllSaveData, importSaveData, resetAl
 import { getStudioIdentity, setStudioIdentity, getRandomDefaultName, STUDIO_LOGOS, DEFAULT_STUDIO_NAMES, type StudioLogo } from '../studioIdentity';
 import { isStoryMomentsEnabled, setStoryMomentsEnabled } from '../cutscenes';
 import { resetTutorial, isTutorialComplete } from '../tutorial';
+import { resetTooltips } from './TutorialTooltip';
 import { getPlayerName, setPlayerName as savePlayerName } from '../leaderboard';
 import { auditStorage, clearNonEssentialStorage } from '../storageManager';
 import ModManager from './ModManager';
@@ -373,7 +374,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             <div style={{ borderTop: '1px solid #333', paddingTop: 12, marginTop: 8 }}>
               <button
                 className="btn btn-small"
-                onClick={() => { resetTutorial(); setTutorialReset(true); setTimeout(() => setTutorialReset(false), 2000); }}
+                onClick={() => { resetTutorial(); resetTooltips(); setTutorialReset(true); setTimeout(() => setTutorialReset(false), 2000); }}
                 style={{ width: '100%', color: tutorialReset ? '#2ecc71' : 'var(--gold)', borderColor: tutorialReset ? '#2ecc71' : 'var(--gold-dim)' }}
                 aria-label="Replay tutorial"
               >

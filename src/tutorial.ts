@@ -244,6 +244,7 @@ export function completeTutorialStep(stepId: string) {
   }
   if (TUTORIAL_STEPS.every(t => s.stepsCompleted.includes(t.id))) {
     s.active = false;
+    try { localStorage.setItem('gl_tutorial_completed', '1'); } catch {}
   }
   saveTutorialState(s);
 }
@@ -262,6 +263,24 @@ export function resetTutorial() {
 /** Alias for completeTutorialStep — matches onboarding API convention */
 export function markStepSeen(stepId: string) {
   completeTutorialStep(stepId);
+}
+
+/** Start (or restart) the tutorial from scratch */
+export function startTutorial() {
+  saveTutorialState({ active: true, stepsCompleted: [], dismissed: false });
+  try { localStorage.removeItem('gl_tutorial_completed'); } catch {}
+}
+
+/** Advance to the next uncompleted step — completes the current step for the given phase */
+export function advanceTutorial(phase: GamePhase) {
+  const step = getTutorialStepForPhase(phase);
+  if (step) completeTutorialStep(step.id);
+}
+
+/** Skip the entire tutorial and mark as completed */
+export function skipTutorial() {
+  dismissTutorial();
+  try { localStorage.setItem('gl_tutorial_completed', '1'); } catch {}
 }
 
 /** Returns true when every tutorial step has been completed (or tutorial was dismissed) */

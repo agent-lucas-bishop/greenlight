@@ -785,7 +785,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       const newCards = checkTradingCardUnlocks(cardState);
       if (newCards.length > 0) setNewCardIds(newCards);
       markFirstRunComplete();
-      trackRunEnd(score, isVictory);
+      trackRunEnd(score, isVictory, {
+        earningsPerSeason: history.map(s => s.boxOffice),
+        qualityPerSeason: history.map(s => s.quality),
+      });
       careerTrackRunEnd({
         totalBO: state.totalEarnings,
         score,

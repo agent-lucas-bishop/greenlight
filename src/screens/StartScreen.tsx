@@ -512,7 +512,7 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [showTrophyRoom, setShowTrophyRoom] = useState(false);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio' | 'mods'>('play');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio' | 'mods' | 'analytics'>('play');
   const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
   const [modsSubView, setModsSubView] = useState<'manage' | 'create'>('manage');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
@@ -880,6 +880,7 @@ export default function StartScreen() {
           { id: 'campaigns' as const, emoji: '📖', label: 'CAMPAIGNS' },
           { id: 'stats', emoji: '📊', label: 'STATS' },
           { id: 'dashboard', emoji: '📈', label: 'DASHBOARD', shortLabel: 'DASH' },
+          { id: 'analytics' as const, emoji: '📊', label: 'ANALYTICS' },
           { id: 'achievements', emoji: '🏆', label: 'ACHIEVEMENTS', shortLabel: 'ACHV' },
           { id: 'trophies' as const, emoji: '🏆', label: 'TROPHIES' },
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
@@ -1062,9 +1063,12 @@ export default function StartScreen() {
             <span>🎬 5 Seasons</span><span>🎭 Push Your Luck</span><span>⭐ Build Your Studio</span><span>🏆 Chase the Oscar</span>
           </div>
           {stats.runs > 0 && (
-            <div style={{ marginTop: 16, display: 'flex', gap: 16, color: '#444', fontSize: '0.7rem' }}>
-              <span>Runs: {stats.runs}</span><span>Wins: {stats.wins}</span><span>Win Rate: {stats.winRate}</span><span>Best Score: {stats.bestScore}</span>
-            </div>
+            <>
+              <MiniStats onOpenDashboard={() => setTab('analytics')} />
+              <div style={{ marginTop: 8, display: 'flex', gap: 16, color: '#444', fontSize: '0.7rem' }}>
+                <span>Runs: {stats.runs}</span><span>Wins: {stats.wins}</span><span>Win Rate: {stats.winRate}</span><span>Best Score: {stats.bestScore}</span>
+              </div>
+            </>
           )}
           {stats.legacyPerks.length > 0 && !simplified && (
             <div style={{ marginTop: 16, maxWidth: 500, margin: '16px auto 0' }}>
@@ -1283,6 +1287,13 @@ export default function StartScreen() {
       {tab === 'dashboard' && (
         <Suspense fallback={<SkeletonLoader />}>
           <StatsDashboard />
+        </Suspense>
+      )}
+
+      {/* ─── ANALYTICS DASHBOARD TAB (R282) ─── */}
+      {tab === 'analytics' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <AnalyticsDashboard />
         </Suspense>
       )}
 

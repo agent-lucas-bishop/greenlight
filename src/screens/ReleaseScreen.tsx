@@ -185,7 +185,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
         setTimeout(() => setScreenFlash(''), 800);
       }, 500);
     }, 1600);
-    const t2 = setTimeout(() => setPhase(2), 3300);
+    const t2 = setTimeout(() => { setPhase(2); if (tier === 'FLOP' && state.completionBond) sfx.completionBond(); }, 3300);
     const t3 = setTimeout(() => { setPhase(3); sfx.marketForecast(); }, 4100);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
@@ -516,7 +516,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
             {state.season + 1 >= state.maxSeasons && <strong> That's your FINAL season!</strong>}
           </p>
           <div className="post-prod-actions" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" onClick={() => { sfx.challenge(); doExtendedCut(); }}>
+            <button className="btn btn-primary" onClick={() => { sfx.extendedCut(); doExtendedCut(); }}>
               🎬 EXTENDED CUT ($3M)
             </button>
             <button className="btn" onClick={() => { sfx.click(); declineExtendedCut(); }}>

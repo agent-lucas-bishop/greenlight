@@ -9,6 +9,7 @@ import { getLeaderboard, type LeaderboardEntry } from '../leaderboard';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getRunStats } from '../unlocks';
 import { STUDIO_ARCHETYPES } from '../data';
+import { sfx } from '../sound';
 
 type StatsSubTab = 'overview' | 'genres' | 'runs';
 
@@ -40,7 +41,7 @@ export default function StatsPanel() {
           { key: 'genres' as const, label: '🎭 Genres' },
           { key: 'runs' as const, label: '📜 Runs' },
         ]).map(t => (
-          <button key={t.key} onClick={() => setSubTab(t.key)} style={{
+          <button key={t.key} onClick={() => { sfx.tabSwitch(); setSubTab(t.key); }} style={{
             background: subTab === t.key ? 'rgba(212,168,67,0.15)' : 'transparent',
             border: `1px solid ${subTab === t.key ? 'var(--gold-dim)' : '#333'}`,
             borderRadius: 6, padding: '8px 14px', color: subTab === t.key ? 'var(--gold)' : '#666',

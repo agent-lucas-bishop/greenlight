@@ -11,7 +11,13 @@ export default function EventScreen({ state }: { state: GameState }) {
 
   const handlePick = () => {
     if (!selectedId) return;
-    sfx.cardPick();
+    const selected = events.find(e => e.id === selectedId);
+    const negativeEffects = ['scandal', 'talentPoached', 'awardSnub', 'rivalPoaching'];
+    if (selected && negativeEffects.includes(selected.effect)) {
+      sfx.eventNegative();
+    } else {
+      sfx.eventPositive();
+    }
     setConfirmed(true);
     setTimeout(() => pickSeasonEvent(selectedId), 600);
   };

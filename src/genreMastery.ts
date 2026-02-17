@@ -63,8 +63,9 @@ export interface FilmResult {
   quality: number;
 }
 
-export function recordGenreMasteryFilms(films: FilmResult[]) {
+export function recordGenreMasteryFilms(films: FilmResult[]): { genre: string; oldTier: MasteryTier; newTier: MasteryTier }[] {
   const state = getGenreMasteryState();
+  const tierChanges: { genre: string; oldTier: MasteryTier; newTier: MasteryTier }[] = [];
 
   for (const film of films) {
     if (!state.genres[film.genre]) {
@@ -77,15 +78,21 @@ export function recordGenreMasteryFilms(films: FilmResult[]) {
       };
     }
     const g = state.genres[film.genre];
+    const oldTier = getMasteryTier(g.totalBoxOffice).tier;
     g.filmsProduced++;
     g.totalBoxOffice += film.boxOffice;
     g.totalQuality += film.quality;
     if (!g.bestFilm || film.boxOffice > g.bestFilm.boxOffice) {
       g.bestFilm = { title: film.title, boxOffice: film.boxOffice, quality: film.quality };
     }
+    const newTier = getMasteryTier(g.totalBoxOffice).tier;
+    if (newTier !== oldTier && newTier !== 'none') {
+      tierChanges.push({ genre: film.genre, oldTier, newTier });
+    }
   }
 
   saveGenreMastery(state);
+  return tierChanges;
 }
 
 // Get sorted genre stats for display

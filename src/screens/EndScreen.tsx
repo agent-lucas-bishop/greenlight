@@ -422,12 +422,15 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         } catch {}
       }
       // Record genre mastery cross-run stats
-      recordGenreMasteryFilms(history.map(s => ({
+      const masteryChanges = recordGenreMasteryFilms(history.map(s => ({
         genre: s.genre,
         title: s.title,
         boxOffice: s.boxOffice,
         quality: s.quality,
       })));
+      if (masteryChanges.length > 0) {
+        setTimeout(() => sfx.masteryMilestone(), 800);
+      }
       // Award prestige XP
       const xpData: RunXPData = {
         totalBoxOffice: state.totalEarnings,

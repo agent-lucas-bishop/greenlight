@@ -150,6 +150,23 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
     }
   }
 
+  // Insurance Fraud event: add 2 extra incidents
+  if (state.activeSeasonEvent?.effect === 'insuranceFraud') {
+    for (let k = 0; k < 2; k++) {
+      deck.push({
+        id: cardUid(),
+        name: 'Insurance Investigator',
+        source: 'Season Event',
+        sourceType: 'crew',
+        cardType: 'incident',
+        baseQuality: -4,
+        synergyText: 'Investigators are snooping around the set.',
+        synergyCondition: null,
+        riskTag: '🔴',
+      });
+    }
+  }
+
   // Shuffle (Fisher-Yates)
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -1324,6 +1341,11 @@ export function resolveRelease() {
       }
     }
     if (se.effect === 'foreignDeal') multiplier += 0.3;
+    if (se.effect === 'rivalFlop') multiplier += 0.2;
+    if (se.effect === 'festivalInvitation') {
+      if (rawQuality > 30) rawQuality += 8; // festival bonus baked into quality for box office
+      else if (rawQuality <= 20) rawQuality -= 3; // embarrassing premiere
+    }
     if (se.effect === 'legacyActor') rawQuality += 5;
     if (se.effect === 'criticDarling' && prod.cleanWrap && prod.drawCount > 0) {
       // Double the clean wrap bonus (already calculated above, add it again)
@@ -1364,6 +1386,11 @@ export function resolveRelease() {
   // Season event: Viral Marketing — if quality > 25, earn +$5M bonus
   if (se?.effect === 'viralMarketing' && rawQuality > 25) {
     bonusMoney += 5;
+  }
+  // Season event: Festival Invitation — quality > 30 = +$8M, quality ≤ 20 = -$3M
+  if (se?.effect === 'festivalInvitation') {
+    if (rawQuality > 30) bonusMoney += 8;
+    else if (rawQuality <= 20) bonusMoney -= 3;
   }
 
   switch (tier) {
@@ -1699,6 +1726,45 @@ export function pickSeasonEvent(eventId: string) {
         const poached = sorted[0];
         roster = state.roster.filter(t => t.id !== poached.id);
       }
+      break;
+    }
+    // R67 events
+    case 'rivalPoaching': {
+      // Lose cheapest talent, gain $5M
+      if (state.roster.length > 0) {
+        const sorted = [...state.roster].sort((a, b) => a.cost - b.cost);
+        const poached = sorted[0];
+        roster = state.roster.filter(t => t.id !== poached.id);
+      }
+      budget += 5;
+      break;
+    }
+    case 'genreMasterclass': {
+      // +1 genre mastery for most-made genre, costs $4M
+      budget -= 4;
+      const entries = Object.entries(state.genreMastery);
+      if (entries.length > 0) {
+        const best = entries.sort((a, b) => b[1] - a[1])[0][0];
+        state.genreMastery[best] = (state.genreMastery[best] || 0) + 1;
+      }
+      break;
+    }
+    case 'insuranceFraud': {
+      // +$8M now, next film gets 2 extra incidents (handled in production setup)
+      budget += 8;
+      break;
+    }
+    case 'festivalInvitation': {
+      // Applied during release resolution
+      break;
+    }
+    case 'rivalFlop': {
+      // +0.2 multiplier applied during release resolution
+      break;
+    }
+    case 'methodEpidemic': {
+      // +1 Skill, +1 Heat to all talent this season (applied here)
+      roster = state.roster.map(t => ({ ...t, skill: t.skill + 1, heat: t.heat + 1 }));
       break;
     }
     // biddingWar effect applied during next season in beginSeason

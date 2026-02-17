@@ -254,7 +254,19 @@ export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';
 
 export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'weekly' | 'challenge' | 'seeded' | 'endless';
 
-export type Difficulty = 'indie' | 'studio' | 'mogul';
+export type Difficulty = 'indie' | 'studio' | 'mogul' | 'nightmare' | 'custom';
+
+export interface GameModifiers {
+  budgetAdjustment: number;      // -10 to +10 ($M)
+  rivalAggressiveness: number;    // 0.5 to 2.0
+  incidentFrequency: number;      // 0 to 2.0
+  marketVolatility: number;       // 0.5 to 2.0
+  cardDrawAdjustment: number;     // -2 to +2
+  genreRestriction: Genre | null; // lock to single genre
+  noLegendary: boolean;           // disable legendary scripts
+  speedMode: boolean;             // halved season count
+  ironMan: boolean;               // no retries, permadeath (1 strike = done)
+}
 
 // Archetype Focus — rewarded when deck is dominated by one tag
 export interface ArchetypeFocus {
@@ -335,6 +347,7 @@ export interface GameState {
   extendedCutUsed: boolean; // used this season (skips next film slot)
   reshootsBudgetUsed: boolean; // $5M reshoots — re-roll incidents after wrap, once per film
   activeModifiers?: string[]; // IDs of toggled challenge modifiers
+  gameModifiers?: GameModifiers; // custom difficulty modifiers
   weeklySeed?: string; // weekly seed display string
   retirementNotification?: string | null; // talent name that just retired
   // R153: Post-Production Phase

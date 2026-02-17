@@ -4970,6 +4970,90 @@ body {
   100% { transform: translateY(110vh); }
 }
 
+/* R247: Foil Shimmer Effects */
+@keyframes foilShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.foil-shimmer-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    rgba(255, 215, 0, 0.12) 40%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 215, 0, 0.12) 60%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: foilShimmer 3s linear infinite;
+  z-index: 1;
+}
+
+.foil-shimmer-card {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 25%,
+    rgba(255, 215, 0, 0.08) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 215, 0, 0.08) 55%,
+    transparent 75%
+  );
+  background-size: 200% 100%;
+  animation: foilShimmer 4s linear infinite;
+  z-index: 1;
+}
+
+/* Subtle in-game foil shimmer for production cards */
+.foil-shimmer-subtle {
+  position: relative;
+}
+.foil-shimmer-subtle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 215, 0, 0.06) 48%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 215, 0, 0.06) 52%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: foilShimmer 5s linear infinite;
+}
+
+.foil-badge {
+  background: linear-gradient(90deg, #ffd700, #ff8c00, #ffd700);
+  background-size: 200% 100%;
+  animation: foilShimmer 2s linear infinite;
+  color: #000 !important;
+  font-weight: 700;
+}
+
+.trade-btn-animating {
+  animation: tradePulse 0.6s ease infinite alternate;
+}
+@keyframes tradePulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); opacity: 0.8; }
+}
+
+.collection-progress-bar {
+  transition: width 0.5s ease;
+}
+
 /* Holiday Season — Gift-wrapped Card Borders */
 .event-snow .card {
   border: 3px dashed #c41e3a !important;

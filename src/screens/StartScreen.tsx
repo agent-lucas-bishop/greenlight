@@ -21,8 +21,9 @@ import { CHALLENGE_MODIFIERS, getCombinedModifierMultiplier } from '../challenge
 import { hasWeeklyRun, getWeeklyBest } from '../leaderboard';
 import { getStudioIdentity, hasStudioIdentity } from '../studioIdentity';
 import { getCareerTitle, loadProfile } from '../playerProfile';
-import { DIFFICULTIES, getDifficultyConfig } from '../difficulty';
-import type { Difficulty } from '../types';
+import { DIFFICULTIES, getDifficultyConfig, getScoreMultiplier } from '../difficulty';
+import type { Difficulty, GameModifiers } from '../types';
+import DifficultySelect from '../components/DifficultySelect';
 
 // Lazy-load heavy modals (only opened on demand)
 const StudioLot = lazy(() => import('../components/StudioLot'));
@@ -41,6 +42,7 @@ const CampaignSelect = lazy(() => import('../components/CampaignSelect'));
 const PlayerProfileModal = lazy(() => import('../components/PlayerProfile'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
+const CollectionPanel = lazy(() => import('../components/CollectionPanel'));
 const PrestigePanel = lazy(() => import('../components/PrestigePanel'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
 import { getPrestigeShop, getPrestigeStarsDisplay } from '../prestigeShop';
@@ -52,6 +54,7 @@ import { isEndlessUnlocked } from '../endgame';
 import { EndlessRecords, EndlessLauncherInfo } from '../components/EndlessPanel';
 import { DailyChallengeCard } from '../components/DailyChallenge';
 import { getCollectionProgress } from '../tradingCards';
+import { getCollectionStats } from '../cardCollection';
 
 const EventCalendar = lazy(() => import('../components/EventCalendar'));
 
@@ -449,10 +452,11 @@ export default function StartScreen() {
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [showPrestigePanel, setShowPrestigePanel] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('studio');
+  const [selectedGameModifiers, setSelectedGameModifiers] = useState<GameModifiers | undefined>(undefined);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'create' | 'synergies' | 'events'>('play');
+  const [tab, setTab] = useState<'play' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events'>('play');
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
@@ -860,6 +864,7 @@ export default function StartScreen() {
           { id: 'dashboard', emoji: '📈', label: 'DASHBOARD', shortLabel: 'DASH' },
           { id: 'achievements', emoji: '🏆', label: 'ACHIEVEMENTS', shortLabel: 'ACHV' },
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
+          { id: 'collection' as const, emoji: '📚', label: `COLLECTION (${getCollectionStats().discovered}/${getCollectionStats().total})`, shortLabel: 'COLLECT' },
           { id: 'create', emoji: '🃏', label: 'WORKSHOP' },
           { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
           { id: 'events' as const, emoji: '📅', label: 'EVENTS' },
@@ -1555,6 +1560,13 @@ export default function StartScreen() {
       {tab === 'cards' && (
         <Suspense fallback={<SkeletonLoader />}>
           <TradingCardGallery onClose={() => setTab('play')} inline />
+        </Suspense>
+      )}
+
+      {/* ─── COLLECTION TAB ─── */}
+      {tab === 'collection' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <CollectionPanel onClose={() => setTab('play')} inline />
         </Suspense>
       )}
 

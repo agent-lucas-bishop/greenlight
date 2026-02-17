@@ -134,11 +134,12 @@ import { loadCampaignData, updateCampaignAfterFilm, getActiveCampaign, type Camp
 import { getSeasonalBOMultiplier, getSeasonalQualityBonus, applyEventModifiers } from './seasonalEvents';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
-import { getDifficultyConfig } from './difficulty';
-import type { Difficulty } from './types';
+import { getDifficultyConfig, getEffectiveConfig, getScoreMultiplier } from './difficulty';
+import type { Difficulty, GameModifiers } from './types';
 import { getEndlessEscalation, calculateEndlessSeasonScore, updateEndlessPersonalBest } from './endlessMode';
 import { getEligibleFestivals, canSubmitToFestival, judgeFestival, getFestivalRepBoost, getFestivalBudgetBonus, getAwardLabel, getFestival, type FestivalResult } from './filmFestivals';
 import { startReplayRecording, recordEvent, finalizeReplay, snapshotState } from './replay';
+import { addCardToCollection } from './cardCollection';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -693,7 +694,7 @@ export function resumeGame(saved: Partial<GameState>) {
   if (state.phase !== 'start') saveGameState(state);
 }
 
-export function startGame(mode: GameMode = 'normal', challengeId?: string, activeModifiers?: string[], difficulty: Difficulty = 'studio') {
+export function startGame(mode: GameMode = 'normal', challengeId?: string, activeModifiers?: string[], difficulty: Difficulty = 'studio', gameModifiers?: GameModifiers) {
   clearSave();
   resetAgingState();
   resetRisingStarNames();
@@ -707,9 +708,11 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
   }
 
   const challenge = challengeId ? getChallengeById(challengeId) : undefined;
-  const diffConfig = getDifficultyConfig(difficulty);
+  const diffConfig = difficulty === 'custom' && gameModifiers
+    ? getEffectiveConfig('custom', gameModifiers)
+    : getDifficultyConfig(difficulty);
   let maxSeasons = diffConfig.maxSeasons;
-  let maxStrikes = 3;
+  let maxStrikes = diffConfig.maxStrikes || 3;
 
   if (challenge?.id === 'speed_run') {
     maxSeasons = 3;
@@ -759,6 +762,7 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     maxSeasons,
     maxStrikes,
     activeModifiers: mods.length > 0 ? mods : undefined,
+    gameModifiers: difficulty === 'custom' && gameModifiers ? gameModifiers : undefined,
     activeRivalIds,
     rivalStats,
     nemesisStudio: null,
@@ -770,7 +774,9 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
 }
 
 export function pickArchetype(archetypeId: StudioArchetypeId) {
-  const diffConfig = getDifficultyConfig(state.difficulty);
+  const diffConfig = state.difficulty === 'custom' && state.gameModifiers
+    ? getEffectiveConfig('custom', state.gameModifiers)
+    : getDifficultyConfig(state.difficulty);
   let budget = diffConfig.startBudget;
   if (archetypeId === 'blockbuster') budget += 5;
   // NG+ bonuses: start with more budget to offset harder targets
@@ -840,7 +846,9 @@ export function pickNeow(choice: number) {
   }
   // R128: Legacy run bonuses — +1 starting reputation per prestige level (cap +5)
   const legacyRunBonuses = getLegacyRunBonuses();
-  const diffConfigNeow = getDifficultyConfig(state.difficulty);
+  const diffConfigNeow = state.difficulty === 'custom' && state.gameModifiers
+    ? getEffectiveConfig('custom', state.gameModifiers)
+    : getDifficultyConfig(state.difficulty);
   const startReputation = Math.min(diffConfigNeow.startReputation + legacyRunBonuses.reputationBonus + getRetirementRepBonus() + getMetaReputationBonus(), 5);
   setState({ neowChoice: choice, roster, budget, perks, genreMastery, reputation: startReputation, phase: 'greenlight' as GamePhase });
   beginSeason();
@@ -1170,6 +1178,10 @@ export function hireTalent(talent: Talent) {
       u.careerStats.uniqueTalentHired.push(talent.name);
       saveUnlocks(u);
     }
+  } catch {}
+  // R247: Add to card collection
+  try {
+    addCardToCollection(talent.name, state.season);
   } catch {}
 }
 

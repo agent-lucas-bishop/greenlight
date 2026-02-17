@@ -782,6 +782,69 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     starPowerReward: { amount: 50, label: '+50 Star Power' },
     check: (s) => s.phase === 'victory' && Math.abs(s.budget) < 0.1 && s.debt === 0,
   },
+  // R247: Collection achievements
+  {
+    id: 'collector_10',
+    name: 'Card Collector',
+    emoji: '📚',
+    category: 'discovery' as AchievementCategory,
+    description: 'Discover 10 unique talent cards in your collection',
+    hint: 'Hire a variety of talent across your runs',
+    rarity: 'common' as AchievementRarityLevel,
+    check: () => {
+      try {
+        const { getCollectionStats } = require('./cardCollection');
+        return getCollectionStats().discovered >= 10;
+      } catch { return false; }
+    },
+  },
+  {
+    id: 'collector_25',
+    name: 'Talent Scout',
+    emoji: '🔍',
+    category: 'discovery' as AchievementCategory,
+    description: 'Discover 25 unique talent cards in your collection',
+    hint: 'Keep hiring new faces',
+    rarity: 'rare' as AchievementRarityLevel,
+    check: () => {
+      try {
+        const { getCollectionStats } = require('./cardCollection');
+        return getCollectionStats().discovered >= 25;
+      } catch { return false; }
+    },
+  },
+  {
+    id: 'collector_complete',
+    name: 'Complete Collection',
+    emoji: '🏅',
+    category: 'discovery' as AchievementCategory,
+    description: 'Discover every talent card in the game',
+    hint: 'Gotta catch \'em all',
+    rarity: 'legendary' as AchievementRarityLevel,
+    starPowerReward: { amount: 100, label: '+100 Star Power' },
+    check: () => {
+      try {
+        const { getCollectionStats } = require('./cardCollection');
+        const stats = getCollectionStats();
+        return stats.percentage >= 100;
+      } catch { return false; }
+    },
+  },
+  {
+    id: 'foil_collector',
+    name: 'Foil Enthusiast',
+    emoji: '✨',
+    category: 'discovery' as AchievementCategory,
+    description: 'Collect 5 foil variant cards',
+    hint: 'Keep hiring — foils are rare!',
+    rarity: 'epic' as AchievementRarityLevel,
+    check: () => {
+      try {
+        const { getCollectionStats } = require('./cardCollection');
+        return getCollectionStats().foilCount >= 5;
+      } catch { return false; }
+    },
+  },
 ];
 
 // ─── Unlock date tracking ───

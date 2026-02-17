@@ -25,6 +25,7 @@ export interface ProductionCard {
   riskTag: RiskTag; // legacy, derived from cardType
   challengeBet?: ChallengeBet;
   tags?: CardTag[];
+  rarity?: CardRarity;
   // Runtime state
   synergyBonus?: number;
   synergyFired?: boolean;
@@ -141,6 +142,8 @@ export interface MarketCondition {
   condition?: string;
 }
 
+export type CardRarity = 'common' | 'rare' | 'epic';
+
 export type GamePhase =
   | 'start'
   | 'neow'
@@ -150,6 +153,7 @@ export type GamePhase =
   | 'postProduction'
   | 'release'
   | 'shop'
+  | 'workshop'
   | 'event'
   | 'gameOver'
   | 'victory';
@@ -326,6 +330,8 @@ export interface GameState {
   // R150: Active Rival System
   prCampaignActive: boolean; // $2M PR Campaign reduces rival interference this season
   rivalActions: RivalAction[]; // rival actions applied this season
+  // R162: Card Workshop — persistent deck upgrades between seasons
+  workshopDeck: ProductionCard[];
 }
 
 // ─── RIVAL ACTIONS (R150) ───

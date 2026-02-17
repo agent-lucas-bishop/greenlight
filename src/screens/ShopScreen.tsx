@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, Talent } from '../types';
-import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason, payDebt } from '../gameStore';
+import { buyPerk, hireTalent, fireTalent, trainTalent, proceedToWorkshop, payDebt } from '../gameStore';
 import { isPerkLocked } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
@@ -275,7 +275,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
       </div>
 
       <div className="btn-group" style={{ marginTop: 16 }}>
-        <button className="btn btn-primary btn-glow" onClick={() => { sfx.seasonTransition(); nextSeason(); }}>
+        <button className="btn btn-primary btn-glow" onClick={() => { sfx.seasonTransition(); proceedToWorkshop(); }}>
           LIGHTS, CAMERA — SEASON {state.season + 1} →
         </button>
       </div>

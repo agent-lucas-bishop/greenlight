@@ -3861,3 +3861,38 @@ button, a, .btn, .card, .cast-slot, .selectable-card, .prod-card-new,
 .force-reduce-motion .tier-hit-styled { animation: none !important; }
 .force-reduce-motion .tier-smash-styled { animation: none !important; }
 .force-reduce-motion .tier-blockbuster-styled { animation: none !important; }
+
+/* ── Settings Modal Enhancements ─────────────────────────────── */
+
+/* Animation speed custom property */
+:root {
+  --animation-speed: 1;
+}
+
+/* Text size modes */
+[data-text-size="small"] { font-size: 13px; }
+[data-text-size="medium"] { font-size: 16px; }
+[data-text-size="large"] { font-size: 19px; }
+
+/* High contrast mode */
+.high-contrast {
+  --gold: #ffd700;
+  --gold-dim: #cca800;
+}
+.high-contrast .card { border-color: #aaa !important; }
+.high-contrast .btn { border-width: 2px !important; }
+.high-contrast .modal { border: 2px solid #888 !important; }
+.high-contrast p, .high-contrast span, .high-contrast label { color: #ddd !important; }
+.high-contrast .settings-row label { color: #eee !important; }
+
+/* Colorblind-friendly mode — add patterns/icons to color-only indicators */
+.colorblind-mode .stat-positive::before { content: "▲ "; }
+.colorblind-mode .stat-negative::before { content: "▼ "; }
+.colorblind-mode .stat-neutral::before { content: "● "; }
+.colorblind-mode .tier-flop-styled { border-style: dashed !important; }
+.colorblind-mode .tier-hit-styled { border-style: solid !important; }
+.colorblind-mode .tier-smash-styled { border-style: double !important; }
+.colorblind-mode .tier-blockbuster-styled { border-style: ridge !important; border-width: 3px !important; }
+
+/* Settings tab button hover */
+.settings-tab-btn:hover { background: rgba(212,168,67,0.08) !important; }

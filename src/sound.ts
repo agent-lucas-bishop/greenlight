@@ -26,7 +26,19 @@ export function setVolume(v: number) {
   if (_masterGain) _masterGain.gain.value = _volume;
 }
 
+// SFX volume (0.0 – 1.0) — separate from master, multiplied together
+let _sfxVolume = typeof localStorage !== 'undefined' ? parseFloat(localStorage.getItem('greenlight-sfx-volume') || '1') : 1;
+if (isNaN(_sfxVolume) || _sfxVolume < 0 || _sfxVolume > 1) _sfxVolume = 1;
+
+export function getSfxVolume(): number { return _sfxVolume; }
+export function setSfxVolume(v: number) {
+  _sfxVolume = Math.max(0, Math.min(1, v));
+  try { localStorage.setItem('greenlight-sfx-volume', String(_sfxVolume)); } catch {}
+  if (_sfxGain) _sfxGain.gain.value = _sfxVolume;
+}
+
 let _masterGain: GainNode | null = null;
+let _sfxGain: GainNode | null = null;
 
 function getCtx(): AudioContext {
   if (!ctx) ctx = new AudioContext();
@@ -36,13 +48,18 @@ function getCtx(): AudioContext {
     _masterGain.gain.value = _volume;
     _masterGain.connect(ctx.destination);
   }
+  if (!_sfxGain) {
+    _sfxGain = ctx.createGain();
+    _sfxGain.gain.value = _sfxVolume;
+    _sfxGain.connect(_masterGain);
+  }
   return ctx;
 }
 
-// Get the master output node (gain node for volume control)
+// Get the master output node (SFX gain → master gain → destination)
 function getMaster(): AudioNode {
-  getCtx(); // ensure masterGain exists
-  return _masterGain!;
+  getCtx(); // ensure gains exist
+  return _sfxGain!;
 }
 
 // Debounce tracking to prevent overlapping rapid-fire sounds

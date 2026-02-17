@@ -18,6 +18,7 @@ import { getRunStats } from '../unlocks';
 import { getDailyNumber, getWeeklyNumber } from '../seededRng';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from '../challengeModifiers';
 import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
+import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
 import { getDifficultyBadge } from '../difficulty';
 
 // ─── Helpers ───

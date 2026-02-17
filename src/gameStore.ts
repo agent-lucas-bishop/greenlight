@@ -83,7 +83,7 @@
  */
 
 import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, MarketingTier, PostProdOption } from './types';
-import type { StudioArchetypeId } from './types';
+import type { StudioArchetypeId, CardRarity } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
@@ -166,6 +166,7 @@ function createInitialState(): GameState {
     reshootsBudgetUsed: false,
     prCampaignActive: false,
     rivalActions: [],
+    workshopDeck: [],
     postProdMarketing: null,
     postProdOption: null,
     postProdMarketingMultiplier: undefined,
@@ -194,16 +195,35 @@ export function subscribe(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
+// ─── CARD RARITY ───
+
+function assignRarity(template: CardTemplate): CardRarity {
+  const tagCount = template.tags?.length || 0;
+  const val = template.baseQuality;
+  // Epic: 3+ tags or base quality >= 6
+  if (tagCount >= 3 || val >= 6) return 'epic';
+  // Rare: 2 tags or base quality >= 4
+  if (tagCount >= 2 || val >= 4) return 'rare';
+  return 'common';
+}
+
+function rarityQualityBonus(rarity: CardRarity): number {
+  if (rarity === 'epic') return 3;
+  if (rarity === 'rare') return 1;
+  return 0;
+}
+
 // ─── BUILD PRODUCTION DECK ───
 
 function templateToCard(template: CardTemplate, source: string, sourceType: ProductionCard['sourceType']): ProductionCard {
+  const rarity = assignRarity(template);
   return {
     id: cardUid(),
     name: template.name,
     source,
     sourceType,
     cardType: template.cardType,
-    baseQuality: template.baseQuality,
+    baseQuality: template.baseQuality + rarityQualityBonus(rarity),
     synergyText: template.synergyText,
     synergyCondition: template.synergyCondition,
     riskTag: template.riskTag,
@@ -211,6 +231,7 @@ function templateToCard(template: CardTemplate, source: string, sourceType: Prod
     budgetMod: template.budgetMod,
     special: template.special,
     tags: template.tags,
+    rarity,
   };
 }
 
@@ -628,6 +649,11 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
   if (mods.includes('speed_run_mod')) {
     maxSeasons = 3;
     maxStrikes = 2;
+  }
+
+  // Daily mode: fixed 3 seasons
+  if (mode === 'daily') {
+    maxSeasons = 3;
   }
 
   // Weekly mode has harder defaults
@@ -2501,7 +2527,7 @@ export function proceedFromRecap() {
 export function proceedToShop() {
   // No Safety Net modifier: skip shop entirely
   if (state.activeModifiers?.includes('no_safety_net_mod')) {
-    nextSeason();
+    proceedToWorkshop();
     return;
   }
   const perkMarket = generatePerkMarket(4, state.perks.map(p => p.name));
@@ -2615,6 +2641,72 @@ export function payDebt(amount: number) {
     budget: state.budget - maxPayable,
     debt: Math.round((state.debt - maxPayable) * 10) / 10,
   });
+}
+
+// ─── CARD WORKSHOP (R162) ───
+
+export function proceedToWorkshop() {
+  // Build workshop deck from last production's played + remaining cards
+  // On season 1 there's no deck yet, skip to nextSeason
+  const prod = state.production;
+  if (!prod || state.season < 1) {
+    nextSeason();
+    return;
+  }
+  // Collect all cards from last production (played + deck + discarded)
+  const allCards = [...(prod.played || []), ...(prod.deck || []), ...(prod.discarded || [])];
+  if (allCards.length === 0) {
+    nextSeason();
+    return;
+  }
+  // Carry over existing workshop deck merged with new production cards
+  const existingIds = new Set(state.workshopDeck.map(c => c.id));
+  const merged = [...state.workshopDeck];
+  for (const card of allCards) {
+    if (!existingIds.has(card.id)) {
+      merged.push(card);
+    }
+  }
+  setState({ phase: 'workshop' as GamePhase, workshopDeck: merged });
+}
+
+export function workshopEnhance(cardId: string) {
+  const cost = 2;
+  if (state.budget < cost) return;
+  const deck = state.workshopDeck.map(c =>
+    c.id === cardId ? { ...c, baseQuality: c.baseQuality + 2 } : c
+  );
+  setState({ budget: state.budget - cost, workshopDeck: deck });
+}
+
+export function workshopTransmute(cardId: string, newType: 'action' | 'challenge' | 'incident') {
+  const cost = 3;
+  if (state.budget < cost) return;
+  const riskTagMap = { action: '🟢' as const, challenge: '🟡' as const, incident: '🔴' as const };
+  const deck = state.workshopDeck.map(c =>
+    c.id === cardId ? { ...c, cardType: newType, riskTag: riskTagMap[newType] } : c
+  );
+  setState({ budget: state.budget - cost, workshopDeck: deck });
+}
+
+export function workshopRemove(cardId: string) {
+  const cost = 1;
+  if (state.budget < cost) return;
+  const deck = state.workshopDeck.filter(c => c.id !== cardId);
+  setState({ budget: state.budget - cost, workshopDeck: deck });
+}
+
+export function workshopDuplicate(cardId: string) {
+  const cost = 4;
+  if (state.budget < cost) return;
+  const card = state.workshopDeck.find(c => c.id === cardId);
+  if (!card) return;
+  const dup = { ...card, id: cardUid() };
+  setState({ budget: state.budget - cost, workshopDeck: [...state.workshopDeck, dup] });
+}
+
+export function skipWorkshop() {
+  nextSeason();
 }
 
 export function nextSeason() {

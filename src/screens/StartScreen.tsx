@@ -11,6 +11,7 @@ import { CHALLENGE_MODES, isChallengeUnlocked } from '../challenges';
 import { getDailyDateString, getWeeklyDateString, getDailyNumber, getWeeklyNumber } from '../seededRng';
 import { getTodayModifier, getWeeklyModifiers } from '../dailyModifiers';
 import { getPersonalBests, getDailyStats } from '../personalBests';
+import { getDailyArchetype, getDailyArchetypeName, getDailyStreak } from '../dailyChallenge';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
 import KeyboardHints from '../components/KeyboardHints';
@@ -701,12 +702,13 @@ export default function StartScreen() {
             <button className={`btn ${hasSave() ? 'btn-small' : 'btn-primary btn-glow'}`} onClick={() => { clearSave(); markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
               NEW RUN
             </button>
-            {/* Daily Run */}
+            {/* Daily Run — fixed setup: Studio difficulty, random archetype from seed, 3 seasons */}
             <button className="btn btn-small" style={{ color: 'var(--blue)', borderColor: 'var(--blue)', opacity: dailyDone ? 0.5 : 1 }}
-              onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowDifficulty(true); } }}>
+              onClick={() => { if (!dailyDone) { sfx.dailyStart(); const arch = getDailyArchetype(); startGame('daily', undefined, undefined, 'studio'); pickArchetype(arch); } }}>
               📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
               {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
               {stats.dailyStreak.current > 0 && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
+              {!dailyDone && <span style={{ fontSize: '0.6rem', marginLeft: 6, opacity: 0.6 }}>{getDailyArchetypeName()}</span>}
             </button>
             {/* Weekly Challenge */}
             {stats.runs > 0 && (

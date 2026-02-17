@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../types';
 import { pickScript } from '../gameStore';
 import { getSeasonTarget } from '../data';
@@ -20,6 +20,15 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
     () => setMobileIdx(i => Math.min(i + 1, state.scriptChoices.length - 1)),
     () => setMobileIdx(i => Math.max(i - 1, 0))
   );
+
+  // Legendary reveal sound
+  const legendaryPlayed = useRef(false);
+  useEffect(() => {
+    if (!legendaryPlayed.current && state.scriptChoices.some((s: any) => s.legendary)) {
+      legendaryPlayed.current = true;
+      setTimeout(() => sfx.legendaryReveal(), 400);
+    }
+  }, [state.scriptChoices]);
 
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (picked) return;

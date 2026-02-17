@@ -271,6 +271,27 @@ export default function ProductionScreen({ state }: { state: GameState }) {
     prevPlayedCount.current = count;
   }, [prod?.played.length]);
 
+  // Director's Vision reveal sound on first render
+  const visionRevealed = useRef(false);
+  useEffect(() => {
+    if (prod?.directorVision && !visionRevealed.current) {
+      visionRevealed.current = true;
+      setTimeout(() => sfx.directorVisionReveal(), 300);
+    }
+  }, [prod?.directorVision]);
+
+  // Director's Vision success/fail sound on wrap
+  const visionResultPlayed = useRef(false);
+  useEffect(() => {
+    if (prod?.isWrapped && prod?.directorVision && !visionResultPlayed.current) {
+      visionResultPlayed.current = true;
+      setTimeout(() => {
+        if (directorVisionBonus > 0) sfx.directorVisionSuccess();
+        else sfx.directorVisionFail();
+      }, 500);
+    }
+  }, [prod?.isWrapped]);
+
   return (
     <div className={`production-area fade-in ${disasterShake ? 'disaster-shake' : ''}`}>
       <PhaseTip phase="production" />
@@ -667,7 +688,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           </button>
         )}
         {!prod.scriptRewriteUsed && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && prod.drawCount > 0 && state.budget >= 3 && (
-          <button className="btn btn-small" onClick={() => { sfx.click(); rewriteScript(); }} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
+          <button className="btn btn-small" onClick={() => { sfx.scriptRewrite(); rewriteScript(); }} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
             ✏️ REWRITE ($3M)
           </button>
         )}

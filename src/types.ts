@@ -297,6 +297,7 @@ export interface GameState {
   activeSeasonEvent: SeasonEventChoice | null; // the chosen event for next season
   streamingDealActive: boolean; // next film -×0.3 mult from streaming deal
   rosterCap?: number; // max roster size (default 8), reduced by studio merger
+  pendingSequelScript?: Script | null; // franchise sequel script for next season
 }
 
 export interface SeasonEventChoice {

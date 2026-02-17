@@ -262,6 +262,11 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     totalCardValue += p.actorBuff;
   }
 
+  // Legendary script: Midnight Masterpiece — incidents add +3 quality instead of hurting
+  if (card.cardType === 'incident' && state.currentScript?.ability === 'midnightMasterpiece') {
+    totalCardValue = 3;
+  }
+
   // Crisis Manager: halve incident penalties
   if (card.cardType === 'incident' && state.perks.some(pk => pk.effect === 'crisisManager')) {
     if (totalCardValue < 0) {
@@ -596,7 +601,12 @@ function beginSeason() {
   const simplified = isSimplifiedRun();
   const trends = simplified ? { hot: [] as Genre[], cold: [] as Genre[] } : generateGenreTrends();
   
-  setState({ scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold });
+  // Legendary: The Franchise — inject pending sequel script into choices
+  if (state.pendingSequelScript) {
+    scripts = [state.pendingSequelScript, ...scripts];
+  }
+
+  setState({ scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold, pendingSequelScript: null });
 }
 
 export function pickScript(script: Script) {
@@ -708,8 +718,14 @@ export function hireTalent(talent: Talent) {
   if (state.perks.some(p => p.effect === 'talentAgency')) {
     hiredTalent = { ...talent, skill: talent.skill + 1 };
   }
+  // Elite passive: rosterSkillBoost — Zara Osei-Mensah gives +1 skill to all existing roster talent
+  let updatedRoster = [...state.roster];
+  if (hiredTalent.elitePassiveEffect === 'rosterSkillBoost') {
+    updatedRoster = updatedRoster.map(t => ({ ...t, skill: t.skill + 1 }));
+  }
+
   setState({
-    roster: [...state.roster, hiredTalent],
+    roster: [...updatedRoster, hiredTalent],
     budget: newBudget,
     debt: newDebt,
     talentMarket: state.talentMarket.filter(t => t.id !== talent.id),
@@ -845,6 +861,34 @@ export function rewriteScript() {
 
 export function startProduction() {
   if (!state.currentScript) return;
+
+  // Elite passive: tagAlchemy — Auteur Collective replaces one script keyword tag with a synergy tag
+  const castTalentsForAlchemy = state.castSlots.map(s => s.talent).filter(Boolean) as Talent[];
+  if (castTalentsForAlchemy.some(t => t.elitePassiveEffect === 'tagAlchemy') && state.currentScript.keywordTags && state.currentScript.keywordTags.length > 0) {
+    // Gather all tags from other cast members' cards (excluding Auteur Collective)
+    const otherCastTags = new Set<CardTag>();
+    for (const t of castTalentsForAlchemy) {
+      if (t.elitePassiveEffect === 'tagAlchemy') continue;
+      if (t.cards) {
+        for (const c of t.cards) {
+          if (c.tags) c.tags.forEach((tag: CardTag) => otherCastTags.add(tag));
+        }
+      }
+    }
+    // Find a tag from other cast that's NOT already in script keyword tags
+    const scriptTags = state.currentScript.keywordTags;
+    const synergyTag = [...otherCastTags].find(tag => !scriptTags.includes(tag));
+    if (synergyTag) {
+      // Replace the first keyword tag that doesn't match any cast card tag
+      const idxToReplace = scriptTags.findIndex(tag => !otherCastTags.has(tag));
+      if (idxToReplace >= 0) {
+        const newTags = [...scriptTags];
+        newTags[idxToReplace] = synergyTag;
+        state.currentScript = { ...state.currentScript, keywordTags: newTags };
+      }
+    }
+  }
+
   const deck = buildProductionDeck(state.castSlots, state.currentScript);
   const hasReshoots = state.perks.some(p => p.effect === 'reshoots');
   setState({
@@ -1389,8 +1433,19 @@ export function calculateQuality(s: GameState): {
   // Chemistry bonus
   const castNames = s.castSlots.map(slot => slot.talent?.name).filter(Boolean) as string[];
   const activeChemistry = getActiveChemistry(castNames);
-  const chemistryBonus = activeChemistry.reduce((sum, c) => sum + c.qualityBonus, 0);
-  
+  let chemistryBonus = activeChemistry.reduce((sum, c) => sum + c.qualityBonus, 0);
+
+  // Elite passive: doubleChemistry — Sebastian Montague doubles chemistry bonus
+  const castTalents = s.castSlots.map(slot => slot.talent).filter(Boolean) as Talent[];
+  if (castTalents.some(t => t.elitePassiveEffect === 'doubleChemistry')) {
+    chemistryBonus *= 2;
+  }
+
+  // Elite passive: globalQualityBoost — Isabella Divine gives +2 quality to ALL films
+  const allTalent = [...s.roster, ...castTalents];
+  const globalQualityBoostCount = allTalent.filter(t => t.elitePassiveEffect === 'globalQualityBoost').length;
+  const eliteGlobalBonus = globalQualityBoostCount * 2;
+
   // Archetype Focus bonus
   const archetypeFocus = calculateArchetypeFocus(prod.tagsPlayed || {});
   const archetypeFocusBonus = archetypeFocus?.bonus || 0;
@@ -1427,7 +1482,7 @@ export function calculateQuality(s: GameState): {
   // Chaos Dividend perk: +3 per incident (max +9)
   const chaosDividendBonus = s.perks.some(p => p.effect === 'chaosDividend') ? Math.min(prod.incidentCount * 3, 9) : 0;
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus;
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;
@@ -1680,6 +1735,24 @@ export function resolveRelease() {
     nominated,
   };
 
+  // Legendary script: The Franchise — BLOCKBUSTER+ generates a free sequel script next season
+  let pendingSequelScript = state.pendingSequelScript;
+  if (script.ability === 'franchise' && tier === 'BLOCKBUSTER') {
+    pendingSequelScript = {
+      id: `sequel-${script.id}-${Date.now()}`,
+      title: `${script.title} II`,
+      genre: script.genre as Genre,
+      baseScore: script.baseScore + 5,
+      slots: script.slots,
+      cost: 0, // free sequel!
+      cards: script.cards,
+      ability: script.ability,
+      abilityDesc: script.abilityDesc,
+      legendary: true,
+      keywordTags: script.keywordTags,
+    };
+  }
+
   let newRoster = [...state.roster];
   if (result.hitTarget) {
     newRoster = newRoster.map(t => {
@@ -1757,6 +1830,7 @@ export function resolveRelease() {
     // Clear season event effects after this film
     activeSeasonEvent: null,
     streamingDealActive: false,
+    pendingSequelScript,
   });
 }
 

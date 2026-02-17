@@ -172,6 +172,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
     sfx.boxOfficeReveal();
     const t1 = setTimeout(() => {
       setPhase(1);
+      if (streak >= 2) setTimeout(() => sfx.streakBonus(), 200);
       if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); setShowGoldenBurst(true); }
       else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); setShowGoldenBurst(true); }
       else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); setTimeout(() => sfx.strikeAdded(), 400); setShowShake(true); setTimeout(() => setShowShake(false), 250); }
@@ -179,7 +180,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       setTimeout(() => setScreenFlash(''), 800);
     }, 1600);
     const t2 = setTimeout(() => setPhase(2), 2800);
-    const t3 = setTimeout(() => setPhase(3), 3600);
+    const t3 = setTimeout(() => { setPhase(3); sfx.marketForecast(); }, 3600);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 

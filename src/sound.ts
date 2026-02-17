@@ -431,6 +431,127 @@ export const sfx = {
     }, 'legendary');
   },
 
+  // ── New sounds for R104 ──
+
+  // Script rewrite — paper shuffling/tearing (filtered noise burst + crinkle)
+  scriptRewrite() {
+    play(c => {
+      // Crinkle: bandpass-filtered noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.35, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 2400;
+      bp.Q.value = 2;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.12, c.currentTime);
+      g.gain.setValueAtTime(0.06, c.currentTime + 0.1);
+      g.gain.setValueAtTime(0.1, c.currentTime + 0.18);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.3);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.35);
+      // Tearing accent
+      note(c, 1800, 0.05, 0.04, 0.06, 'square');
+      note(c, 1200, 0.12, 0.04, 0.05, 'square');
+    }, 'rewrite');
+  },
+
+  // Director vision reveal — dramatic reveal chord (low strings → resolve)
+  directorVisionReveal() {
+    play(c => {
+      // Low strings swell
+      note(c, 110, 0, 0.5, 0.12, 'sawtooth');
+      note(c, 165, 0, 0.5, 0.08, 'sawtooth');
+      // Resolve up to minor chord
+      note(c, 220, 0.3, 0.4, 0.1, 'triangle');
+      note(c, 262, 0.35, 0.35, 0.08, 'triangle');
+      note(c, 330, 0.4, 0.3, 0.08, 'sine');
+      // Subtle mystery shimmer
+      note(c, 880, 0.45, 0.3, 0.03, 'sine');
+    }, 'visionReveal');
+  },
+
+  // Director vision success — bright ascending arpeggio
+  directorVisionSuccess() {
+    play(c => {
+      note(c, 659, 0, 0.15, 0.12, 'sine');
+      note(c, 784, 0.08, 0.15, 0.12, 'sine');
+      note(c, 988, 0.16, 0.15, 0.12, 'sine');
+      note(c, 1319, 0.24, 0.3, 0.14, 'sine');
+      // Sparkle
+      note(c, 2637, 0.3, 0.25, 0.05, 'sine');
+    }, 'visionSuccess');
+  },
+
+  // Director vision fail — muted descending minor
+  directorVisionFail() {
+    play(c => {
+      note(c, 440, 0, 0.2, 0.08, 'triangle');
+      note(c, 370, 0.15, 0.2, 0.07, 'triangle');
+      note(c, 311, 0.3, 0.3, 0.06, 'triangle');
+    }, 'visionFail');
+  },
+
+  // Legendary reveal — epic discovery fanfare (brass + shimmer, ~1s)
+  legendaryReveal() {
+    play(c => {
+      // Brass stab (sawtooth = brassy)
+      note(c, 165, 0, 0.6, 0.18, 'sawtooth');
+      note(c, 220, 0, 0.5, 0.14, 'sawtooth');
+      note(c, 330, 0.05, 0.45, 0.12, 'sawtooth');
+      // Resolve chord
+      note(c, 440, 0.2, 0.5, 0.1, 'triangle');
+      note(c, 523, 0.25, 0.45, 0.08, 'triangle');
+      note(c, 659, 0.3, 0.4, 0.08, 'triangle');
+      // High shimmer
+      noise(c, 0, 0.2, 0.1);
+      note(c, 1760, 0.35, 0.5, 0.05, 'sine');
+      note(c, 2637, 0.4, 0.5, 0.04, 'sine');
+      note(c, 3520, 0.45, 0.4, 0.03, 'sine');
+    }, 'legendaryReveal');
+  },
+
+  // Market forecast — newspaper printing/ticker for season headlines
+  marketForecast() {
+    play(c => {
+      // Mechanical ticker clicks
+      note(c, 600, 0, 0.02, 0.07, 'square');
+      note(c, 600, 0.06, 0.02, 0.06, 'square');
+      note(c, 600, 0.12, 0.02, 0.06, 'square');
+      note(c, 800, 0.18, 0.02, 0.05, 'square');
+      note(c, 800, 0.24, 0.02, 0.05, 'square');
+      // Printing press rumble
+      const buf = c.createBuffer(1, c.sampleRate * 0.4, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 600;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.06, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      src.connect(lp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.4);
+    }, 'forecast');
+  },
+
+  // Streak bonus — quick escalating ping
+  streakBonus() {
+    play(c => {
+      note(c, 880, 0, 0.08, 0.1, 'sine');
+      note(c, 1175, 0.06, 0.08, 0.1, 'sine');
+      note(c, 1480, 0.12, 0.08, 0.1, 'sine');
+      note(c, 1760, 0.18, 0.15, 0.12, 'sine');
+    }, 'streak');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

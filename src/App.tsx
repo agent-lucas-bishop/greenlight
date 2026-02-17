@@ -8,6 +8,7 @@ import StudioFoundingNarrative from './components/StudioFoundingNarrative';
 import { shouldShowNarrative, markNarrativeShown } from './onboarding';
 import { isTutorialActive } from './tutorial';
 import { CUTSCENES, isStoryMomentsEnabled, hasCutsceneBeenSeen, type CutsceneData } from './cutscenes';
+import { checkURLForMod, importModPack } from './modding';
 import CutsceneOverlay from './components/CutsceneOverlay';
 import { getRandomTip } from './loadingTips';
 import LoadingScreen from './components/LoadingScreen';
@@ -52,6 +53,20 @@ function App() {
   const [activeCutscene, setActiveCutscene] = useState<{ data: CutsceneData; vars?: Record<string, string> } | null>(null);
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // R205: Check URL for shared mod pack
+  useEffect(() => {
+    const mod = checkURLForMod();
+    if (mod) {
+      const json = JSON.stringify(mod);
+      const result = importModPack(json);
+      if (result.mod) {
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
+        alert(`Mod pack "${result.mod.name}" by ${result.mod.author} has been imported! Enable it in Settings → Mods.`);
+      }
+    }
+  }, []);
 
   // R167: Apply seasonal theme CSS properties
   useEffect(() => {

@@ -92,6 +92,7 @@ import {
   ALL_LEADS, ALL_SUPPORTS, ALL_DIRECTORS, ALL_CREW, ALL_SCRIPTS, isPerkLocked,
 } from './data';
 import type { SeasonEventChoice } from './types';
+import { getEnabledModEvents } from './modding';
 import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, getWeeklySeed, getWeeklyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
@@ -2691,7 +2692,16 @@ export function proceedToShop() {
   }
   const perkMarket = generatePerkMarket(4, state.perks.map(p => p.name));
   const talentMarket = generateTalentMarket(4, state.season, state.roster);
-  const event = INDUSTRY_EVENTS[Math.floor(rng() * INDUSTRY_EVENTS.length)];
+  // R205: Merge mod events into industry event pool
+  const modEvents = getEnabledModEvents().map(me => ({
+    name: me.name,
+    description: me.description,
+    effect: (state: GameState) => {
+      if (me.qualityMod) state.production.qualityBonus = (state.production.qualityBonus || 0) + me.qualityMod;
+    },
+  }));
+  const eventPool = [...INDUSTRY_EVENTS, ...modEvents];
+  const event = eventPool[Math.floor(rng() * eventPool.length)];
   
   // Legacy perk: Talent Scout — guarantee at least one 4+ skill talent in shop
   const legacyPerksShop = getActiveLegacyPerks();

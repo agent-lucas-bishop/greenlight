@@ -2,6 +2,9 @@ import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, Chall
 import { rng } from './seededRng';
 import { getUnlockedScriptDefs, getUnlockedTalentDefs } from './unlockableContent';
 import { isTalentRetired, isLoyalTalent, getAgentFee } from './talentHistory';
+import { getEnabledModScripts, getEnabledModTalent } from './modding';
+import { customCardToCardTemplate } from './customCards';
+import type { CustomScript, CustomTalent } from './customCards';
 
 // Cache prestige level in memory to avoid localStorage reads on every render
 let _cachedPrestigeLevel = 0;
@@ -4793,8 +4796,45 @@ const OSCAR_BAIT_SCRIPT: Omit<Script, 'id'> = {
   keywordTags: ['precision', 'heart'],
 };
 
+function modScriptToPool(ms: CustomScript): Omit<Script, 'id'> {
+  const e = ms.cardEffect;
+  const cards: CardTemplate[] = [
+    { name: `${ms.name} — Core`, cardType: 'action', baseQuality: Math.max(0, ms.baseScore - 3), synergyText: ms.description || 'Modded script card', riskTag: '🟢' },
+    { name: `${ms.name} — Vision`, cardType: 'action', baseQuality: e.qualityBonus, synergyText: ms.description || 'Modded bonus', riskTag: e.qualityBonus >= 3 ? '🟡' : '🟢' },
+    customCardToCardTemplate(ms),
+  ];
+  return {
+    title: ms.name,
+    genre: ms.genre,
+    cost: ms.cost,
+    baseScore: ms.baseScore,
+    slots: ms.slots,
+    cards,
+    description: ms.description || `Custom mod script`,
+  };
+}
+
+function modTalentToPool(mt: CustomTalent): Omit<Talent, 'id'> {
+  const cards: CardTemplate[] = [
+    customCardToCardTemplate(mt),
+    { name: `${mt.name} — Skill`, cardType: 'action', baseQuality: Math.ceil(mt.skill / 2), synergyText: 'Talent contribution', riskTag: '🟢' },
+  ];
+  return {
+    name: mt.name,
+    type: mt.talentType,
+    skill: mt.skill,
+    cost: mt.cost,
+    cards,
+    description: mt.description || `Custom mod talent`,
+  };
+}
+
 export function generateScripts(count: number, _season: number): Script[] {
   const pool = [...ALL_SCRIPTS];
+  // R205: Add modded scripts to pool
+  for (const ms of getEnabledModScripts()) {
+    pool.push(modScriptToPool(ms));
+  }
   // Prestige 4+: add legendary scripts to pool
   if (_cachedPrestigeLevel >= 4) {
     pool.push(...LEGENDARY_SCRIPTS);
@@ -4853,7 +4893,9 @@ export function generateTalentMarket(count: number, _season: number, currentRost
   const elitePool = _cachedPrestigeLevel >= 4 ? [...ELITE_LEADS, ...ELITE_SUPPORTS, ...ELITE_DIRECTORS, ...ELITE_CREW] : [];
   // Add unlocked meta-progression talent to pool
   const unlockedTalent = getUnlockedTalentDefs() as Omit<Talent, 'id'>[];
-  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW, ...elitePool, ...unlockedTalent].filter(t => !rosterNames.has(t.name) && !isTalentRetired(t.name));
+  // R205: Add modded talent to pool
+  const modTalent = getEnabledModTalent().map(mt => modTalentToPool(mt));
+  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW, ...elitePool, ...unlockedTalent, ...modTalent].filter(t => !rosterNames.has(t.name) && !isTalentRetired(t.name));
   while (result.length < count) {
     const available = allTalent.filter(t => !usedNames.has(t.name));
     if (available.length === 0) break;

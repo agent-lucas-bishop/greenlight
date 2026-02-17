@@ -6,6 +6,7 @@ import { isStoryMomentsEnabled, setStoryMomentsEnabled } from '../cutscenes';
 import { resetTutorial, isTutorialComplete } from '../tutorial';
 import { getPlayerName, setPlayerName as savePlayerName } from '../leaderboard';
 import { auditStorage, clearNonEssentialStorage } from '../storageManager';
+import ModManager from './ModManager';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -116,7 +117,7 @@ function StudioIdentityEditor() {
 
 /* ── Settings sections ───────────────────────────────────────── */
 
-type Tab = 'sound' | 'animation' | 'display' | 'game' | 'data' | 'keyboard' | 'studio' | 'credits';
+type Tab = 'sound' | 'animation' | 'display' | 'game' | 'mods' | 'data' | 'keyboard' | 'studio' | 'credits';
 
 const TABS: { id: Tab; icon: string; label: string }[] = [
   { id: 'sound', icon: '🔊', label: 'Sound' },
@@ -124,6 +125,7 @@ const TABS: { id: Tab; icon: string; label: string }[] = [
   { id: 'display', icon: '👁', label: 'Display' },
   { id: 'game', icon: '🎮', label: 'Game' },
   { id: 'studio', icon: '🏛', label: 'Studio' },
+  { id: 'mods', icon: '🧩', label: 'Mods' },
   { id: 'data', icon: '💾', label: 'Data' },
   { id: 'keyboard', icon: '⌨️', label: 'Keys' },
   { id: 'credits', icon: 'ℹ️', label: 'About' },
@@ -375,6 +377,12 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
               <SectionH3>Director Name</SectionH3>
               <PlayerNameEditor />
             </div>
+          </div>
+        );
+      case 'mods':
+        return (
+          <div className="settings-section" style={{ borderBottom: 'none' }}>
+            <ModManager />
           </div>
         );
       case 'data': {

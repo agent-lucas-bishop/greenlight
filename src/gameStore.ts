@@ -65,6 +65,10 @@ function createInitialState(): GameState {
     activeSeasonEvent: null,
     streamingDealActive: false,
     pendingSequelScript: null,
+    completionBond: false,
+    extendedCutAvailable: false,
+    extendedCutUsed: false,
+    reshootsBudgetUsed: false,
   };
 }
 
@@ -1361,6 +1365,94 @@ export function attemptEncore() {
   setState({ production: prod });
 }
 
+// R106: $5M Reshoots — after wrap, re-roll all incident cards in played pile. Risky: could be better or worse.
+export function performReshoots() {
+  if (!state.production || !state.production.isWrapped || state.production.isDisaster) return;
+  if (state.reshootsBudgetUsed) return;
+  if (state.budget < 5) return;
+
+  const prod = { ...state.production };
+  const played = [...prod.played];
+  
+  // Find all incident cards and re-roll them
+  for (let i = 0; i < played.length; i++) {
+    if (played[i].cardType === 'incident') {
+      // Re-roll: replace with a random card from the concept of "new incident or action"
+      const roll = rng();
+      if (roll < 0.45) {
+        // 45% chance: becomes a decent action card (+2 to +4)
+        const bonus = 2 + Math.floor(rng() * 3);
+        played[i] = {
+          ...played[i],
+          cardType: 'action',
+          name: '🎬 Reshoot Take',
+          baseQuality: bonus,
+          totalValue: bonus,
+          synergyBonus: 0,
+          synergyFired: false,
+          synergyText: 'Reshoot — new footage replaced the problem.',
+          riskTag: '🟢',
+        };
+      } else if (roll < 0.75) {
+        // 30% chance: still an incident but milder (-1 to -2)
+        const penalty = -(1 + Math.floor(rng() * 2));
+        played[i] = {
+          ...played[i],
+          name: '🎬 Reshoot Incident',
+          baseQuality: penalty,
+          totalValue: penalty,
+          synergyBonus: 0,
+          synergyFired: false,
+          synergyText: 'Reshoot — still had problems on set.',
+        };
+      } else {
+        // 25% chance: worse incident (-5 to -7)
+        const penalty = -(5 + Math.floor(rng() * 3));
+        played[i] = {
+          ...played[i],
+          name: '💥 Reshoot Disaster',
+          baseQuality: penalty,
+          totalValue: penalty,
+          synergyBonus: 0,
+          synergyFired: false,
+          synergyText: 'Reshoot backfired — new footage is even worse!',
+        };
+      }
+    }
+  }
+
+  // Recalculate production totals
+  let qualityTotal = 0;
+  let incidentCount = 0;
+  let cleanWrap = true;
+  let budgetChange = 0;
+  for (const card of played) {
+    qualityTotal += card.totalValue || card.baseQuality;
+    if (card.cardType === 'incident') {
+      incidentCount++;
+      cleanWrap = false;
+    }
+    budgetChange += card.budgetMod || 0;
+  }
+
+  const disasterThreshold = state.studioArchetype === 'chaos' ? 4 : 3;
+  
+  setState({
+    budget: state.budget - 5,
+    reshootsBudgetUsed: true,
+    production: {
+      ...prod,
+      played,
+      qualityTotal,
+      incidentCount,
+      redCount: incidentCount,
+      cleanWrap,
+      budgetChange,
+      isDisaster: incidentCount >= disasterThreshold,
+    },
+  });
+}
+
 export function declineEncore() {
   if (!state.production) return;
   const prod = { ...state.production };
@@ -1680,11 +1772,20 @@ export function resolveRelease() {
   }
 
   switch (tier) {
-    case 'FLOP':
+    case 'FLOP': {
+      // R106: Completion Bond — FLOP → MISS (no strike, no rep loss)
+      if (state.completionBond) {
+        // Bond consumed, treated as a MISS (same as HIT tier minus bonus)
+        repChange = 0;
+        bonusMoney = 0;
+        // Earn full BO but no bonus
+        break;
+      }
       repChange = (state.challengeId === 'critics_choice' || state.challengeId === 'critics_only') ? -2 : -1;
       const streamingSafety = state.industryEvent?.effect === 'streamingSafety';
       earnings = Math.round(boxOffice * (streamingSafety ? 0.75 : 0.6) * 10) / 10;
       break;
+    }
     case 'HIT':
       repChange = 0;
       bonusMoney = 5;
@@ -1819,7 +1920,11 @@ export function resolveRelease() {
     budget: state.budget + earnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost,
     totalEarnings: state.totalEarnings + earnings,
     reputation: Math.max(0, Math.min(5, newRep + debtRepPenalty)),
-    strikes: tier === 'FLOP' ? state.strikes + 1 : state.strikes,
+    strikes: (tier === 'FLOP' && !state.completionBond) ? state.strikes + 1 : state.strikes,
+    completionBond: (tier === 'FLOP' && state.completionBond) ? false : state.completionBond, // consume bond on FLOP
+    extendedCutAvailable: tier !== 'FLOP', // HIT or better can do extended cut
+    extendedCutUsed: false,
+    reshootsBudgetUsed: false, // reset for next film
     seasonHistory: [...state.seasonHistory, result],
     rivalHistory: [...state.rivalHistory, rivalSeasonData],
     cumulativeRivalEarnings: newCumulativeRivalEarnings,
@@ -1833,6 +1938,29 @@ export function resolveRelease() {
     streamingDealActive: false,
     pendingSequelScript,
   });
+}
+
+// R106: Extended Cut — spend $3M for a second BO run (30-50% of original), but skip next film slot
+export function doExtendedCut() {
+  if (!state.extendedCutAvailable || state.extendedCutUsed) return;
+  if (state.budget < 3) return;
+  if (state.lastTier === 'FLOP') return; // safety check
+
+  const extendedMultiplier = 0.3 + rng() * 0.2; // 30-50%
+  const extendedBO = Math.round(state.lastBoxOffice * extendedMultiplier * 10) / 10;
+
+  setState({
+    budget: state.budget - 3 + extendedBO,
+    totalEarnings: state.totalEarnings + extendedBO,
+    extendedCutUsed: true,
+    extendedCutAvailable: false,
+    // Skip a film slot: advance season counter by 1
+    season: state.season + 1,
+  });
+}
+
+export function declineExtendedCut() {
+  setState({ extendedCutAvailable: false });
 }
 
 export function proceedFromRecap() {
@@ -1911,11 +2039,16 @@ export function buyPerk(perk: StudioPerk) {
   let actualCost = state.challengeId === 'shoestring' ? perk.cost + 1 : perk.cost;
   if (state.challengeId === 'budget_hell') actualCost += 2;
   if (state.budget < actualCost || state.perks.length >= 5) return;
-  setState({
+  const updates: Partial<GameState> = {
     perks: [...state.perks, perk],
     budget: state.budget - actualCost,
     perkMarket: state.perkMarket.filter(p => p.id !== perk.id),
-  });
+  };
+  // Completion Bond sets a one-use flag
+  if (perk.effect === 'completionBond') {
+    updates.completionBond = true;
+  }
+  setState(updates);
 }
 
 // Train a talent: costs $5M, removes their worst incident card OR upgrades an action card

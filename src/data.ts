@@ -4923,6 +4923,7 @@ export const ALL_PERKS: PerkDef[] = [
   { name: 'Sequel Rights', cost: 10, description: 'Same genre as last film: +$10M box office', effect: 'sequelRights' },
   { name: 'Chaos Dividend', cost: 11, description: '+3 quality per Incident in production (max +9). Dangerous but rewarding.', effect: 'chaosDividend', prestigeRequired: 3 },
   { name: 'Talent Agency', cost: 14, description: 'All hired talent gets +1 Skill. Expensive but elite.', effect: 'talentAgency', prestigeRequired: 5 },
+  { name: 'Completion Bond', cost: 4, description: 'Insurance: if your next film FLOPs, it\'s upgraded to a MISS (no strike). One-use, consumed on trigger.', effect: 'completionBond' },
 ];
 
 export function generatePerkMarket(count: number, owned: string[]): (StudioPerk & { prestigeRequired?: number })[] {

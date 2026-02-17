@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
-import { proceedFromRecap, calculateQuality } from '../gameStore';
+import { proceedFromRecap, calculateQuality, doExtendedCut, declineExtendedCut } from '../gameStore';
 import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary, calculateRubberBand } from '../rivals';
 import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
 import { sfx } from '../sound';
@@ -466,6 +466,72 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
           );
         })}
       </div>
+
+      {/* R106: Completion Bond notification */}
+      {phase >= 2 && tier === 'FLOP' && state.completionBond && (
+        <div className="animate-slide-down" style={{
+          background: 'rgba(46,204,113,0.1)',
+          border: '2px solid #2ecc71',
+          borderRadius: 12,
+          padding: 12,
+          marginTop: 12,
+          textAlign: 'center',
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>🛡️ COMPLETION BOND ACTIVATED!</span>
+          <div style={{ color: '#2ecc71', fontSize: '0.85rem', marginTop: 4 }}>
+            Your insurance upgraded this FLOP to a MISS — no strike added! Bond consumed.
+          </div>
+        </div>
+      )}
+
+      {/* R106: Extended Cut option — HIT or better */}
+      {phase >= 3 && state.extendedCutAvailable && !state.extendedCutUsed && tier !== 'FLOP' && state.season < state.maxSeasons && state.budget >= 3 && (
+        <div className="animate-slide-down" style={{
+          background: 'rgba(155,89,182,0.1)',
+          border: '2px solid #9b59b6',
+          borderRadius: 12,
+          padding: 16,
+          marginTop: 16,
+          textAlign: 'center',
+        }}>
+          <h3 style={{ color: '#9b59b6', marginBottom: 8, fontSize: '1rem' }}>🎬 EXTENDED CUT ($3M)</h3>
+          <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: 4 }}>
+            Release a Director's Extended Cut for <strong style={{ color: '#d4a843' }}>30-50%</strong> of the original ${state.lastBoxOffice.toFixed(1)}M box office.
+          </p>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: 4 }}>
+            Estimated: <strong style={{ color: '#2ecc71' }}>${(state.lastBoxOffice * 0.3).toFixed(1)}M – ${(state.lastBoxOffice * 0.5).toFixed(1)}M</strong>
+          </p>
+          <p style={{ color: '#e74c3c', fontSize: '0.75rem', marginBottom: 12 }}>
+            ⚠️ This uses your next film slot — you'll skip Season {state.season + 1}'s production.
+            {state.season + 1 >= state.maxSeasons && <strong> That's your FINAL season!</strong>}
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => { sfx.challenge(); doExtendedCut(); }}>
+              🎬 EXTENDED CUT ($3M)
+            </button>
+            <button className="btn" onClick={() => { sfx.click(); declineExtendedCut(); }}>
+              Skip — make a new film
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Extended Cut result */}
+      {state.extendedCutUsed && (
+        <div className="animate-slide-down" style={{
+          background: 'rgba(46,204,113,0.1)',
+          border: '2px solid #2ecc71',
+          borderRadius: 12,
+          padding: 12,
+          marginTop: 12,
+          textAlign: 'center',
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>🎬 Extended Cut Released!</span>
+          <div style={{ color: '#2ecc71', fontSize: '0.85rem', marginTop: 4 }}>
+            Season {state.season} film slot used for the extended run.
+          </div>
+        </div>
+      )}
 
       {phase >= 3 && (
         <div className="btn-group" style={{ marginTop: 16 }}>

@@ -298,6 +298,11 @@ export interface GameState {
   streamingDealActive: boolean; // next film -×0.3 mult from streaming deal
   rosterCap?: number; // max roster size (default 8), reduced by studio merger
   pendingSequelScript?: Script | null; // franchise sequel script for next season
+  // R106: Advanced strategy
+  completionBond: boolean; // one-use: next FLOP → MISS (no strike)
+  extendedCutAvailable: boolean; // after HIT+, can do extended cut
+  extendedCutUsed: boolean; // used this season (skips next film slot)
+  reshootsBudgetUsed: boolean; // $5M reshoots — re-roll incidents after wrap, once per film
 }
 
 export interface SeasonEventChoice {

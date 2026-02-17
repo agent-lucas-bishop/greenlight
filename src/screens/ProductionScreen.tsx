@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript, performReshoots } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { getCardBackColor } from '../achievements';
@@ -746,7 +746,34 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             )}
           </div>
         )}
-        {prod.isWrapped && (!prod.encoreState?.available || prod.encoreState.used) && (
+        {/* R106: $5M Reshoots — re-roll all incidents after wrap */}
+        {prod.isWrapped && !prod.isDisaster && (!prod.encoreState?.available || prod.encoreState.used) && !state.reshootsBudgetUsed && prod.incidentCount > 0 && state.budget >= 5 && (
+          <div style={{
+            background: 'rgba(231,76,60,0.08)',
+            border: '2px solid #e67e22',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 12,
+            textAlign: 'center',
+          }}>
+            <h3 style={{ color: '#e67e22', marginBottom: 8, fontSize: '1rem' }}>🎬 RESHOOTS ($5M)</h3>
+            <p style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: 4 }}>
+              Spend $5M to re-roll all <strong style={{ color: '#e74c3c' }}>{prod.incidentCount} incident{prod.incidentCount !== 1 ? 's' : ''}</strong> with new footage.
+            </p>
+            <p style={{ color: '#e74c3c', fontSize: '0.75rem', marginBottom: 12 }}>
+              ⚠️ Risky! Each incident has a 45% chance of becoming good footage, 30% mild issue, 25% even worse!
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => { sfx.challenge(); performReshoots(); }}>
+                🎬 RESHOOTS ($5M)
+              </button>
+              <button className="btn" onClick={() => {}}>
+                Skip — keep current footage
+              </button>
+            </div>
+          </div>
+        )}
+        {prod.isWrapped && (!prod.encoreState?.available || prod.encoreState.used) && (state.reshootsBudgetUsed || prod.incidentCount === 0 || state.budget < 5) && (
           <AutoAdvance onAdvance={resolveRelease} delayMs={2500} label="📊 SEE BOX OFFICE →" />
         )}
       </div>

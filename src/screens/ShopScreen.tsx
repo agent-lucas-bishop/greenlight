@@ -164,6 +164,11 @@ export default function ShopScreen({ state }: { state: GameState }) {
                   {p.name}
                 </span>
               ))}
+              {state.completionBond && (
+                <span className="perk-badge" title="Next FLOP → MISS (no strike). One-use." style={{ fontSize: '0.8rem', padding: '4px 12px', background: 'rgba(46,204,113,0.2)', border: '1px solid #2ecc71', color: '#2ecc71' }}>
+                  🛡️ Completion Bond (active)
+                </span>
+              )}
             </div>
           </div>
         )}

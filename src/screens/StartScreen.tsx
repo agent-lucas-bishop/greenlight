@@ -14,6 +14,8 @@ import { getPersonalBests } from '../personalBests';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
 import AchievementGallery from '../components/AchievementGallery';
+import SettingsModal from '../components/SettingsModal';
+import KeyboardHints from '../components/KeyboardHints';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
@@ -324,6 +326,8 @@ export default function StartScreen() {
   const firstRun = isFirstRun();
   const simplified = isSimplifiedRun(); // true until first run complete
   const [showHelp, setShowHelp] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showKeyboardHints, setShowKeyboardHints] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
@@ -338,6 +342,17 @@ export default function StartScreen() {
   const dailyDate = getDailyDateString();
   const dailyDone = hasDailyRun(dailyDate);
   const dailyBest = getDailyBest(dailyDate);
+
+  // "?" keyboard shortcut for keyboard hints
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '?' && !showHelp && !showSettings && !showAchievements) {
+        setShowKeyboardHints(h => !h);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showHelp, showSettings, showAchievements]);
 
   useEffect(() => {
     if (firstRun) {
@@ -367,7 +382,9 @@ export default function StartScreen() {
         )}
         <p style={{ color: '#888', marginBottom: 24, fontSize: '0.9rem' }}>Your studio identity shapes your strategy for the entire run.</p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 800, margin: '0 auto' }}>
-          {STUDIO_ARCHETYPES.map(a => (
+          {STUDIO_ARCHETYPES.map(a => {
+            const isRecommended = a.id === 'blockbuster';
+            return (
             <div
               key={a.id}
               className="card"
@@ -375,16 +392,22 @@ export default function StartScreen() {
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(selectedMode, selectedChallenge); pickArchetype(a.id as StudioArchetypeId); } }}
               tabIndex={0}
               role="button"
-              aria-label={`${a.name}: ${a.description}`}
-              style={{ cursor: 'pointer', padding: 20, flex: '1 1 180px', maxWidth: 220, textAlign: 'center', transition: 'transform 0.2s, border-color 0.2s' }}
+              aria-label={`${a.name}: ${a.description}${isRecommended ? ' (Recommended for beginners)' : ''}`}
+              style={{ cursor: 'pointer', padding: 20, flex: '1 1 180px', maxWidth: 220, textAlign: 'center', transition: 'transform 0.2s, border-color 0.2s', borderColor: isRecommended && simplified ? 'rgba(46,204,113,0.4)' : undefined }}
               onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = 'var(--gold)'; (e.target as HTMLElement).style.transform = 'scale(1.05)'; }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = ''; (e.target as HTMLElement).style.transform = ''; }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = isRecommended && simplified ? 'rgba(46,204,113,0.4)' : ''; (e.target as HTMLElement).style.transform = ''; }}
             >
+              {isRecommended && simplified && (
+                <div style={{ fontSize: '0.65rem', color: '#2ecc71', background: 'rgba(46,204,113,0.15)', border: '1px solid rgba(46,204,113,0.3)', borderRadius: 4, padding: '2px 8px', marginBottom: 8, display: 'inline-block' }}>
+                  ⭐ RECOMMENDED
+                </div>
+              )}
               <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{a.emoji}</div>
               <div style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>{a.name}</div>
               <div style={{ color: '#aaa', fontSize: '0.8rem', lineHeight: 1.5 }}>{a.description}</div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -393,16 +416,28 @@ export default function StartScreen() {
   return (
     <div className="start-screen" style={{ position: 'relative' }}>
       <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8, zIndex: 10 }}>
+        <button
+          onClick={() => setShowKeyboardHints(true)}
+          title="Keyboard shortcuts (?)"
+          aria-label="Keyboard shortcuts"
+          className="start-icon-btn"
+        >
+          ?
+        </button>
+        <button
+          onClick={() => setShowSettings(true)}
+          title="Settings"
+          aria-label="Settings"
+          className="start-icon-btn"
+        >
+          ⚙️
+        </button>
         {!simplified && (
           <button
             onClick={() => setShowAchievements(true)}
             title={`Achievements (${getUnlockedAchievements().length}/${ACHIEVEMENTS.length})`}
-            style={{
-              width: 44, height: 44, borderRadius: '50%',
-              border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
-              color: 'var(--gold)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-            }}
+            aria-label={`Achievements: ${getUnlockedAchievements().length} of ${ACHIEVEMENTS.length} unlocked`}
+            className="start-icon-btn"
           >
             🏆
           </button>
@@ -410,12 +445,8 @@ export default function StartScreen() {
         <button
           onClick={handleToggleMute}
           title={muted ? 'Unmute' : 'Mute'}
-          style={{
-            width: 44, height: 44, borderRadius: '50%',
-            border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
-            color: 'var(--gold)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-          }}
+          aria-label={muted ? 'Sound muted, click to unmute' : 'Sound on, click to mute'}
+          className="start-icon-btn"
         >
           {muted ? '🔇' : '🔊'}
         </button>
@@ -1005,6 +1036,8 @@ export default function StartScreen() {
       )}
       {showHelp && <HowToPlay onClose={() => { setShowHelp(false); if (firstRun) markRunStarted(); }} isFirstTime={firstRun} />}
       {showAchievements && <AchievementGallery onClose={() => setShowAchievements(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
     </div>
   );
 }

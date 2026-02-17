@@ -4571,6 +4571,7 @@ export interface SeasonEvent {
   description: string;
   flavorText: string;
   effect: string; // key used by gameStore
+  rarity?: 'common' | 'rare' | 'legendary'; // default: common
 }
 
 export const ALL_SEASON_EVENTS: SeasonEvent[] = [
@@ -4670,13 +4671,97 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
     flavorText: 'A New Yorker profile, a Letterboxd retrospective, and three Film Twitter accounts dedicated to your output. No pressure.',
     effect: 'criticDarling',
   },
+  // ─── R80: NEW EVENTS ───
+  {
+    id: 'casting_scandal',
+    name: 'Casting Couch Scandal',
+    emoji: '🔥',
+    description: 'Lose 1 reputation. But the publicity gives your next film +$10M box office.',
+    flavorText: 'TMZ breaks the story at 6 AM. By noon, your name is trending. By dinner, your publicist has a plan: "All press is good press." She\'s terrifyingly right.',
+    effect: 'castingScandal',
+    rarity: 'rare',
+  },
+  {
+    id: 'tax_incentive',
+    name: 'Tax Incentive',
+    emoji: '🏛️',
+    description: 'Next film costs -30% budget, but must be a specific genre (shown after picking).',
+    flavorText: 'The governor\'s office calls. They\'ll subsidize your next production — but only if it "showcases the cultural heritage of the region." Translation: they pick the genre.',
+    effect: 'taxIncentive',
+    rarity: 'common',
+  },
+  {
+    id: 'studio_merger',
+    name: 'Studio Merger Offer',
+    emoji: '🏢',
+    description: 'Gain $15M cash injection. But lose 1 talent roster slot permanently.',
+    flavorText: 'MegaCorp wants to "align synergies." Their check has a lot of zeros. Their contract has even more pages. Somewhere in the fine print: "operational restructuring."',
+    effect: 'studioMerger',
+    rarity: 'rare',
+  },
+  {
+    id: 'film_festival_award',
+    name: 'Film Festival Award',
+    emoji: '🎪',
+    description: 'If your last film had quality > 30, gain +2 reputation. Otherwise, nothing.',
+    flavorText: 'Cannes calls. Your film is in competition. The jury deliberates for six hours. You chain-smoke outside the Palais. Your phone buzzes...',
+    effect: 'filmFestivalAward',
+    rarity: 'common',
+  },
+  {
+    id: 'streaming_bidding_war',
+    name: 'Streaming Bidding War',
+    emoji: '💻',
+    description: 'Guaranteed $40M floor for next film. But no theatrical multiplier bonus.',
+    flavorText: 'StreamFlix, Prism+, and WatchTower are in a three-way bidding war for your next picture. The floor is insane. The ceiling? Gone. No theaters means no multiplier magic.',
+    effect: 'streamingBiddingWar',
+    rarity: 'legendary',
+  },
+  {
+    id: 'actors_strike',
+    name: 'Actor\'s Strike',
+    emoji: '✊🎭',
+    description: 'All lead hiring costs double next season. But all leads get +2 skill.',
+    flavorText: 'SAG-AFTRA walks out. Picket signs line Wilshire. Your casting director panics. But when they come back? They come back hungry, focused, and twice as good.',
+    effect: 'actorsStrike',
+    rarity: 'rare',
+  },
+  {
+    id: 'nostalgia_wave',
+    name: 'Nostalgia Wave',
+    emoji: '📼',
+    description: 'Same-genre bonus and sequel bonuses doubled this season.',
+    flavorText: '"Everything old is new again." Twitter is flooded with "they don\'t make \'em like they used to" takes. For once, the algorithm agrees with the critics.',
+    effect: 'nostalgiaWave',
+    rarity: 'common',
+  },
+  {
+    id: 'foreign_distribution_deal',
+    name: 'Foreign Distribution Deal',
+    emoji: '🌏',
+    description: 'Next film gets +×0.3 multiplier. But -5 base quality (dubbing penalty).',
+    flavorText: 'A Chinese mega-distributor wants your next film — dubbed, not subtitled. Your dialogue coach weeps. Your accountant does a little dance.',
+    effect: 'foreignDistributionDeal',
+    rarity: 'common',
+  },
 ];
 
 export function generateSeasonEvents(count: number, extraEvents?: SeasonEvent[]): SeasonEvent[] {
   const pool: SeasonEvent[] = [...ALL_SEASON_EVENTS, ...(extraEvents || [])];
   const result: SeasonEvent[] = [];
+  
   for (let i = 0; i < count && pool.length > 0; i++) {
-    const idx = Math.floor(rng() * pool.length);
+    // Rarity-weighted selection: common 70%, rare 25%, legendary 5%
+    const rarityWeights: Record<string, number> = { common: 70, rare: 25, legendary: 5 };
+    const weighted = pool.map(e => ({ event: e, weight: rarityWeights[e.rarity || 'common'] || 70 }));
+    const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0);
+    let roll = rng() * totalWeight;
+    let picked = weighted[0];
+    for (const w of weighted) {
+      roll -= w.weight;
+      if (roll <= 0) { picked = w; break; }
+    }
+    const idx = pool.indexOf(picked.event);
     result.push(pool.splice(idx, 1)[0]);
   }
   return result;

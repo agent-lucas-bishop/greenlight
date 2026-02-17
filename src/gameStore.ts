@@ -514,6 +514,12 @@ function beginSeason() {
   if (state.activeSeasonEvent?.effect === 'creativeRetreat') {
     scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 3 }));
   }
+  // R80: Tax Incentive — scripts cost -30%, but locked to a random genre
+  if (state.activeSeasonEvent?.effect === 'taxIncentive') {
+    const allGenres: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Romance', 'Sci-Fi', 'Thriller'];
+    const lockedGenre = allGenres[Math.floor(rng() * allGenres.length)];
+    scripts = scripts.map(s => ({ ...s, genre: lockedGenre as Genre, cost: Math.round(s.cost * 0.7) }));
+  }
   
   // Pass script genres so market generation guarantees at least one matching market
   const scriptGenres = scripts.map(s => s.genre);
@@ -543,6 +549,10 @@ export function pickScript(script: Script) {
   // Season event: Bidding War — talent costs +$3, but talent skill +1
   if (state.activeSeasonEvent?.effect === 'biddingWar') {
     market = market.map(t => ({ ...t, cost: t.cost + 3, skill: t.skill + 1 }));
+  }
+  // R80: Actor's Strike — lead hiring costs double, but leads get +2 skill
+  if (state.activeSeasonEvent?.effect === 'actorsStrike') {
+    market = market.map(t => t.type === 'Lead' ? { ...t, cost: t.cost * 2, skill: t.skill + 2 } : t);
   }
   // Season event: Union Dispute — crew costs +$2, but crew cards get +1 base quality
   if (state.activeSeasonEvent?.effect === 'unionDispute') {
@@ -618,7 +628,7 @@ export function hireTalent(talent: Talent) {
     const existingDirectors = state.roster.filter(t => t.type === 'Director');
     if (existingDirectors.length >= 1) return; // blocked
   }
-  if (state.roster.length >= 8) return;
+  if (state.roster.length >= (state.rosterCap ?? 8)) return;
   // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - actualCost;
   let newDebt = state.debt;
@@ -1353,6 +1363,14 @@ export function resolveRelease() {
       const baseCleanWrap = state.studioArchetype === 'prestige' ? 8 : 5;
       rawQuality += baseCleanWrap;
     }
+    // R80 events
+    if (se.effect === 'foreignDistributionDeal') { multiplier += 0.3; rawQuality -= 5; }
+    if (se.effect === 'castingScandal') rawQuality += 10; // +$10M worth via quality boost
+    if (se.effect === 'nostalgiaWave') {
+      // Double genre mastery bonus (same-genre) — add it again
+      const genreCount = state.genreMastery[script.genre] || 0;
+      if (genreCount > 0) multiplier += Math.min(genreCount * 0.1, 0.3); // double the existing genre mastery bonus
+    }
   }
 
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
@@ -1372,7 +1390,13 @@ export function resolveRelease() {
   // Challenge: Budget Hell — box office ×1.5
   if (state.challengeId === 'budget_hell') multiplier *= 1.5;
 
-  const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
+  // Streaming Bidding War: flat $40M, no multiplier
+  let boxOffice: number;
+  if (se?.effect === 'streamingBiddingWar') {
+    boxOffice = Math.max(40, Math.round(rawQuality * 1.0 * repBonus * 10) / 10); // floor $40M, no market multiplier
+  } else {
+    boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
+  }
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const tier = getTier(boxOffice, target);
 
@@ -1587,9 +1611,16 @@ export function proceedToShop() {
     finalTalentMarket = finalTalentMarket.map(t => ({ ...t, cost: Math.max(1, t.cost - 2) }));
   }
   
+  // Simplify first-season shop for new players: show fewer options
+  const simplified = isSimplifiedRun();
+  const finalPerkMarket = simplified && state.season <= 2 ? perkMarket.slice(0, 3) : perkMarket;
+  if (simplified && state.season <= 2) {
+    finalTalentMarket = finalTalentMarket.slice(0, 3);
+  }
+
   setState({
     phase: 'shop',
-    perkMarket,
+    perkMarket: finalPerkMarket,
     talentMarket: finalTalentMarket,
     industryEvent: { name: event.name, description: event.description, effect: event.effect },
   });
@@ -1762,6 +1793,27 @@ export function pickSeasonEvent(eventId: string) {
     case 'methodEpidemic': {
       // +1 Skill, +1 Heat to all talent this season (applied here)
       roster = state.roster.map(t => ({ ...t, skill: t.skill + 1, heat: t.heat + 1 }));
+      break;
+    }
+    // R80 events
+    case 'castingScandal': {
+      reputation = Math.max(0, reputation - 1);
+      // +$10M BO applied during release
+      break;
+    }
+    case 'studioMerger': {
+      budget += 15;
+      break;
+    }
+    case 'filmFestivalAward': {
+      // Check last film quality
+      if (state.lastQuality > 30) {
+        reputation = Math.min(5, reputation + 2);
+      }
+      break;
+    }
+    case 'actorsStrike': {
+      // Effects applied during talent market generation
       break;
     }
     // biddingWar effect applied during next season in beginSeason

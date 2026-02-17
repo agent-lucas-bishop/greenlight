@@ -2542,3 +2542,103 @@ body {
 .genre-label.drama { color: var(--genre-drama); background: rgba(212,160,23,0.12); }
 .genre-label.thriller { color: var(--genre-thriller); background: rgba(93,109,126,0.12); }
 .genre-label.romance { color: var(--genre-romance); background: rgba(233,30,99,0.12); }
+
+/* ===== SETTINGS MODAL ===== */
+
+.settings-section {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  gap: 12px;
+}
+
+.settings-toggle {
+  position: relative;
+  width: 46px;
+  height: 24px;
+  border-radius: 12px;
+  border: 1px solid #444;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.settings-toggle-knob {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #eee;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+
+.settings-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  border: none;
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+  border: none;
+}
+
+.settings-slider:disabled {
+  opacity: 0.4;
+}
+
+/* Start screen icon buttons */
+.start-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(212,168,67,0.3);
+  background: rgba(212,168,67,0.08);
+  color: var(--gold);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.start-icon-btn:hover {
+  border-color: var(--gold);
+  background: rgba(212,168,67,0.15);
+}
+
+/* Force reduce-motion class (user toggle in settings) */
+.force-reduce-motion *, .force-reduce-motion *::before, .force-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+.force-reduce-motion .spotlight { display: none; }
+.force-reduce-motion .confetti-burst { display: none !important; }

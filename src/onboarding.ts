@@ -94,6 +94,21 @@ export function dismissTip(tipId: string) {
   saveOnboarding(s);
 }
 
+/** Permanently dismiss all phase tips */
+export function dismissAllTips() {
+  const s = getOnboarding();
+  for (const key of Object.keys(PHASE_TIPS)) {
+    s.tipsDissmissed[key] = true;
+  }
+  saveOnboarding(s);
+}
+
+/** Check if all tips are dismissed */
+export function areAllTipsDismissed(): boolean {
+  const s = getOnboarding();
+  return Object.keys(PHASE_TIPS).every(k => !!s.tipsDissmissed[k]);
+}
+
 export function getRunCount(): number {
   return getOnboarding().runCount;
 }

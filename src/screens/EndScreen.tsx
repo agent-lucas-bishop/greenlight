@@ -762,6 +762,55 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         );
       })()}
 
+      {/* ─── WHAT HAPPENED? (Loss breakdown for new players) ─── */}
+      {phase >= 3 && !isVictory && history.length > 0 && (() => {
+        const reasons: { icon: string; text: string }[] = [];
+        const flops = history.filter(s => s.tier === 'FLOP');
+        const disasters = history.filter(s => s.quality <= 0);
+        const missedTargets = history.filter(s => !s.hitTarget);
+        
+        if (disasters.length > 0) {
+          reasons.push({ icon: '💀', text: `${disasters.length} film${disasters.length > 1 ? 's' : ''} hit DISASTER (3 incidents = lose all quality). Try wrapping early when you have 2 incidents.` });
+        }
+        if (flops.length > disasters.length) {
+          const nonDisasterFlops = flops.length - disasters.length;
+          reasons.push({ icon: '📉', text: `${nonDisasterFlops} film${nonDisasterFlops > 1 ? 's' : ''} flopped from low quality. Cast higher-Skill talent and look for chemistry pairs (💕) for bonus quality.` });
+        }
+        if (missedTargets.length >= 3) {
+          reasons.push({ icon: '🎯', text: `Missed ${missedTargets.length} box office targets (3 strikes = fired). Matching genre to 🔥 Hot trends gives big multiplier boosts.` });
+        }
+        if (state.reputation <= 0) {
+          reasons.push({ icon: '⭐', text: 'Reputation hit zero. Flops and disasters hurt your rep — protect it by wrapping early rather than risking a total loss.' });
+        }
+        const highHeatCast = history.some(s => s.quality <= 0); // rough proxy
+        if (disasters.length > 0) {
+          reasons.push({ icon: '🎭', text: 'High-Heat talent add powerful cards BUT also Incidents. Balance risk: mix safe low-Heat crew with your divas.' });
+        }
+        if (reasons.length === 0) {
+          reasons.push({ icon: '💡', text: 'Close one! Try matching genres to market trends, building chemistry pairs, and wrapping production before incidents pile up.' });
+        }
+
+        return (
+          <div className="animate-slide-down" style={{
+            background: 'rgba(231,76,60,0.06)', border: '1px solid rgba(231,76,60,0.2)',
+            borderRadius: 12, padding: '16px 20px', margin: '20px auto', maxWidth: 520,
+          }}>
+            <h3 style={{ color: '#e74c3c', margin: '0 0 12px', fontSize: '1rem', letterSpacing: 1 }}>❓ WHAT WENT WRONG?</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {reasons.map((r, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{r.icon}</span>
+                  <span style={{ color: '#bbb', fontSize: '0.8rem', lineHeight: 1.5 }}>{r.text}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(46,204,113,0.08)', borderRadius: 6, fontSize: '0.75rem', color: '#2ecc71' }}>
+              💡 <strong>Tip:</strong> Your first run is always the hardest — you'll unlock permanent bonuses that help in future runs!
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ─── CAREER NARRATIVE ─── */}
       {phase >= 5 && (
         <div className="animate-slide-down" style={{

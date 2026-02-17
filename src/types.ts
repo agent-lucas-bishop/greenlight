@@ -274,6 +274,7 @@ export interface GameState {
   seasonEventChoices: SeasonEventChoice[] | null; // events to pick from between seasons
   activeSeasonEvent: SeasonEventChoice | null; // the chosen event for next season
   streamingDealActive: boolean; // next film -×0.3 mult from streaming deal
+  rosterCap?: number; // max roster size (default 8), reduced by studio merger
 }
 
 export interface SeasonEventChoice {
@@ -283,6 +284,7 @@ export interface SeasonEventChoice {
   description: string;
   flavorText: string;
   effect: string;
+  rarity?: 'common' | 'rare' | 'legendary';
 }
 
 export interface RivalSeasonData {

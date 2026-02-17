@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameState, SeasonResult, RewardTier } from '../types';
 import { startGame } from '../gameStore';
-import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered } from '../unlocks';
+import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered, type EndingDef } from '../unlocks';
 import { sfx } from '../sound';
 import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
@@ -9,6 +9,10 @@ import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
 import { awardRunXP, getPrestige, getPrestigeLevel, type RunXPData } from '../prestige';
 import { recordGenreMasteryFilms } from '../genreMastery';
+import { getStudioLegacy, type StudioLegacy } from '../studioLegacy';
+import { recordPersonalBests, getDailyStats, getPersonalBests } from '../personalBests';
+import { getWeeklyModifiers, getModifierById } from '../dailyModifiers';
+import { getRunStats } from '../unlocks';
 
 // ─── Helpers ───
 
@@ -118,26 +122,65 @@ function generateCareerSummary(state: GameState, isVictory: boolean, score: numb
 
 // ─── Share Text ───
 
-function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean, legacyRating: string, prestigeTitle?: string): string {
+function generateSeasonRecapEmoji(s: SeasonResult): string {
+  const isDisaster = s.quality <= 0;
+  if (isDisaster) return '💀';
+  if (s.nominated) return '🏆';
+  if (s.tier === 'BLOCKBUSTER') return '💰';
+  if (s.tier === 'SMASH') return '💰';
+  if (s.tier === 'HIT') return '🎬';
+  return '💀';
+}
+
+function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean, legacyRating: string, ending: EndingDef, challenge?: ReturnType<typeof getChallengeById>, prestigeTitle?: string): string {
   const h = state.seasonHistory;
+
+  // Tier grid (Wordle-style colored squares)
   const grid = h.map(s => {
     const isDisaster = s.quality <= 0;
     return tierEmoji(s.tier, isDisaster);
   }).join('');
 
+  // Season recap line: film-by-film emoji story
+  const seasonRecap = h.map(generateSeasonRecapEmoji).join('');
+
   const totalBO = state.totalEarnings;
-  const bestFilm = h.length > 0 ? h.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
+  const dailyDate = state.dailySeed;
+  const stats = getRunStats();
 
   const lines = [
     `🎬 GREENLIGHT ${isVictory ? '🏆' : '💀'}`,
-    `${state.studioName || 'Studio'} · ${h.length} seasons`,
+    '',
+    `${state.studioName || 'Studio'}`,
     grid,
+    seasonRecap,
+    '',
     `Score: ${score} (${rank}) · $${totalBO.toFixed(1)}M`,
-    `Legacy: ${legacyRating} · Films: ${h.length}${prestigeTitle ? ` · ${prestigeTitle}` : ''}`,
-    bestFilm ? `Best: "${bestFilm.title}" $${bestFilm.boxOffice.toFixed(1)}M` : '',
-    `greenlight-plum.vercel.app`,
-  ].filter(Boolean);
-  return lines.join('\n');
+  ];
+
+  // Add ending title if earned (victory only)
+  if (isVictory && ending.title !== 'STUDIO BANKRUPTCY') {
+    lines.push(`${ending.emoji} ${ending.title}`);
+  }
+
+  // Challenge mode
+  if (challenge) {
+    lines.push(`${challenge.emoji} ${challenge.name} Challenge`);
+  }
+
+  // Daily info
+  if (dailyDate) {
+    lines.push(`📅 Daily ${dailyDate}${stats.dailyStreak.current > 1 ? ` · 🔥${stats.dailyStreak.current} streak` : ''}`);
+  }
+
+  if (prestigeTitle) {
+    lines.push(`⭐ ${prestigeTitle}`);
+  }
+
+  lines.push('');
+  lines.push('greenlight-plum.vercel.app');
+
+  return lines.filter(l => l !== undefined).join('\n');
 }
 
 // ─── Particles ───
@@ -215,6 +258,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
   const [prestigeResult, setPrestigeResult] = useState<ReturnType<typeof awardRunXP> | null>(null);
+  const studioLegacy = useMemo(() => isVictory ? getStudioLegacy(state) : null, []);
 
   const totalBO = state.totalEarnings;
   const bestFilm = history.length > 0 ? history.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
@@ -247,7 +291,9 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const careerSummary = useMemo(() => generateCareerSummary(state, isVictory, score, rank), []);
   const currentPrestige = getPrestige();
   const currentPrestigeLevel = getPrestigeLevel(currentPrestige.xp);
-  const shareText = useMemo(() => generateShareText(state, score, rank, isVictory, legacy.rating, currentPrestigeLevel.title), []);
+  const shareText = useMemo(() => {
+    return generateShareText(state, score, rank, isVictory, legacy.rating, ending, challenge, currentPrestigeLevel.title);
+  }, []);
 
   useEffect(() => {
     if (isVictory) sfx.victory(); else sfx.flop();
@@ -321,6 +367,18 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       };
       const pResult = awardRunXP(xpData);
       setPrestigeResult(pResult);
+      // Record personal bests
+      const modifierNames: string[] = [];
+      if (state.dailyModifierId) { const m = getModifierById(state.dailyModifierId); if (m) modifierNames.push(m.name); }
+      if (state.dailyModifierId2) { const m = getModifierById(state.dailyModifierId2); if (m) modifierNames.push(m.name); }
+      recordPersonalBests({
+        score, earnings: state.totalEarnings,
+        films: history.map(s => ({ title: s.title, boxOffice: s.boxOffice })),
+        won: isVictory, mode: state.gameMode,
+        challengeId: state.challengeId,
+        dailySeed: state.dailySeed,
+        modifierNames, rank,
+      });
       markFirstRunComplete();
       trackRunEnd(score, isVictory);
       setRecorded(true);
@@ -398,6 +456,38 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           lineHeight: 1.6,
         }}>
           {ending.flavorText}
+        </div>
+      )}
+
+      {/* ─── STUDIO LEGACY ─── */}
+      {phase >= 1 && studioLegacy && (
+        <div className="animate-slide-down" style={{
+          background: 'linear-gradient(135deg, rgba(212,168,67,0.12) 0%, rgba(212,168,67,0.04) 100%)',
+          border: '2px solid rgba(212,168,67,0.4)',
+          borderRadius: 16,
+          padding: '20px 24px',
+          margin: '20px auto',
+          maxWidth: 520,
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{studioLegacy.emoji}</div>
+          <div style={{
+            color: '#d4a843',
+            fontFamily: 'Bebas Neue',
+            fontSize: 'clamp(1.2rem, 3vw, 1.6rem)',
+            letterSpacing: 2,
+            marginBottom: 8,
+          }}>
+            {studioLegacy.title}
+          </div>
+          <div style={{
+            color: '#bbb',
+            fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
+            lineHeight: 1.7,
+            fontStyle: 'italic',
+          }}>
+            {studioLegacy.narrative}
+          </div>
         </div>
       )}
 
@@ -584,6 +674,88 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         </div>
       )}
+
+      {/* ─── DAILY RECAP ─── */}
+      {phase >= 5 && state.gameMode === 'daily' && (() => {
+        const dailyStats = getDailyStats();
+        if (dailyStats.totalDailyRuns <= 1) return null; // Need history to compare
+        const isNewBest = score > dailyStats.bestScore;
+        const aboveAvg = score > dailyStats.avgScore;
+        const unlocks = getRunStats();
+        return (
+          <div className="animate-slide-down" style={{ marginTop: 24 }}>
+            <h3 style={{ color: '#3498db', marginBottom: 12, letterSpacing: 1 }}>📅 DAILY RECAP</h3>
+            <div style={{
+              background: 'rgba(52,152,219,0.08)', border: '1px solid rgba(52,152,219,0.2)',
+              borderRadius: 12, padding: '16px 20px', maxWidth: 440, margin: '0 auto',
+            }}>
+              {isNewBest && (
+                <div style={{
+                  background: 'rgba(46,204,113,0.15)', border: '1px solid #2ecc71',
+                  borderRadius: 8, padding: '8px 12px', marginBottom: 12, textAlign: 'center',
+                  color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1rem',
+                  animation: 'comboAppear 0.5s ease',
+                }}>
+                  🎉 NEW DAILY PERSONAL BEST!
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
+                <div>
+                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Today</div>
+                  <div style={{ color: aboveAvg ? '#2ecc71' : '#e74c3c', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{score}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Avg</div>
+                  <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{dailyStats.avgScore}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Daily</div>
+                  <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{dailyStats.bestScore}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Streak</div>
+                  <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>🔥 {unlocks.dailyStreak.current}</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 12, display: 'flex', gap: 6, justifyContent: 'center', color: '#555', fontSize: '0.65rem' }}>
+                <span>{dailyStats.totalDailyRuns} dailies played</span>
+                <span>·</span>
+                <span>{dailyStats.winRate}% win rate</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ─── PERSONAL BESTS ─── */}
+      {phase >= 5 && (() => {
+        const pb = getPersonalBests();
+        const modeKey = state.challengeId || state.gameMode;
+        const modeBests = pb.modes[modeKey];
+        if (!modeBests || modeBests.totalRuns <= 1) return null;
+        const isNewBestScore = score >= modeBests.bestScore;
+        const bestFilmBO = history.length > 0 ? Math.max(...history.map(s => s.boxOffice)) : 0;
+        const isNewFilmRecord = bestFilmBO >= modeBests.highestSingleFilmBO;
+        if (!isNewBestScore && !isNewFilmRecord) return null;
+        return (
+          <div className="animate-slide-down" style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {isNewBestScore && (
+                <span style={{
+                  background: 'rgba(46,204,113,0.15)', border: '1px solid #2ecc71',
+                  borderRadius: 6, padding: '4px 12px', fontSize: '0.75rem', color: '#2ecc71',
+                }}>🏅 New Best Score for {challenge?.name || (state.gameMode === 'daily' ? 'Daily' : state.gameMode === 'normal' ? 'Standard' : state.gameMode)}</span>
+              )}
+              {isNewFilmRecord && (
+                <span style={{
+                  background: 'rgba(243,156,18,0.15)', border: '1px solid #f39c12',
+                  borderRadius: 6, padding: '4px 12px', fontSize: '0.75rem', color: '#f39c12',
+                }}>💎 New Single-Film BO Record: ${bestFilmBO.toFixed(1)}M</span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ─── CAREER NARRATIVE ─── */}
       {phase >= 5 && (

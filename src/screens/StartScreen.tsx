@@ -8,13 +8,16 @@ import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES, isChallengeUnlocked } from '../challenges';
-import { getDailyDateString } from '../seededRng';
+import { getDailyDateString, getWeeklyDateString } from '../seededRng';
+import { getTodayModifier, getWeeklyModifiers } from '../dailyModifiers';
+import { getPersonalBests } from '../personalBests';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
 import AchievementGallery from '../components/AchievementGallery';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
+import { getCareerMilestones } from '../studioLegacy';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
@@ -509,6 +512,37 @@ export default function StartScreen() {
               {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
               {stats.dailyStreak.current > 0 && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
             </button>
+            {/* Weekly Modifier Preview */}
+            {stats.runs > 0 && !dailyDone && (() => {
+              const todayMod = getTodayModifier();
+              const [weeklyMod1, weeklyMod2] = getWeeklyModifiers();
+              return (
+                <div style={{
+                  background: 'rgba(52,152,219,0.08)', border: '1px solid rgba(52,152,219,0.15)',
+                  borderRadius: 10, padding: '12px 16px', maxWidth: 360, width: '100%',
+                  textAlign: 'left', fontSize: '0.75rem',
+                }}>
+                  <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '0.8rem', letterSpacing: '0.05em', marginBottom: 8 }}>
+                    📅 TODAY'S DAILY MODIFIERS
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>{todayMod.emoji}</span>
+                      <span style={{ color: '#ccc', fontWeight: 600 }}>{todayMod.name}</span>
+                      <span style={{ color: '#666' }}>— {todayMod.shortDesc}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>{weeklyMod1.emoji}</span>
+                      <span style={{ color: '#ccc', fontWeight: 600 }}>{weeklyMod1.name}</span>
+                      <span style={{ color: '#666' }}>— {weeklyMod1.shortDesc}</span>
+                    </div>
+                  </div>
+                  <div style={{ color: '#444', fontSize: '0.6rem', marginTop: 6 }}>
+                    Weekly modifier rotates every Monday · Week of {getWeeklyDateString()}
+                  </div>
+                </div>
+              );
+            })()}
             {stats.ngPlusUnlocked && (
               <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>
@@ -764,6 +798,52 @@ export default function StartScreen() {
             </div>
           )}
 
+          {/* Personal Bests */}
+          {(() => {
+            const pb = getPersonalBests();
+            if (pb.overall.totalRuns < 1) return null;
+            const o = pb.overall;
+            const dailyBests = pb.daily;
+            return (
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 8, letterSpacing: 1 }}>🏅 PERSONAL BESTS</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
+                    <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{o.bestScore}</div>
+                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Score</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
+                    <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>${o.bestEarnings.toFixed(1)}M</div>
+                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Earnings</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
+                    <div style={{ color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>${o.highestSingleFilmBO.toFixed(1)}M</div>
+                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Single Film</div>
+                    {o.highestSingleFilmTitle && <div style={{ color: '#555', fontSize: '0.55rem' }}>"{o.highestSingleFilmTitle}"</div>}
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
+                    <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{o.fastestWin ?? '—'}</div>
+                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Fastest Win (Films)</div>
+                  </div>
+                </div>
+                {/* Challenge mode bests */}
+                {Object.keys(pb.modes).length > 1 && (
+                  <details style={{ marginTop: 8 }}>
+                    <summary style={{ color: '#666', fontSize: '0.7rem', cursor: 'pointer' }}>Per-mode records ({Object.keys(pb.modes).length} modes)</summary>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+                      {Object.entries(pb.modes).map(([key, rec]) => (
+                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: 4, fontSize: '0.7rem' }}>
+                          <span style={{ color: '#888' }}>{key}</span>
+                          <span style={{ color: 'var(--gold)' }}>{rec.bestScore} pts · ${rec.bestEarnings.toFixed(1)}M</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Daily Streak */}
           {stats.dailyStreak.best > 0 && (
             <div style={{ marginBottom: 24, padding: 16, background: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.2)', borderRadius: 8, textAlign: 'center' }}>
@@ -780,6 +860,31 @@ export default function StartScreen() {
               </div>
             </div>
           )}
+
+          {/* Lifetime Stats */}
+          {stats.careerStats.totalFilms > 0 && (() => {
+            const lifetimeStats = getCareerMilestones();
+            return (
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 12, letterSpacing: 1 }}>🏛️ LIFETIME RECORDS</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  {lifetimeStats.map(m => (
+                    <div key={m.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                      background: 'rgba(212,168,67,0.06)', border: '1px solid rgba(212,168,67,0.15)',
+                      borderRadius: 8,
+                    }}>
+                      <span style={{ fontSize: '1.2rem' }}>{m.emoji}</span>
+                      <div>
+                        <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{m.value}</div>
+                        <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{m.label}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Milestones */}
           <div>

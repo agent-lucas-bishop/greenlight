@@ -471,7 +471,8 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy'>('play');
+  const [showTrophyRoom, setShowTrophyRoom] = useState(false);
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies'>('play');
   const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
@@ -830,6 +831,7 @@ export default function StartScreen() {
           { id: 'stats', emoji: '📊', label: 'STATS' },
           { id: 'dashboard', emoji: '📈', label: 'DASHBOARD', shortLabel: 'DASH' },
           { id: 'achievements', emoji: '🏆', label: 'ACHIEVEMENTS', shortLabel: 'ACHV' },
+          { id: 'trophies' as const, emoji: '🏆', label: 'TROPHIES' },
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
           { id: 'collection' as const, emoji: '📚', label: `COLLECTION (${getCollectionStats().discovered}/${getCollectionStats().total})`, shortLabel: 'COLLECT' },
           { id: 'create', emoji: '🃏', label: 'WORKSHOP' },
@@ -1663,6 +1665,18 @@ export default function StartScreen() {
       {tab === 'events' && (
         <Suspense fallback={<SkeletonLoader />}>
           <EventCalendar onClose={() => setTab('play')} />
+        </Suspense>
+      )}
+
+      {tab === 'trophies' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <TrophyRoom onClose={() => setTab('play')} />
+        </Suspense>
+      )}
+
+      {showTrophyRoom && (
+        <Suspense fallback={null}>
+          <TrophyRoom onClose={() => setShowTrophyRoom(false)} />
         </Suspense>
       )}
 

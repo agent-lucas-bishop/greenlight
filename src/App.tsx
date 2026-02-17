@@ -19,6 +19,7 @@ import LoadingScreen from './components/LoadingScreen';
 import { checkAchievements, persistAchievements } from './achievements';
 import type { AchievementDef } from './achievements';
 import AchievementToast from './components/AchievementToast';
+import AchievementPopup, { queueAchievementPopups } from './components/AchievementPopup';
 import UnlockToast from './components/UnlockToast';
 import { checkUnlockConditions, UNLOCKABLE_DEFS } from './unlockableContent';
 import type { UnlockableDef } from './unlockableContent';
@@ -153,6 +154,7 @@ function App() {
     if (newAchs.length > 0) {
       persistAchievements(newAchs.map(a => a.id));
       setToastQueue(prev => [...prev, ...newAchs]);
+      queueAchievementPopups(newAchs);
     }
     // Check for unlockable content
     const newUnlockIds = checkUnlockConditions();
@@ -339,6 +341,7 @@ function App() {
           onDone={() => setToastQueue(prev => prev.slice(1))}
         />
       )}
+      <AchievementPopup />
       {unlockToastQueue.length > 0 && toastQueue.length === 0 && (
         <UnlockToast
           unlock={unlockToastQueue[0]}

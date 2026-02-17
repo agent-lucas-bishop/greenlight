@@ -445,6 +445,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [endTab, setEndTab] = useState<'overview' | 'details' | 'progression'>('overview');
   const [copied, setCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
+  const [showReplayToast, setShowReplayToast] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
   const [prestigeResult, setPrestigeResult] = useState<ReturnType<typeof awardRunXP> | null>(null);
   const [metaResult, setMetaResult] = useState<MetaXPResult | null>(null);
@@ -813,6 +814,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice })),
       });
       setRecorded(true);
+      setShowReplayToast(true);
+      setTimeout(() => setShowReplayToast(false), 3000);
     }
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -830,6 +833,16 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   return (
     <div className={`end-screen fade-in ${!isVictory ? 'end-screen-defeat' : ''}`} style={{ paddingBottom: 60 }}>
       {isVictory && <><VictoryParticles /><div className="victory-starburst" aria-hidden="true" /></>}
+      {showReplayToast && (
+        <div className="animate-slide-down" style={{
+          position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+          background: 'rgba(52,152,219,0.15)', border: '1px solid rgba(52,152,219,0.4)', borderRadius: 10,
+          padding: '10px 20px', color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '0.9rem',
+          letterSpacing: '0.05em', backdropFilter: 'blur(8px)',
+        }}>
+          📼 Run Recorded — View in Archive
+        </div>
+      )}
       {showStrategyTips && <StrategyTipsModal onClose={() => setShowStrategyTips(false)} />}
 
       {/* ─── TITLE ─── */}

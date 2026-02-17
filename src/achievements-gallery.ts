@@ -206,11 +206,11 @@ export function getAchievementScore(): { total: number; earned: number; byCatego
 }
 
 /** Achievements with >50% progress that are not yet unlocked */
-export function getNearestToUnlock(): GalleryAchievement[] {
+export async function getNearestToUnlock(): Promise<GalleryAchievement[]> {
   // We need game state to evaluate progress
   try {
-    const { getState } = require('./gameStore') as { getState: () => import('./types').GameState };
-    const { getUnlocks } = require('./unlocks') as { getUnlocks: () => import('./unlocks').UnlockState };
+    const { getState } = (await import('./gameStore')) as { getState: () => import('./types').GameState };
+    const { getUnlocks } = (await import('./unlocks')) as { getUnlocks: () => import('./unlocks').UnlockState };
     const state = getState();
     const unlockState = getUnlocks();
     const all = getGalleryAchievements();

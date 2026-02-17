@@ -289,8 +289,8 @@ export function getUnlockedRewards(): CosmeticReward[] {
 
 // ─── STUDIO LOGO SYSTEM ───
 
-export type LogoShape = 'shield' | 'circle' | 'diamond' | 'star' | 'hexagon' | 'filmReel';
-export const LOGO_SHAPES: LogoShape[] = ['shield', 'circle', 'diamond', 'star', 'hexagon', 'filmReel'];
+export type LogoShape = 'shield' | 'circle' | 'diamond' | 'star' | 'hexagon' | 'filmReel' | 'camera' | 'clapperboard' | 'spotlight' | 'megaphone' | 'ticket' | 'projector';
+export const LOGO_SHAPES: LogoShape[] = ['shield', 'circle', 'diamond', 'star', 'hexagon', 'filmReel', 'camera', 'clapperboard', 'spotlight', 'megaphone', 'ticket', 'projector'];
 export const LOGO_COLORS = ['#d4a843', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12', '#1abc9c', '#e91e63'];
 export type AccentStyle = 'solid' | 'gradient' | 'outline' | 'glow';
 export const ACCENT_STYLES: AccentStyle[] = ['solid', 'gradient', 'outline', 'glow'];

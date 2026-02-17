@@ -28,6 +28,7 @@ import DifficultySelect from '../components/DifficultySelect';
 
 // Lazy-load heavy modals (only opened on demand)
 const StudioLot = lazy(() => import('../components/StudioLot'));
+const StudioCard = lazy(() => import('../components/StudioCard'));
 const AchievementGallery = lazy(() => import('../components/AchievementGallery'));
 const SettingsModal = lazy(() => import('../components/SettingsModal'));
 const Glossary = lazy(() => import('../components/Glossary'));
@@ -897,12 +898,17 @@ export default function StartScreen() {
         );
       })()}
 
-      {/* Studio Lot Visual */}
+      {/* Studio Card + Studio Lot Visual */}
       {stats.runs > 0 && (
         <div style={{ margin: '16px auto 8px', maxWidth: 460 }}>
           <Suspense fallback={null}>
-            <StudioLot compact />
+            <StudioCard compact />
           </Suspense>
+          <div style={{ marginTop: 8 }}>
+            <Suspense fallback={null}>
+              <StudioLot compact />
+            </Suspense>
+          </div>
         </div>
       )}
 

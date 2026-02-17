@@ -1133,73 +1133,98 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     starPowerReward: { amount: 75, label: '+75 Star Power' },
     check: (s) => s.phase === 'victory' && s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.quality >= 80),
   },
-
   // ─── R313: Achievements v2 — Hidden, Rare & Legendary ───
 
+  // HIDDEN: The Kubrick — win Auteur difficulty on first ever attempt
   {
     id: 'the_kubrick',
     name: 'The Kubrick',
     emoji: '🎥',
     category: 'secret',
-    description: 'Win on Auteur difficulty on your very first attempt — a singular vision',
+    description: 'Win on Auteur difficulty on your very first attempt — a singular vision from day one',
     hint: '???',
     secret: true,
     rarity: 'legendary',
     starPowerReward: { amount: 100, label: '+100 Star Power' },
-    check: (s, u) => s.phase === 'victory' && s.difficulty === 'auteur' && u.totalRuns <= 1,
+    check: (s, u) => {
+      if (s.phase !== 'victory') return false;
+      if (s.difficulty !== 'auteur') return false;
+      // First-ever run at auteur
+      return u.totalRuns <= 1;
+    },
   },
+
+  // HIDDEN: One-Take Wonder — complete a season without rerolling (no rerolls used)
   {
     id: 'r313_one_take_wonder',
     name: 'One-Take Wonder',
     emoji: '🎞️',
     category: 'secret',
-    description: 'Complete an entire run without ever using a reroll — raw instinct only',
+    description: 'Complete an entire run without ever using a reroll — raw instinct, no second takes',
     hint: '???',
     secret: true,
     rarity: 'epic',
     starPowerReward: { amount: 40, label: '+40 Star Power' },
-    check: (s) => s.phase === 'victory' && ((s as any).rerollsUsed ?? 0) === 0,
+    check: (s) => {
+      if (s.phase !== 'victory') return false;
+      return (s.rerollsUsed ?? 0) === 0;
+    },
   },
+
+  // HIDDEN: Method Actor — play 5 drama cards in one film
   {
     id: 'method_actor',
     name: 'Method Actor',
     emoji: '🎭',
     category: 'secret',
-    description: 'Play 5+ heart-tagged cards in a single Drama production — living the role',
+    description: 'Play 5 Drama-tagged cards in a single film production — living the role',
     hint: '???',
     secret: true,
     rarity: 'epic',
     starPowerReward: { amount: 35, label: '+35 Star Power' },
     check: (s) => {
-      if (!s.production?.played) return false;
-      const heartCards = s.production.played.filter((c: any) => c.tags?.includes('heart'));
-      return heartCards.length >= 5 && (s as any).currentScript?.genre === 'Drama';
+      if (!s.production?.playedCards) return false;
+      const dramaCards = s.production.playedCards.filter(
+        (c: any) => c.tags?.includes('heart') || c.sourceType === 'actor'
+      );
+      return dramaCards.length >= 5 && s.currentScript?.genre === 'Drama';
     },
   },
+
+  // HIDDEN: Ghost Director — win without hiring any director
   {
     id: 'ghost_director',
     name: 'Ghost Director',
     emoji: '👻',
     category: 'secret',
-    description: 'Win a run without hiring a director — who needs leadership?',
+    description: 'Win a run without ever hiring a director — who needs leadership?',
     hint: '???',
     secret: true,
     rarity: 'legendary',
     starPowerReward: { amount: 75, label: '+75 Star Power' },
-    check: (s) => s.phase === 'victory' && s.roster.filter((t: any) => t.type === 'director').length === 0,
+    check: (s) => {
+      if (s.phase !== 'victory') return false;
+      return s.roster.filter(t => t.role === 'director').length === 0;
+    },
   },
+
+  // HIDDEN: Opening Night Miracle — first film of first run is a BLOCKBUSTER
   {
     id: 'opening_night_miracle',
     name: 'Opening Night Miracle',
     emoji: '✨',
     category: 'secret',
-    description: 'Your very first film ever is a BLOCKBUSTER — beginner\'s luck?',
+    description: 'Your very first film ever is a BLOCKBUSTER — beginner\'s luck or raw talent?',
     hint: '???',
     secret: true,
     rarity: 'legendary',
     starPowerReward: { amount: 60, label: '+60 Star Power' },
-    check: (s, u) => u.totalRuns <= 1 && s.seasonHistory.length >= 1 && s.seasonHistory[0].tier === 'BLOCKBUSTER',
+    check: (s, u) => {
+      return u.totalRuns <= 1 && s.seasonHistory.length >= 1 && s.seasonHistory[0].tier === 'BLOCKBUSTER';
+    },
   },
+
+  // RARE: Studio Centenarian — produce 100 lifetime films
   {
     id: 'studio_centenarian',
     name: 'Studio Centenarian',
@@ -1212,6 +1237,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     check: (_s, u) => u.careerStats.totalFilms >= 100,
     progress: (_s, u) => ({ current: Math.min(u.careerStats.totalFilms, 100), target: 100 }),
   },
+
+  // EPIC: Triple Crown — win with 3 different archetypes
   {
     id: 'triple_crown',
     name: 'Triple Crown',
@@ -1222,22 +1249,26 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'epic',
     starPowerReward: { amount: 40, label: '+40 Star Power' },
     check: (_s, u) => {
-      const archetypeWins = new Set((u.careerStats as any).archetypeWins || []);
+      const archetypeWins = new Set(u.careerStats.archetypeWins || []);
       return archetypeWins.size >= 3;
     },
   },
+
+  // LEGENDARY: Diamond Studio — win 25 total runs
   {
     id: 'diamond_studio',
     name: 'Diamond Studio',
     emoji: '💎',
     category: 'milestone',
-    description: 'Win 25 runs — your name is carved into Hollywood history',
+    description: 'Win 25 runs total — your name is carved into Hollywood history',
     hint: 'Win. Again. And again.',
     rarity: 'legendary',
     starPowerReward: { amount: 75, label: '+75 Star Power' },
     check: (_s, u) => u.totalWins >= 25,
     progress: (_s, u) => ({ current: Math.min(u.totalWins, 25), target: 25 }),
   },
+
+  // RARE: Chemistry Master — trigger 25 chemistry bonuses lifetime
   {
     id: 'chemistry_master',
     name: 'Chemistry Master',
@@ -1250,6 +1281,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     check: (_s, u) => (u.careerStats.chemistryTriggered || 0) >= 25,
     progress: (_s, u) => ({ current: Math.min(u.careerStats.chemistryTriggered || 0, 25), target: 25 }),
   },
+
+  // EPIC: Underpromise, Overdeliver — exceed box office target by 200%+ on any film
   {
     id: 'overdeliver',
     name: 'Underpromise, Overdeliver',
@@ -1259,20 +1292,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hint: 'Blow past expectations',
     rarity: 'epic',
     starPowerReward: { amount: 30, label: '+30 Star Power' },
-    check: (s) => s.seasonHistory.some(h => h.boxOffice >= (h as any).target * 3),
+    check: (s) => s.seasonHistory.some(h => h.boxOffice >= (h.target || 1) * 3),
   },
+
+  // LEGENDARY: The Completionist — unlock 50 achievements
   {
     id: 'the_completionist',
     name: 'The Completionist',
     emoji: '🏅',
     category: 'milestone',
-    description: 'Unlock 50 achievements — you\'ve seen everything Hollywood offers',
+    description: 'Unlock 50 achievements — you\'ve seen everything Hollywood has to offer',
     hint: 'Unlock many achievements',
     rarity: 'legendary',
     starPowerReward: { amount: 100, label: '+100 Star Power' },
     check: (_s, u) => u.achievements.length >= 50,
     progress: (_s, u) => ({ current: Math.min(u.achievements.length, 50), target: 50 }),
   },
+
+  // RARE: Bankroll — finish a run with $200M+ in the bank
   {
     id: 'bankroll',
     name: 'Bankroll',
@@ -1284,6 +1321,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     starPowerReward: { amount: 20, label: '+20 Star Power' },
     check: (s) => s.phase === 'victory' && s.budget >= 200,
   },
+
+  // EPIC: Five-Star Filmography — have 5 films quality 70+ in one run
   {
     id: 'five_star_filmography',
     name: 'Five-Star Filmography',
@@ -1295,17 +1334,21 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     starPowerReward: { amount: 35, label: '+35 Star Power' },
     check: (s) => s.phase === 'victory' && s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.quality >= 70),
   },
+
+  // LEGENDARY: Nightmare Survivor — win on Nightmare difficulty
   {
     id: 'nightmare_survivor',
     name: 'Nightmare Survivor',
     emoji: '💀',
     category: 'skill',
-    description: 'Win on Nightmare difficulty — only the truly insane attempt this',
+    description: 'Win a run on Nightmare difficulty — only the truly insane attempt this',
     hint: 'Face the ultimate challenge',
     rarity: 'legendary',
     starPowerReward: { amount: 100, label: '+100 Star Power' },
     check: (s) => s.phase === 'victory' && s.difficulty === 'nightmare',
   },
+
+  // RARE: Seasonal Veteran — complete 20 daily challenges
   {
     id: 'seasonal_veteran',
     name: 'Seasonal Veteran',
@@ -1315,8 +1358,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hint: 'Keep playing dailies',
     rarity: 'rare',
     starPowerReward: { amount: 20, label: '+20 Star Power' },
-    check: (_s, u) => (u.careerStats.challengesCompleted?.length || 0) >= 20,
-    progress: (_s, u) => ({ current: Math.min(u.careerStats.challengesCompleted?.length || 0, 20), target: 20 }),
+    check: (_s, u) => (u.careerStats.dailyChallengesCompleted || 0) >= 20,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.dailyChallengesCompleted || 0, 20), target: 20 }),
   },
 ];
 

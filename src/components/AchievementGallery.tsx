@@ -11,6 +11,7 @@ import { getUnlocks } from '../unlocks';
 import { getState } from '../gameStore';
 import { getLeaderboard } from '../leaderboard';
 import { sfx } from '../sound';
+import { getAchievementShowcase, toggleShowcaseAchievement } from '../achievementShowcase';
 
 // ─── Shimmer keyframes (injected once) ───
 const SHIMMER_ID = 'ach-gallery-shimmer';
@@ -58,6 +59,54 @@ function ensureShimmerStyle() {
     .ach-trophy-locked {
       filter: grayscale(1) brightness(0.25);
       opacity: 0.3;
+    }
+    .ach-card-legendary {
+      position: relative;
+      overflow: hidden;
+    }
+    .ach-card-legendary::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px; right: -1px; bottom: -1px;
+      background: linear-gradient(135deg, #ffd700, #ff8c00, #ffd700, #ffed4a, #ffd700);
+      background-size: 300% 300%;
+      animation: ach-shimmer 2s linear infinite;
+      border-radius: inherit;
+      z-index: -1;
+    }
+    .ach-card-legendary::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(
+        110deg, transparent 20%, rgba(255,215,0,0.12) 40%,
+        rgba(255,215,0,0.25) 50%, rgba(255,215,0,0.12) 60%, transparent 80%
+      );
+      background-size: 200% 100%;
+      animation: ach-shimmer 2.5s ease-in-out infinite;
+      pointer-events: none;
+      border-radius: inherit;
+    }
+    .ach-card-epic {
+      position: relative;
+      overflow: hidden;
+    }
+    .ach-card-epic::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(
+        110deg, transparent 25%, rgba(155,89,182,0.1) 45%,
+        rgba(155,89,182,0.18) 50%, rgba(155,89,182,0.1) 55%, transparent 75%
+      );
+      background-size: 200% 100%;
+      animation: ach-shimmer 3s ease-in-out infinite;
+      pointer-events: none;
+      border-radius: inherit;
+    }
+    @keyframes ach-popup-shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
     }
   `;
   document.head.appendChild(style);
@@ -157,7 +206,7 @@ function TrophyShelf() {
 }
 
 // ─── Achievement Card ───
-function AchievementCard({ achievement }: { achievement: GalleryAchievement }) {
+function AchievementCard({ achievement, showcase, onToggleShowcase }: { achievement: GalleryAchievement; showcase: string[]; onToggleShowcase: (id: string) => void }) {
   const { def: ach, isUnlocked, rarity: rarityId, unlockDate } = achievement;
   const rarity = RARITY_DEFS[rarityId];
   const state = getState();
@@ -168,16 +217,18 @@ function AchievementCard({ achievement }: { achievement: GalleryAchievement }) {
 
   return (
     <div
-      className={isUnlocked ? 'ach-card-unlocked' : ''}
+      className={isUnlocked ? (rarityId === 'legendary' ? 'ach-card-legendary' : rarityId === 'epic' ? 'ach-card-epic' : 'ach-card-unlocked') : ''}
       style={{
         background: isUnlocked
           ? `linear-gradient(135deg, rgba(255,215,0,0.07), ${rarity.glowColor.replace('0.3', '0.03')})`
           : 'rgba(255,255,255,0.015)',
-        border: `1px solid ${isUnlocked ? rarity.color + '40' : '#1a1a1a'}`,
+        border: `${isUnlocked && rarityId === 'legendary' ? '2px' : '1px'} solid ${isUnlocked ? rarity.color + (rarityId === 'legendary' ? '80' : '40') : '#1a1a1a'}`,
         borderRadius: 12, padding: '16px 12px', textAlign: 'center',
         opacity: isUnlocked ? 1 : 0.45,
         transition: 'all 0.3s',
         position: 'relative',
+        boxShadow: isUnlocked && rarityId === 'legendary' ? `0 0 16px ${rarity.glowColor}, inset 0 0 8px ${rarity.glowColor.replace('0.4', '0.1')}` :
+                   isUnlocked && rarityId === 'epic' ? `0 0 10px ${rarity.glowColor}` : 'none',
       }}
     >
       {/* Rarity indicator */}
@@ -269,6 +320,24 @@ function AchievementCard({ achievement }: { achievement: GalleryAchievement }) {
           ⭐ {(ach as any).starPowerReward.label}
         </div>
       )}
+
+      {/* Showcase toggle */}
+      {isUnlocked && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleShowcase(ach.id); }}
+          title={showcase.includes(ach.id) ? 'Remove from showcase' : showcase.length >= 3 ? 'Showcase full (3 max)' : 'Add to showcase'}
+          style={{
+            marginTop: 6, padding: '2px 8px', borderRadius: 4, fontSize: '0.5rem',
+            background: showcase.includes(ach.id) ? 'rgba(52,152,219,0.15)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${showcase.includes(ach.id) ? 'rgba(52,152,219,0.4)' : '#222'}`,
+            color: showcase.includes(ach.id) ? '#3498db' : '#555',
+            cursor: showcase.length >= 3 && !showcase.includes(ach.id) ? 'not-allowed' : 'pointer',
+            opacity: showcase.length >= 3 && !showcase.includes(ach.id) ? 0.4 : 1,
+          }}
+        >
+          {showcase.includes(ach.id) ? '⭐ SHOWCASED' : '☆ SHOWCASE'}
+        </button>
+      )}
     </div>
   );
 }
@@ -276,6 +345,12 @@ function AchievementCard({ achievement }: { achievement: GalleryAchievement }) {
 // ─── Main Gallery ───
 export default function AchievementGallery({ onClose, inline }: { onClose: () => void; inline?: boolean }) {
   const [filter, setFilter] = useState<GalleryCategory | 'all'>('all');
+  const [showcase, setShowcase] = useState<string[]>(() => getAchievementShowcase());
+
+  const handleToggleShowcase = (id: string) => {
+    const updated = toggleShowcaseAchievement(id);
+    setShowcase(updated);
+  };
 
   useEffect(() => { ensureShimmerStyle(); sfx.galleryOpenWhoosh(); }, []);
 
@@ -344,6 +419,37 @@ export default function AchievementGallery({ onClose, inline }: { onClose: () =>
           boxShadow: stats.unlockedCount > 0 ? '0 0 8px rgba(255,215,0,0.4)' : 'none',
         }} />
       </div>
+
+      {/* Achievement Showcase */}
+      {showcase.length > 0 && (
+        <div style={{
+          marginBottom: 16, padding: '12px 16px',
+          background: 'rgba(52,152,219,0.05)', border: '1px solid rgba(52,152,219,0.15)',
+          borderRadius: 10, textAlign: 'center',
+        }}>
+          <div style={{ color: '#3498db', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, fontFamily: 'Bebas Neue' }}>
+            ⭐ YOUR SHOWCASE ({showcase.length}/3)
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+            {showcase.map(id => {
+              const ach = allAchievements.find(a => a.def.id === id);
+              if (!ach) return null;
+              const rarityDef = RARITY_DEFS[ach.rarity];
+              return (
+                <div key={id} style={{
+                  padding: '8px 12px', borderRadius: 8,
+                  background: `linear-gradient(135deg, rgba(0,0,0,0.5), ${rarityDef.glowColor})`,
+                  border: `1px solid ${rarityDef.color}50`,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>{ach.def.emoji}</span>
+                  <span style={{ color: rarityDef.color, fontFamily: 'Bebas Neue', fontSize: '0.7rem' }}>{ach.def.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Trophy Shelf */}
       <TrophyShelf />
@@ -455,7 +561,7 @@ export default function AchievementGallery({ onClose, inline }: { onClose: () =>
             {/* Achievement grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(155px, 100%), 1fr))', gap: 10 }}>
               {items.map(ach => (
-                <AchievementCard key={ach.def.id} achievement={ach} />
+                <AchievementCard key={ach.def.id} achievement={ach} showcase={showcase} onToggleShowcase={handleToggleShowcase} />
               ))}
 
               {/* Hidden secret placeholders */}

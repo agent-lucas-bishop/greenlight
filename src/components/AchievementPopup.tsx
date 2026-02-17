@@ -106,11 +106,15 @@ export default function AchievementPopup() {
               cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 12,
               minWidth: 280, maxWidth: 380,
-              boxShadow: `0 4px 24px ${rarityDef.glowColor}, 0 0 0 1px rgba(0,0,0,0.3)`,
+              boxShadow: `0 4px 24px ${rarityDef.glowColor}, 0 0 0 1px rgba(0,0,0,0.3)${rarity === 'legendary' ? `, 0 0 40px ${rarityDef.glowColor}` : ''}`,
               transform: item.exiting ? 'translateX(120%)' : 'translateX(0)',
               opacity: item.exiting ? 0 : 1,
               animation: item.exiting ? undefined : 'achievementSlideIn 0.4s ease-out',
               transition: 'transform 0.4s ease-in, opacity 0.4s',
+              backgroundImage: rarity === 'legendary'
+                ? `linear-gradient(135deg, rgba(10,10,10,0.95), rgba(20,20,20,0.95)), linear-gradient(110deg, transparent 30%, ${rarityDef.glowColor} 50%, transparent 70%)`
+                : undefined,
+              backgroundSize: rarity === 'legendary' ? '100% 100%, 200% 100%' : undefined,
             }}
           >
             {/* Trophy icon */}

@@ -12,6 +12,12 @@ const SHAPE_LABELS: Record<LogoShape, string> = {
   star: '⭐ Star',
   hexagon: '⬡ Hexagon',
   filmReel: '🎞️ Film Reel',
+  camera: '📷 Camera',
+  clapperboard: '🎬 Clapperboard',
+  spotlight: '🔦 Spotlight',
+  megaphone: '📣 Megaphone',
+  ticket: '🎫 Ticket',
+  projector: '📽️ Projector',
 };
 
 function LogoSVG({ config, size = 80 }: { config: StudioLogoConfig; size?: number }) {
@@ -73,6 +79,61 @@ function LogoSVG({ config, size = 80 }: { config: StudioLogoConfig; size?: numbe
                 cy={half + half * 0.55 * Math.sin(deg * Math.PI / 180)}
                 r={half * 0.12} fill="#0a0a0a" />
             ))}
+          </g>
+        );
+      case 'camera':
+        return (
+          <g>
+            <rect x={size * 0.1} y={size * 0.3} width={size * 0.6} height={size * 0.5} rx={size * 0.04} />
+            <polygon points={`${size * 0.7},${size * 0.38} ${size * 0.92},${size * 0.25} ${size * 0.92},${size * 0.75} ${size * 0.7},${size * 0.62}`} />
+            <circle cx={size * 0.4} cy={size * 0.55} r={size * 0.12} fill="#0a0a0a" />
+            <rect x={size * 0.2} y={size * 0.2} width={size * 0.15} height={size * 0.1} rx={size * 0.02} />
+          </g>
+        );
+      case 'clapperboard':
+        return (
+          <g>
+            <rect x={size * 0.12} y={size * 0.35} width={size * 0.76} height={size * 0.55} rx={size * 0.03} />
+            <polygon points={`${size * 0.12},${size * 0.35} ${size * 0.88},${size * 0.35} ${size * 0.88},${size * 0.18} ${size * 0.12},${size * 0.18}`} />
+            {[0.25, 0.42, 0.59, 0.76].map((x, i) => (
+              <line key={i} x1={size * x} y1={size * 0.18} x2={size * (x - 0.08)} y2={size * 0.35} stroke="#0a0a0a" strokeWidth={size * 0.025} />
+            ))}
+          </g>
+        );
+      case 'spotlight':
+        return (
+          <g>
+            <ellipse cx={half} cy={size * 0.2} rx={size * 0.15} ry={size * 0.12} />
+            <polygon points={`${size * 0.3},${size * 0.28} ${size * 0.1},${size * 0.9} ${size * 0.9},${size * 0.9} ${size * 0.7},${size * 0.28}`} />
+            <line x1={half} y1={size * 0.05} x2={half} y2={size * 0.1} stroke={getFill()} strokeWidth={size * 0.03} />
+          </g>
+        );
+      case 'megaphone':
+        return (
+          <g>
+            <polygon points={`${size * 0.15},${size * 0.4} ${size * 0.85},${size * 0.15} ${size * 0.85},${size * 0.75} ${size * 0.15},${size * 0.6}`} />
+            <rect x={size * 0.08} y={size * 0.38} width={size * 0.1} height={size * 0.24} rx={size * 0.03} />
+            <rect x={size * 0.18} y={size * 0.6} width={size * 0.06} height={size * 0.25} rx={size * 0.02} />
+          </g>
+        );
+      case 'ticket':
+        return (
+          <g>
+            <rect x={size * 0.08} y={size * 0.25} width={size * 0.84} height={size * 0.5} rx={size * 0.04} />
+            <circle cx={size * 0.65} cy={size * 0.25} r={size * 0.06} fill="#0a0a0a" />
+            <circle cx={size * 0.65} cy={size * 0.75} r={size * 0.06} fill="#0a0a0a" />
+            <line x1={size * 0.65} y1={size * 0.31} x2={size * 0.65} y2={size * 0.69} stroke="#0a0a0a" strokeWidth={size * 0.015} strokeDasharray={`${size * 0.04} ${size * 0.03}`} />
+          </g>
+        );
+      case 'projector':
+        return (
+          <g>
+            <rect x={size * 0.2} y={size * 0.4} width={size * 0.6} height={size * 0.4} rx={size * 0.04} />
+            <circle cx={size * 0.35} cy={size * 0.28} r={size * 0.15} />
+            <circle cx={size * 0.35} cy={size * 0.28} r={size * 0.06} fill="#0a0a0a" />
+            <circle cx={size * 0.62} cy={size * 0.32} r={size * 0.1} />
+            <circle cx={size * 0.62} cy={size * 0.32} r={size * 0.04} fill="#0a0a0a" />
+            <rect x={size * 0.78} y={size * 0.48} width={size * 0.15} height={size * 0.08} rx={size * 0.02} />
           </g>
         );
     }

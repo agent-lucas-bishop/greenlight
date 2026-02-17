@@ -15,7 +15,7 @@ const BottomNav = memo(function BottomNav({ state }: BottomNavProps) {
 
   const items = [
     { id: 'game', icon: '🎬', label: 'Game' },
-    { id: 'deck', icon: '🃏', label: 'Deck', count: state.deck?.length },
+    { id: 'deck', icon: '🃏', label: 'Deck', count: state.production?.deck?.length },
     { id: 'stats', icon: '📊', label: 'Stats' },
     { id: 'info', icon: '💡', label: 'Info' },
   ];

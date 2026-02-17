@@ -25,6 +25,8 @@ import DevStats from './components/DevStats';
 import BottomNav from './components/BottomNav';
 import WorldEventBanner from './components/WorldEventBanner';
 import SeasonalBanner from './components/SeasonalBanner';
+import EventBanner from './components/EventBanner';
+import { applyEventTheme } from './seasonalEvents';
 import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 import { sfx } from './sound';
@@ -80,6 +82,13 @@ function App() {
       applySeasonTheme(state.season);
     }
   }, [state.season, state.phase]);
+
+  // R245: Apply real-world seasonal event theme overrides
+  useEffect(() => {
+    if (state.phase !== 'start') {
+      applyEventTheme();
+    }
+  }, [state.phase]);
 
   // R218: Contextual tooltips — trigger on first encounter of game mechanics
   useEffect(() => {
@@ -283,6 +292,7 @@ function App() {
           <div className="weather-particle p4" />
         </div>
       )}
+      {state.phase !== 'start' && <EventBanner />}
       {state.phase !== 'start' && <SeasonalBanner />}
       {state.phase !== 'start' && <Header state={state} />}
       {state.phase !== 'start' && state.activeWorldEvents && state.activeWorldEvents.length > 0 && (

@@ -35,6 +35,8 @@ import { updateProfileAfterRun } from '../playerProfile';
 import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionProgress } from '../tradingCards';
 import TradingCardToast from '../components/TradingCardToast';
 import ShareCard from '../components/ShareCard';
+import ShareModal from '../components/ShareModal';
+import RunRecap from '../components/RunRecap';
 import StrategyTipsModal, { shouldShowStrategyTips } from '../components/StrategyTipsModal';
 import { extractShareData, type RunShareData } from '../sharing';
 import { checkCommunityChallenges, type RunSummary, type CommunityChallenge } from '../challenges';
@@ -448,6 +450,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [highScoreRank, setHighScoreRank] = useState<number | null>(null);
   const [leaderboardEntry, setLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showRunRecap, setShowRunRecap] = useState(false);
   const [completedCommunity, setCompletedCommunity] = useState<CommunityChallenge[]>([]);
   const [showReplayViewer, setShowReplayViewer] = useState(false);
   const [showStrategyTips, setShowStrategyTips] = useState(!isVictory && shouldShowStrategyTips());
@@ -2022,7 +2026,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             }}>
               {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
             </button>
-            <button className="btn" onClick={() => { sfx.shareSnap(); setShowShareCard(true); }} style={{
+            <button className="btn" onClick={() => { sfx.shareSnap(); setShowShareModal(true); }} style={{
               background: 'linear-gradient(135deg, rgba(212,168,67,0.2), rgba(155,89,182,0.15))',
               border: '2px solid rgba(212,168,67,0.5)',
               color: '#d4a843',
@@ -2032,12 +2036,38 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             }}>
               📸 Share Card
             </button>
+            <button className="btn" onClick={() => { sfx.shareSnap(); setShowRunRecap(true); }} style={{
+              background: 'rgba(155,89,182,0.15)',
+              border: '1px solid rgba(155,89,182,0.4)',
+              color: '#bb86fc',
+              padding: '8px 24px', fontSize: '0.85rem', cursor: 'pointer',
+              fontFamily: 'Bebas Neue', letterSpacing: 1,
+            }}>
+              🎬 Run Recap
+            </button>
           </div>
         </div>
       )}
 
-      {/* ─── SHARE CARD MODAL ─── */}
+      {/* ─── SHARE CARD MODAL (legacy) ─── */}
       {showShareCard && <ShareCard data={shareData} onClose={() => setShowShareCard(false)} />}
+
+      {/* ─── SHARE MODAL (R244) ─── */}
+      {showShareModal && <ShareModal data={shareData} onClose={() => setShowShareModal(false)} />}
+
+      {/* ─── RUN RECAP (R244) ─── */}
+      {showRunRecap && (
+        <RunRecap
+          films={history}
+          shareData={shareData}
+          totalRevenue={totalBO}
+          score={score}
+          rank={rank}
+          legacyRating={legacy.rating}
+          isVictory={isVictory}
+          onClose={() => setShowRunRecap(false)}
+        />
+      )}
 
       {/* ─── TRADING CARDS ─── */}
       {phase >= 7 && endTab === 'progression' && newCardIds.length > 0 && (

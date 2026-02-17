@@ -53,6 +53,8 @@ import { EndlessRecords, EndlessLauncherInfo } from '../components/EndlessPanel'
 import { DailyChallengeCard } from '../components/DailyChallenge';
 import { getCollectionProgress } from '../tradingCards';
 
+const EventCalendar = lazy(() => import('../components/EventCalendar'));
+
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -450,7 +452,7 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'create' | 'synergies'>('play');
+  const [tab, setTab] = useState<'play' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'create' | 'synergies' | 'events'>('play');
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
@@ -860,6 +862,7 @@ export default function StartScreen() {
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
           { id: 'create', emoji: '🃏', label: 'WORKSHOP' },
           { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
+          { id: 'events' as const, emoji: '📅', label: 'EVENTS' },
           { id: 'career', emoji: '🏛️', label: 'CAREER' },
           { id: 'history', emoji: '📜', label: 'RUNS' },
           { id: 'archive', emoji: '🎞️', label: 'ARCHIVE' },
@@ -1571,6 +1574,12 @@ export default function StartScreen() {
       {tab === 'synergies' && (
         <Suspense fallback={<SkeletonLoader />}>
           <SynergyCodex onClose={() => setTab('play')} inline />
+        </Suspense>
+      )}
+
+      {tab === 'events' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <EventCalendar onClose={() => setTab('play')} />
         </Suspense>
       )}
 

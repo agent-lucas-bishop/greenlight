@@ -604,10 +604,9 @@ function SeasonalSection() {
           </div>
           <div style={{ fontSize: '0.65rem', color: '#999', marginBottom: 6 }}>{event.description}</div>
           <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', color: '#aaa', flexWrap: 'wrap' }}>
-            <span>Genres: <strong style={{ color: event.themeColor }}>{event.affectedGenres.join(', ')}</strong></span>
-            {event.boMultiplier !== 1.0 && <span>BO: <strong style={{ color: '#2ecc71' }}>×{event.boMultiplier.toFixed(2)}</strong></span>}
-            {event.qualityBonus > 0 && <span>Quality: <strong style={{ color: '#3b82f6' }}>+{event.qualityBonus}</strong></span>}
-            {event.criticBonus > 0 && <span>Critic: <strong style={{ color: '#d4a843' }}>+{event.criticBonus}</strong></span>}
+            {event.modifiers.map((mod) => (
+              <span key={mod.id} style={{ color: '#aaa' }}>{mod.description}</span>
+            ))}
           </div>
         </div>
       ))}

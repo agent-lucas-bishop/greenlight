@@ -11,8 +11,8 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 
 function getEventMonthSpan(event: SeasonalEvent): { start: number; end: number } {
   return {
-    start: event.dateRange.startMonth - 1,
-    end: event.dateRange.endMonth - 1,
+    start: event.startDate.month - 1,
+    end: event.endDate.month - 1,
   };
 }
 
@@ -170,7 +170,7 @@ export default function EventCalendar({ onClose }: { onClose?: () => void }) {
                 {selectedEvent.name}
               </div>
               <div style={{ color: '#888', fontSize: '0.75rem' }}>
-                {MONTH_NAMES[selectedEvent.dateRange.startMonth - 1]} {selectedEvent.dateRange.startDay} — {MONTH_NAMES[selectedEvent.dateRange.endMonth - 1]} {selectedEvent.dateRange.endDay}
+                {MONTH_NAMES[selectedEvent.startDate.month - 1]} {selectedEvent.startDate.day} — {MONTH_NAMES[selectedEvent.endDate.month - 1]} {selectedEvent.endDate.day}
               </div>
             </div>
           </div>
@@ -178,32 +178,24 @@ export default function EventCalendar({ onClose }: { onClose?: () => void }) {
           <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: 12 }}>{selectedEvent.description}</p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
-              <span style={{ color: '#888' }}>Revenue: </span>
-              <span style={{ color: selectedEvent.modifiers.revenueMultiplier > 1 ? '#2ecc71' : '#ccc' }}>
-                ×{selectedEvent.modifiers.revenueMultiplier}
-              </span>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
-              <span style={{ color: '#888' }}>Quality: </span>
-              <span style={{ color: selectedEvent.modifiers.qualityMultiplier > 1 ? '#2ecc71' : '#ccc' }}>
-                ×{selectedEvent.modifiers.qualityMultiplier}
-              </span>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
-              <span style={{ color: '#888' }}>Budget: </span>
-              <span style={{ color: selectedEvent.modifiers.budgetMultiplier < 1 ? '#2ecc71' : '#ccc' }}>
-                ×{selectedEvent.modifiers.budgetMultiplier}
-              </span>
-            </div>
+            {selectedEvent.modifiers.map((mod) => (
+              <div key={mod.id} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
+                <span style={{ color: '#aaa' }}>{mod.description}</span>
+              </div>
+            ))}
           </div>
 
-          <div style={{ marginBottom: 8 }}>
-            <span style={{ color: '#888', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Affected Genres: </span>
-            <span style={{ color: selectedEvent.themeColor, fontSize: '0.8rem' }}>
-              {selectedEvent.affectedGenres.join(', ')}
-            </span>
-          </div>
+          {(() => {
+            const genres = [...new Set(selectedEvent.modifiers.map(m => m.targetGenre).filter(Boolean))];
+            return genres.length > 0 ? (
+              <div style={{ marginBottom: 8 }}>
+                <span style={{ color: '#888', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Affected Genres: </span>
+                <span style={{ color: selectedEvent.themeColor, fontSize: '0.8rem' }}>
+                  {genres.join(', ')}
+                </span>
+              </div>
+            ) : null;
+          })()}
 
           {selectedEvent.specialCards.length > 0 && (
             <div>

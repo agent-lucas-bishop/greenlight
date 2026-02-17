@@ -510,6 +510,20 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         prestigeTitle: currentPrestigeLevel.title,
         legacyRating: legacy.rating,
       });
+      // Daily challenge: update streak and history
+      if (state.gameMode === 'daily') {
+        updateDailyStreak();
+        completeDailyAttempt(score);
+        addDailyHistoryEntry({
+          date: new Date().toISOString().slice(0, 10),
+          score,
+          rank,
+          films: history.length,
+          earnings: state.totalEarnings,
+          won: isVictory,
+          archetype: state.studioArchetype || 'unknown',
+        });
+      }
       // Save weekly best score to localStorage
       if (state.gameMode === 'weekly' && state.weeklySeed) {
         const weeklyKey = `greenlight_weekly_best_${state.weeklySeed}`;

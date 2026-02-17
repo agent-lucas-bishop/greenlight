@@ -19,6 +19,7 @@ import KeyboardHints from '../components/KeyboardHints';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 import { CHALLENGE_MODIFIERS, getCombinedModifierMultiplier } from '../challengeModifiers';
 import { hasWeeklyRun, getWeeklyBest } from '../leaderboard';
+import { WeeklyChallengeCard } from '../components/WeeklyChallenge';
 import { getStudioIdentity, hasStudioIdentity } from '../studioIdentity';
 import { getCareerTitle, loadProfile } from '../playerProfile';
 import { DIFFICULTIES, getDifficultyConfig, getScoreMultiplier } from '../difficulty';
@@ -466,8 +467,8 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events'>('play');
-  const [dailySubTab, setDailySubTab] = useState<'challenge' | 'create' | 'import'>('challenge');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft'>('play');
+  const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
@@ -1003,8 +1004,9 @@ export default function StartScreen() {
           <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
             {([
               { id: 'challenge' as const, label: '🎯 DAILY', color: '#3498db' },
+              { id: 'weekly' as const, label: '📅 WEEKLY', color: '#9b59b6' },
               { id: 'create' as const, label: '🔧 CREATE', color: '#f39c12' },
-              { id: 'import' as const, label: '📥 IMPORT', color: '#9b59b6' },
+              { id: 'import' as const, label: '📥 IMPORT', color: '#8e44ad' },
             ] as const).map(st => (
               <button key={st.id} className="btn btn-small"
                 style={{ color: dailySubTab === st.id ? st.color : '#666', borderColor: dailySubTab === st.id ? st.color : 'rgba(255,255,255,0.1)', background: dailySubTab === st.id ? `${st.color}15` : 'transparent' }}
@@ -1049,6 +1051,14 @@ export default function StartScreen() {
                 </Suspense>
               </div>
             </>
+          )}
+
+          {dailySubTab === 'weekly' && (
+            <WeeklyChallengeCard onStart={() => {
+              setSelectedMode('weekly');
+              setSelectedChallenge(undefined);
+              setShowDifficulty(true);
+            }} />
           )}
 
           {dailySubTab === 'create' && (

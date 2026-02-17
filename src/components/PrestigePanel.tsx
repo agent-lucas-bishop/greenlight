@@ -6,6 +6,7 @@ import {
   getPrestigeShop, PRESTIGE_UPGRADES, PRESTIGE_COSMETICS,
   canPurchaseUpgrade, purchaseUpgrade, equipCosmetic, unequipCosmetic,
   isCosmeticUnlocked, getPrestigeStarsDisplay,
+  getActiveNGPPerks, getNextPrestigeReward,
   type PrestigeUpgrade, type PrestigeCosmetic,
 } from '../prestigeShop';
 import { sfx } from '../sound';

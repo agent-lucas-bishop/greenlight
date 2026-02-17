@@ -113,7 +113,7 @@ import { getEnabledWorkshopCards, crewCardToCardTemplate } from './cardCreator';
 import { getDirectorStyleBonus } from './directorProfile';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
-import { getPrestigeShopBudgetBonus, getPrestigeRepShield, getPrestigeExtraCardDraw, getPrestigeLuckyBreakChance, getPrestigeTalentScoutBonus } from './prestigeShop';
+import { getPrestigeShopBudgetBonus, getPrestigeRepShield, getPrestigeExtraCardDraw, getPrestigeLuckyBreakChance, getPrestigeTalentScoutBonus, getNGPBudgetPercent, getNGPReputationBonus, getNGPExtraStrikes, getNGPQualityBaselinePercent, getNGPCardDrawBonus, getNGPTalentCostMultiplier } from './prestigeShop';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
 import { generateWorldEvents, tickWorldEvents, getWorldEventBOMultiplier, getWorldEventTalentCostMultiplier, getWorldEventBudgetMultiplier, getWorldEventQualityBonus, getWorldEventStreamingBonus, type ActiveWorldEvent } from './worldEvents';
@@ -749,6 +749,9 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     maxStrikes = 2; // tighter margin
   }
 
+  // R259: New Game+ extra strike perk
+  maxStrikes += getNGPExtraStrikes();
+
   const activeRivalIds = selectActiveRivals(difficulty);
   const rivalStats = initRivalStats(activeRivalIds);
 
@@ -798,6 +801,8 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   budget += getMetaBudgetBonus();
   // R227: Prestige shop budget bonus
   budget += getPrestigeShopBudgetBonus();
+  // R259: New Game+ budget perk — +5% starting budget
+  if (getNGPBudgetPercent() > 0) budget = Math.round(budget * (1 + getNGPBudgetPercent() / 100) * 10) / 10;
   // R128: Legacy run bonuses — $1M per 2 prestige levels
   const legacyBonuses = getLegacyRunBonuses();
   budget += legacyBonuses.budgetBonus;
@@ -852,7 +857,7 @@ export function pickNeow(choice: number) {
   const diffConfigNeow = state.difficulty === 'custom' && state.gameModifiers
     ? getEffectiveConfig('custom', state.gameModifiers)
     : getDifficultyConfig(state.difficulty);
-  const startReputation = Math.min(diffConfigNeow.startReputation + legacyRunBonuses.reputationBonus + getRetirementRepBonus() + getMetaReputationBonus(), 5);
+  const startReputation = Math.min(diffConfigNeow.startReputation + legacyRunBonuses.reputationBonus + getRetirementRepBonus() + getMetaReputationBonus() + getNGPReputationBonus(), 5);
   setState({ neowChoice: choice, roster, budget, perks, genreMastery, reputation: startReputation, phase: 'greenlight' as GamePhase });
   beginSeason();
 }
@@ -2080,6 +2085,10 @@ export function calculateQuality(s: GameState): {
     const insuranceKeep = s.perks.some(p => p.effect === 'insurance') ? 0.25 : 0;
     rawQuality = Math.floor(rawQuality * insuranceKeep);
   }
+
+  // R259: New Game+ quality baseline perk — +5% quality
+  const ngpQualityPct = getNGPQualityBaselinePercent();
+  if (ngpQualityPct > 0) rawQuality = Math.round(rawQuality * (1 + ngpQualityPct / 100));
 
   return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus, archetypeFocus, directorVisionBonus };
 }

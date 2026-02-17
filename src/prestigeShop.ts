@@ -14,6 +14,7 @@ export interface PrestigeShopState {
   unlockedCosmetics: string[]; // cosmetic IDs
   totalStarPowerEarned: number;
   prestigeResetCount: number;
+  chosenPerks: string[]; // R259: new game+ perk IDs chosen at each prestige level
 }
 
 export interface PrestigeUpgrade {
@@ -184,6 +185,7 @@ export function getPrestigeShop(): PrestigeShopState {
     unlockedCosmetics: [],
     totalStarPowerEarned: 0,
     prestigeResetCount: 0,
+    chosenPerks: [],
   };
 }
 
@@ -311,16 +313,66 @@ export function unequipCosmetic(type: 'logoFrame' | 'cardBack' | 'uiTheme'): voi
   savePrestigeShop(state);
 }
 
-// ─── Prestige Reset (R227) ───
+// ─── New Game+ Perk Pool (R259) ───
+// Each prestige level grants one chosen perk from this pool
+
+export interface NewGamePlusPerk {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  effectLabel: string; // short display text for active perks list
+}
+
+export const NEW_GAME_PLUS_PERKS: NewGamePlusPerk[] = [
+  { id: 'ngp_budget', name: 'Golden Parachute', emoji: '💰', description: '+5% starting budget each run', effectLabel: '+5% starting budget' },
+  { id: 'ngp_reputation', name: 'Industry Connections', emoji: '🤝', description: '+1 starting reputation', effectLabel: '+1 starting reputation' },
+  { id: 'ngp_legendary_starter', name: 'Legendary Debut', emoji: '🌟', description: 'Unlock a legendary starter card in your opening hand', effectLabel: 'Legendary starter card' },
+  { id: 'ngp_card_draw', name: 'Deep Bench', emoji: '🃏', description: '+1 card draw per turn during production', effectLabel: '+1 card draw per turn' },
+  { id: 'ngp_talent_discount', name: 'Talent Pipeline', emoji: '🎭', description: '-10% talent hiring costs', effectLabel: '-10% talent costs' },
+  { id: 'ngp_quality_baseline', name: 'Quality Foundation', emoji: '📐', description: '+5% quality baseline on all films', effectLabel: '+5% quality baseline' },
+  { id: 'ngp_extra_strike', name: 'Thick Skin', emoji: '🛡️', description: 'One extra strike before game over', effectLabel: '+1 strike tolerance' },
+  { id: 'ngp_random_synergy', name: 'Lucky Chemistry', emoji: '🧪', description: 'Start each run with a random synergy active', effectLabel: 'Random starting synergy' },
+  { id: 'ngp_nightmare', name: 'Nightmare Architect', emoji: '💀', description: 'Unlock nightmare difficulty modifiers for custom mode', effectLabel: 'Nightmare modifiers unlocked' },
+  { id: 'ngp_prestige_cards', name: 'Prestige Collection', emoji: '👑', description: 'Unlock exclusive prestige-only production cards', effectLabel: 'Prestige-only cards' },
+];
+
+/** Get perks available for selection (not yet chosen) */
+export function getAvailableNGPPerks(): NewGamePlusPerk[] {
+  const state = getPrestigeShop();
+  const chosen = state.chosenPerks || [];
+  return NEW_GAME_PLUS_PERKS.filter(p => !chosen.includes(p.id));
+}
+
+/** Get all active (chosen) new game+ perks */
+export function getActiveNGPPerks(): NewGamePlusPerk[] {
+  const state = getPrestigeShop();
+  const chosen = state.chosenPerks || [];
+  return NEW_GAME_PLUS_PERKS.filter(p => chosen.includes(p.id));
+}
+
+/** Check if a specific NGP perk is active */
+export function hasNGPPerk(perkId: string): boolean {
+  const state = getPrestigeShop();
+  return (state.chosenPerks || []).includes(perkId);
+}
+
+/** Get the perk that will be available at the next prestige level */
+export function getNextPrestigeReward(): NewGamePlusPerk | null {
+  const available = getAvailableNGPPerks();
+  return available.length > 0 ? available[0] : null;
+}
+
+// ─── Prestige Reset (R227, updated R259 with perk choice) ───
 
 export function canPrestigeReset(): boolean {
   const state = getPrestigeShop();
   return state.prestigeLevel < 10;
 }
 
-export function performPrestigeReset(): { success: boolean; newLevel: number; starPowerAwarded: number } {
+export function performPrestigeReset(chosenPerkId?: string): { success: boolean; newLevel: number; starPowerAwarded: number; perkChosen: NewGamePlusPerk | null } {
   const state = getPrestigeShop();
-  if (state.prestigeLevel >= 10) return { success: false, newLevel: state.prestigeLevel, starPowerAwarded: 0 };
+  if (state.prestigeLevel >= 10) return { success: false, newLevel: state.prestigeLevel, starPowerAwarded: 0, perkChosen: null };
   
   state.prestigeLevel += 1;
   state.prestigeResetCount += 1;
@@ -328,9 +380,21 @@ export function performPrestigeReset(): { success: boolean; newLevel: number; st
   const starPowerBonus = 10 + (state.prestigeLevel * 5);
   state.starPower += starPowerBonus;
   state.totalStarPowerEarned += starPowerBonus;
+
+  // R259: Choose a permanent new game+ perk
+  let perkChosen: NewGamePlusPerk | null = null;
+  if (chosenPerkId) {
+    if (!state.chosenPerks) state.chosenPerks = [];
+    const perk = NEW_GAME_PLUS_PERKS.find(p => p.id === chosenPerkId);
+    if (perk && !state.chosenPerks.includes(chosenPerkId)) {
+      state.chosenPerks.push(chosenPerkId);
+      perkChosen = perk;
+    }
+  }
+
   savePrestigeShop(state);
   
-  return { success: true, newLevel: state.prestigeLevel, starPowerAwarded: starPowerBonus };
+  return { success: true, newLevel: state.prestigeLevel, starPowerAwarded: starPowerBonus, perkChosen };
 }
 
 // ─── Gameplay Integration Helpers ───
@@ -393,4 +457,56 @@ export function getPrestigeStarsDisplay(level?: number): string {
   const l = level ?? getPrestigeShop().prestigeLevel;
   if (l <= 0) return '';
   return '⭐'.repeat(Math.min(l, 10));
+}
+
+// ─── R259: New Game+ Perk Gameplay Helpers ───
+
+/** NGP budget bonus: +5% per perk level (stacks with each selection) */
+export function getNGPBudgetPercent(): number {
+  return hasNGPPerk('ngp_budget') ? 5 : 0;
+}
+
+/** NGP reputation bonus */
+export function getNGPReputationBonus(): number {
+  return hasNGPPerk('ngp_reputation') ? 1 : 0;
+}
+
+/** NGP card draw bonus */
+export function getNGPCardDrawBonus(): number {
+  return hasNGPPerk('ngp_card_draw') ? 1 : 0;
+}
+
+/** NGP talent cost discount (0.9 = 10% off) */
+export function getNGPTalentCostMultiplier(): number {
+  return hasNGPPerk('ngp_talent_discount') ? 0.9 : 1;
+}
+
+/** NGP quality baseline bonus (percentage) */
+export function getNGPQualityBaselinePercent(): number {
+  return hasNGPPerk('ngp_quality_baseline') ? 5 : 0;
+}
+
+/** NGP extra strikes */
+export function getNGPExtraStrikes(): number {
+  return hasNGPPerk('ngp_extra_strike') ? 1 : 0;
+}
+
+/** NGP legendary starter card unlocked */
+export function hasNGPLegendaryStarter(): boolean {
+  return hasNGPPerk('ngp_legendary_starter');
+}
+
+/** NGP random starting synergy */
+export function hasNGPRandomSynergy(): boolean {
+  return hasNGPPerk('ngp_random_synergy');
+}
+
+/** NGP nightmare difficulty modifiers unlocked */
+export function hasNGPNightmareUnlocked(): boolean {
+  return hasNGPPerk('ngp_nightmare');
+}
+
+/** NGP prestige-only cards unlocked */
+export function hasNGPPrestigeCards(): boolean {
+  return hasNGPPerk('ngp_prestige_cards');
 }

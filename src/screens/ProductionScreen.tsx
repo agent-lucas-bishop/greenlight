@@ -5,6 +5,7 @@ import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { screenShake, playCardAnimation, showTenseVignette, hideTenseVignette } from '../visualEffects';
 import { getCardBackColor } from '../achievements';
+import { getSelectedCardBackDesign } from '../studioCustomization';
 import { CardTypeBadge } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 import MechanicTip from '../components/MechanicTip';
@@ -646,8 +647,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       {/* Drawing animation */}
       {isDrawing && (
         <div className="draw-animation">
-          <div className="card-back" style={getCardBackColor() ? { filter: `drop-shadow(0 0 15px ${getCardBackColor()})` } : {}}>🎬</div>
-          <div className="card-back" style={getCardBackColor() ? { filter: `drop-shadow(0 0 15px ${getCardBackColor()})` } : {}}>🎬</div>
+          {(() => { const cbd = getSelectedCardBackDesign(); const cbc = getCardBackColor(); return (<><div className="card-back" style={{ background: cbd.background, borderColor: cbd.borderColor, ...(cbc ? { filter: `drop-shadow(0 0 15px ${cbc})` } : {}) }}>{cbd.emoji}</div><div className="card-back" style={{ background: cbd.background, borderColor: cbd.borderColor, ...(cbc ? { filter: `drop-shadow(0 0 15px ${cbc})` } : {}) }}>{cbd.emoji}</div></>); })()}
         </div>
       )}
 

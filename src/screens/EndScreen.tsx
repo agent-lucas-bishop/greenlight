@@ -31,6 +31,8 @@ import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
 import { getDifficultyBadge } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
+import { submitRunToHallOfFame, type SubmitResult } from '../hallOfFame';
+import HallOfFameCard from '../components/HallOfFameCard';
 import { updateLegacyAfterRun } from '../studioLegacy';
 import { updateEndlessPersonalBest, getEndlessPersonalBest } from '../endlessMode';
 import { loadCampaignData, getActiveCampaign, getCampaignById } from '../campaigns';
@@ -465,6 +467,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [completedCommunity, setCompletedCommunity] = useState<CommunityChallenge[]>([]);
   const [showReplayViewer, setShowReplayViewer] = useState(false);
   const [showStrategyTips, setShowStrategyTips] = useState(!isVictory && shouldShowStrategyTips());
+  const [hofResult, setHofResult] = useState<SubmitResult | null>(null);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
     history,
@@ -813,6 +816,28 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         archetype: state.studioArchetype || 'unknown',
         films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice })),
       });
+      // R272: Submit to Hall of Fame
+      {
+        const bestFilmForHof = history.length > 0
+          ? history.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b)
+          : null;
+        const hofSubmit = submitRunToHallOfFame({
+          studioName: studioIdentity?.name || state.studioName || 'Unknown Studio',
+          archetype: (state.studioArchetype || 'blockbuster') as import('../types').StudioArchetypeId,
+          difficulty: (state.difficulty || 'studio') as import('../types').Difficulty,
+          finalScore: score,
+          totalEarnings: state.totalEarnings,
+          filmsProduced: history.length,
+          bestFilm: bestFilmForHof
+            ? { title: bestFilmForHof.title, genre: bestFilmForHof.genre, earnings: bestFilmForHof.boxOffice }
+            : { title: '—', genre: '—', earnings: 0 },
+          awardsWon: nominations,
+          seasonsSurvived: history.length,
+          won: isVictory,
+          genres: history.map(s => s.genre),
+        });
+        setHofResult(hofSubmit);
+      }
       setRecorded(true);
       setShowReplayToast(true);
       setTimeout(() => setShowReplayToast(false), 3000);
@@ -909,6 +934,13 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             Rank <span style={{ color: '#ffd700', fontWeight: 700 }}>#{highScoreRank}</span> on the {state.difficulty || 'studio'} leaderboard
           </div>
           <GoldenBurst elaborate />
+        </div>
+      )}
+
+      {/* ─── HALL OF FAME CARD (R272) ─── */}
+      {hofResult && hofResult.qualified && (
+        <div style={{ maxWidth: 400, margin: '16px auto' }}>
+          <HallOfFameCard result={hofResult} />
         </div>
       )}
 

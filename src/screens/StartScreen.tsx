@@ -52,7 +52,10 @@ import { getPrestigeShop, getPrestigeStarsDisplay, getActiveNGPPerks } from '../
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones, updateLegacyAfterRun } from '../studioLegacy';
+import { getStudioCustomization, getSelectedNameplate, getSelectedBanner, saveStudioCustomization } from '../studioCustomization';
 const LegacyPanel = lazy(() => import('../components/LegacyPanel'));
+const StudioOffice = lazy(() => import('../components/StudioOffice'));
+const CardBackPicker = lazy(() => import('../components/CardBackPicker'));
 const StudioLogoEditor = lazy(() => import('../components/StudioLogoEditor'));
 import { getAllUnlockableStatus } from '../unlockableContent';
 import { isEndlessUnlocked } from '../endgame';
@@ -452,6 +455,32 @@ function SkeletonLoader() {
   );
 }
 
+function MottoEditor() {
+  const [editing, setEditing] = useState(false);
+  const customization = getStudioCustomization();
+  const [mottoInput, setMottoInput] = useState(customization.motto);
+  const save = () => { saveStudioCustomization({ motto: mottoInput.trim() }); setEditing(false); };
+  return (
+    <div style={{ marginTop: 24, textAlign: 'center' }}>
+      <h3 style={{ color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1rem', letterSpacing: '0.08em', marginBottom: 12 }}>
+        ✍️ STUDIO MOTTO
+      </h3>
+      {editing ? (
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
+          <input type="text" value={mottoInput} onChange={e => setMottoInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') save(); }} maxLength={60} autoFocus
+            style={{ background: '#1a1a1a', border: '1px solid var(--gold-dim)', borderRadius: 6, padding: '6px 12px', color: '#eee', fontSize: '0.8rem', width: 260, textAlign: 'center' }} />
+          <button className="btn btn-small" onClick={save}>✓</button>
+        </div>
+      ) : (
+        <div onClick={() => setEditing(true)} style={{ cursor: 'pointer', color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>
+          &ldquo;{customization.motto}&rdquo; <span style={{ fontSize: '0.6rem', color: '#555' }}>✏️ click to edit</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StartScreen() {
   const firstRun = isFirstRun();
   const simplified = isSimplifiedRun(); // true until first run complete
@@ -472,7 +501,7 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [showTrophyRoom, setShowTrophyRoom] = useState(false);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies'>('play');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio'>('play');
   const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
@@ -655,6 +684,14 @@ export default function StartScreen() {
                 </span>
               </div>
             )}
+            {identity && (() => {
+              const customization = getStudioCustomization();
+              return customization.motto ? (
+                <div style={{ marginTop: 2, textAlign: 'center', color: '#888', fontSize: '0.65rem', fontStyle: 'italic' }}>
+                  "{customization.motto}"
+                </div>
+              ) : null;
+            })()}
             {playerCareer && (
               <div style={{ marginTop: 2, textAlign: 'center', color: '#888', fontSize: '0.7rem', fontFamily: 'Bebas Neue', letterSpacing: '0.05em' }}>
                 {playerCareer.emoji} {playerCareer.title}
@@ -839,6 +876,7 @@ export default function StartScreen() {
           { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
           { id: 'events' as const, emoji: '📅', label: 'EVENTS' },
           { id: 'legacy' as const, emoji: '🏛️', label: 'LEGACY' },
+          { id: 'studio' as const, emoji: '🏢', label: 'STUDIO' },
           { id: 'career', emoji: '📋', label: 'CAREER' },
           { id: 'history', emoji: '📜', label: 'RUNS' },
           { id: 'archive', emoji: '🎞️', label: 'ARCHIVE' },
@@ -1666,6 +1704,22 @@ export default function StartScreen() {
         <Suspense fallback={<SkeletonLoader />}>
           <EventCalendar onClose={() => setTab('play')} />
         </Suspense>
+      )}
+
+      {/* ─── STUDIO TAB ─── */}
+      {tab === 'studio' && (
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <Suspense fallback={<SkeletonLoader />}>
+            <StudioOffice />
+          </Suspense>
+          <div style={{ marginTop: 24 }}>
+            <Suspense fallback={<SkeletonLoader />}>
+              <CardBackPicker />
+            </Suspense>
+          </div>
+          {/* Motto editor */}
+          <MottoEditor />
+        </div>
       )}
 
       {tab === 'trophies' && (

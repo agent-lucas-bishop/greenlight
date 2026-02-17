@@ -64,6 +64,7 @@ function createInitialState(): GameState {
     seasonEventChoices: null,
     activeSeasonEvent: null,
     streamingDealActive: false,
+    pendingSequelScript: null,
   };
 }
 

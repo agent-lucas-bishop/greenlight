@@ -8,13 +8,15 @@ import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES, isChallengeUnlocked } from '../challenges';
-import { getDailyDateString, getWeeklyDateString } from '../seededRng';
+import { getDailyDateString, getWeeklyDateString, getDailyNumber, getWeeklyNumber } from '../seededRng';
 import { getTodayModifier, getWeeklyModifiers } from '../dailyModifiers';
 import { getPersonalBests, getDailyStats } from '../personalBests';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
 import KeyboardHints from '../components/KeyboardHints';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
+import { CHALLENGE_MODIFIERS, getCombinedModifierMultiplier } from '../challengeModifiers';
+import { hasWeeklyRun, getWeeklyBest } from '../leaderboard';
 
 // Lazy-load heavy modals (only opened on demand)
 const AchievementGallery = lazy(() => import('../components/AchievementGallery'));
@@ -383,6 +385,7 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history'>('play');
+  const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
   const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
   const stats = getRunStats();
@@ -391,6 +394,10 @@ export default function StartScreen() {
   const dailyDate = getDailyDateString();
   const dailyDone = hasDailyRun(dailyDate);
   const dailyBest = getDailyBest(dailyDate);
+  const weeklyDate = getWeeklyDateString();
+  const weeklyDone = hasWeeklyRun(weeklyDate);
+  const weeklyBest = getWeeklyBest(weeklyDate);
+  const modifierMult = getCombinedModifierMultiplier(activeModifiers);
 
   // "?" keyboard shortcut for keyboard hints
   useEffect(() => {
@@ -420,6 +427,7 @@ export default function StartScreen() {
     const modeLabel = selectedMode === 'newGamePlus' ? '⭐ NEW GAME+ — Targets ×1.4' :
       selectedMode === 'directorMode' ? '🔥 DIRECTOR MODE — Targets ×1.8' :
       selectedMode === 'daily' ? '📅 DAILY RUN — ' + dailyDate :
+      selectedMode === 'weekly' ? `🗓️ WEEKLY CHALLENGE — Week of ${weeklyDate}` :
       selectedChallenge ? `${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.emoji} ${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.name}` : '';
     return (
       <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -437,8 +445,8 @@ export default function StartScreen() {
             <div
               key={a.id}
               className="card"
-              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge); pickArchetype(a.id as StudioArchetypeId); }}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge); pickArchetype(a.id as StudioArchetypeId); } }}
+              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); } }}
               tabIndex={0}
               role="button"
               aria-label={`${a.name}: ${a.description}${isRecommended ? ' (Recommended for beginners)' : ''}`}
@@ -600,6 +608,14 @@ export default function StartScreen() {
               {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
               {stats.dailyStreak.current > 0 && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
             </button>
+            {/* Weekly Challenge */}
+            {stats.runs > 0 && (
+              <button className="btn btn-small" style={{ color: '#9b59b6', borderColor: '#9b59b6', opacity: weeklyDone ? 0.5 : 1 }}
+                onClick={() => { if (!weeklyDone) { setSelectedMode('weekly'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
+                🗓️ WEEKLY CHALLENGE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(Week of {weeklyDate})</span>
+                {weeklyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {weeklyBest?.score || 0}pts</span>}
+              </button>
+            )}
             {/* Weekly Modifier Preview */}
             {stats.runs > 0 && !dailyDone && (() => {
               const todayMod = getTodayModifier();
@@ -631,6 +647,49 @@ export default function StartScreen() {
                 </div>
               );
             })()}
+            {/* Challenge Modifiers */}
+            {stats.runs > 0 && (
+              <div style={{
+                background: 'rgba(243,156,18,0.06)', border: '1px solid rgba(243,156,18,0.15)',
+                borderRadius: 10, padding: '12px 16px', maxWidth: 400, width: '100%',
+                textAlign: 'left', fontSize: '0.75rem',
+              }}>
+                <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '0.8rem', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>⚙️ CHALLENGE MODIFIERS</span>
+                  {modifierMult > 1.0 && <span style={{ color: '#2ecc71', fontSize: '0.7rem' }}>Score ×{modifierMult.toFixed(2)}</span>}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {CHALLENGE_MODIFIERS.map(mod => {
+                    const active = activeModifiers.includes(mod.id);
+                    return (
+                      <div key={mod.id}
+                        onClick={() => {
+                          setActiveModifiers(prev =>
+                            prev.includes(mod.id) ? prev.filter(id => id !== mod.id) : [...prev, mod.id]
+                          );
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                          background: active ? 'rgba(243,156,18,0.12)' : 'rgba(255,255,255,0.02)',
+                          border: `1px solid ${active ? 'rgba(243,156,18,0.4)' : '#333'}`,
+                          borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s',
+                        }}>
+                        <span style={{ fontSize: '1rem', width: 24, textAlign: 'center' }}>
+                          {active ? '✅' : '⬜'}
+                        </span>
+                        <span style={{ fontSize: '0.9rem' }}>{mod.emoji}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: active ? '#f39c12' : '#ccc', fontWeight: 600, fontSize: '0.8rem' }}>
+                            {mod.name} <span style={{ color: '#2ecc71', fontWeight: 400, fontSize: '0.7rem' }}>×{mod.scoreMultiplier}</span>
+                          </div>
+                          <div style={{ color: '#999', fontSize: '0.65rem' }}>{mod.shortDesc}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {stats.ngPlusUnlocked && (
               <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>

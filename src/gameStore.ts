@@ -92,13 +92,14 @@ import {
 } from './data';
 import type { SeasonEventChoice } from './types';
 import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
-import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
+import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, getWeeklySeed, getWeeklyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
 import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
 import { sfx } from './sound';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
+import { careerSessionStart, careerTrackTalentHire, careerTrackFilmComplete } from './careerAnalytics';
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
@@ -168,7 +169,7 @@ function setState(partial: Partial<GameState>) {
   listeners.forEach(l => l());
   // Auto-save on every state change (phase transitions and mid-phase)
   // Daily runs don't save — prevents save-scumming
-  if (state.phase !== 'start' && state.gameMode !== 'daily') {
+  if (state.phase !== 'start' && state.gameMode !== 'daily' && state.gameMode !== 'weekly') {
     saveGameState(state);
   }
 }
@@ -490,7 +491,7 @@ function rebuildCardFunctions(cards: ProductionCard[]): void {
 
 export function resumeGame(saved: Partial<GameState>) {
   // Block resuming daily runs — no save-scumming allowed
-  if (saved.gameMode === 'daily') {
+  if (saved.gameMode === 'daily' || saved.gameMode === 'weekly') {
     clearSave();
     return;
   }
@@ -545,11 +546,13 @@ export function resumeGame(saved: Partial<GameState>) {
   if (state.phase !== 'start') saveGameState(state);
 }
 
-export function startGame(mode: GameMode = 'normal', challengeId?: string) {
+export function startGame(mode: GameMode = 'normal', challengeId?: string, activeModifiers?: string[]) {
   clearSave();
-  // Activate seeded RNG for daily runs
+  // Activate seeded RNG for daily/weekly runs
   if (mode === 'daily') {
     activateSeed(getDailySeed());
+  } else if (mode === 'weekly') {
+    activateSeed(getWeeklySeed());
   } else {
     deactivateSeed();
   }
@@ -567,16 +570,30 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string) {
     maxStrikes = 4;
   }
 
+  // Apply challenge modifier effects
+  const mods = activeModifiers || [];
+  if (mods.includes('speed_run_mod')) {
+    maxSeasons = 3;
+    maxStrikes = 2;
+  }
+
+  // Weekly mode has harder defaults
+  if (mode === 'weekly') {
+    maxStrikes = 2; // tighter margin
+  }
+
   setState({
     ...createInitialState(),
     phase: 'start',
     gameMode: mode,
     challengeId,
-    dailySeed: mode === 'daily' ? getDailyDateString() : undefined,
+    dailySeed: mode === 'daily' ? getDailyDateString() : mode === 'weekly' ? `weekly:${getWeeklyDateString()}` : undefined,
+    weeklySeed: mode === 'weekly' ? getWeeklyDateString() : undefined,
     dailyModifierId: mode === 'daily' ? getTodayModifier().id : undefined,
     dailyModifierId2: mode === 'daily' ? getWeeklyModifiers()[0].id : undefined,
     maxSeasons,
     maxStrikes,
+    activeModifiers: mods.length > 0 ? mods : undefined,
   });
 }
 
@@ -597,8 +614,13 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   if (state.challengeId === 'shoestring') budget = 8;
   // Challenge: Budget Hell — start with $5M
   if (state.challengeId === 'budget_hell') budget = 5;
+  // Challenge modifier: Shoestring — 50% budget
+  if (state.activeModifiers?.includes('shoestring_mod')) budget = Math.round(budget * 0.5);
+  // Weekly mode: start with less budget
+  if (state.gameMode === 'weekly') budget = Math.round(budget * 0.75);
   const studio = generateStudioName();
   trackRunStart(state.gameMode, state.challengeId, archetypeId);
+  careerSessionStart();
   setState({ studioArchetype: archetypeId, budget, studioName: studio.name, studioTagline: studio.tagline, phase: 'neow' as GamePhase });
 }
 
@@ -777,6 +799,7 @@ export function assignTalent(slotIndex: number, talent: Talent) {
   slots.forEach((s, i) => { if (s.talent?.id === talent.id) slots[i] = { ...s, talent: null }; });
   slots[slotIndex] = { ...slots[slotIndex], talent };
   trackTalentPick(talent.name);
+  careerTrackTalentHire(talent.name);
   setState({ castSlots: slots });
 }
 
@@ -2023,6 +2046,9 @@ export function resolveRelease() {
   // Debt reputation penalty: lose 1 rep if in significant debt
   let debtRepPenalty = debt >= 15 ? -1 : 0;
 
+  // Track film completion for career analytics
+  careerTrackFilmComplete({ title: filmTitle, genre: script.genre, boxOffice, quality: rawQuality });
+
   setState({
     phase: 'release',
     lastFilmTitle: filmTitle,
@@ -2104,6 +2130,11 @@ export function proceedFromRecap() {
 }
 
 export function proceedToShop() {
+  // No Safety Net modifier: skip shop entirely
+  if (state.activeModifiers?.includes('no_safety_net_mod')) {
+    nextSeason();
+    return;
+  }
   const perkMarket = generatePerkMarket(4, state.perks.map(p => p.name));
   const talentMarket = generateTalentMarket(4, state.season, state.roster);
   const event = INDUSTRY_EVENTS[Math.floor(rng() * INDUSTRY_EVENTS.length)];

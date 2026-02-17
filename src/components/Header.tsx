@@ -153,8 +153,8 @@ export default function Header({ state }: { state: GameState }) {
         {state.gameMode !== 'normal' && (
           <div className="header-stat">
             <span className="label">Mode</span>
-            <span className="value" style={{ color: state.gameMode === 'directorMode' ? '#e74c3c' : state.gameMode === 'daily' ? '#3498db' : 'var(--gold)', fontSize: '0.9rem' }}>
-              {state.gameMode === 'newGamePlus' ? '⭐ NG+' : state.gameMode === 'directorMode' ? '🔥 Director' : state.gameMode === 'daily' ? '📅 Daily' : state.gameMode === 'challenge' ? '⚡ Challenge' : ''}
+            <span className="value" style={{ color: state.gameMode === 'directorMode' ? '#e74c3c' : state.gameMode === 'daily' ? '#3498db' : state.gameMode === 'weekly' ? '#9b59b6' : 'var(--gold)', fontSize: '0.9rem' }}>
+              {state.gameMode === 'newGamePlus' ? '⭐ NG+' : state.gameMode === 'directorMode' ? '🔥 Director' : state.gameMode === 'daily' ? '📅 Daily' : state.gameMode === 'weekly' ? '🗓️ Weekly' : state.gameMode === 'challenge' ? '⚡ Challenge' : ''}
             </span>
           </div>
         )}

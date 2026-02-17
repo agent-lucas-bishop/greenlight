@@ -7,12 +7,15 @@ import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
+import { careerTrackRunEnd } from '../careerAnalytics';
 import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, type RunXPData } from '../prestige';
 import { recordGenreMasteryFilms } from '../genreMastery';
 import { getStudioLegacy, type StudioLegacy } from '../studioLegacy';
 import { recordPersonalBests, getDailyStats, getPersonalBests } from '../personalBests';
 import { getWeeklyModifiers, getModifierById } from '../dailyModifiers';
 import { getRunStats } from '../unlocks';
+import { getDailyNumber, getWeeklyNumber } from '../seededRng';
+import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from '../challengeModifiers';
 
 // ─── Helpers ───
 
@@ -145,41 +148,63 @@ function generateShareText(state: GameState, score: number, rank: string, isVict
   const seasonRecap = h.map(generateSeasonRecapEmoji).join('');
 
   const totalBO = state.totalEarnings;
-  const dailyDate = state.dailySeed;
   const stats = getRunStats();
+  const avgQuality = h.length > 0 ? Math.round(h.reduce((s, f) => s + f.quality, 0) / h.length) : 0;
 
-  const lines = [
-    `🎬 GREENLIGHT ${isVictory ? '🏆' : '💀'}`,
-    '',
-    `${state.studioName || 'Studio'}`,
-    grid,
-    seasonRecap,
-    '',
-    `Score: ${score} (${rank}) · $${totalBO.toFixed(1)}M`,
-  ];
+  // Daily/Weekly specific header
+  const isDaily = state.gameMode === 'daily';
+  const isWeekly = state.gameMode === 'weekly';
 
-  // Add ending title if earned (victory only)
-  if (isVictory && ending.title !== 'STUDIO BANKRUPTCY') {
-    lines.push(`${ending.emoji} ${ending.title}`);
+  let header: string;
+  if (isDaily) {
+    const dayNum = getDailyNumber();
+    header = `🎬 GREENLIGHT Daily #${dayNum}`;
+  } else if (isWeekly) {
+    const weekNum = getWeeklyNumber();
+    header = `🎬 GREENLIGHT Weekly #${weekNum}`;
+  } else {
+    header = `🎬 GREENLIGHT ${isVictory ? '🏆' : '💀'}`;
   }
 
-  // Studio legacy title
-  if (studioLegacy) {
-    lines.push(`${studioLegacy.emoji} ${studioLegacy.title}`);
-  }
+  const lines: string[] = [header, ''];
 
-  // Challenge mode
-  if (challenge) {
-    lines.push(`${challenge.emoji} ${challenge.name} Challenge`);
-  }
+  // For daily/weekly, use the compact Wordle-style share format
+  if (isDaily || isWeekly) {
+    lines.push(`⭐ Score: ${score} | 🎥 ${h.length} Films | 💰 $${Math.round(totalBO)}M | 🏆 ${rank}-Rank`);
+    lines.push(grid);
+    if (state.activeModifiers && state.activeModifiers.length > 0) {
+      const modNames = state.activeModifiers.map(id => CHALLENGE_MODIFIERS.find(m => m.id === id)).filter(Boolean).map(m => `${m!.emoji}${m!.name}`);
+      lines.push(`Modifiers: ${modNames.join(' · ')}`);
+    }
+    if (isDaily && stats.dailyStreak.current > 1) {
+      lines.push(`🔥 ${stats.dailyStreak.current}-day streak`);
+    }
+  } else {
+    lines.push(`${state.studioName || 'Studio'}`);
+    lines.push(grid);
+    lines.push(seasonRecap);
+    lines.push('');
+    lines.push(`Score: ${score} (${rank}) · $${totalBO.toFixed(1)}M`);
 
-  // Daily info
-  if (dailyDate) {
-    lines.push(`📅 Daily ${dailyDate}${stats.dailyStreak.current > 1 ? ` · 🔥${stats.dailyStreak.current} streak` : ''}`);
-  }
-
-  if (prestigeTitle) {
-    lines.push(`⭐ ${prestigeTitle}`);
+    if (isVictory && ending.title !== 'STUDIO BANKRUPTCY') {
+      lines.push(`${ending.emoji} ${ending.title}`);
+    }
+    if (studioLegacy) {
+      lines.push(`${studioLegacy.emoji} ${studioLegacy.title}`);
+    }
+    if (challenge) {
+      lines.push(`${challenge.emoji} ${challenge.name} Challenge`);
+    }
+    if (state.activeModifiers && state.activeModifiers.length > 0) {
+      const modNames = state.activeModifiers.map(id => CHALLENGE_MODIFIERS.find(m => m.id === id)).filter(Boolean).map(m => `${m!.emoji}${m!.name}`);
+      lines.push(`Modifiers: ${modNames.join(' · ')}`);
+    }
+    if (state.dailySeed) {
+      lines.push(`📅 Daily ${state.dailySeed}${stats.dailyStreak.current > 1 ? ` · 🔥${stats.dailyStreak.current} streak` : ''}`);
+    }
+    if (prestigeTitle) {
+      lines.push(`⭐ ${prestigeTitle}`);
+    }
   }
 
   lines.push('');
@@ -283,8 +308,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const isVictory = type === 'victory';
   const challenge = state.challengeId ? getChallengeById(state.challengeId) : undefined;
   const challengeMultiplier = challenge?.scoreMultiplier || 1.0;
+  const modifierMultiplier = state.activeModifiers ? getCombinedModifierMultiplier(state.activeModifiers) : 1.0;
+  const weeklyMultiplier = state.gameMode === 'weekly' ? 1.5 : 1.0;
   const baseScore = Math.round(state.totalEarnings * state.reputation * (1 + state.seasonHistory.filter(s => s.nominated).length * 0.2));
-  const score = Math.round(baseScore * challengeMultiplier);
+  const score = Math.round(baseScore * challengeMultiplier * modifierMultiplier * weeklyMultiplier);
   const rank = score > 800 ? 'S' : score > 500 ? 'A' : score > 300 ? 'B' : score > 150 ? 'C' : 'D';
   const achievements = getAchievements(state);
   const history = state.seasonHistory;
@@ -380,12 +407,20 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         archetype: state.studioArchetype || 'unknown',
         films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice, season: s.season, nominated: s.nominated })),
         won: isVictory,
-        dailySeed: state.dailySeed,
+        dailySeed: state.dailySeed || state.weeklySeed ? `weekly:${state.weeklySeed}` : undefined,
         studioName: state.studioName || undefined,
         prestigeLevel: currentPrestigeLevel.level,
         prestigeTitle: currentPrestigeLevel.title,
         legacyRating: legacy.rating,
       });
+      // Save weekly best score to localStorage
+      if (state.gameMode === 'weekly' && state.weeklySeed) {
+        const weeklyKey = `greenlight_weekly_best_${state.weeklySeed}`;
+        try {
+          const prev = parseInt(localStorage.getItem(weeklyKey) || '0', 10);
+          if (score > prev) localStorage.setItem(weeklyKey, String(score));
+        } catch {}
+      }
       // Record genre mastery cross-run stats
       recordGenreMasteryFilms(history.map(s => ({
         genre: s.genre,
@@ -420,6 +455,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       });
       markFirstRunComplete();
       trackRunEnd(score, isVictory);
+      careerTrackRunEnd({
+        totalBO: state.totalEarnings,
+        score,
+        filmCount: history.length,
+        won: isVictory,
+        archetype: state.studioArchetype || 'unknown',
+        prestigeLevel: currentPrestigeLevel.level,
+      });
       setRecorded(true);
     }
     return () => timers.forEach(clearTimeout);
@@ -728,6 +771,93 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         </div>
       )}
+
+      {/* ─── DAILY/WEEKLY SCORE BREAKDOWN ─── */}
+      {phase >= 2 && (state.gameMode === 'daily' || state.gameMode === 'weekly') && (() => {
+        const h = state.seasonHistory;
+        const avgQuality = h.length > 0 ? Math.round(h.reduce((s, f) => s + f.quality, 0) / h.length) : 0;
+        const dayNum = state.gameMode === 'daily' ? getDailyNumber() : getWeeklyNumber();
+        const label = state.gameMode === 'daily' ? `Daily #${dayNum}` : `Weekly #${dayNum}`;
+        const activeModNames = (state.activeModifiers || []).map(id => CHALLENGE_MODIFIERS.find(m => m.id === id)).filter(Boolean);
+        const totalModMult = state.activeModifiers ? getCombinedModifierMultiplier(state.activeModifiers) : 1.0;
+        const weeklyMult = state.gameMode === 'weekly' ? 1.5 : 1.0;
+        const compactShare = `🎬 GREENLIGHT ${label}\n⭐ Score: ${score} | 🎥 ${h.length} Films | 💰 $${Math.round(state.totalEarnings)}M | 🏆 ${rank}-Rank\n${h.map(s => tierEmoji(s.tier, s.quality <= 0)).join('')}\ngreenlight-plum.vercel.app`;
+
+        return (
+          <div className="animate-slide-down" style={{
+            background: state.gameMode === 'weekly' ? 'rgba(155,89,182,0.08)' : 'rgba(52,152,219,0.08)',
+            border: `2px solid ${state.gameMode === 'weekly' ? 'rgba(155,89,182,0.3)' : 'rgba(52,152,219,0.3)'}`,
+            borderRadius: 16, padding: '20px 24px', margin: '20px auto', maxWidth: 480, textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '1.8rem', marginBottom: 4 }}>📅</div>
+            <div style={{ color: state.gameMode === 'weekly' ? '#9b59b6' : '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.4rem', letterSpacing: 2 }}>
+              {label}
+            </div>
+
+            {/* Score breakdown */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, margin: '16px 0', textAlign: 'center' }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 8px' }}>
+                <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>{score}</div>
+                <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Score</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 8px' }}>
+                <div style={{ color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>{h.length}</div>
+                <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Films</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 8px' }}>
+                <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>${Math.round(state.totalEarnings)}M</div>
+                <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Box Office</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 8px' }}>
+                <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>{avgQuality}</div>
+                <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Avg Quality</div>
+              </div>
+            </div>
+
+            {/* Tier grid */}
+            <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 12, fontSize: '1.4rem' }}>
+              {h.map((s, i) => <span key={i}>{tierEmoji(s.tier, s.quality <= 0)}</span>)}
+            </div>
+
+            {/* Multiplier breakdown */}
+            {(totalModMult > 1.0 || weeklyMult > 1.0 || challengeMultiplier > 1.0) && (
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+                {challengeMultiplier > 1.0 && (
+                  <span style={{ fontSize: '0.7rem', color: '#e67e22', background: 'rgba(230,126,34,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    Challenge ×{challengeMultiplier}
+                  </span>
+                )}
+                {weeklyMult > 1.0 && (
+                  <span style={{ fontSize: '0.7rem', color: '#9b59b6', background: 'rgba(155,89,182,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    Weekly ×{weeklyMult}
+                  </span>
+                )}
+                {activeModNames.map(m => (
+                  <span key={m!.id} style={{ fontSize: '0.7rem', color: '#f39c12', background: 'rgba(243,156,18,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    {m!.emoji} {m!.name} ×{m!.scoreMultiplier}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Share button */}
+            <button className="btn" onClick={() => {
+              navigator.clipboard.writeText(compactShare).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }} style={{
+              background: copied ? 'rgba(46,204,113,0.2)' : state.gameMode === 'weekly' ? 'rgba(155,89,182,0.15)' : 'rgba(52,152,219,0.15)',
+              border: `1px solid ${copied ? '#2ecc71' : state.gameMode === 'weekly' ? '#9b59b6' : '#3498db'}`,
+              color: copied ? '#2ecc71' : state.gameMode === 'weekly' ? '#9b59b6' : '#3498db',
+              padding: '10px 28px', fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.3s',
+              fontFamily: 'Bebas Neue', letterSpacing: 1,
+            }}>
+              {copied ? '✅ Copied!' : `📋 Share ${state.gameMode === 'weekly' ? 'Weekly' : 'Daily'} Score`}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ─── DAILY RECAP ─── */}
       {phase >= 5 && state.gameMode === 'daily' && (() => {

@@ -1,10 +1,17 @@
 // Achievement gallery — shows all achievements as locked/unlocked cards with progress bars
+import { useEffect } from 'react';
 import { ACHIEVEMENTS, CATEGORY_LABELS, getUnlockedAchievements, getEarnedCosmetics, getAchievementDates } from '../achievements';
 import type { AchievementCategory } from '../achievements';
 import { getUnlocks } from '../unlocks';
 import { getState } from '../gameStore';
 
 export default function AchievementGallery({ onClose }: { onClose: () => void }) {
+  // Escape key to close
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
   const unlocked = getUnlockedAchievements();
   const cosmetics = getEarnedCosmetics();
   const dates = getAchievementDates();

@@ -346,6 +346,16 @@ export function resumeGame(saved: Partial<GameState>) {
   // the deck/script will be rebuilt if the player is mid-production
   clearSave();
   state = { ...createInitialState(), ...saved };
+  // Migrate old emoji-prefixed rival earnings keys to plain names
+  if (state.cumulativeRivalEarnings) {
+    const migrated: Record<string, number> = {};
+    for (const [key, val] of Object.entries(state.cumulativeRivalEarnings)) {
+      // Strip leading emoji + space (e.g. "⚡ Titan Pictures" -> "Titan Pictures")
+      const plainName = key.replace(/^[^\w\s]*\s+/, '').trim() || key;
+      migrated[plainName] = (migrated[plainName] || 0) + val;
+    }
+    state.cumulativeRivalEarnings = migrated;
+  }
   listeners.forEach(l => l());
   // Re-save immediately to persist
   if (state.phase !== 'start') saveGameState(state);
@@ -1126,16 +1136,6 @@ export function calculateQuality(s: GameState): {
   const activeChemistry = getActiveChemistry(castNames);
   const chemistryBonus = activeChemistry.reduce((sum, c) => sum + c.qualityBonus, 0);
   
-  // Track chemistry triggers for achievements
-  if (activeChemistry.length > 0) {
-    try {
-      const u = getUnlocks();
-      if (!u.careerStats.chemistryTriggered) u.careerStats.chemistryTriggered = 0;
-      u.careerStats.chemistryTriggered += activeChemistry.length;
-      saveUnlocks(u);
-    } catch {}
-  }
-  
   // Archetype Focus bonus
   const archetypeFocus = calculateArchetypeFocus(prod.tagsPlayed || {});
   const archetypeFocusBonus = archetypeFocus?.bonus || 0;
@@ -1180,6 +1180,18 @@ export function resolveRelease() {
   const prod = state.production;
 
   let { rawQuality } = calculateQuality(state);
+
+  // Track chemistry triggers for achievements (only here, not in calculateQuality which is called on every render)
+  const castNamesForTracking = state.castSlots.map(slot => slot.talent?.name).filter(Boolean) as string[];
+  const activeChemistryForTracking = getActiveChemistry(castNamesForTracking);
+  if (activeChemistryForTracking.length > 0) {
+    try {
+      const u = getUnlocks();
+      if (!u.careerStats.chemistryTriggered) u.careerStats.chemistryTriggered = 0;
+      u.careerStats.chemistryTriggered += activeChemistryForTracking.length;
+      saveUnlocks(u);
+    } catch {}
+  }
 
   const chooseMarket = state.perks.some(p => p.effect === 'chooseMarket');
   let market = state.activeMarket;
@@ -1267,7 +1279,7 @@ export function resolveRelease() {
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
   const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
-  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const tier = getTier(boxOffice, target);
 
   let repChange = 0;
@@ -1351,8 +1363,7 @@ export function resolveRelease() {
   const rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres);
   const newCumulativeRivalEarnings = { ...state.cumulativeRivalEarnings };
   for (const rf of rivalFilms) {
-    const key = `${rf.studioEmoji} ${rf.studioName}`;
-    newCumulativeRivalEarnings[key] = (newCumulativeRivalEarnings[key] || 0) + rf.boxOffice;
+    newCumulativeRivalEarnings[rf.studioName] = (newCumulativeRivalEarnings[rf.studioName] || 0) + rf.boxOffice;
   }
   const rivalSeasonData = { season: state.season, films: rivalFilms };
 

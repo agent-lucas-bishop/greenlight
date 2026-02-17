@@ -151,6 +151,170 @@ function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?
   );
 }
 
+function getLegacyRating(earnings: number, reputation: number, won: boolean): { rating: string; color: string } {
+  if (!won) return { rating: 'F', color: '#e74c3c' };
+  const composite = earnings * 0.7 + reputation * 30;
+  if (composite > 200) return { rating: 'S', color: '#ff6b6b' };
+  if (composite > 140) return { rating: 'A', color: '#ffd93d' };
+  if (composite > 90) return { rating: 'B', color: '#6bcb77' };
+  if (composite > 50) return { rating: 'C', color: '#5dade2' };
+  if (composite > 25) return { rating: 'D', color: '#999' };
+  return { rating: 'F', color: '#e74c3c' };
+}
+
+function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLeaderboard> }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999', F: '#e74c3c' };
+  const tierColors: Record<string, string> = { BLOCKBUSTER: '#2ecc71', SMASH: '#f1c40f', HIT: '#e67e22', FLOP: '#e74c3c' };
+
+  if (leaderboard.length === 0) {
+    return <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: 600, margin: '0 auto' }}>No runs completed yet. Finish a run to see your history!</p>;
+  }
+
+  return (
+    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {leaderboard.map((entry) => {
+          const legacy = getLegacyRating(entry.earnings, entry.reputation, entry.won);
+          const archetypeEmoji = ARCHETYPE_DATA.find(a => a.id === entry.archetype)?.emoji || '🎬';
+          const isExpanded = expandedId === entry.id;
+          const bestFilm = entry.films.length > 0
+            ? entry.films.reduce((best, f) => {
+                const tierRank = ['BLOCKBUSTER', 'SMASH', 'HIT', 'FLOP'];
+                return tierRank.indexOf(f.tier) < tierRank.indexOf(best.tier) ? f : best;
+              }, entry.films[0])
+            : null;
+          const worstFilm = entry.films.length > 0
+            ? entry.films.reduce((worst, f) => {
+                const tierRank = ['BLOCKBUSTER', 'SMASH', 'HIT', 'FLOP'];
+                return tierRank.indexOf(f.tier) > tierRank.indexOf(worst.tier) ? f : worst;
+              }, entry.films[0])
+            : null;
+
+          return (
+            <div key={entry.id} style={{
+              padding: '14px 16px', background: 'rgba(255,255,255,0.02)',
+              border: `1px solid ${entry.won ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'}`,
+              borderRadius: 8, cursor: 'pointer', transition: 'border-color 0.2s',
+            }} onClick={() => setExpandedId(isExpanded ? null : entry.id)}>
+              {/* Header row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: rankColors[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{entry.rank}</span>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: `2px solid ${legacy.color}`, color: legacy.color, fontFamily: 'Bebas Neue', fontSize: '0.8rem',
+                  }}>{legacy.rating}</div>
+                  <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem', fontWeight: 600 }}>
+                    {entry.won ? '🏆 WON' : '💀 LOST'}
+                  </span>
+                  <span style={{ color: '#555', fontSize: '0.7rem' }}>{entry.date}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{entry.score} pts</div>
+                  <span style={{ color: '#555', fontSize: '0.8rem', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : '' }}>▾</span>
+                </div>
+              </div>
+
+              {/* Studio name + tags */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                {entry.studioName && (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--gold)', background: 'rgba(212,168,67,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    {entry.studioName}
+                  </span>
+                )}
+                <span style={{ fontSize: '0.7rem', color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                  {archetypeEmoji} {entry.archetype}
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                  ${entry.earnings.toFixed(1)}M
+                </span>
+                <span style={{ fontSize: '0.7rem', color: legacy.color, background: `${legacy.color}15`, padding: '2px 8px', borderRadius: 4 }}>
+                  Legacy {legacy.rating}
+                </span>
+                {entry.mode !== 'normal' && (
+                  <span style={{ fontSize: '0.7rem', color: '#f39c12', background: 'rgba(243,156,18,0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    {entry.mode === 'newGamePlus' ? '⭐ NG+' : entry.mode === 'directorMode' ? '🔥 Dir' : entry.mode === 'daily' ? '📅 Daily' : entry.mode === 'challenge' ? '⚡ Ch' : ''}
+                  </span>
+                )}
+              </div>
+
+              {/* Film tier emoji strip */}
+              <div style={{ display: 'flex', gap: 2, marginBottom: 4 }}>
+                {entry.films.map((f, j) => {
+                  const tierEmoji: Record<string, string> = { BLOCKBUSTER: '🟩', SMASH: '🟨', HIT: '🟧', FLOP: '🟥' };
+                  return <span key={j} title={`${f.title} (${f.genre}) - ${f.tier}`}>{tierEmoji[f.tier] || '⬜'}</span>;
+                })}
+              </div>
+
+              {/* Expanded detail */}
+              {isExpanded && (
+                <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }} onClick={e => e.stopPropagation()}>
+                  {/* Best/Worst */}
+                  <div style={{ display: 'flex', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+                    {bestFilm && (
+                      <div style={{ flex: 1, minWidth: 140 }}>
+                        <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👑 Best</div>
+                        <div style={{ color: '#2ecc71', fontSize: '0.8rem', fontWeight: 600 }}>"{bestFilm.title}"</div>
+                        <div style={{ color: '#888', fontSize: '0.65rem' }}>{bestFilm.genre} · {bestFilm.tier}{bestFilm.boxOffice != null ? ` · $${bestFilm.boxOffice.toFixed(1)}M` : ''}</div>
+                      </div>
+                    )}
+                    {worstFilm && worstFilm !== bestFilm && (
+                      <div style={{ flex: 1, minWidth: 140 }}>
+                        <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💀 Worst</div>
+                        <div style={{ color: '#e74c3c', fontSize: '0.8rem', fontWeight: 600 }}>"{worstFilm.title}"</div>
+                        <div style={{ color: '#888', fontSize: '0.65rem' }}>{worstFilm.genre} · {worstFilm.tier}{worstFilm.boxOffice != null ? ` · $${worstFilm.boxOffice.toFixed(1)}M` : ''}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Full filmography */}
+                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Full Filmography</div>
+                  {entry.films.map((f, j) => (
+                    <div key={j} style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0',
+                      borderBottom: j < entry.films.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                    }}>
+                      <span style={{ color: '#555', fontFamily: 'Bebas Neue', fontSize: '0.8rem', width: 24 }}>S{f.season || j + 1}</span>
+                      <span style={{ color: tierColors[f.tier], fontSize: '0.9rem' }}>
+                        {({ BLOCKBUSTER: '🟩', SMASH: '🟨', HIT: '🟧', FLOP: '🟥' } as Record<string, string>)[f.tier] || '⬜'}
+                      </span>
+                      <span style={{ flex: 1, color: '#ccc', fontSize: '0.8rem' }}>{f.title}</span>
+                      <span style={{ color: '#888', fontSize: '0.65rem' }}>{f.genre}</span>
+                      {f.boxOffice != null && (
+                        <span style={{ color: tierColors[f.tier], fontFamily: 'Bebas Neue', fontSize: '0.85rem', minWidth: 50, textAlign: 'right' }}>
+                          ${f.boxOffice.toFixed(1)}M
+                        </span>
+                      )}
+                      {f.nominated && <span>🏆</span>}
+                    </div>
+                  ))}
+
+                  {/* Stats row */}
+                  <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{entry.seasons}</div>
+                      <div style={{ color: '#666', fontSize: '0.55rem' }}>SEASONS</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{'★'.repeat(entry.reputation)}{'☆'.repeat(Math.max(0, 5 - entry.reputation))}</div>
+                      <div style={{ color: '#666', fontSize: '0.55rem' }}>REPUTATION</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>${entry.earnings.toFixed(1)}M</div>
+                      <div style={{ color: '#666', fontSize: '0.55rem' }}>TOTAL BO</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function StartScreen() {
   const firstRun = isFirstRun();
   const simplified = isSimplifiedRun(); // true until first run complete

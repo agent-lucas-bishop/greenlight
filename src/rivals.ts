@@ -368,7 +368,7 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     id: 'poached',
     name: 'Poached!',
     emoji: '🦅',
-    description: 'A rival steals your lowest-reputation talent from your roster.',
+    description: 'A rival steals your lowest-skill talent from your roster.',
     flavorText: `"${RIVAL_STUDIOS[2].emoji} ${RIVAL_STUDIOS[2].name} made them an offer they couldn't refuse. Your loss."`,
     effect: 'talentPoached',
   },

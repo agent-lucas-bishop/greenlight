@@ -90,7 +90,7 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="The box office amount your film must earn this season. Increases each season." inline>
             <span className="label">Target</span>
           </StatTooltip>
-          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId)}M</span>
+          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2)}M</span>
         </div>
         <div className="header-stat">
           <StatTooltip tip="Miss a box office target = 1 strike. 3 strikes and you're fired!" inline>

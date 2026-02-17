@@ -217,6 +217,29 @@ Between each season, 3-4 random events are offered. Player picks one (or skips).
 - Resolved all merge conflicts from R25 branch across App.tsx, analytics.ts, gameStore.ts
 - Integrated DevStats panel, achievements, tutorial overlay, lazy loading, and studio founding narrative
 
+## Round 60 Changes — Rival AI Depth & Narrative
+
+### Rival Personalities (3 distinct competitors)
+- **⚡ Titan Pictures** (Aggressive) — Big budgets, wide quality swings (boom or bust), chases hot genres 75% of the time, trash talks when you flop
+- **🕯️ Lumière Collective** (Steady) — Narrow quality range with consistency bonus, reliable mid-tier results, measured commentary
+- **🎪 Neon Vagrant** (Scrappy) — Low budgets, 18% breakout hit chance (1.8× quality spike), self-deprecating humor, occasionally steals the show
+
+### Rival Commentary
+- Procedural dialogue after each season based on game state
+- 4 context keys: playerFlopped, playerBehind, playerAhead, neutral
+- Each personality has unique tone: aggressive taunts, steady wisdom, scrappy humor
+- Shown on release screen after box office rankings
+
+### Rivalry Leaderboard
+- Cumulative studio standings displayed on release screen
+- All 4 studios (player + 3 rivals) ranked by total earnings
+- Personality emoji indicators (🔥/📊/🎪)
+
+### Rival Events (3 new season events)
+- **💸 Bidding War** — All talent costs +$3 next season, but talent skill +1
+- **🦅 Poached!** — Rival steals your lowest-skill talent from roster
+- **😤 Award Snub** — Lose 1 reputation, gain +$3M sympathy press
+
 ## What Needs Attention
 1. ~~**No browser playtesting done**~~ — ✅ R54: Code-level visual audit completed. Fixed 5 CSS bugs (EndScreen grid layout, header button overlap on mobile, production card overflow, DevStats mobile overflow, button positioning). No browser tab was available for live testing, so a thorough code review was done instead. Real-device testing still recommended.
 1. **Real browser/device testing still needed** — all iteration was code-review based. Visual regressions are possible, especially R18+R19 CSS layering.

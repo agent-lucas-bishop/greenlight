@@ -2818,6 +2818,28 @@ export function resolveRelease() {
     sequelOrigins,
     merchStreams: updatedMerchStreams,
   });
+
+  // R235: Campaign objective tracking after film release
+  try {
+    const campaignData = loadCampaignData();
+    const activeCamp = getActiveCampaign(campaignData);
+    if (activeCamp) {
+      const campaignFilm: CampaignFilmRecord = {
+        title: result.title,
+        genre: result.genre,
+        quality: rawQuality,
+        boxOffice,
+        tier,
+        season: state.season,
+        nominated: result.nominated,
+        festivalAwards: result.festivalAwards,
+      };
+      const campaignResult = updateCampaignAfterFilm(campaignFilm, campaignData);
+      if (campaignResult.newlyCompleted.length > 0) {
+        setState({ campaignMilestonesThisSeason: campaignResult.newlyCompleted, campaignJustCompleted: campaignResult.campaignComplete });
+      }
+    }
+  } catch {}
 }
 
 // R106: Extended Cut — spend $3M for a second BO run (30-50% of original), but skip next film slot

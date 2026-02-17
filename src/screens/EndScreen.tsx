@@ -1201,6 +1201,53 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
+      {/* ─── CAMPAIGN PROGRESS (R235) ─── */}
+      {phase >= 4 && endTab === 'overview' && state.campaignMilestonesThisSeason && state.campaignMilestonesThisSeason.length > 0 && (() => {
+        const { loadCampaignData: loadCD, getActiveCampaign: getAC, getCampaignById: getCB } = require('../campaigns');
+        const cData = loadCD();
+        // Show milestones completed this season
+        const activeCamp = getAC(cData);
+        const campaignId = activeCamp?.campaign?.id || state.activeCampaignId;
+        const campaign = campaignId ? getCB(campaignId) : null;
+        if (!campaign) return null;
+        const completedIds = new Set(state.campaignMilestonesThisSeason);
+        const milestones = campaign.objectives.filter((o: any) => completedIds.has(o.id));
+        return (
+          <div className="animate-slide-down" style={{
+            background: 'linear-gradient(135deg, rgba(212,168,67,0.12) 0%, rgba(46,204,113,0.08) 100%)',
+            border: '2px solid rgba(212,168,67,0.4)',
+            borderRadius: 16, padding: '20px 24px', margin: '20px auto', maxWidth: 520, textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '2rem', marginBottom: 4 }}>📖</div>
+            <div style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '1.3rem', letterSpacing: 2, marginBottom: 12 }}>
+              CAMPAIGN MILESTONE{milestones.length > 1 ? 'S' : ''}!
+            </div>
+            <div style={{ color: '#999', fontSize: '0.75rem', marginBottom: 12 }}>
+              {campaign.name}
+            </div>
+            {milestones.map((m: any) => (
+              <div key={m.id} style={{
+                background: 'rgba(46,204,113,0.1)', border: '1px solid rgba(46,204,113,0.3)',
+                borderRadius: 8, padding: '8px 16px', marginBottom: 6, color: '#2ecc71', fontSize: '0.85rem',
+              }}>
+                {m.milestoneLabel}
+              </div>
+            ))}
+            {state.campaignJustCompleted && (
+              <div style={{
+                marginTop: 12, background: 'rgba(255,215,0,0.15)', border: '2px solid #ffd700',
+                borderRadius: 10, padding: '12px 16px', animation: 'comboAppear 0.5s ease',
+              }}>
+                <div style={{ fontSize: '1.5rem' }}>🎉</div>
+                <div style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '1.2rem', letterSpacing: 2 }}>
+                  CAMPAIGN COMPLETE!
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* ─── RIVAL LEADERBOARD (R180) ─── */}
       {phase >= 4 && rivalStandings.length > 0 && endTab === 'overview' && (
         <div style={{ marginTop: 24 }} className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.rivalLeaderboardReveal(); } }}>

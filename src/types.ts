@@ -385,6 +385,10 @@ export interface GameState {
   aiDirectorFilms: import('./aiDirectors').DirectorFilm[][]; // films per season
   aiDirectorPrevRanks: Record<string, number>; // director id -> last season rank
   aiDirectorShowdowns: import('./aiDirectors').BoxOfficeShowdown[]; // showdowns from latest season
+  // R235: Campaign system
+  activeCampaignId?: string;
+  campaignMilestonesThisSeason?: string[]; // objective IDs completed this season
+  campaignJustCompleted?: boolean; // true if campaign was completed this season
 }
 
 // ─── RIVAL ACTIONS (R150) ───

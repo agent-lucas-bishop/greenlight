@@ -3,6 +3,7 @@ import { GameState, ProductionCard } from '../types';
 import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, goToPostProduction, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript, performReshoots, skipReshoots } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
+import { getAudioEngine } from '../audioEngine';
 import { screenShake, playCardAnimation, showTenseVignette, hideTenseVignette } from '../visualEffects';
 import { getCardBackColor } from '../achievements';
 import { getSelectedCardBackDesign } from '../studioCustomization';

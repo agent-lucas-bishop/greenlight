@@ -6,6 +6,7 @@ import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard
 import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
 import { formatSoundtrackRating, getThemeById } from '../soundtrack';
 import { sfx } from '../sound';
+import { getAudioEngine } from '../audioEngine';
 import MechanicTip from '../components/MechanicTip';
 import PostFilmSummary from '../components/PostFilmSummary';
 import { RivalDashboard } from '../components/RivalDashboard';
@@ -186,9 +187,9 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       setTimeout(() => {
         setTierRevealed(true);
         if (streak >= 2) setTimeout(() => sfx.streakBonus(), 200);
-        if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); setShowGoldenBurst(true); }
-        else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); setShowGoldenBurst(true); }
-        else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); setTimeout(() => sfx.strikeAdded(), 400); setShowShake(true); setTimeout(() => setShowShake(false), 250); }
+        if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); getAudioEngine().playSuccess(); setShowConfetti(true); setShowGoldenBurst(true); }
+        else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); getAudioEngine().playSuccess(); setShowConfetti(true); setShowGoldenBurst(true); }
+        else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); getAudioEngine().playFailure(); setTimeout(() => sfx.strikeAdded(), 400); setShowShake(true); setTimeout(() => setShowShake(false), 250); }
         else { sfx.hit(); }
         setTimeout(() => setScreenFlash(''), 800);
       }, 500);

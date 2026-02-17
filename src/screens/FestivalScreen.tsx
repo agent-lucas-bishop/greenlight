@@ -3,6 +3,7 @@ import { GameState } from '../types';
 import { submitToFestival, skipFestival } from '../gameStore';
 import { canSubmitToFestival, getFestival, getAwardLabel, getLaurelBadge, type FestivalId } from '../filmFestivals';
 import { sfx } from '../sound';
+import { getAudioEngine } from '../audioEngine';
 
 export default function FestivalScreen({ state }: { state: GameState }) {
   const [selectedFestival, setSelectedFestival] = useState<string | null>(null);
@@ -38,8 +39,8 @@ export default function FestivalScreen({ state }: { state: GameState }) {
   useEffect(() => {
     if (result && !festSoundPlayed.current) {
       festSoundPlayed.current = true;
-      if (result.award === 'grandPrize') setTimeout(() => sfx.festivalGrandPrize(), 100);
-      else if (result.award === 'winner') setTimeout(() => { sfx.festivalWinnerFanfare(); setTimeout(() => sfx.festivalLaurelStamp(), 400); }, 100);
+      if (result.award === 'grandPrize') setTimeout(() => { sfx.festivalGrandPrize(); getAudioEngine().playAward(); }, 100);
+      else if (result.award === 'winner') setTimeout(() => { sfx.festivalWinnerFanfare(); getAudioEngine().playAward(); setTimeout(() => sfx.festivalLaurelStamp(), 400); }, 100);
       else if (result.award === 'nomination') setTimeout(() => sfx.festivalNominationChime(), 100);
     }
   }, [result]);

@@ -78,6 +78,8 @@ import type { StudioArchetypeId as MPArchetypeId } from '../types';
 const DailyLeaderboard = lazy(() => import('../components/DailyLeaderboard'));
 const SaveSlotsPanel = lazy(() => import('../components/SaveSlotsPanel'));
 const MultiplayerLobby = lazy(() => import('../components/MultiplayerLobby'));
+const AnalyticsDashboard = lazy(() => import('../components/AnalyticsDashboard'));
+import MiniStats from '../components/MiniStats';
 
 const EventCalendar = lazy(() => import('../components/EventCalendar'));
 

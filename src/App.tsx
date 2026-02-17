@@ -32,6 +32,7 @@ import { applyEventTheme } from './seasonalEvents';
 import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 import { sfx } from './sound';
+import { getAudioEngine } from './audioEngine';
 import { announcePhase, setupGlobalKeyboardListeners } from './accessibility';
 import { showTenseVignette, hideTenseVignette } from './visualEffects';
 import KeyboardHelp from './components/KeyboardHelp';
@@ -66,6 +67,14 @@ function App() {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // R281: Initialize AudioEngine on first user interaction
+  useEffect(() => {
+    const initAudio = () => { getAudioEngine().init(); window.removeEventListener('click', initAudio); window.removeEventListener('keydown', initAudio); };
+    window.addEventListener('click', initAudio, { once: true });
+    window.addEventListener('keydown', initAudio, { once: true });
+    return () => { window.removeEventListener('click', initAudio); window.removeEventListener('keydown', initAudio); };
+  }, []);
 
   // R279: Global keyboard shortcuts (? for help, M for mute)
   useEffect(() => {

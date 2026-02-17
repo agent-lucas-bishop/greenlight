@@ -15,6 +15,13 @@ export interface AnalyticsData {
   scores: number[];
   genrePicks: Record<string, number>;
   sessionStart: number | null;            // timestamp of current run start
+  // R282: Enhanced analytics
+  sessionsLog: { start: number; end: number }[];  // session start/end times
+  decisionsPerRun: number[];              // decisions made per run
+  cardsDrawnPerRun: number[];             // cards drawn per run
+  cardsPlayedPerRun: number[];            // cards played per run
+  earningsPerSeason: number[][];          // earnings per season per run
+  qualityPerRun: number[][];              // quality per season per run
 }
 
 function defaultData(): AnalyticsData {
@@ -30,6 +37,12 @@ function defaultData(): AnalyticsData {
     scores: [],
     genrePicks: {},
     sessionStart: null,
+    sessionsLog: [],
+    decisionsPerRun: [],
+    cardsDrawnPerRun: [],
+    cardsPlayedPerRun: [],
+    earningsPerSeason: [],
+    qualityPerRun: [],
   };
 }
 
@@ -72,15 +85,45 @@ export function trackGenrePick(genre: string) {
   save(d);
 }
 
-export function trackRunEnd(score: number, won: boolean) {
+export function trackRunEnd(score: number, won: boolean, extra?: {
+  decisions?: number;
+  cardsDrawn?: number;
+  cardsPlayed?: number;
+  earningsPerSeason?: number[];
+  qualityPerSeason?: number[];
+}) {
   const d = load();
   d.runsCompleted++;
   if (won) d.runsWon++;
   d.totalScore += score;
   d.scores.push(score);
   if (d.sessionStart) {
-    d.runDurations.push(Date.now() - d.sessionStart);
+    const end = Date.now();
+    d.runDurations.push(end - d.sessionStart);
+    // R282: Log session times
+    if (!d.sessionsLog) d.sessionsLog = [];
+    d.sessionsLog.push({ start: d.sessionStart, end });
+    if (d.sessionsLog.length > 100) d.sessionsLog = d.sessionsLog.slice(-100);
     d.sessionStart = null;
+  }
+  // R282: Enhanced per-run tracking
+  if (extra) {
+    if (!d.decisionsPerRun) d.decisionsPerRun = [];
+    if (!d.cardsDrawnPerRun) d.cardsDrawnPerRun = [];
+    if (!d.cardsPlayedPerRun) d.cardsPlayedPerRun = [];
+    if (!d.earningsPerSeason) d.earningsPerSeason = [];
+    if (!d.qualityPerRun) d.qualityPerRun = [];
+    if (extra.decisions != null) d.decisionsPerRun.push(extra.decisions);
+    if (extra.cardsDrawn != null) d.cardsDrawnPerRun.push(extra.cardsDrawn);
+    if (extra.cardsPlayed != null) d.cardsPlayedPerRun.push(extra.cardsPlayed);
+    if (extra.earningsPerSeason) d.earningsPerSeason.push(extra.earningsPerSeason);
+    if (extra.qualityPerSeason) d.qualityPerRun.push(extra.qualityPerSeason);
+    // Cap arrays at 100
+    if (d.decisionsPerRun.length > 100) d.decisionsPerRun = d.decisionsPerRun.slice(-100);
+    if (d.cardsDrawnPerRun.length > 100) d.cardsDrawnPerRun = d.cardsDrawnPerRun.slice(-100);
+    if (d.cardsPlayedPerRun.length > 100) d.cardsPlayedPerRun = d.cardsPlayedPerRun.slice(-100);
+    if (d.earningsPerSeason.length > 100) d.earningsPerSeason = d.earningsPerSeason.slice(-100);
+    if (d.qualityPerRun.length > 100) d.qualityPerRun = d.qualityPerRun.slice(-100);
   }
   save(d);
 }

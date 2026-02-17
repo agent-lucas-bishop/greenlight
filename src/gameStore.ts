@@ -1735,9 +1735,11 @@ function getMarketMultiplier(market: MarketCondition, genre: string, quality: nu
 
 function getTier(boxOffice: number, target: number): RewardTier {
   const ratio = boxOffice / target;
-  if (ratio >= 1.5) return 'BLOCKBUSTER';
-  if (ratio >= 1.25) return 'SMASH';
-  if (ratio >= 1.0) return 'HIT';
+  // Critics' Darling modifier raises tier thresholds by 20%
+  const cd = state.activeModifiers?.includes('critics_darling_mod') ? 1.2 : 1.0;
+  if (ratio >= 1.5 * cd) return 'BLOCKBUSTER';
+  if (ratio >= 1.25 * cd) return 'SMASH';
+  if (ratio >= 1.0 * cd) return 'HIT';
   return 'FLOP';
 }
 

@@ -34,7 +34,7 @@ export default function StatsPanel() {
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
       {/* Sub-tab nav */}
-      <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 20 }}>
+      <div className="stats-tab-nav" style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 20 }}>
         {([
           { key: 'overview' as const, label: '📊 Overview' },
           { key: 'genres' as const, label: '🎭 Genres' },
@@ -43,9 +43,9 @@ export default function StatsPanel() {
           <button key={t.key} onClick={() => setSubTab(t.key)} style={{
             background: subTab === t.key ? 'rgba(212,168,67,0.15)' : 'transparent',
             border: `1px solid ${subTab === t.key ? 'var(--gold-dim)' : '#333'}`,
-            borderRadius: 6, padding: '6px 14px', color: subTab === t.key ? 'var(--gold)' : '#666',
+            borderRadius: 6, padding: '8px 14px', color: subTab === t.key ? 'var(--gold)' : '#666',
             cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'Bebas Neue', letterSpacing: '0.05em',
-            transition: 'all 0.2s',
+            transition: 'all 0.2s', minHeight: 44,
           }}>
             {t.label}
           </button>
@@ -90,7 +90,7 @@ function OverviewTab({ ca, leaderboard }: { ca: CareerAnalyticsData; leaderboard
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
+      <div className="stats-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
         {statCards.map((s, i) => (
           <div key={i} style={{
             background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8,

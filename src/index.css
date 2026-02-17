@@ -102,7 +102,6 @@ body {
   font-family: 'Inter', sans-serif;
   background: var(--black);
   color: var(--white);
-  min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -114,7 +113,6 @@ h1, h2, h3, h4 {
 }
 
 #root {
-  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -1829,7 +1827,7 @@ h1, h2, h3, h4 {
   .modal-overlay { align-items: stretch; padding: 0; }
   .modal {
     max-width: 100%;
-    max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
     padding: 20px 16px;
     width: 100%;
@@ -2828,7 +2826,6 @@ body {
 /* --- 4. Viewport Height Fix (dvh) --- */
 /* Already applied above to body, #root, .start-screen. Additional: */
 .modal-overlay {
-  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -2938,6 +2935,97 @@ body {
 .force-reduce-motion .golden-burst { display: none !important; }
 .force-reduce-motion .prestige-burst { display: none !important; }
 .force-reduce-motion .talent-stagger { opacity: 1; animation: none !important; }
+
+/* ===== R122: MOBILE RESPONSIVENESS PASS 2 ===== */
+
+/* Stats panel — 2-column grid on mobile */
+@media (max-width: 480px) {
+  .stats-grid-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* Genre mastery bars: prevent clip */
+  .genre-mastery-bar {
+    min-width: 0;
+    overflow: hidden;
+  }
+  /* Run history cards: scrollable */
+  .run-history-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Stats panel tab buttons: don't overflow on 375px */
+@media (max-width: 400px) {
+  .stats-tab-nav {
+    gap: 2px !important;
+  }
+  .stats-tab-nav button {
+    padding: 6px 8px !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+/* Challenge modifier toggles — 44px minimum touch target */
+@media (max-width: 480px) {
+  .challenge-modifier-row {
+    min-height: 48px;
+    padding: 10px 12px !important;
+  }
+}
+
+/* Season overlay (The Daily Reel) — readable on small screens */
+@media (max-width: 480px) {
+  .season-overlay-inner {
+    padding: 0 12px;
+    max-width: 100%;
+  }
+  .season-number {
+    font-size: clamp(3rem, 10vw, 6rem);
+  }
+  .season-headline-text {
+    font-size: clamp(0.8rem, 3vw, 1.1rem) !important;
+  }
+}
+
+/* Post-production decision buttons — adequate touch spacing */
+@media (max-width: 480px) {
+  .post-prod-actions {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .post-prod-actions .btn {
+    width: 100%;
+  }
+}
+
+/* Rivals leaderboard — no horizontal scroll on mobile */
+@media (max-width: 480px) {
+  .rival-standings {
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
+  .rival-standings > div {
+    flex-wrap: wrap;
+  }
+}
+
+/* End screen career stats grid — 2 columns on mobile */
+@media (max-width: 480px) {
+  .end-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .end-stats-grid > div[style*="grid-column: span 2"] {
+    grid-column: span 2 !important;
+  }
+}
+
+/* Career tab grids — 2 columns on mobile */
+@media (max-width: 480px) {
+  .career-grid-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
 
 /* ===== R100: LOADING SCREEN ===== */
 

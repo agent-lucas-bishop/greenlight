@@ -626,6 +626,16 @@ export default function StartScreen() {
   return (
     <div className="start-screen" style={{ position: 'relative', ...(hasMilestone('studio_lot') ? { border: '2px solid #ffd700', boxShadow: '0 0 20px rgba(255,215,0,0.15)' } : {}) }}>
       <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8, zIndex: 10 }}>
+        {stats.runs > 0 && (
+          <button
+            onClick={() => setShowPlayerProfile(true)}
+            title="Player Profile"
+            aria-label="Player Profile"
+            className="start-icon-btn"
+          >
+            👤
+          </button>
+        )}
         <button
           onClick={() => setShowKeyboardHints(true)}
           title="Keyboard shortcuts (?)"
@@ -673,14 +683,24 @@ export default function StartScreen() {
       <div className="start-subtitle">A Movie Studio Roguelite</div>
       {(() => {
         const identity = getStudioIdentity();
-        return identity ? (
-          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <span style={{ fontSize: '1.2rem' }}>{identity.logo}</span>
-            <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem', letterSpacing: '0.08em' }}>
-              {identity.name}
-            </span>
-          </div>
-        ) : null;
+        const playerCareer = stats.runs > 0 ? getCareerTitle(loadProfile()) : null;
+        return (
+          <>
+            {identity && (
+              <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <span style={{ fontSize: '1.2rem' }}>{identity.logo}</span>
+                <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem', letterSpacing: '0.08em' }}>
+                  {identity.name}
+                </span>
+              </div>
+            )}
+            {playerCareer && (
+              <div style={{ marginTop: 2, textAlign: 'center', color: '#888', fontSize: '0.7rem', fontFamily: 'Bebas Neue', letterSpacing: '0.05em' }}>
+                {playerCareer.emoji} {playerCareer.title}
+              </div>
+            )}
+          </>
+        );
       })()}
 
       {/* Prestige Level */}
@@ -1535,6 +1555,11 @@ export default function StartScreen() {
       {showChallengeBoard && (
         <Suspense fallback={null}>
           <ChallengeBoard onClose={() => setShowChallengeBoard(false)} />
+        </Suspense>
+      )}
+      {showPlayerProfile && (
+        <Suspense fallback={null}>
+          <PlayerProfileModal onClose={() => setShowPlayerProfile(false)} />
         </Suspense>
       )}
 

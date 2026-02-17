@@ -236,7 +236,8 @@ function generateShareText(state: GameState, score: number, rank: string, isVict
       lines.push(`🔥 ${stats.dailyStreak.current}-day streak`);
     }
   } else {
-    lines.push(`${state.studioName || 'Studio'}`);
+    const sid = getStudioIdentity();
+    lines.push(`${sid?.logo || ''} ${sid?.name || state.studioName || 'Studio'}`.trim());
     lines.push(grid);
     lines.push(seasonRecap);
     lines.push('');
@@ -492,7 +493,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice, season: s.season, nominated: s.nominated })),
         won: isVictory,
         dailySeed: state.dailySeed || state.weeklySeed ? `weekly:${state.weeklySeed}` : undefined,
-        studioName: state.studioName || undefined,
+        studioName: studioIdentity?.name || state.studioName || undefined,
+        runTitle: runTitle || undefined,
         prestigeLevel: currentPrestigeLevel.level,
         prestigeTitle: currentPrestigeLevel.title,
         legacyRating: legacy.rating,

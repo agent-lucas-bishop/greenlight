@@ -284,6 +284,11 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
                     {entry.studioName}
                   </span>
                 )}
+                {(entry as any).runTitle && (
+                  <span style={{ fontSize: '0.7rem', color: '#999', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4, fontStyle: 'italic' }}>
+                    "{(entry as any).runTitle}"
+                  </span>
+                )}
                 <span style={{ fontSize: '0.7rem', color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 4 }}>
                   {archetypeEmoji} {entry.archetype}
                 </span>

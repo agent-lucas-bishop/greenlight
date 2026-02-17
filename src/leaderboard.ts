@@ -28,6 +28,7 @@ export interface LeaderboardEntry {
   won: boolean;
   dailySeed?: string; // date string if daily run
   studioName?: string;
+  runTitle?: string;
   prestigeLevel?: number;
   prestigeTitle?: string;
   legacyRating?: string;

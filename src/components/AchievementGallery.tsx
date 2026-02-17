@@ -22,7 +22,7 @@ export default function AchievementGallery({ onClose }: { onClose: () => void })
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 700, maxHeight: '85vh', overflow: 'auto' }}>
-        <button className="modal-close" onClick={onClose}>✕</button>
+        <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         <h2 style={{ color: 'var(--gold)', marginBottom: 8, textAlign: 'center' }}>🏆 Achievements</h2>
         
         <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: 8, textAlign: 'center' }}>

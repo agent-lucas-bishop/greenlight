@@ -4,6 +4,7 @@ import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
   INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES, generateSeasonEvents,
+  ALL_LEADS, ALL_SUPPORTS, ALL_DIRECTORS, ALL_CREW, ALL_SCRIPTS,
 } from './data';
 import type { SeasonEventChoice } from './types';
 import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
@@ -364,12 +365,63 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
 
 // ─── ACTIONS ───
 
+// Rebuild synergy/challenge functions on cards after loading from JSON save
+function rebuildCardFunctions(cards: ProductionCard[]): void {
+  // Build name → template lookup from ALL talent and scripts
+  const templateMap = new Map<string, CardTemplate>();
+  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW];
+  for (const t of allTalent) {
+    for (const c of t.cards) templateMap.set(c.name, c);
+    if (t.heatCards) for (const c of t.heatCards) templateMap.set(c.name, c);
+  }
+  for (const s of ALL_SCRIPTS) {
+    for (const c of s.cards) templateMap.set(c.name, c);
+  }
+
+  for (const card of cards) {
+    const template = templateMap.get(card.name);
+    if (template) {
+      card.synergyCondition = template.synergyCondition;
+      if (template.challengeBet) {
+        card.challengeBet = template.challengeBet;
+      }
+    }
+  }
+}
+
 export function resumeGame(saved: Partial<GameState>) {
-  // Restore saved state — note: synergy functions are stripped, but that's OK
-  // because production cards in played[] don't need them anymore, and
-  // the deck/script will be rebuilt if the player is mid-production
   clearSave();
   state = { ...createInitialState(), ...saved };
+
+  // Rebuild synergy/challenge functions stripped during JSON serialization
+  if (state.production) {
+    rebuildCardFunctions(state.production.deck);
+    rebuildCardFunctions(state.production.played);
+    rebuildCardFunctions(state.production.discarded);
+    if (state.production.directorsCutCards) rebuildCardFunctions(state.production.directorsCutCards);
+    if (state.production.currentDraw?.choosable) rebuildCardFunctions(state.production.currentDraw.choosable);
+    if (state.production.pendingChallenge?.card) rebuildCardFunctions([state.production.pendingChallenge.card]);
+    if (state.production.pendingBlock) {
+      rebuildCardFunctions([state.production.pendingBlock.incident, state.production.pendingBlock.actionCard]);
+    }
+  }
+  // Also rebuild talent card functions on roster and cast
+  const allTalentPools = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW];
+  const talentTemplateMap = new Map<string, typeof allTalentPools[0]>();
+  for (const t of allTalentPools) talentTemplateMap.set(t.name, t);
+  for (const t of [...state.roster, ...state.castSlots.map(s => s.talent).filter(Boolean) as Talent[]]) {
+    const template = talentTemplateMap.get(t.name);
+    if (template) {
+      t.cards = template.cards;
+      if (template.heatCards) t.heatCards = template.heatCards;
+    }
+  }
+  // Rebuild script card functions
+  if (state.currentScript) {
+    const scriptTemplate = ALL_SCRIPTS.find(s => s.title === state.currentScript!.title);
+    if (scriptTemplate) state.currentScript.cards = scriptTemplate.cards;
+  }
+
   // Migrate old emoji-prefixed rival earnings keys to plain names
   if (state.cumulativeRivalEarnings) {
     const migrated: Record<string, number> = {};
@@ -1701,6 +1753,7 @@ export function nextSeason() {
     description: e.description,
     flavorText: e.flavorText,
     effect: e.effect,
+    rarity: e.rarity,
   }));
   
   setState({

@@ -9,7 +9,7 @@ function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
-        <button className="modal-close" onClick={onClose}>✕</button>
+        <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         <h2 style={{ color: 'var(--gold)', marginBottom: 16 }}>Quick Reference</h2>
         <div className="how-to-play">
           <div className="htp-section">

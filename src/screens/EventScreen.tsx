@@ -62,6 +62,23 @@ export default function EventScreen({ state }: { state: GameState }) {
               }}
             >
               <div style={{ fontSize: '2rem', marginBottom: 6 }}>{event.emoji}</div>
+              {event.rarity && event.rarity !== 'common' && (
+                <div style={{
+                  display: 'inline-block',
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  padding: '2px 8px',
+                  borderRadius: 8,
+                  marginBottom: 4,
+                  background: event.rarity === 'legendary' ? 'rgba(241, 196, 15, 0.25)' : 'rgba(155, 89, 182, 0.25)',
+                  color: event.rarity === 'legendary' ? '#f1c40f' : '#9b59b6',
+                  border: `1px solid ${event.rarity === 'legendary' ? 'rgba(241, 196, 15, 0.4)' : 'rgba(155, 89, 182, 0.4)'}`,
+                }}>
+                  {event.rarity === 'legendary' ? '⭐ Legendary' : '💎 Rare'}
+                </div>
+              )}
               <div style={{ fontWeight: 700, fontSize: 'clamp(0.85rem, 2vw, 1.05rem)', marginBottom: 4 }}>
                 {event.name}
               </div>

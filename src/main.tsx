@@ -11,6 +11,11 @@ import App from './App.tsx'
 // Wire prestige → data cache sync (avoids circular import)
 setPrestigeChangeCallback(refreshPrestigeLevelCache)
 
+// Restore reduce-motion preference
+if (localStorage.getItem('greenlight-reduce-motion') === 'true') {
+  document.documentElement.classList.add('force-reduce-motion');
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

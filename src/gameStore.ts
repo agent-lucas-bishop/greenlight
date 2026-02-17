@@ -662,7 +662,7 @@ export function pickNeow(choice: number) {
   }
   // R128: Legacy run bonuses — +1 starting reputation per prestige level (cap +5)
   const legacyRunBonuses = getLegacyRunBonuses();
-  const startReputation = Math.min(3 + legacyRunBonuses.reputationBonus, 5);
+  const startReputation = Math.min(3 + legacyRunBonuses.reputationBonus + getRetirementRepBonus(), 5);
   setState({ neowChoice: choice, roster, budget, perks, genreMastery, reputation: startReputation, phase: 'greenlight' as GamePhase });
   beginSeason();
 }
@@ -820,6 +820,10 @@ export function assignTalent(slotIndex: number, talent: Talent) {
   trackTalentPick(talent.name);
   careerTrackTalentHire(talent.name);
   setState({ castSlots: slots });
+  // Check if this talent should retire (8+ career hires)
+  if (checkRetirement(talent.name)) {
+    setState({ retirementNotification: talent.name });
+  }
 }
 
 // Check if a slot is blocked by any cast talent's baggage
@@ -837,7 +841,9 @@ export function hireTalent(talent: Talent) {
   // Legacy perk: Talent Whisperer — all hiring costs $1 less (min $1)
   const legacyPerks = getActiveLegacyPerks();
   const discount = legacyPerks.some(p => p.effect === 'cheaperTalent') ? 1 : 0;
-  let actualCost = Math.max(1, talent.cost - discount);
+  let actualCost = Math.max(1, talent.cost - discount - getLoyaltyDiscount(talent.name));
+  // Agent fee: elite talent (skill 5) costs +$1
+  actualCost += getAgentFee(talent.skill);
   // Daily modifier: Union Strike — crew costs +$2
   if ((state.dailyModifierId === 'union_strike' || state.dailyModifierId2 === 'union_strike') && talent.type === 'Crew') {
     actualCost += 2;
@@ -883,6 +889,10 @@ export function hireTalent(talent: Talent) {
       saveUnlocks(u);
     }
   } catch {}
+}
+
+export function clearRetirementNotification() {
+  setState({ retirementNotification: null });
 }
 
 export function fireTalent(talentId: string) {
@@ -1718,7 +1728,10 @@ export function calculateQuality(s: GameState): {
   // Chaos Dividend perk: +3 per incident (max +9)
   const chaosDividendBonus = s.perks.some(p => p.effect === 'chaosDividend') ? Math.min(prod.incidentCount * 3, 9) : 0;
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus;
+  // Talent Loyalty: +2 quality per loyal talent in cast
+  const loyaltyBonus = s.castSlots.reduce((sum, slot) => sum + (slot.talent ? getLoyaltyQualityBonus(slot.talent.name) : 0), 0);
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;

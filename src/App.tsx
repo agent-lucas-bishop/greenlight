@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { getState, subscribe } from './gameStore';
+import { getState, subscribe, clearRetirementNotification } from './gameStore';
 import { GameState } from './types';
 import StartScreen from './screens/StartScreen';
 import Header from './components/Header';
@@ -16,6 +16,7 @@ import UnlockToast from './components/UnlockToast';
 import { checkUnlockConditions, UNLOCKABLE_DEFS } from './unlockableContent';
 import type { UnlockableDef } from './unlockableContent';
 import DevStats from './components/DevStats';
+import RetirementToast from './components/RetirementToast';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -172,6 +173,12 @@ function App() {
         <UnlockToast
           unlock={unlockToastQueue[0]}
           onDone={() => setUnlockToastQueue(prev => prev.slice(1))}
+        />
+      )}
+      {state.retirementNotification && (
+        <RetirementToast
+          talentName={state.retirementNotification}
+          onDone={clearRetirementNotification}
         />
       )}
       <DevStats />

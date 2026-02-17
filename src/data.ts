@@ -1,6 +1,7 @@
 import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag } from './types';
 import { rng } from './seededRng';
 import { getUnlockedScriptDefs, getUnlockedTalentDefs } from './unlockableContent';
+import { isTalentRetired, isLoyalTalent, getAgentFee } from './talentHistory';
 
 // Cache prestige level in memory to avoid localStorage reads on every render
 let _cachedPrestigeLevel = 0;
@@ -4836,7 +4837,7 @@ export function generateTalentMarket(count: number, _season: number, currentRost
   const rosterNames = new Set(currentRoster.map(t => t.name));
   const usedNames = new Set<string>();
 
-  const filterPool = (pool: Omit<Talent, 'id'>[]) => pool.filter(t => !rosterNames.has(t.name));
+  const filterPool = (pool: Omit<Talent, 'id'>[]) => pool.filter(t => !rosterNames.has(t.name) && !isTalentRetired(t.name));
 
   const ensureTypes: Omit<Talent, 'id'>[][] = [filterPool(ALL_LEADS), filterPool(ALL_DIRECTORS), filterPool(ALL_CREW)];
   for (const pool of ensureTypes) {
@@ -4852,7 +4853,7 @@ export function generateTalentMarket(count: number, _season: number, currentRost
   const elitePool = _cachedPrestigeLevel >= 4 ? [...ELITE_LEADS, ...ELITE_SUPPORTS, ...ELITE_DIRECTORS, ...ELITE_CREW] : [];
   // Add unlocked meta-progression talent to pool
   const unlockedTalent = getUnlockedTalentDefs() as Omit<Talent, 'id'>[];
-  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW, ...elitePool, ...unlockedTalent].filter(t => !rosterNames.has(t.name));
+  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW, ...elitePool, ...unlockedTalent].filter(t => !rosterNames.has(t.name) && !isTalentRetired(t.name));
   while (result.length < count) {
     const available = allTalent.filter(t => !usedNames.has(t.name));
     if (available.length === 0) break;

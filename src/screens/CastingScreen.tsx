@@ -8,6 +8,7 @@ import MechanicTip from '../components/MechanicTip';
 import StatTooltip from '../components/StatTooltip';
 import { sfx } from '../sound';
 import { useSwipe } from '../hooks/useSwipe';
+import { isLoyalTalent, getAgentFee, getTalentHireCount } from '../talentHistory';
 
 function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onClick?: () => void; compact?: boolean; dimmed?: boolean; highlight?: boolean }) {
   const [expanded, setExpanded] = useState(false);
@@ -48,11 +49,14 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
     >
       <span className="talent-type" style={{ background: typeColors[t.type] || '#666' }}>{typeEmoji[t.type]} {t.type}</span>
       {(t as any).elite && <span className="elite-badge">💎 ELITE</span>}
+      {isLoyalTalent(t.name) && <span style={{ fontSize: '0.7rem', color: '#ffd700', fontWeight: 600, marginLeft: 4 }}>⭐ LOYAL</span>}
       <div className="card-title" style={{ fontSize: '1rem' }}>{t.name}</div>
       
       {/* Summary line: cost + key tags */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
         {t.cost > 0 && <span className="card-stat gold">${t.cost}M</span>}
+        {getAgentFee(t.skill) > 0 && <span style={{ fontSize: '0.65rem', color: '#e67e22', fontWeight: 600 }}>+$1 agent fee</span>}
+        {isLoyalTalent(t.name) && <span style={{ fontSize: '0.65rem', color: '#2ecc71', fontWeight: 600 }}>-$1 loyal</span>}
         <span className="card-stat green">S{t.skill}</span>
         <span className="card-stat red">H{t.heat}</span>
         {topTags.map(([tag]) => {

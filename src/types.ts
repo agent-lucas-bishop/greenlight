@@ -305,6 +305,7 @@ export interface GameState {
   reshootsBudgetUsed: boolean; // $5M reshoots — re-roll incidents after wrap, once per film
   activeModifiers?: string[]; // IDs of toggled challenge modifiers
   weeklySeed?: string; // weekly seed display string
+  retirementNotification?: string | null; // talent name that just retired
 }
 
 export interface SeasonEventChoice {

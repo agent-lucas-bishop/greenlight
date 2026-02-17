@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GameState, MarketingTier, PostProdOption } from '../types';
-import { pickMarketing, pickPostProdOption, confirmPostProduction } from '../gameStore';
+import { pickMarketing, pickPostProdOption, confirmPostProduction, hireComposer, skipComposer } from '../gameStore';
+import { getComposersByTier } from '../soundtrack';
 import { sfx } from '../sound';
 
 const MARKETING_OPTIONS: { id: MarketingTier; emoji: string; name: string; cost: number; desc: string }[] = [
@@ -18,15 +19,31 @@ const POSTPROD_OPTIONS: { id: PostProdOption; emoji: string; name: string; cost:
 ];
 
 export default function PostProductionScreen({ state }: { state: GameState }) {
-  const [phase, setPhase] = useState<'marketing' | 'postprod' | 'confirm'>('marketing');
+  const [phase, setPhase] = useState<'marketing' | 'composer' | 'postprod' | 'confirm'>('marketing');
   const [selectedMarketing, setSelectedMarketing] = useState<MarketingTier | null>(null);
   const [selectedPostProd, setSelectedPostProd] = useState<PostProdOption | null>(null);
+  const [selectedComposer, setSelectedComposer] = useState<string | null>(null);
 
   const handlePickMarketing = (tier: MarketingTier) => {
     if (MARKETING_OPTIONS.find(m => m.id === tier)!.cost > state.budget) return;
     sfx.marketingConfirm();
     setSelectedMarketing(tier);
     pickMarketing(tier);
+    setPhase('composer');
+  };
+
+  const handleHireComposer = (name: string, cost: number) => {
+    if (cost > state.budget) return;
+    sfx.click();
+    setSelectedComposer(name);
+    hireComposer(name, cost);
+    setPhase('postprod');
+  };
+
+  const handleSkipComposer = () => {
+    sfx.click();
+    skipComposer();
+    setSelectedComposer(null);
     setPhase('postprod');
   };
 
@@ -110,7 +127,80 @@ export default function PostProductionScreen({ state }: { state: GameState }) {
         </div>
       )}
 
-      {/* Step 2: Post-Production Option */}
+      {/* Step 2: Composer Hiring */}
+      {phase === 'composer' && (
+        <div>
+          <div style={{ marginBottom: 16, padding: '8px 16px', background: 'rgba(52,152,219,0.15)', borderRadius: 8, display: 'inline-block' }}>
+            <span style={{ color: '#3498db', fontSize: 'clamp(0.75rem, 1.8vw, 0.9rem)' }}>
+              Marketing: {MARKETING_OPTIONS.find(m => m.id === state.postProdMarketing)?.emoji}{' '}
+              {MARKETING_OPTIONS.find(m => m.id === state.postProdMarketing)?.name}
+            </span>
+          </div>
+
+          <h3 style={{ fontSize: 'clamp(1rem, 2.5vw, 1.3rem)', marginBottom: 12, color: '#e67e22' }}>
+            🎵 Hire a Composer
+          </h3>
+          <p style={{ color: '#888', fontSize: 'clamp(0.7rem, 1.8vw, 0.85rem)', marginBottom: 16 }}>
+            A great score can elevate your film. Budget: ${state.budget}M
+          </p>
+
+          {[1, 2, 3].map(tier => {
+            const composers = getComposersByTier(tier);
+            const tierLabel = tier === 1 ? 'Budget' : tier === 2 ? 'Established' : 'Elite';
+            const tierColor = tier === 1 ? '#95a5a6' : tier === 2 ? '#f39c12' : '#ffd700';
+            return (
+              <div key={tier} style={{ marginBottom: 16 }}>
+                <div style={{ color: tierColor, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)', fontWeight: 700, marginBottom: 8 }}>
+                  {'⭐'.repeat(tier)} {tierLabel} — ${tier}M
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: 10,
+                  maxWidth: 900,
+                  margin: '0 auto',
+                }}>
+                  {composers.map(c => {
+                    const disabled = c.cost > state.budget;
+                    return (
+                      <div
+                        key={c.name}
+                        onClick={() => !disabled && handleHireComposer(c.name, c.cost)}
+                        style={cardStyle(false, disabled)}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)', marginBottom: 4, color: tierColor }}>
+                          {c.name}
+                        </div>
+                        <div style={{ color: '#aaa', fontSize: 'clamp(0.65rem, 1.5vw, 0.75rem)' }}>
+                          {c.styles.join(' · ')}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          <button
+            onClick={handleSkipComposer}
+            style={{
+              marginTop: 8,
+              padding: '10px 24px',
+              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#888',
+              border: '1px solid #555',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            Skip — use a free composer
+          </button>
+        </div>
+      )}
+
+      {/* Step 3: Post-Production Option */}
       {phase === 'postprod' && (
         <div>
           {/* Show marketing choice */}
@@ -186,6 +276,12 @@ export default function PostProductionScreen({ state }: { state: GameState }) {
                     ({state.postProdMarketingMultiplier.toFixed(2)}×)
                   </span>
                 )}
+              </span>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <span style={{ color: '#888', fontSize: 'clamp(0.7rem, 1.8vw, 0.85rem)' }}>Composer: </span>
+              <span style={{ color: '#e67e22', fontWeight: 700 }}>
+                🎵 {state.postProdComposer || 'Free composer'}
               </span>
             </div>
             <div style={{ marginBottom: 12 }}>

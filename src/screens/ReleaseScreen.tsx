@@ -4,6 +4,7 @@ import { getSeasonTarget } from '../data';
 import { proceedFromRecap, calculateQuality, doExtendedCut, declineExtendedCut } from '../gameStore';
 import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary, calculateRubberBand } from '../rivals';
 import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
+import { formatSoundtrackRating } from '../soundtrack';
 import { sfx } from '../sound';
 import MechanicTip from '../components/MechanicTip';
 import PostFilmSummary from '../components/PostFilmSummary';
@@ -192,6 +193,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   }, []);
 
   const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus } = calculateQuality(state);
+  const soundtrackBonus = state.postProdSoundtrack?.qualityBonus || 0;
 
   return (
     <div className={`box-office fade-in ${screenFlash} ${showShake ? 'screen-shake' : ''}`}>
@@ -260,6 +262,36 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
         </div>
       )}
 
+      {/* R179: Soundtrack card */}
+      {phase >= 1 && state.postProdSoundtrack && (
+        <div className="animate-slide-down" style={{
+          marginTop: 12,
+          padding: '10px 16px',
+          background: 'rgba(230, 126, 34, 0.08)',
+          borderRadius: 8,
+          border: '1px solid rgba(230, 126, 34, 0.25)',
+          maxWidth: 400,
+          margin: '12px auto 0',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: 4 }}>🎵 SOUNDTRACK</div>
+          <div style={{ color: '#e67e22', fontWeight: 700, fontSize: '0.9rem' }}>
+            {state.postProdSoundtrack.composerName}
+          </div>
+          <div style={{ color: '#aaa', fontSize: '0.75rem', fontStyle: 'italic', marginBottom: 4 }}>
+            {state.postProdSoundtrack.style}
+          </div>
+          <div style={{ fontSize: '0.85rem', letterSpacing: 2 }}>
+            {formatSoundtrackRating(state.postProdSoundtrack.qualityRating)}
+          </div>
+          {state.postProdSoundtrack.qualityBonus > 0 && (
+            <div style={{ color: '#2ecc71', fontSize: '0.75rem', marginTop: 2 }}>
+              +{state.postProdSoundtrack.qualityBonus} quality from soundtrack
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Tier rewards - simplified */}
       {phase >= 2 && (
         <div className="tier-rewards animate-slide-down">
@@ -306,6 +338,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
                 {genreMasteryBonus > 0 && <div className="qs-row positive"><span>🎓 Genre Mastery</span><span>+{genreMasteryBonus}</span></div>}
                 {chemistryBonus > 0 && <div className="qs-row positive"><span>💕 Chemistry</span><span>+{chemistryBonus}</span></div>}
                 {archetypeFocusBonus > 0 && <div className="qs-row positive"><span>⚡ Archetype Focus</span><span>+{archetypeFocusBonus}</span></div>}
+                {soundtrackBonus > 0 && <div className="qs-row positive"><span>🎵 Soundtrack</span><span>+{soundtrackBonus}</span></div>}
                 <div className="qs-row total"><span>Total</span><span>{rawQuality}</span></div>
               </div>
 

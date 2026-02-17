@@ -82,7 +82,7 @@
  * ══════════════════════════════════════════════════════════════════════
  */
 
-import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, CardAbility, MarketingTier, PostProdOption } from './types';
+import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, CardAbility, MarketingTier, PostProdOption, SoundtrackData } from './types';
 import type { StudioArchetypeId, CardRarity } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
@@ -94,7 +94,7 @@ import type { SeasonEventChoice } from './types';
 import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, getWeeklySeed, getWeeklyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
-import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand, generateRivalActions } from './rivals';
+import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand, generateRivalActions, selectActiveRivals, initRivalStats, updateRivalStats } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { addFilmToArchive, getCurrentRunNumber } from './filmArchive';
 import { isSimplifiedRun } from './onboarding';
@@ -107,6 +107,12 @@ import { getGenreMasteryBonus } from './genreMastery';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
+import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
+
+// R179: Composer cost lookup
+const COMPOSERS_COST: Record<string, number> = Object.fromEntries(
+  getComposerOptions().map(c => [c.name, c.cost])
+);
 import { generateCriticReviews } from './criticReviews';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
@@ -173,10 +179,15 @@ function createInitialState(): GameState {
     festivalHistory: [],
     festivalEligible: null,
     festivalResult: null,
+    activeRivalIds: [],
+    rivalStats: {},
+    nemesisStudio: null,
     postProdMarketing: null,
     postProdOption: null,
     postProdMarketingMultiplier: undefined,
     postProdTestScreeningTier: null,
+    postProdComposer: null,
+    postProdSoundtrack: null,
   };
 }
 
@@ -673,6 +684,9 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     maxStrikes = 2; // tighter margin
   }
 
+  const activeRivalIds = selectActiveRivals(difficulty);
+  const rivalStats = initRivalStats(activeRivalIds);
+
   setState({
     ...createInitialState(),
     phase: 'start',
@@ -686,6 +700,9 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     maxSeasons,
     maxStrikes,
     activeModifiers: mods.length > 0 ? mods : undefined,
+    activeRivalIds,
+    rivalStats,
+    nemesisStudio: null,
   });
 }
 
@@ -839,7 +856,7 @@ function beginSeason() {
   }
 
   // R150: Generate rival actions for this season
-  const rivalActions = generateRivalActions(state.season, state.prCampaignActive);
+  const rivalActions = generateRivalActions(state.season, state.prCampaignActive, undefined, state.activeRivalIds, state.nemesisStudio);
 
   // Apply stealScript actions: remove blocked scripts
   for (const action of rivalActions) {
@@ -1915,7 +1932,23 @@ export function goToPostProduction() {
     postProdOption: null,
     postProdMarketingMultiplier: undefined,
     postProdTestScreeningTier: null,
+    postProdComposer: null,
+    postProdSoundtrack: null,
   });
+}
+
+// R179: Hire a composer during post-production
+export function hireComposer(composerName: string, cost: number) {
+  if (state.budget < cost) return;
+  setState({
+    budget: state.budget - cost,
+    postProdComposer: composerName,
+  });
+}
+
+// R179: Skip composer hiring (use free default)
+export function skipComposer() {
+  setState({ postProdComposer: null });
 }
 
 export function pickMarketing(tier: MarketingTier) {
@@ -2179,6 +2212,18 @@ export function resolveRelease() {
     }
   }
 
+  // R179: Generate soundtrack profile and apply quality bonus
+  const soundtrack = generateSoundtrackProfile(
+    script.genre,
+    rawQuality,
+    state.postProdComposer || null,
+    state.postProdComposer
+      ? (COMPOSERS_COST[state.postProdComposer] || 1)
+      : 0,
+    rng,
+  );
+  rawQuality += soundtrack.qualityBonus;
+
   // Challenge: Budget Hell — box office ×1.5
   if (state.challengeId === 'budget_hell') multiplier *= 1.5;
 
@@ -2294,6 +2339,7 @@ export function resolveRelease() {
     nominated,
     criticScore: criticConsensus.freshPercent,
     criticStars: criticConsensus.avgStars,
+    soundtrack,
   };
 
   // ─── R136: FRANCHISE / SEQUEL SYSTEM ───
@@ -2403,7 +2449,7 @@ export function resolveRelease() {
   }).filter(t => t.filmsLeft === undefined || t.filmsLeft > 0);
 
   // Generate rival films for this season (rivals chase hot genres, with rubber-banding)
-  let rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres, state.totalEarnings + earnings, state.cumulativeRivalEarnings);
+  let rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres, state.totalEarnings + earnings, state.cumulativeRivalEarnings, state.activeRivalIds, state.nemesisStudio);
   // Difficulty: Mogul rivals are more aggressive (higher box office)
   if (diffConfigRelease.rivalAggressiveness > 1.0) {
     rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * diffConfigRelease.rivalAggressiveness * 10) / 10 }));
@@ -2419,6 +2465,14 @@ export function resolveRelease() {
     newCumulativeRivalEarnings[rf.studioName] = (newCumulativeRivalEarnings[rf.studioName] || 0) + rf.boxOffice;
   }
   const rivalSeasonData = { season: state.season, films: rivalFilms };
+
+  // R180: Update persistent rival stats and check nemesis
+  const { stats: updatedRivalStats, newNemesis } = updateRivalStats(
+    state.rivalStats || {},
+    rivalFilms,
+    boxOffice,
+  );
+  const nemesisStudio = newNemesis || state.nemesisStudio;
 
   // Generate procedural film title based on genre + tags
   const filmTitle = generateFilmTitle(script.genre, prod.tagsPlayed);
@@ -2470,6 +2524,7 @@ export function resolveRelease() {
     lastQuality: rawQuality,
     lastTier: tier,
     activeMarket: market,
+    postProdSoundtrack: soundtrack,
     debt,
     budget: state.budget + earnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost,
     totalEarnings: state.totalEarnings + earnings,
@@ -2482,6 +2537,8 @@ export function resolveRelease() {
     seasonHistory: [...state.seasonHistory, result],
     rivalHistory: [...state.rivalHistory, rivalSeasonData],
     cumulativeRivalEarnings: newCumulativeRivalEarnings,
+    rivalStats: updatedRivalStats,
+    nemesisStudio,
     roster: newRoster,
     genreMastery: {
       ...state.genreMastery,

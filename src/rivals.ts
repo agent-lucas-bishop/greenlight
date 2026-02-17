@@ -1,22 +1,23 @@
 import { rng } from './seededRng';
-import { Genre, RewardTier, GameState, RivalAction, RivalActionType } from './types';
+import { Genre, RewardTier, GameState, RivalAction, RivalActionType, RivalPersonalityId, RivalStats, Difficulty } from './types';
 
-// ─── RIVAL STUDIOS ───
-// Three distinct rivals with personality, strategy, and trash talk
+// ─── R180: ADVANCED AI RIVAL PERSONALITIES ───
 
 export type RivalPersonality = 'aggressive' | 'steady' | 'scrappy';
 
 export interface RivalStudio {
+  id: RivalPersonalityId;
   name: string;
   emoji: string;
   style: string;
   personality: RivalPersonality;
   qualityRange: [number, number];
   genrePool: Genre[];
-  // Personality-driven behavior
   budgetTier: 'high' | 'mid' | 'low';
-  breakoutChance: number; // chance of an exceptional film (0-1)
-  consistencyBonus: number; // reduces variance
+  breakoutChance: number;
+  consistencyBonus: number;
+  // R180: action weights [stealTalent, competingFilm, prCampaign/stealScript]
+  actionWeights: [number, number, number];
 }
 
 export interface RivalFilm {
@@ -29,100 +30,130 @@ export interface RivalFilm {
   quality: number;
 }
 
-// ─── THE THREE RIVALS ───
+// ─── THE SIX RIVAL PERSONALITIES ───
 
 const RIVAL_STUDIOS: RivalStudio[] = [
   {
-    name: 'Titan Pictures',
-    emoji: '⚡',
-    style: 'Big-budget blockbuster factory. Go big or go bankrupt.',
+    id: 'pinnacle',
+    name: 'Pinnacle Pictures',
+    emoji: '⛰️',
+    style: 'Blockbuster focused, high budget. Go big or go home.',
     personality: 'aggressive',
-    qualityRange: [10, 50], // wide range — high risk
+    qualityRange: [15, 50],
     genrePool: ['Action', 'Sci-Fi', 'Thriller', 'Action', 'Sci-Fi', 'Action'],
     budgetTier: 'high',
-    breakoutChance: 0.25, // often swings for the fences
-    consistencyBonus: 0, // no consistency — boom or bust
-  },
-  {
-    name: 'Lumière Collective',
-    emoji: '🕯️',
-    style: 'Reliable mid-tier prestige. Never the best, never the worst.',
-    personality: 'steady',
-    qualityRange: [20, 38], // narrow, consistent range
-    genrePool: ['Drama', 'Thriller', 'Romance', 'Drama', 'Drama'],
-    budgetTier: 'mid',
-    breakoutChance: 0.08, // rarely surprises
-    consistencyBonus: 5, // always adds a floor
-  },
-  {
-    name: 'Neon Vagrant',
-    emoji: '🎪',
-    style: 'Scrappy indie darling. Tiny budgets, big dreams, occasional lightning.',
-    personality: 'scrappy',
-    qualityRange: [8, 35], // usually low, but...
-    genrePool: ['Horror', 'Comedy', 'Drama', 'Romance', 'Horror'],
-    budgetTier: 'low',
-    breakoutChance: 0.18, // the breakout hit chance
+    breakoutChance: 0.25,
     consistencyBonus: 0,
+    actionWeights: [0.15, 0.65, 0.20], // loves competing films
   },
   {
-    name: 'Obsidian Gate',
-    emoji: '🏛️',
-    style: 'Legacy studio clinging to prestige. Old money, old methods, occasional gems.',
+    id: 'arthouse',
+    name: 'Arthouse Alliance',
+    emoji: '🎭',
+    style: 'Quality over quantity. The critics\' darling.',
     personality: 'steady',
-    qualityRange: [18, 40],
-    genrePool: ['Drama', 'Thriller', 'Drama', 'Romance', 'Drama'],
-    budgetTier: 'high',
+    qualityRange: [25, 42],
+    genrePool: ['Drama', 'Romance', 'Thriller', 'Drama', 'Drama'],
+    budgetTier: 'mid',
     breakoutChance: 0.10,
-    consistencyBonus: 4,
+    consistencyBonus: 6,
+    actionWeights: [0.50, 0.20, 0.30], // steals talent (quality matters)
   },
   {
-    name: 'Feral Cat Pictures',
-    emoji: '🐱',
-    style: 'Chaotic micro-studio. Zero budget, maximum audacity.',
+    id: 'sequel_machine',
+    name: 'Sequel Machine Studios',
+    emoji: '🔄',
+    style: 'Franchise obsessed. Everything gets a sequel.',
+    personality: 'aggressive',
+    qualityRange: [12, 45],
+    genrePool: ['Action', 'Sci-Fi', 'Comedy', 'Action', 'Action', 'Sci-Fi'],
+    budgetTier: 'high',
+    breakoutChance: 0.18,
+    consistencyBonus: 3,
+    actionWeights: [0.20, 0.55, 0.25], // competing films + steal scripts
+  },
+  {
+    id: 'flash',
+    name: 'Flash Films',
+    emoji: '⚡',
+    style: 'Rush releases, quantity over quality. Speed is king.',
     personality: 'scrappy',
     qualityRange: [5, 30],
-    genrePool: ['Horror', 'Comedy', 'Horror', 'Comedy', 'Thriller'],
+    genrePool: ['Horror', 'Comedy', 'Action', 'Thriller', 'Horror', 'Comedy'],
     budgetTier: 'low',
-    breakoutChance: 0.22,
+    breakoutChance: 0.12,
     consistencyBonus: 0,
+    actionWeights: [0.35, 0.35, 0.30], // balanced chaos
   },
   {
-    name: 'Meridian Pictures',
-    emoji: '🌅',
-    style: 'Mid-budget crowd-pleasers. Focus-grouped to perfection.',
+    id: 'golden_age',
+    name: 'Golden Age Cinema',
+    emoji: '🌟',
+    style: 'Classic genres, consistent quality. Old-school reliable.',
     personality: 'steady',
-    qualityRange: [15, 35],
-    genrePool: ['Comedy', 'Romance', 'Action', 'Comedy', 'Romance'],
+    qualityRange: [20, 40],
+    genrePool: ['Drama', 'Romance', 'Thriller', 'Comedy', 'Drama'],
     budgetTier: 'mid',
-    breakoutChance: 0.06,
-    consistencyBonus: 6,
+    breakoutChance: 0.08,
+    consistencyBonus: 5,
+    actionWeights: [0.30, 0.30, 0.40], // steals scripts (protect their turf)
   },
   {
-    name: 'Colosseum Entertainment',
-    emoji: '🏟️',
-    style: 'Franchise factory. Everything is a cinematic universe.',
-    personality: 'aggressive',
-    qualityRange: [12, 48],
-    genrePool: ['Action', 'Sci-Fi', 'Action', 'Action', 'Sci-Fi', 'Thriller'],
-    budgetTier: 'high',
-    breakoutChance: 0.20,
-    consistencyBonus: 2,
-  },
-  {
-    name: 'Velvet Underground Films',
-    emoji: '🎸',
-    style: 'Art-house provocateurs. Critics love them, audiences are confused.',
+    id: 'chaos',
+    name: 'Chaos Productions',
+    emoji: '🎪',
+    style: 'Unpredictable. Wild swings between genius and disaster.',
     personality: 'scrappy',
-    qualityRange: [10, 42],
-    genrePool: ['Drama', 'Horror', 'Thriller', 'Drama', 'Romance'],
+    qualityRange: [3, 55],
+    genrePool: ['Horror', 'Sci-Fi', 'Comedy', 'Drama', 'Action', 'Romance', 'Thriller'],
     budgetTier: 'low',
-    breakoutChance: 0.15,
+    breakoutChance: 0.28,
     consistencyBonus: 0,
+    actionWeights: [0.33, 0.34, 0.33], // truly random
   },
 ];
 
-// ─── RIVAL COMMENTARY (procedural trash talk / flavor) ───
+// ─── RIVAL SELECTION ───
+
+export function selectActiveRivals(difficulty: Difficulty): RivalPersonalityId[] {
+  const count = difficulty === 'mogul' ? 3 : difficulty === 'studio' ? 3 : 2;
+  const shuffled = [...RIVAL_STUDIOS].sort(() => rng() - 0.5);
+  return shuffled.slice(0, count).map(r => r.id);
+}
+
+export function getActiveRivalStudios(activeIds: RivalPersonalityId[]): RivalStudio[] {
+  return RIVAL_STUDIOS.filter(r => activeIds.includes(r.id));
+}
+
+export function getRivalById(id: RivalPersonalityId): RivalStudio | undefined {
+  return RIVAL_STUDIOS.find(r => r.id === id);
+}
+
+export function initRivalStats(activeIds: RivalPersonalityId[]): Record<string, RivalStats> {
+  const stats: Record<string, RivalStats> = {};
+  for (const id of activeIds) {
+    const rival = getRivalById(id);
+    if (rival) {
+      stats[rival.name] = { filmsMade: 0, totalBoxOffice: 0, reputation: 3, seasonEarnings: [], timesBeatenPlayer: 0 };
+    }
+  }
+  return stats;
+}
+
+// ─── NEMESIS SYSTEM ───
+
+export function checkNemesis(rivalStats: Record<string, RivalStats>): string | null {
+  for (const [name, stats] of Object.entries(rivalStats)) {
+    if (stats.timesBeatenPlayer >= 3) return name;
+  }
+  return null;
+}
+
+export function getNemesisBoost(studioName: string, nemesisStudio: string | null): number {
+  return studioName === nemesisStudio ? 1.15 : 1.0; // +15% aggression
+}
+
+// ─── RIVAL COMMENTARY ───
 
 interface CommentaryContext {
   playerTotalEarnings: number;
@@ -130,7 +161,8 @@ interface CommentaryContext {
   playerLastTier: RewardTier | null;
   playerRep: number;
   season: number;
-  playerRank: number; // 1-4 in cumulative standings
+  playerRank: number;
+  isNemesis: boolean;
 }
 
 const AGGRESSIVE_TAUNTS: Record<string, string[]> = {
@@ -140,31 +172,27 @@ const AGGRESSIVE_TAUNTS: Record<string, string[]> = {
     "Flopping is a choice. We choose to dominate.",
     "Our marketing budget alone is bigger than your entire film.",
     "Our intern's short film outgrossed your feature. Awkward.",
-    "We considered sending flowers. Then we greenlit another hit instead.",
-    "The only thing your film opened was the door to an early exit.",
   ],
   playerBehind: [
     "Check the scoreboard. Actually, don't. It'll just make you sad.",
     "We're not even trying and we're ahead of you.",
     "This isn't a competition anymore. It's an exhibition.",
     "You're playing checkers. We're playing 4D chess with a $200M budget.",
-    "We can see you from up here. You look small.",
-    "Our B-team makes your A-game look like a student film.",
   ],
   playerAhead: [
     "Enjoy the lead while it lasts. We've got three tentpoles in the pipeline.",
     "Lucky streak. That's all it is. We'll see who's standing in Season 5.",
-    "You're ahead? Good. We perform better as the underdog. Ask anyone.",
-    "The bigger they are...",
-    "Cute numbers. Wait till you see what we're cooking.",
-    "Savor it. Seriously. This doesn't last.",
+    "You're ahead? Good. We perform better as the underdog.",
   ],
   neutral: [
     "Every dollar you earn is a dollar we're coming for.",
     "We don't make films. We make events.",
     "Sleep well. We won't.",
-    "Our next trailer drops tomorrow. Clear your social feeds.",
-    "Bigger budgets. Bigger stars. Bigger everything. That's Titan.",
+  ],
+  nemesis: [
+    "We OWN you. Three times beaten — accept it.",
+    "Your nemesis is here. And we're not done yet.",
+    "Every time you think you've caught up, we'll remind you who's boss.",
   ],
 };
 
@@ -173,29 +201,25 @@ const STEADY_COMMENTS: Record<string, string[]> = {
     "Tough break. Consistency is what separates the studios that last.",
     "We've all been there. The key is not to panic and overspend.",
     "A flop stings, but it's the rebounds that define a studio.",
-    "We keep a reserve fund for moments like these. Do you?",
-    "Volatility is the enemy. We eliminated it years ago.",
   ],
   playerBehind: [
     "Steady wins the race. We're not flashy, but we're profitable.",
     "We don't chase trends. We set the standard.",
     "Our shareholders are happy. Are yours?",
-    "Our quarterly earnings call was very boring. That's the point.",
-    "Slow and steady doesn't make for good headlines. It does make for good returns.",
   ],
   playerAhead: [
     "Well played. But there's a lot of season left.",
     "Impressive run. We respect the craft, even from competitors.",
     "You're having a moment. We're building a legacy.",
-    "Enjoy the spotlight. We prefer the steady glow of profitability.",
-    "A lead is just a number. Sustainability is a philosophy.",
   ],
   neutral: [
-    "Another season, another reliable slate. That's the Lumière way.",
+    "Another season, another reliable slate. That's our way.",
     "We'll be here long after the flash-in-the-pans burn out.",
     "No drama off-screen. All of it on-screen.",
-    "Our five-year plan is on track. As always.",
-    "Prestige doesn't shout. It whispers, and the world leans in.",
+  ],
+  nemesis: [
+    "We've quietly surpassed you three times now. The pattern is clear.",
+    "Consistency beats flash. We've proven it again and again.",
   ],
 };
 
@@ -203,31 +227,26 @@ const SCRAPPY_COMMENTS: Record<string, string[]> = {
   playerFlopped: [
     "Hey, at least you can afford to flop! We literally can't.",
     "Join the club. We've flopped on a fraction of your budget.",
-    "Flops build character. Or so we keep telling ourselves.",
     "Your flop cost more than our entire annual output. Wild.",
-    "We flop for free. You paid millions for the privilege.",
   ],
   playerBehind: [
     "We're behind too, but we spent 1/10th of what you did. Who's really winning?",
     "Punching above our weight is kind of our thing.",
-    "Budget doesn't equal quality. We prove it every season.",
-    "We're technically last place but we're vibing. You look stressed.",
-    "Our cost-per-quality-point ratio is incredible. Look it up.",
+    "We're technically last place but we're vibing.",
   ],
   playerAhead: [
     "Nice work! Honestly, we're just happy to be here.",
     "You're crushing it. We'll catch up... probably... maybe.",
     "One breakout hit and we're right back in this. Watch.",
-    "Respect! We'll name a conference room after you when we get a conference room.",
-    "Teach us your ways! (We can't afford the lesson but still.)",
   ],
   neutral: [
     "We found $200 in the couch cushions. That's our marketing budget.",
     "Who needs CGI when you have passion and a borrowed camera?",
-    "Small budget, big heart. That's the Neon Vagrant promise.",
-    "Our entire studio runs on coffee and delusion. It's working.",
-    "We held auditions at a bus stop. Found a star.",
-    "Our premiere was at a laundromat. Standing room only.",
+    "Small budget, big heart. That's our promise.",
+  ],
+  nemesis: [
+    "We beat you THREE TIMES on a shoestring budget. Legend status.",
+    "David vs Goliath, baby. And David keeps winning.",
   ],
 };
 
@@ -236,6 +255,7 @@ function pickComment(pool: string[]): string {
 }
 
 function getCommentaryKey(ctx: CommentaryContext): string {
+  if (ctx.isNemesis && rng() < 0.4) return 'nemesis';
   if (ctx.playerLastTier === 'FLOP') return 'playerFlopped';
   if (ctx.playerRank > 2) return 'playerBehind';
   if (ctx.playerRank === 1) return 'playerAhead';
@@ -247,19 +267,21 @@ export interface RivalCommentary {
   studioEmoji: string;
   personality: RivalPersonality;
   comment: string;
+  isNemesis: boolean;
 }
 
 export function generateRivalCommentary(state: GameState): RivalCommentary[] {
-  const cumulative = state.cumulativeRivalEarnings;
+  const activeStudios = getActiveRivalStudios(state.activeRivalIds || []);
+  if (activeStudios.length === 0) return generateLegacyRivalCommentary(state);
   
-  // Calculate player rank among all studios
+  const cumulative = state.cumulativeRivalEarnings;
   const allEarnings = [
     { name: 'player', total: state.totalEarnings },
-    ...RIVAL_STUDIOS.map(r => ({ name: r.name, total: cumulative[r.name] || 0 })),
+    ...activeStudios.map(r => ({ name: r.name, total: cumulative[r.name] || 0 })),
   ].sort((a, b) => b.total - a.total);
   const playerRank = allEarnings.findIndex(e => e.name === 'player') + 1;
 
-  return RIVAL_STUDIOS.map(rival => {
+  return activeStudios.map(rival => {
     const ctx: CommentaryContext = {
       playerTotalEarnings: state.totalEarnings,
       rivalTotalEarnings: cumulative[rival.name] || 0,
@@ -267,21 +289,34 @@ export function generateRivalCommentary(state: GameState): RivalCommentary[] {
       playerRep: state.reputation,
       season: state.season,
       playerRank,
+      isNemesis: state.nemesisStudio === rival.name,
     };
     const key = getCommentaryKey(ctx);
     let pool: string[];
     switch (rival.personality) {
-      case 'aggressive': pool = AGGRESSIVE_TAUNTS[key]; break;
-      case 'steady': pool = STEADY_COMMENTS[key]; break;
-      case 'scrappy': pool = SCRAPPY_COMMENTS[key]; break;
+      case 'aggressive': pool = AGGRESSIVE_TAUNTS[key] || AGGRESSIVE_TAUNTS['neutral']; break;
+      case 'steady': pool = STEADY_COMMENTS[key] || STEADY_COMMENTS['neutral']; break;
+      case 'scrappy': pool = SCRAPPY_COMMENTS[key] || SCRAPPY_COMMENTS['neutral']; break;
     }
     return {
       studioName: rival.name,
       studioEmoji: rival.emoji,
       personality: rival.personality,
       comment: pickComment(pool),
+      isNemesis: state.nemesisStudio === rival.name,
     };
   });
+}
+
+// Legacy fallback for old saves without activeRivalIds
+function generateLegacyRivalCommentary(state: GameState): RivalCommentary[] {
+  return RIVAL_STUDIOS.slice(0, 3).map(rival => ({
+    studioName: rival.name,
+    studioEmoji: rival.emoji,
+    personality: rival.personality,
+    comment: 'The competition heats up...',
+    isNemesis: false,
+  }));
 }
 
 // ─── FILM GENERATION ───
@@ -332,24 +367,22 @@ function getTier(boxOffice: number, target: number): RewardTier {
   return 'FLOP';
 }
 
-function generateRivalFilm(studio: RivalStudio, season: number, target: number): RivalFilm {
+function generateRivalFilm(studio: RivalStudio, season: number, target: number, nemesisBoost: number): RivalFilm {
   const genre = studio.genrePool[Math.floor(rng() * studio.genrePool.length)];
   const [minQ, maxQ] = studio.qualityRange;
   const seasonBoost = (season - 1) * 4;
   let quality = Math.round(minQ + seasonBoost + studio.consistencyBonus + rng() * (maxQ - minQ));
 
-  // Breakout hit — scrappy studios occasionally have lightning-in-a-bottle moments
   const isBreakout = rng() < studio.breakoutChance;
   if (isBreakout) {
     quality = Math.round(quality * (studio.personality === 'scrappy' ? 1.8 : 1.4));
   }
 
-  // Aggressive studios have wider multiplier swings
   let baseMultLow: number, baseMultHigh: number;
   switch (studio.personality) {
     case 'aggressive':
-      baseMultLow = 0.5 + season * 0.05; // can flop hard
-      baseMultHigh = 1.4 + season * 0.15; // or hit huge
+      baseMultLow = 0.5 + season * 0.05;
+      baseMultHigh = 1.4 + season * 0.15;
       break;
     case 'steady':
       baseMultLow = 0.85 + season * 0.03;
@@ -358,7 +391,7 @@ function generateRivalFilm(studio: RivalStudio, season: number, target: number):
     case 'scrappy':
       baseMultLow = 0.6 + season * 0.04;
       baseMultHigh = 1.1 + season * 0.1;
-      if (isBreakout) { baseMultLow = 1.3; baseMultHigh = 2.0; } // breakout goes big
+      if (isBreakout) { baseMultLow = 1.3; baseMultHigh = 2.0; }
       break;
     default:
       baseMultLow = 0.7 + season * 0.05;
@@ -366,15 +399,23 @@ function generateRivalFilm(studio: RivalStudio, season: number, target: number):
   }
 
   const multiplier = baseMultLow + rng() * (baseMultHigh - baseMultLow);
-  const boxOffice = Math.round(quality * multiplier * 10) / 10;
+  let boxOffice = Math.round(quality * multiplier * nemesisBoost * 10) / 10;
   const tier = getTier(boxOffice, target);
   const title = generateRivalTitle(genre);
 
   return { studioName: studio.name, studioEmoji: studio.emoji, title, genre, boxOffice, tier, quality };
 }
 
-export function generateRivalSeason(season: number, target: number, hotGenres?: Genre[], coldGenres?: Genre[], playerTotal?: number, rivalCumulativeEarnings?: Record<string, number>): RivalFilm[] {
-  // Calculate rubber-band modifier
+export function generateRivalSeason(
+  season: number, target: number,
+  hotGenres?: Genre[], coldGenres?: Genre[],
+  playerTotal?: number, rivalCumulativeEarnings?: Record<string, number>,
+  activeRivalIds?: RivalPersonalityId[], nemesisStudio?: string | null,
+): RivalFilm[] {
+  const studios = activeRivalIds && activeRivalIds.length > 0
+    ? getActiveRivalStudios(activeRivalIds)
+    : RIVAL_STUDIOS.slice(0, 3); // fallback for old saves
+
   let rubberBandMult = 1.0;
   if (playerTotal !== undefined && rivalCumulativeEarnings) {
     const rivalTotals = Object.values(rivalCumulativeEarnings);
@@ -382,9 +423,10 @@ export function generateRivalSeason(season: number, target: number, hotGenres?: 
     rubberBandMult = calculateRubberBand(playerTotal, rivalAvg).multiplier;
   }
 
-  return RIVAL_STUDIOS.map(studio => {
-    const film = generateRivalFilm(studio, season, target);
-    // Aggressive rivals always chase hot genres; others 50% chance
+  return studios.map(studio => {
+    const nemesisBoost = getNemesisBoost(studio.name, nemesisStudio || null);
+    const film = generateRivalFilm(studio, season, target, nemesisBoost);
+
     const chaseChance = studio.personality === 'aggressive' ? 0.75 : 0.5;
     if (hotGenres && hotGenres.length > 0 && rng() < chaseChance) {
       film.genre = hotGenres[Math.floor(rng() * hotGenres.length)];
@@ -394,11 +436,45 @@ export function generateRivalSeason(season: number, target: number, hotGenres?: 
     if (coldGenres && coldGenres.includes(film.genre)) {
       film.boxOffice = Math.round(film.boxOffice * 0.8 * 10) / 10;
     }
-    // Apply rubber-band scaling
     film.boxOffice = Math.round(film.boxOffice * rubberBandMult * 10) / 10;
     film.tier = getTier(film.boxOffice, target);
     return film;
   });
+}
+
+// ─── R180: UPDATE RIVAL STATS AFTER SEASON ───
+
+export function updateRivalStats(
+  currentStats: Record<string, RivalStats>,
+  rivalFilms: RivalFilm[],
+  playerSeasonBO: number,
+): { stats: Record<string, RivalStats>; newNemesis: string | null } {
+  const updated = { ...currentStats };
+  let newNemesis: string | null = null;
+
+  for (const film of rivalFilms) {
+    if (!updated[film.studioName]) {
+      updated[film.studioName] = { filmsMade: 0, totalBoxOffice: 0, reputation: 3, seasonEarnings: [], timesBeatenPlayer: 0 };
+    }
+    const s = { ...updated[film.studioName] };
+    s.filmsMade += 1;
+    s.totalBoxOffice = Math.round((s.totalBoxOffice + film.boxOffice) * 10) / 10;
+    s.seasonEarnings = [...s.seasonEarnings, film.boxOffice];
+
+    // Reputation evolution based on tier
+    if (film.tier === 'BLOCKBUSTER') s.reputation = Math.min(5, s.reputation + 1);
+    else if (film.tier === 'FLOP') s.reputation = Math.max(1, s.reputation - 1);
+
+    // Track if rival beat player this season
+    if (film.boxOffice > playerSeasonBO) {
+      s.timesBeatenPlayer += 1;
+      if (s.timesBeatenPlayer >= 3) newNemesis = film.studioName;
+    }
+
+    updated[film.studioName] = s;
+  }
+
+  return { stats: updated, newNemesis: newNemesis || checkNemesis(updated) };
 }
 
 // ─── RIVALRY LEADERBOARD ───
@@ -412,6 +488,66 @@ export interface RivalryLeaderboardEntry {
   filmCount: number;
   strategyLabel?: string;
   latestFilm?: { title: string; boxOffice: number; tier: RewardTier; genre: Genre };
+  reputation?: number;
+  isNemesis?: boolean;
+  seasonEarnings?: number[];
+}
+
+const STRATEGY_LABELS: Record<RivalPersonalityId, string> = {
+  pinnacle: 'Blockbuster · High Budget',
+  arthouse: 'Prestige · Quality First',
+  sequel_machine: 'Franchise · Sequel Factory',
+  flash: 'Speed · Quantity Rush',
+  golden_age: 'Classic · Consistent',
+  chaos: 'Wildcard · Unpredictable',
+};
+
+export function getRivalryLeaderboard(state: GameState): RivalryLeaderboardEntry[] {
+  const activeStudios = getActiveRivalStudios(state.activeRivalIds || []);
+  const seasonCount = state.seasonHistory.length;
+  
+  const latestFilms: Record<string, RivalFilm> = {};
+  if (state.rivalHistory.length > 0) {
+    const lastSeason = state.rivalHistory[state.rivalHistory.length - 1];
+    for (const f of lastSeason.films) {
+      latestFilms[f.studioName] = f;
+    }
+  }
+
+  const entries: RivalryLeaderboardEntry[] = [
+    {
+      name: state.studioName || 'Your Studio',
+      emoji: '🎬',
+      totalEarnings: state.totalEarnings,
+      isPlayer: true,
+      filmCount: seasonCount,
+      seasonEarnings: state.seasonHistory.map(h => h.boxOffice),
+      latestFilm: state.seasonHistory.length > 0 ? {
+        title: state.lastFilmTitle || state.seasonHistory[state.seasonHistory.length - 1].title,
+        boxOffice: state.seasonHistory[state.seasonHistory.length - 1].boxOffice,
+        tier: state.seasonHistory[state.seasonHistory.length - 1].tier,
+        genre: state.seasonHistory[state.seasonHistory.length - 1].genre,
+      } : undefined,
+    },
+    ...activeStudios.map(r => {
+      const latest = latestFilms[r.name];
+      const stats = state.rivalStats?.[r.name];
+      return {
+        name: r.name,
+        emoji: r.emoji,
+        totalEarnings: state.cumulativeRivalEarnings[r.name] || 0,
+        personality: r.personality,
+        isPlayer: false,
+        filmCount: stats?.filmsMade || seasonCount,
+        strategyLabel: STRATEGY_LABELS[r.id],
+        reputation: stats?.reputation,
+        isNemesis: state.nemesisStudio === r.name,
+        seasonEarnings: stats?.seasonEarnings || [],
+        latestFilm: latest ? { title: latest.title, boxOffice: latest.boxOffice, tier: latest.tier, genre: latest.genre } : undefined,
+      };
+    }),
+  ];
+  return entries.sort((a, b) => b.totalEarnings - a.totalEarnings);
 }
 
 // ─── RUBBER-BAND DIFFICULTY ───
@@ -419,7 +555,7 @@ export interface RivalryLeaderboardEntry {
 export type MarketPressure = 'competitive' | 'yourLead' | 'underdog' | 'neutral';
 
 export interface RubberBandResult {
-  multiplier: number; // applied to rival BO (e.g. 1.08 = +8%)
+  multiplier: number;
   label: MarketPressure;
   flavorText: string;
 }
@@ -430,7 +566,6 @@ export function calculateRubberBand(playerTotal: number, rivalAvgTotal: number):
   }
   const ratio = playerTotal / Math.max(rivalAvgTotal, 1);
   if (ratio > 1.35) {
-    // Player way ahead — rivals get a boost
     const boost = Math.min(0.10, (ratio - 1.35) * 0.15);
     return { multiplier: 1 + boost, label: 'competitive', flavorText: 'Market Conditions: Competitive — rivals are hungry 🔥' };
   }
@@ -438,61 +573,13 @@ export function calculateRubberBand(playerTotal: number, rivalAvgTotal: number):
     return { multiplier: 1.05, label: 'yourLead', flavorText: 'Market Conditions: Your Lead — stay sharp' };
   }
   if (ratio < 0.75) {
-    // Player way behind — rivals get a slight penalty
     const penalty = Math.min(0.10, (0.75 - ratio) * 0.15);
     return { multiplier: 1 - penalty, label: 'underdog', flavorText: 'Market Conditions: Underdog — the industry is rooting for you' };
   }
   return { multiplier: 1.0, label: 'neutral', flavorText: 'Market Conditions: Wide Open' };
 }
 
-const STRATEGY_LABELS: Record<RivalPersonality, string> = {
-  aggressive: 'Big Budget · High Risk',
-  steady: 'Prestige · Consistent',
-  scrappy: 'Indie · Scrappy',
-};
-
-export function getRivalryLeaderboard(state: GameState): RivalryLeaderboardEntry[] {
-  const seasonCount = state.seasonHistory.length;
-  // Find each rival's latest film from rivalHistory
-  const latestFilms: Record<string, RivalFilm> = {};
-  if (state.rivalHistory.length > 0) {
-    const lastSeason = state.rivalHistory[state.rivalHistory.length - 1];
-    for (const f of lastSeason.films) {
-      latestFilms[f.studioName] = f;
-    }
-  }
-  const entries: RivalryLeaderboardEntry[] = [
-    {
-      name: state.studioName || 'Your Studio',
-      emoji: '🎬',
-      totalEarnings: state.totalEarnings,
-      isPlayer: true,
-      filmCount: seasonCount,
-      latestFilm: state.seasonHistory.length > 0 ? {
-        title: state.lastFilmTitle || state.seasonHistory[state.seasonHistory.length - 1].title,
-        boxOffice: state.seasonHistory[state.seasonHistory.length - 1].boxOffice,
-        tier: state.seasonHistory[state.seasonHistory.length - 1].tier,
-        genre: state.seasonHistory[state.seasonHistory.length - 1].genre,
-      } : undefined,
-    },
-    ...RIVAL_STUDIOS.map(r => {
-      const latest = latestFilms[r.name];
-      return {
-        name: r.name,
-        emoji: r.emoji,
-        totalEarnings: state.cumulativeRivalEarnings[r.name] || 0,
-        personality: r.personality,
-        isPlayer: false,
-        filmCount: seasonCount,
-        strategyLabel: STRATEGY_LABELS[r.personality],
-        latestFilm: latest ? { title: latest.title, boxOffice: latest.boxOffice, tier: latest.tier, genre: latest.genre } : undefined,
-      };
-    }),
-  ];
-  return entries.sort((a, b) => b.totalEarnings - a.totalEarnings);
-}
-
-// ─── RIVAL EVENTS (for the season event pool) ───
+// ─── RIVAL EVENTS ───
 
 export interface RivalEvent {
   id: string;
@@ -509,7 +596,7 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     name: 'Bidding War',
     emoji: '💸',
     description: 'A rival wants the same talent! All talent costs +$3 next season, but talent quality is higher (+1 skill).',
-    flavorText: `"${RIVAL_STUDIOS[0].emoji} ${RIVAL_STUDIOS[0].name} is throwing money around. Match their offer or lose out."`,
+    flavorText: '"⛰️ Pinnacle Pictures is throwing money around. Match their offer or lose out."',
     effect: 'biddingWar',
   },
   {
@@ -517,7 +604,7 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     name: 'Poached!',
     emoji: '🦅',
     description: 'A rival steals your lowest-skill talent from your roster.',
-    flavorText: `"${RIVAL_STUDIOS[2].emoji} ${RIVAL_STUDIOS[2].name} made them an offer they couldn't refuse. Your loss."`,
+    flavorText: '"🎭 Arthouse Alliance made them an offer they couldn\'t refuse. Your loss."',
     effect: 'talentPoached',
   },
   {
@@ -525,7 +612,7 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     name: 'Award Snub',
     emoji: '😤',
     description: 'A rival\'s film wins the big award over yours. Lose 1 reputation, but gain +$3M sympathy press.',
-    flavorText: `"The envelope, please... ${RIVAL_STUDIOS[1].emoji} ${RIVAL_STUDIOS[1].name}! The crowd gasps. You were robbed."`,
+    flavorText: '"The envelope, please... 🌟 Golden Age Cinema! The crowd gasps. You were robbed."',
     effect: 'awardSnub',
   },
   {
@@ -617,30 +704,32 @@ export function getSeasonIdentity(season: number): SeasonIdentity {
   return SEASON_IDENTITIES[Math.min(season - 1, SEASON_IDENTITIES.length - 1)];
 }
 
-// ─── R150: RIVAL ACTIONS ───
-// Each season, 1-2 rivals take an action that interferes with the player.
-// PR Campaign ($2M) reduces interference (fewer actions, weaker effects).
+// ─── R180: ENHANCED RIVAL ACTIONS ───
 
-export function generateRivalActions(season: number, prCampaignActive: boolean, playerGenre?: string): RivalAction[] {
+export function generateRivalActions(
+  season: number, prCampaignActive: boolean, playerGenre?: string,
+  activeRivalIds?: RivalPersonalityId[], nemesisStudio?: string | null,
+): RivalAction[] {
+  const studios = activeRivalIds && activeRivalIds.length > 0
+    ? getActiveRivalStudios(activeRivalIds)
+    : RIVAL_STUDIOS.slice(0, 3);
+
   const actions: RivalAction[] = [];
-  // Pick 1-3 rivals to act this season (PR campaign: max 1)
   const maxActions = prCampaignActive ? 1 : (season <= 1 ? 1 : (rng() < 0.4 ? 3 : 2));
-  const shuffled = [...RIVAL_STUDIOS].sort(() => rng() - 0.5);
-  const actingRivals = shuffled.slice(0, maxActions);
+  const shuffled = [...studios].sort(() => rng() - 0.5);
+  const actingRivals = shuffled.slice(0, Math.min(maxActions, shuffled.length));
 
   for (const rival of actingRivals) {
-    // Aggressive rivals prefer competing films; scrappy prefer sniping talent; steady prefer stealing scripts
+    // Use personality-driven action weights
+    const [wTalent, wFilm, wScript] = rival.actionWeights;
     const roll = rng();
     let actionType: RivalActionType;
-    if (rival.personality === 'aggressive') {
-      actionType = roll < 0.5 ? 'competingFilm' : roll < 0.8 ? 'snipeTalent' : 'stealScript';
-    } else if (rival.personality === 'scrappy') {
-      actionType = roll < 0.5 ? 'snipeTalent' : roll < 0.8 ? 'stealScript' : 'competingFilm';
-    } else {
-      actionType = roll < 0.5 ? 'stealScript' : roll < 0.8 ? 'competingFilm' : 'snipeTalent';
-    }
+    if (roll < wTalent) actionType = 'snipeTalent';
+    else if (roll < wTalent + wFilm) actionType = 'competingFilm';
+    else actionType = 'stealScript';
 
-    // PR campaign weakens effects
+    // Nemesis rivals get extra actions
+    const isNemesis = rival.name === nemesisStudio;
     const dampening = prCampaignActive ? 0.5 : 1.0;
 
     if (actionType === 'snipeTalent') {
@@ -648,32 +737,106 @@ export function generateRivalActions(season: number, prCampaignActive: boolean, 
         studioName: rival.name,
         studioEmoji: rival.emoji,
         actionType: 'snipeTalent',
-        description: `${rival.emoji} ${rival.name} poached a talent from the market!`,
-        removedTalentIndex: Math.floor(rng() * 6), // will be clamped to actual market size
+        description: `${rival.emoji} ${rival.name} poached a talent from the market!${isNemesis ? ' (Nemesis!)' : ''}`,
+        removedTalentIndex: Math.floor(rng() * 6),
       });
     } else if (actionType === 'stealScript') {
       actions.push({
         studioName: rival.name,
         studioEmoji: rival.emoji,
         actionType: 'stealScript',
-        description: `${rival.emoji} ${rival.name} snatched a script before you could greenlight it!`,
-        blockedScriptIndex: Math.floor(rng() * 3), // will be clamped
+        description: `${rival.emoji} ${rival.name} snatched a script before you could greenlight it!${isNemesis ? ' (Nemesis!)' : ''}`,
+        blockedScriptIndex: Math.floor(rng() * 3),
       });
     } else {
-      const penalty = (0.1 + rng() * 0.2) * dampening; // 0.1-0.3 (halved with PR)
+      const basePenalty = (0.1 + rng() * 0.2) * dampening;
+      const penalty = isNemesis ? basePenalty * 1.3 : basePenalty; // Nemesis hits harder
       const genre = playerGenre || rival.genrePool[Math.floor(rng() * rival.genrePool.length)];
       actions.push({
         studioName: rival.name,
         studioEmoji: rival.emoji,
         actionType: 'competingFilm',
-        description: `${rival.emoji} ${rival.name} released a competing ${genre} film! (−${penalty.toFixed(1)}× multiplier)`,
+        description: `${rival.emoji} ${rival.name} released a competing ${genre} film! (−${penalty.toFixed(1)}× multiplier)${isNemesis ? ' (Nemesis!)' : ''}`,
         multiplierPenalty: Math.round(penalty * 100) / 100,
         competingGenre: genre as Genre,
       });
     }
+
+    // Nemesis gets a bonus action 40% of the time
+    if (isNemesis && !prCampaignActive && rng() < 0.4) {
+      const bonusType: RivalActionType = rng() < 0.5 ? 'snipeTalent' : 'competingFilm';
+      if (bonusType === 'snipeTalent') {
+        actions.push({
+          studioName: rival.name,
+          studioEmoji: rival.emoji,
+          actionType: 'snipeTalent',
+          description: `${rival.emoji} ${rival.name} strikes again! Another talent poached! (Nemesis!)`,
+          removedTalentIndex: Math.floor(rng() * 6),
+        });
+      } else {
+        const penalty = (0.1 + rng() * 0.15);
+        const genre = rival.genrePool[Math.floor(rng() * rival.genrePool.length)];
+        actions.push({
+          studioName: rival.name,
+          studioEmoji: rival.emoji,
+          actionType: 'competingFilm',
+          description: `${rival.emoji} ${rival.name} doubles down with another ${genre} release! (Nemesis!)`,
+          multiplierPenalty: Math.round(penalty * 100) / 100,
+          competingGenre: genre as Genre,
+        });
+      }
+    }
   }
 
   return actions;
+}
+
+// ─── R180: END-OF-RUN LEADERBOARD ───
+
+export interface EndRunLeaderboardEntry {
+  name: string;
+  emoji: string;
+  totalEarnings: number;
+  seasonEarnings: number[];
+  filmCount: number;
+  reputation: number;
+  isPlayer: boolean;
+  isNemesis: boolean;
+  strategyLabel?: string;
+}
+
+export function getEndRunLeaderboard(state: GameState): EndRunLeaderboardEntry[] {
+  const activeStudios = getActiveRivalStudios(state.activeRivalIds || []);
+  const playerSeasonEarnings = state.seasonHistory.map(h => h.boxOffice);
+
+  const entries: EndRunLeaderboardEntry[] = [
+    {
+      name: state.studioName || 'Your Studio',
+      emoji: '🎬',
+      totalEarnings: state.totalEarnings,
+      seasonEarnings: playerSeasonEarnings,
+      filmCount: state.seasonHistory.length,
+      reputation: state.reputation,
+      isPlayer: true,
+      isNemesis: false,
+    },
+    ...activeStudios.map(r => {
+      const stats = state.rivalStats?.[r.name];
+      return {
+        name: r.name,
+        emoji: r.emoji,
+        totalEarnings: state.cumulativeRivalEarnings[r.name] || 0,
+        seasonEarnings: stats?.seasonEarnings || [],
+        filmCount: stats?.filmsMade || 0,
+        reputation: stats?.reputation || 3,
+        isPlayer: false,
+        isNemesis: state.nemesisStudio === r.name,
+        strategyLabel: STRATEGY_LABELS[r.id],
+      };
+    }),
+  ];
+
+  return entries.sort((a, b) => b.totalEarnings - a.totalEarnings);
 }
 
 export { RIVAL_STUDIOS };

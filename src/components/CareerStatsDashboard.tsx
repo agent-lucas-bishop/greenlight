@@ -240,6 +240,36 @@ export default function CareerStatsDashboard() {
         )}
       </div>
 
+      {/* R179: Soundtrack stats */}
+      {(unlocks.careerStats.bestSoundtrackScore > 0 || unlocks.careerStats.favoriteComposer) && (
+        <div style={{
+          background: 'rgba(230, 126, 34, 0.06)', border: '1px solid rgba(230, 126, 34, 0.2)',
+          borderRadius: 10, padding: '14px 16px', marginBottom: 24,
+        }}>
+          <div style={{ color: '#e67e22', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            🎵 Soundtrack Stats
+          </div>
+          <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {unlocks.careerStats.bestSoundtrackScore > 0 && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>
+                  {'🎵'.repeat(unlocks.careerStats.bestSoundtrackScore)}
+                </div>
+                <div style={{ color: '#888', fontSize: '0.6rem' }}>BEST SCORE</div>
+              </div>
+            )}
+            {unlocks.careerStats.favoriteComposer && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>
+                  {unlocks.careerStats.favoriteComposer}
+                </div>
+                <div style={{ color: '#888', fontSize: '0.6rem' }}>FAVORITE COMPOSER</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Tier distribution */}
       {allFilms.length > 0 && (() => {
         const tiers: Record<string, { count: number; color: string; emoji: string }> = {

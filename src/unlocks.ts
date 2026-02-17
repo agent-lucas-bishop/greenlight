@@ -29,6 +29,10 @@ export interface UnlockState {
     challengesCompleted: string[]; // challenge IDs won
     uniqueTalentHired: string[]; // talent names hired across all runs
     chemistryTriggered: number; // count of chemistry bonuses triggered across all runs
+    // R179: Soundtrack career stats
+    bestSoundtrackScore: number; // highest soundtrack quality rating (1-5)
+    favoriteComposer: string; // most-used composer name
+    composerHireCounts: Record<string, number>; // composer name -> hire count
   };
   // Daily challenge streak
   dailyStreak: {
@@ -62,6 +66,9 @@ function defaultCareerStats() {
     challengesCompleted: [] as string[],
     uniqueTalentHired: [] as string[],
     chemistryTriggered: 0,
+    bestSoundtrackScore: 0,
+    favoriteComposer: '',
+    composerHireCounts: {},
   };
 }
 
@@ -256,7 +263,7 @@ export function getActiveLegacyPerks(): LegacyPerk[] {
   return LEGACY_PERKS.filter(p => p.check(u));
 }
 
-export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string; weeklySeed?: string; filmCount?: number }) {
+export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean; soundtrack?: { composerName: string; qualityRating: number } | null }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string; weeklySeed?: string; filmCount?: number }) {
   const u = getUnlocks();
   u.totalRuns++;
   if (won) {
@@ -298,6 +305,19 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
     }
     const allHit = seasonHistory.length >= 5 && seasonHistory.every(s => s.hitTarget);
     if (allHit) u.careerStats.perfectRuns++;
+
+    // R179: Track soundtrack stats
+    for (const s of seasonHistory) {
+      if (s.soundtrack) {
+        u.careerStats.bestSoundtrackScore = Math.max(u.careerStats.bestSoundtrackScore, s.soundtrack.qualityRating);
+        if (!u.careerStats.composerHireCounts) u.careerStats.composerHireCounts = {};
+        const cn = s.soundtrack.composerName;
+        u.careerStats.composerHireCounts[cn] = (u.careerStats.composerHireCounts[cn] || 0) + 1;
+        // Update favorite composer
+        const counts = u.careerStats.composerHireCounts;
+        u.careerStats.favoriteComposer = Object.entries(counts).reduce((a, b) => b[1] > a[1] ? b : a, ['', 0])[0];
+      }
+    }
   }
 
   // Track extras

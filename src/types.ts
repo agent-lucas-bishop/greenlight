@@ -166,6 +166,16 @@ export type GamePhase =
 export type MarketingTier = 'none' | 'standard' | 'premium' | 'viral';
 export type PostProdOption = 'directorsCut' | 'testScreening' | 'reshoot' | 'rushRelease';
 
+// R179: Soundtrack system
+export interface SoundtrackData {
+  composerName: string;
+  composerTier: number;
+  style: string;
+  qualityRating: number; // 1-5
+  qualityBonus: number; // +0 to +2
+  cost: number;
+}
+
 export interface CastSlot {
   slotType: SlotType;
   talent: Talent | null;
@@ -332,6 +342,9 @@ export interface GameState {
   postProdOption?: PostProdOption | null; // chosen post-production option
   postProdMarketingMultiplier?: number; // resolved marketing multiplier (for viral randomness)
   postProdTestScreeningTier?: string | null; // preview tier shown during test screening
+  // R179: Soundtrack system
+  postProdComposer?: string | null; // hired composer name (null = no hire, use free default)
+  postProdSoundtrack?: SoundtrackData | null; // generated soundtrack profile for current film
   // R150: Active Rival System
   prCampaignActive: boolean; // $2M PR Campaign reduces rival interference this season
   rivalActions: RivalAction[]; // rival actions applied this season
@@ -341,6 +354,10 @@ export interface GameState {
   festivalHistory: { festivalId: string; filmTitle: string; filmGenre: Genre; season: number; award: string | null; score: number }[];
   festivalEligible: { id: string; name: string; emoji: string; entryCost: number }[] | null; // festivals available this between-season
   festivalResult: { festivalId: string; festivalName: string; festivalEmoji: string; filmTitle: string; award: string | null; score: number; repBoost: number; budgetBonus: number } | null;
+  // R180: Advanced AI Rivals
+  activeRivalIds: RivalPersonalityId[]; // 2-3 rivals active this run
+  rivalStats: Record<string, RivalStats>; // rival name -> persistent stats
+  nemesisStudio: string | null; // rival name that became nemesis (beaten player 3+ times)
 }
 
 // ─── RIVAL ACTIONS (R150) ───
@@ -359,6 +376,17 @@ export interface RivalAction {
   multiplierPenalty?: number;
   /** Genre of competing film (for competingFilm action) */
   competingGenre?: Genre;
+}
+
+// ─── R180: Advanced AI Rivals ───
+export type RivalPersonalityId = 'pinnacle' | 'arthouse' | 'sequel_machine' | 'flash' | 'golden_age' | 'chaos';
+
+export interface RivalStats {
+  filmsMade: number;
+  totalBoxOffice: number;
+  reputation: number;
+  seasonEarnings: number[]; // earnings per season index
+  timesBeatenPlayer: number; // seasons where this rival's BO > player's BO
 }
 
 export interface SeasonEventChoice {
@@ -416,4 +444,5 @@ export interface SeasonResult {
   criticScore?: number; // R173: fresh percentage (0-100)
   criticStars?: number; // R173: average star rating (1-5)
   festivalAwards?: { festivalId: string; award: string }[]; // R176: festival laurels
+  soundtrack?: SoundtrackData | null; // R179: soundtrack profile
 }

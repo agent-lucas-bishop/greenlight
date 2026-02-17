@@ -5,6 +5,7 @@ import {
   CAREER_MILESTONES, getAllMilestonesWithStatus,
   type PlayerProfile as ProfileType, type DifficultyStats, type FilmRecord,
 } from '../playerProfile';
+import { sfx } from '../sound';
 
 // ─── Animated Counter ───
 function AnimatedCounter({ end, duration = 1200, prefix = '', suffix = '' }: { end: number; duration?: number; prefix?: string; suffix?: string }) {
@@ -19,7 +20,9 @@ function AnimatedCounter({ end, duration = 1200, prefix = '', suffix = '' }: { e
       const progress = Math.min(elapsed / duration, 1);
       // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(start + (end - start) * eased));
+      const newVal = Math.round(start + (end - start) * eased);
+      if (progress < 1 && Math.round(progress * 10) % 3 === 0) sfx.statCounterTick();
+      setValue(newVal);
       if (progress < 1) ref.current = requestAnimationFrame(animate);
     };
     ref.current = requestAnimationFrame(animate);
@@ -124,7 +127,7 @@ function DifficultyStatsGrid({ stats, label, color }: { stats: DifficultyStats; 
 
 // ─── Main Component ───
 export default function PlayerProfileModal({ onClose }: { onClose: () => void }) {
-  const [profile, setProfile] = useState<ProfileType>(loadProfile);
+  const [profile, setProfile] = useState<ProfileType>(() => { sfx.profileOpen(); return loadProfile(); });
   const [section, setSection] = useState<'overview' | 'stats' | 'genres' | 'milestones' | 'runs' | 'hof'>('overview');
   const career = getCareerTitle(profile);
   const frameColor = getAvatarFrameColor(profile);

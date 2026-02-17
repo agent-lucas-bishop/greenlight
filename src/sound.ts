@@ -2779,4 +2779,246 @@ export const sfx = {
       note(c, 700, 0, 0.03, 0.04, 'sine');
     }, 'difficultyCompareHover');
   },
+
+  // ── R226: Film Franchises (R220) ──
+
+  /** Dramatic ascending fanfare when a sequel becomes available */
+  franchiseSequelUnlock() {
+    play(c => {
+      // Brass-like ascending fanfare: G4 → B4 → D5 → G5
+      note(c, 392, 0, 0.2, 0.14, 'sawtooth');
+      note(c, 494, 0.12, 0.2, 0.14, 'sawtooth');
+      note(c, 587, 0.24, 0.2, 0.16, 'sawtooth');
+      note(c, 784, 0.36, 0.4, 0.18, 'triangle');
+      // Resolve chord
+      note(c, 392, 0.4, 0.35, 0.08, 'triangle');
+      note(c, 587, 0.4, 0.35, 0.08, 'triangle');
+      // Shimmer
+      note(c, 1568, 0.45, 0.3, 0.05, 'sine');
+      note(c, 2349, 0.5, 0.25, 0.04, 'sine');
+    }, 'franchiseSequel');
+  },
+
+  /** Soft accordion open for expanding franchise tree view */
+  franchiseTreeExpand() {
+    play(c => {
+      // Gentle expanding whoosh
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(300, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.15);
+      g.gain.setValueAtTime(0.04, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.18);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.2);
+      // Soft chime
+      note(c, 880, 0.05, 0.12, 0.05, 'sine');
+      note(c, 1175, 0.1, 0.1, 0.04, 'sine');
+    }, 'franchiseExpand');
+  },
+
+  /** Tension build + resolution for franchise vs original comparison */
+  franchiseShowdownReveal() {
+    play(c => {
+      // Tension build: low rumble rising
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(80, c.currentTime);
+      o.frequency.linearRampToValueAtTime(300, c.currentTime + 0.5);
+      g.gain.setValueAtTime(0.08, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.4);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.55);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.6);
+      // Resolution hit
+      note(c, 523, 0.5, 0.3, 0.15, 'triangle');
+      note(c, 659, 0.52, 0.28, 0.12, 'triangle');
+      note(c, 784, 0.54, 0.25, 0.1, 'sine');
+      noise(c, 0.5, 0.08, 0.1);
+    }, 'franchiseShowdown');
+  },
+
+  // ── R226: Economy System (R221) ──
+
+  /** Heavy cash register ka-ching with slight ominous undertone */
+  loanTaken() {
+    play(c => {
+      // Cash register drawer
+      noise(c, 0, 0.04, 0.15);
+      // Heavy ka-ching bell
+      note(c, 1200, 0.04, 0.3, 0.16, 'sine');
+      note(c, 1600, 0.06, 0.25, 0.12, 'sine');
+      // Coin rattle
+      note(c, 3000, 0.1, 0.08, 0.06, 'square');
+      note(c, 2600, 0.15, 0.06, 0.05, 'square');
+      // Ominous undertone
+      note(c, 55, 0.05, 0.6, 0.1, 'sine');
+      note(c, 82, 0.1, 0.5, 0.06, 'triangle');
+    }, 'loanTaken');
+  },
+
+  /** Relieved ascending chime, lighter than loanTaken */
+  loanRepaid() {
+    play(c => {
+      note(c, 659, 0, 0.15, 0.1, 'sine');
+      note(c, 784, 0.08, 0.15, 0.1, 'sine');
+      note(c, 988, 0.16, 0.15, 0.1, 'sine');
+      note(c, 1319, 0.24, 0.25, 0.12, 'sine');
+      // Light sparkle
+      note(c, 2637, 0.3, 0.2, 0.04, 'sine');
+    }, 'loanRepaid');
+  },
+
+  /** Confident two-note rising tone */
+  investmentPurchased() {
+    play(c => {
+      note(c, 523, 0, 0.2, 0.12, 'triangle');
+      note(c, 784, 0.1, 0.3, 0.14, 'triangle');
+      // Subtle confirmation shimmer
+      note(c, 1568, 0.18, 0.2, 0.05, 'sine');
+    }, 'investBuy');
+  },
+
+  /** Gentle coin cascade (multiple short high tones staggered) */
+  investmentPayout() {
+    play(c => {
+      const freqs = [1400, 1600, 1800, 2000, 2200, 1900, 2100];
+      freqs.forEach((f, i) => {
+        note(c, f, i * 0.06, 0.1, 0.07 - i * 0.006, 'sine');
+      });
+      // Warm base
+      note(c, 440, 0, 0.4, 0.06, 'triangle');
+    }, 'investPayout');
+  },
+
+  /** Subtle cash flow tinkle */
+  merchIncome() {
+    play(c => {
+      note(c, 1800, 0, 0.08, 0.06, 'sine');
+      note(c, 2200, 0.05, 0.08, 0.05, 'sine');
+      note(c, 1600, 0.1, 0.1, 0.04, 'sine');
+    }, 'merchIncome');
+  },
+
+  /** Attention-grabbing notification ping */
+  streamingDealOffer() {
+    play(c => {
+      note(c, 880, 0, 0.06, 0.12, 'sine');
+      note(c, 1175, 0.08, 0.06, 0.12, 'sine');
+      note(c, 1568, 0.16, 0.2, 0.14, 'sine');
+      // Echo
+      note(c, 1568, 0.3, 0.15, 0.06, 'sine');
+    }, 'streamDeal');
+  },
+
+  /** Safety click/lock sound */
+  insuranceToggle() {
+    play(c => {
+      // Click
+      note(c, 800, 0, 0.03, 0.12, 'square');
+      noise(c, 0, 0.03, 0.1);
+      // Lock engage
+      note(c, 400, 0.04, 0.08, 0.1, 'sine');
+      note(c, 600, 0.06, 0.1, 0.08, 'triangle');
+    }, 'insuranceToggle');
+  },
+
+  // ── R226: Player Profiles (R223) ──
+
+  /** Whoosh + subtle achievement-style chime */
+  profileOpen() {
+    play(c => {
+      // Whoosh
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(200, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(900, c.currentTime + 0.12);
+      o.frequency.exponentialRampToValueAtTime(300, c.currentTime + 0.2);
+      g.gain.setValueAtTime(0.08, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.22);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.25);
+      noise(c, 0, 0.1, 0.04);
+      // Achievement chime
+      note(c, 1047, 0.15, 0.15, 0.08, 'sine');
+      note(c, 1319, 0.22, 0.15, 0.08, 'sine');
+      note(c, 1568, 0.29, 0.2, 0.1, 'sine');
+    }, 'profileOpen');
+  },
+
+  /** Rapid soft ticks for animated stat counters */
+  statCounterTick() {
+    play(c => {
+      note(c, 1800, 0, 0.02, 0.04, 'square');
+    }, 'statTick');
+  },
+
+  /** Celebratory short fanfare (distinct from trophy) */
+  milestoneUnlock() {
+    play(c => {
+      // Quick brass stab: Eb5 → G5 → Bb5 → Eb6
+      note(c, 622, 0, 0.12, 0.12, 'sawtooth');
+      note(c, 784, 0.08, 0.12, 0.12, 'sawtooth');
+      note(c, 932, 0.16, 0.12, 0.12, 'triangle');
+      note(c, 1245, 0.24, 0.25, 0.14, 'triangle');
+      // Sparkle burst
+      note(c, 2489, 0.28, 0.2, 0.06, 'sine');
+      note(c, 3136, 0.32, 0.18, 0.04, 'sine');
+      noise(c, 0.25, 0.1, 0.04);
+    }, 'milestoneUnlock');
+  },
+
+  // ── R226: AI Directors (R225) ──
+
+  /** Competitive horn/announcement sting */
+  rivalFilmRelease() {
+    play(c => {
+      // Horn stab: minor key brass
+      note(c, 196, 0, 0.25, 0.15, 'sawtooth');
+      note(c, 233, 0.03, 0.22, 0.12, 'sawtooth');
+      note(c, 294, 0.06, 0.2, 0.1, 'sawtooth');
+      // Accent hit
+      note(c, 392, 0.15, 0.15, 0.08, 'triangle');
+      noise(c, 0, 0.08, 0.1);
+      // Tension tail
+      note(c, 147, 0.2, 0.3, 0.06, 'sine');
+    }, 'rivalRelease');
+  },
+
+  /** Dramatic tension build (drum roll feel) with resolution hit */
+  boxOfficeShowdown() {
+    play(c => {
+      // Drum roll: rapid low hits accelerating
+      for (let i = 0; i < 10; i++) {
+        const t = i * (0.05 - i * 0.003);
+        noise(c, Math.max(0, t), 0.03, 0.06 + i * 0.005);
+        note(c, 120 + i * 8, Math.max(0, t), 0.03, 0.05 + i * 0.004, 'square');
+      }
+      // Resolution hit — big chord
+      note(c, 220, 0.45, 0.4, 0.18, 'sawtooth');
+      note(c, 330, 0.45, 0.35, 0.14, 'triangle');
+      note(c, 440, 0.47, 0.3, 0.12, 'triangle');
+      noise(c, 0.45, 0.15, 0.12);
+      // Shimmer
+      note(c, 880, 0.5, 0.3, 0.06, 'sine');
+    }, 'boShowdown');
+  },
+
+  /** Quick ascending/descending tone based on movement direction */
+  leaderboardShift(direction: 'up' | 'down' = 'up') {
+    play(c => {
+      if (direction === 'up') {
+        note(c, 523, 0, 0.1, 0.1, 'triangle');
+        note(c, 659, 0.06, 0.1, 0.1, 'triangle');
+        note(c, 784, 0.12, 0.15, 0.12, 'sine');
+      } else {
+        note(c, 784, 0, 0.1, 0.1, 'triangle');
+        note(c, 659, 0.06, 0.1, 0.1, 'triangle');
+        note(c, 523, 0.12, 0.15, 0.12, 'sine');
+      }
+    }, 'lbShift');
+  },
 };

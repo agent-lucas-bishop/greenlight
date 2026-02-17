@@ -13,6 +13,7 @@ import { EndScreenStatsSummary } from '../components/StatsDashboard';
 import { calculateStandings, getSeasonLeaderboard } from '../aiDirectors';
 import { RivalDashboard } from '../components/RivalDashboard';
 import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, hasMilestone, type RunXPData } from '../prestige';
+import { calculateStarPowerFromRun, awardStarPower, canPrestigeReset, performPrestigeReset, getPrestigeShop, getPrestigeStarsDisplay, type StarPowerEarning } from '../prestigeShop';
 import { awardMetaXP, getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, canPrestige, performPrestige, getPrestigeBadgeEmoji, type MetaRunXPInput, type MetaXPResult } from '../metaProgression';
 import { recordGenreMasteryFilms } from '../genreMastery';
 import { recordZeroFlopsRun, recordAllModifiersWin } from '../unlockableContent';
@@ -437,6 +438,9 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [prestigeResult, setPrestigeResult] = useState<ReturnType<typeof awardRunXP> | null>(null);
   const [metaResult, setMetaResult] = useState<MetaXPResult | null>(null);
   const [showPrestigeConfirm, setShowPrestigeConfirm] = useState(false);
+  const [starPowerEarnings, setStarPowerEarnings] = useState<StarPowerEarning[]>([]);
+  const [showPrestigeResetConfirm, setShowPrestigeResetConfirm] = useState(false);
+  const [prestigeResetDone, setPrestigeResetDone] = useState(false);
   const [newCardIds, setNewCardIds] = useState<string[]>([]);
   const [highScoreRank, setHighScoreRank] = useState<number | null>(null);
   const [leaderboardEntry, setLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
@@ -658,6 +662,19 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       };
       const mResult = awardMetaXP(metaInput);
       setMetaResult(mResult);
+      // R227: Star Power earnings
+      const spEarnings = calculateStarPowerFromRun({
+        isVictory,
+        difficulty: state.difficulty || 'studio',
+        legacyRating: legacy.rating,
+        filmCount: history.length,
+        totalBoxOffice: state.totalEarnings,
+        achievementCount: achievements.length,
+      });
+      if (spEarnings.length > 0) {
+        awardStarPower(spEarnings);
+        setStarPowerEarnings(spEarnings);
+      }
       // Record personal bests
       const modifierNames: string[] = [];
       if (state.dailyModifierId) { const m = getModifierById(state.dailyModifierId); if (m) modifierNames.push(m.name); }

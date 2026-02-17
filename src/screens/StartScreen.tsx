@@ -40,7 +40,9 @@ const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
 const PlayerProfileModal = lazy(() => import('../components/PlayerProfile'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
+const PrestigePanel = lazy(() => import('../components/PrestigePanel'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
+import { getPrestigeShop, getPrestigeStarsDisplay } from '../prestigeShop';
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
@@ -440,6 +442,7 @@ export default function StartScreen() {
   const [showGlossary, setShowGlossary] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showDifficulty, setShowDifficulty] = useState(false);
+  const [showPrestigePanel, setShowPrestigePanel] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('studio');
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
@@ -725,6 +728,24 @@ export default function StartScreen() {
                 <span style={{ color: '#999', fontSize: '0.6rem' }}>Lv.{level.level}</span>
               </div>
             )}
+          </div>
+        );
+      })()}
+
+      {/* R227: Prestige Stars + Shop Button */}
+      {stats.runs > 0 && (() => {
+        const pShop = getPrestigeShop();
+        const pStars = getPrestigeStarsDisplay(pShop.prestigeLevel);
+        return (
+          <div style={{ textAlign: 'center', marginTop: 6 }}>
+            {pStars && <span style={{ fontSize: '0.85rem', marginRight: 6 }}>{pStars}</span>}
+            <button className="btn" onClick={() => setShowPrestigePanel(true)} style={{
+              background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)',
+              color: '#ffd700', padding: '3px 12px', cursor: 'pointer', fontSize: '0.7rem',
+              fontFamily: 'Bebas Neue', letterSpacing: 1, borderRadius: 6,
+            }}>
+              ⭐ Prestige Shop{pShop.starPower > 0 ? ` (${pShop.starPower})` : ''}
+            </button>
           </div>
         );
       })()}
@@ -1553,6 +1574,7 @@ export default function StartScreen() {
       {showAchievements && <Suspense fallback={null}><AchievementGallery onClose={() => setShowAchievements(false)} /></Suspense>}
       {showGlossary && <Suspense fallback={null}><Glossary onClose={() => setShowGlossary(false)} /></Suspense>}
       {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
+      {showPrestigePanel && <Suspense fallback={null}><PrestigePanel onClose={() => setShowPrestigePanel(false)} /></Suspense>}
       {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
       {showChallengeBoard && (
         <Suspense fallback={null}>

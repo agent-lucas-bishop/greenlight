@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AIDirector, AI_DIRECTORS, DirectorFilm, DirectorStanding, BoxOfficeShowdown, LeaderboardEntry } from '../aiDirectors';
+import { sfx } from '../sound';
 
 // ─── R225: RIVAL DASHBOARD ───
 
@@ -17,10 +18,20 @@ export function RivalDashboard({ standings, leaderboard, showdowns, currentSeaso
   const [showdownRevealed, setShowdownRevealed] = useState(false);
   const [showdownPhase, setShowdownPhase] = useState<'intro' | 'versus' | 'result'>('intro');
 
+  const soundedRef = useRef(false);
+
   // Auto-switch to showdown tab if there are collisions
   useEffect(() => {
     if (showdowns.length > 0) setTab('showdown');
   }, [showdowns.length]);
+
+  // Play rival release sound on mount
+  useEffect(() => {
+    if (!soundedRef.current) {
+      soundedRef.current = true;
+      sfx.rivalFilmRelease();
+    }
+  }, []);
 
   return (
     <div style={{
@@ -66,7 +77,7 @@ export function RivalDashboard({ standings, leaderboard, showdowns, currentSeaso
                 <span style={{ width: 28, textAlign: 'center', fontWeight: 'bold', color: i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#e67e22' : '#888' }}>
                   #{entry.rank}
                 </span>
-                <MovementArrow movement={entry.movement} />
+                <span ref={el => { if (el && !el.dataset.sounded && entry.isPlayer && (entry.movement === 'up' || entry.movement === 'down')) { el.dataset.sounded = '1'; sfx.leaderboardShift(entry.movement); } }}><MovementArrow movement={entry.movement} /></span>
                 <span style={{ fontSize: 20 }}>{entry.portrait}</span>
                 <span style={{ flex: 1, fontWeight: entry.isPlayer ? 'bold' : 'normal', color: entry.isPlayer ? '#2ecc71' : '#eee' }}>
                   {entry.name}
@@ -215,6 +226,7 @@ function ShowdownReveal({ showdown, onNext, hasNext }: { showdown: BoxOfficeShow
 
   useEffect(() => {
     setPhase('intro');
+    sfx.boxOfficeShowdown();
     const t1 = setTimeout(() => setPhase('versus'), 800);
     const t2 = setTimeout(() => setPhase('result'), 2000);
     return () => { clearTimeout(t1); clearTimeout(t2); };

@@ -56,7 +56,7 @@ export default function FranchiseTracker({ state, showSequelButton, onMakeSequel
               cursor: 'pointer',
               borderLeft: `3px solid ${eligible ? '#2ecc71' : '#444'}`,
             }}
-            onClick={() => { setExpanded(isExpanded ? null : franchise.rootTitle); sfx.cardFlip?.(); }}
+            onClick={() => { setExpanded(isExpanded ? null : franchise.rootTitle); if (!isExpanded) sfx.franchiseTreeExpand(); else sfx.cardFlip?.(); }}
           >
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -156,7 +156,7 @@ export default function FranchiseTracker({ state, showSequelButton, onMakeSequel
 
             {/* BO comparison bar when expanded */}
             {isExpanded && franchise.films.length >= 2 && (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 12 }} ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.franchiseShowdownReveal(); } }}>
                 <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: 4 }}>Box Office Comparison</div>
                 {(() => {
                   const maxBO = Math.max(...franchise.films.map(f => f.boxOffice));
@@ -187,7 +187,7 @@ export default function FranchiseTracker({ state, showSequelButton, onMakeSequel
                 className="btn btn-gold"
                 onClick={(e) => {
                   e.stopPropagation();
-                  sfx.greenlightStamp();
+                  sfx.franchiseSequelUnlock();
                   onMakeSequel(franchise);
                 }}
                 style={{ marginTop: 10, width: '100%', fontSize: '0.85rem' }}

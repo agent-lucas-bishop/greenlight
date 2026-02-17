@@ -10,6 +10,7 @@ import {
 } from '../gameStore';
 import type { Loan, Investment, MerchStream, StreamingDeal, InsurancePolicy } from '../economy';
 import { useState } from 'react';
+import { sfx } from '../sound';
 
 function Bar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
@@ -57,8 +58,8 @@ export default function FinancePanel({ state }: { state: GameState }) {
           <Bar value={state.budget} max={maxIncome} color="#2ecc71" label="Cash on Hand" />
           {totalDebt > 0 && <Bar value={totalDebt} max={maxIncome} color="#e74c3c" label="Total Debt" />}
           {totalMerchIncome > 0 && <Bar value={totalMerchIncome} max={maxIncome} color="#9b59b6" label="Merch/Season" />}
-          {state.lastInvestmentIncome > 0 && <Bar value={state.lastInvestmentIncome} max={maxIncome} color="#3498db" label="Investment Income (this season)" />}
-          {state.lastMerchIncome > 0 && <Bar value={state.lastMerchIncome} max={maxIncome} color="#9b59b6" label="Merch Income (this season)" />}
+          {state.lastInvestmentIncome > 0 && <span ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.investmentPayout(); } }}><Bar value={state.lastInvestmentIncome} max={maxIncome} color="#3498db" label="Investment Income (this season)" /></span>}
+          {state.lastMerchIncome > 0 && <span ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.merchIncome(); } }}><Bar value={state.lastMerchIncome} max={maxIncome} color="#9b59b6" label="Merch Income (this season)" /></span>}
         </Section>
 
         {/* Active Loans */}
@@ -81,7 +82,7 @@ export default function FinancePanel({ state }: { state: GameState }) {
                   />
                   <button className="btn btn-small" onClick={() => {
                     const amt = parseFloat(repayAmt);
-                    if (amt > 0) { makeRepayment(loan.id, amt); setRepayId(null); setRepayAmt(''); }
+                    if (amt > 0) { sfx.loanRepaid(); makeRepayment(loan.id, amt); setRepayId(null); setRepayAmt(''); }
                   }}>Pay</button>
                   <button className="btn btn-small" style={{ background: 'rgba(255,255,255,0.1)' }} onClick={() => { setRepayId(null); setRepayAmt(''); }}>Cancel</button>
                 </div>
@@ -102,7 +103,7 @@ export default function FinancePanel({ state }: { state: GameState }) {
                     <span><strong style={{ color: '#2ecc71' }}>${offer.amount}M</strong></span>
                     <span style={{ color: '#e67e22' }}>{offer.interestRate * 100}% rate · {offer.seasonsDue} seasons</span>
                   </div>
-                  <button className="btn btn-small" style={{ marginTop: 4, fontSize: '0.7rem' }} onClick={() => takeLoan(offer.id)}>
+                  <button className="btn btn-small" style={{ marginTop: 4, fontSize: '0.7rem' }} onClick={() => { sfx.loanTaken(); takeLoan(offer.id); }}>
                     Borrow ${offer.amount}M
                   </button>
                 </div>
@@ -142,7 +143,7 @@ export default function FinancePanel({ state }: { state: GameState }) {
                       <span style={{ color: '#2ecc71' }}>+${inv.incomePerSeason}M/season × {inv.totalSeasons}</span>
                       <span style={{ color: roi > 0 ? '#2ecc71' : '#e74c3c' }}>ROI: {roi > 0 ? '+' : ''}{roi}%</span>
                     </div>
-                    <button className="btn btn-small" style={{ marginTop: 4, fontSize: '0.7rem', opacity: canAfford ? 1 : 0.4 }} disabled={!canAfford} onClick={() => buyInvestment(inv.id)}>
+                    <button className="btn btn-small" style={{ marginTop: 4, fontSize: '0.7rem', opacity: canAfford ? 1 : 0.4 }} disabled={!canAfford} onClick={() => { sfx.investmentPurchased(); buyInvestment(inv.id); }}>
                       Invest ${inv.cost}M
                     </button>
                   </div>
@@ -182,14 +183,14 @@ export default function FinancePanel({ state }: { state: GameState }) {
             </div>
           )}
           {state.streamingDealOffer && !state.activeStreamingDeal && (
-            <div style={{ background: 'rgba(46,204,113,0.06)', border: '1px solid rgba(46,204,113,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem' }}>
+            <div ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.streamingDealOffer(); } }} style={{ background: 'rgba(46,204,113,0.06)', border: '1px solid rgba(46,204,113,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem' }}>
               <div style={{ color: '#2ecc71', fontWeight: 'bold' }}>📨 Offer from {state.streamingDealOffer.platformName}</div>
               <div style={{ color: '#ccc', fontSize: '0.75rem', margin: '4px 0' }}>
                 Guaranteed <strong>${state.streamingDealOffer.guaranteedIncome}M</strong> for next film.
                 Box office capped at {Math.round(state.streamingDealOffer.boMultiplierCap * 100)}%.
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <button className="btn btn-small" onClick={acceptStreamingDeal}>Accept Deal</button>
+                <button className="btn btn-small" onClick={() => { sfx.click(); acceptStreamingDeal(); }}>Accept Deal</button>
                 <button className="btn btn-small" style={{ background: 'rgba(255,255,255,0.1)' }} onClick={declineStreamingDeal}>Decline</button>
               </div>
             </div>
@@ -207,14 +208,14 @@ export default function FinancePanel({ state }: { state: GameState }) {
                 <span style={{ color: '#f1c40f' }}>Active — FLOP keeps 85% BO</span>
                 <span style={{ color: '#e74c3c' }}>-${state.insurancePolicy.premium}M/season</span>
               </div>
-              <button className="btn btn-small" style={{ marginTop: 4, fontSize: '0.7rem', background: 'rgba(231,76,60,0.2)' }} onClick={cancelInsurance}>
+              <button className="btn btn-small" style={{ marginTop: 4, fontSize: '0.7rem', background: 'rgba(231,76,60,0.2)' }} onClick={() => { sfx.insuranceToggle(); cancelInsurance(); }}>
                 Cancel Policy
               </button>
             </div>
           ) : state.insuranceOffer ? (
             <div style={{ background: 'rgba(241,196,15,0.06)', border: '1px solid rgba(241,196,15,0.15)', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem' }}>
               <div style={{ color: '#f1c40f', marginBottom: 4 }}>{state.insuranceOffer.description}</div>
-              <button className="btn btn-small" style={{ fontSize: '0.7rem' }} disabled={state.budget < state.insuranceOffer.premium} onClick={buyInsurance}>
+              <button className="btn btn-small" style={{ fontSize: '0.7rem' }} disabled={state.budget < state.insuranceOffer.premium} onClick={() => { sfx.insuranceToggle(); buyInsurance(); }}>
                 Buy Insurance (${state.insuranceOffer.premium}M)
               </button>
             </div>

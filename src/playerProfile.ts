@@ -274,10 +274,15 @@ export function updateProfileAfterRun(data: RunEndData): PlayerProfile {
   p.hallOfFame = p.hallOfFame.slice(0, 5);
 
   // Check milestones
+  let newMilestone = false;
   for (const m of CAREER_MILESTONES) {
     if (!p.milestones[m.id] && m.check(p)) {
       p.milestones[m.id] = now;
+      newMilestone = true;
     }
+  }
+  if (newMilestone) {
+    try { import('./sound').then(({ sfx }) => sfx.milestoneUnlock()); } catch {}
   }
 
   saveProfile(p);

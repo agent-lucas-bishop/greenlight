@@ -297,7 +297,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       {phase >= 2 && state.lastAudienceReaction && (() => {
         const ar: AudienceReaction = state.lastAudienceReaction;
         return (
-          <div className="animate-slide-down" style={{ marginTop: 16, maxWidth: 420, margin: '16px auto 0' }}>
+          <div className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; if (ar.audienceScore >= 70) sfx.audienceCheer(); else if (ar.audienceScore < 40) sfx.audienceBoo(); if (ar.buzz.level === 'extreme' || ar.buzz.level === 'high') setTimeout(() => sfx.buzzBuilding(), 300); if (ar.viralEvent) setTimeout(() => sfx.viralMoment(), 600); } }} style={{ marginTop: 16, maxWidth: 420, margin: '16px auto 0' }}>
             {/* Buzz & Audience Score header */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
               <div style={{

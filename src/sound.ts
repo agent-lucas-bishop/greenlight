@@ -1767,6 +1767,256 @@ export const sfx = {
     }, 'rivalReveal');
   },
 
+  // ── R190: Cutscene sounds (R183) ──
+
+  // Cutscene start — dramatic minor chord swell
+  cutsceneStart() {
+    play(c => {
+      // Dark dramatic chord: Am (A3-C4-E4)
+      note(c, 220, 0, 0.6, 0.12, 'sawtooth');
+      note(c, 262, 0, 0.6, 0.1, 'sawtooth');
+      note(c, 330, 0.05, 0.55, 0.1, 'triangle');
+      // Swell up
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(110, c.currentTime);
+      o.frequency.linearRampToValueAtTime(220, c.currentTime + 0.5);
+      g.gain.setValueAtTime(0.001, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, c.currentTime + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.7);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.75);
+      noise(c, 0, 0.15, 0.05);
+    }, 'cutsceneStart');
+  },
+
+  // Cutscene text type — subtle typewriter tick
+  cutsceneTextType() {
+    play(c => {
+      note(c, 1800, 0, 0.015, 0.03, 'square');
+      noise(c, 0, 0.01, 0.02);
+    }, 'cutsceneType');
+  },
+
+  // Cutscene end — fade-out whoosh
+  cutsceneEnd() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(600, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(80, c.currentTime + 0.4);
+      g.gain.setValueAtTime(0.1, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.5);
+      noise(c, 0, 0.3, 0.06);
+    }, 'cutsceneEnd');
+  },
+
+  // ── R190: Audience sounds (R185) ──
+
+  // Audience cheer — crowd roar (layered noise bursts)
+  audienceCheer() {
+    play(c => {
+      // Crowd noise: multiple bandpass-filtered noise layers
+      for (let i = 0; i < 3; i++) {
+        const buf = c.createBuffer(1, c.sampleRate * 0.8, c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let j = 0; j < data.length; j++) data[j] = (Math.random() * 2 - 1);
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 800 + i * 600;
+        bp.Q.value = 0.6;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.02, c.currentTime);
+        g.gain.linearRampToValueAtTime(0.1 - i * 0.02, c.currentTime + 0.15);
+        g.gain.setValueAtTime(0.08, c.currentTime + 0.4);
+        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.7);
+        src.connect(bp).connect(g).connect(getMaster());
+        src.start(c.currentTime); src.stop(c.currentTime + 0.8);
+      }
+      // Bright excited tone on top
+      note(c, 1047, 0.1, 0.2, 0.06, 'sine');
+      note(c, 1319, 0.15, 0.2, 0.05, 'sine');
+    }, 'audienceCheer');
+  },
+
+  // Audience boo — disappointed groan (low filtered noise + descending tone)
+  audienceBoo() {
+    play(c => {
+      const buf = c.createBuffer(1, c.sampleRate * 0.7, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let j = 0; j < data.length; j++) data[j] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 400;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.03, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, c.currentTime + 0.1);
+      g.gain.setValueAtTime(0.08, c.currentTime + 0.35);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.65);
+      src.connect(lp).connect(g).connect(getMaster());
+      src.start(c.currentTime); src.stop(c.currentTime + 0.7);
+      // Descending disappointed tone
+      const o = c.createOscillator();
+      const g2 = c.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(250, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(120, c.currentTime + 0.5);
+      g2.gain.setValueAtTime(0.06, c.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.55);
+      o.connect(g2).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.6);
+    }, 'audienceBoo');
+  },
+
+  // Viral moment — phone notification cascade
+  viralMoment() {
+    play(c => {
+      // Cascade of notification pings at different pitches
+      const freqs = [1175, 1397, 1568, 1760, 1976, 2093];
+      freqs.forEach((f, i) => {
+        note(c, f, i * 0.07, 0.1, 0.08 - i * 0.008, 'sine');
+        // Tiny click before each
+        note(c, 3000, i * 0.07, 0.01, 0.03, 'square');
+      });
+      // Buzz vibration undertone
+      note(c, 150, 0, 0.4, 0.04, 'square');
+    }, 'viralMoment');
+  },
+
+  // Buzz building — rising tension
+  buzzBuilding() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(100, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.6);
+      g.gain.setValueAtTime(0.03, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, c.currentTime + 0.5);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.7);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.75);
+      // High tension overtone
+      note(c, 880, 0.3, 0.35, 0.04, 'sine');
+      noise(c, 0.4, 0.2, 0.04);
+    }, 'buzzBuilding');
+  },
+
+  // ── R190: Director sounds (R186) ──
+
+  // Director style reveal — prestigious fanfare
+  directorStyleReveal() {
+    play(c => {
+      // Brass fanfare: Bb major
+      note(c, 233, 0, 0.3, 0.14, 'sawtooth');
+      note(c, 293, 0.05, 0.25, 0.12, 'sawtooth');
+      note(c, 349, 0.1, 0.25, 0.12, 'triangle');
+      note(c, 466, 0.15, 0.35, 0.14, 'triangle');
+      // Resolve shimmer
+      note(c, 932, 0.25, 0.3, 0.06, 'sine');
+      note(c, 1397, 0.3, 0.25, 0.04, 'sine');
+      noise(c, 0.1, 0.12, 0.06);
+    }, 'dirStyleReveal');
+  },
+
+  // Auteur rating up — ascending chime
+  auteurRatingUp() {
+    play(c => {
+      note(c, 784, 0, 0.12, 0.1, 'sine');
+      note(c, 988, 0.06, 0.12, 0.1, 'sine');
+      note(c, 1175, 0.12, 0.12, 0.1, 'sine');
+      note(c, 1568, 0.18, 0.2, 0.12, 'sine');
+      note(c, 2349, 0.24, 0.15, 0.05, 'sine');
+    }, 'auteurUp');
+  },
+
+  // ── R190: Trading Card sounds (R187) ──
+
+  // Card unlock — shimmery reveal
+  cardUnlock() {
+    play(c => {
+      // Lock click
+      noise(c, 0, 0.04, 0.1);
+      note(c, 500, 0, 0.03, 0.08, 'square');
+      // Shimmer ascending
+      note(c, 880, 0.06, 0.15, 0.1, 'sine');
+      note(c, 1175, 0.12, 0.15, 0.1, 'sine');
+      note(c, 1568, 0.18, 0.15, 0.1, 'sine');
+      note(c, 2093, 0.24, 0.25, 0.12, 'sine');
+      // High sparkle
+      note(c, 3136, 0.3, 0.2, 0.05, 'sine');
+      note(c, 3520, 0.35, 0.15, 0.04, 'sine');
+    }, 'cardUnlock');
+  },
+
+  // Trading card flip — physical card flip (distinct from existing cardFlip)
+  tradingCardFlip() {
+    play(c => {
+      // Paper flick
+      noise(c, 0, 0.06, 0.12);
+      // Snap
+      note(c, 1200, 0, 0.04, 0.08, 'square');
+      note(c, 600, 0.04, 0.06, 0.06, 'triangle');
+      // Settle
+      noise(c, 0.08, 0.03, 0.05);
+    }, 'tradingFlip');
+  },
+
+  // Legendary card reveal — epic orchestral hit
+  legendaryCardReveal() {
+    play(c => {
+      // Deep bass impact
+      note(c, 55, 0, 0.8, 0.28, 'sine');
+      note(c, 82, 0, 0.6, 0.2, 'triangle');
+      // Brass stab
+      note(c, 220, 0.02, 0.5, 0.16, 'sawtooth');
+      note(c, 330, 0.04, 0.45, 0.14, 'sawtooth');
+      note(c, 440, 0.06, 0.4, 0.12, 'sawtooth');
+      // Resolve chord
+      note(c, 523, 0.15, 0.5, 0.1, 'triangle');
+      note(c, 659, 0.2, 0.45, 0.08, 'triangle');
+      note(c, 784, 0.25, 0.45, 0.08, 'triangle');
+      // Cymbal wash
+      noise(c, 0.05, 0.4, 0.14);
+      // Shimmer cascade
+      note(c, 2093, 0.3, 0.5, 0.06, 'sine');
+      note(c, 2637, 0.35, 0.45, 0.05, 'sine');
+      note(c, 3520, 0.4, 0.4, 0.04, 'sine');
+      note(c, 4186, 0.45, 0.35, 0.03, 'sine');
+    }, 'legendaryCard');
+  },
+
+  // ── R190: Tutorial sounds (R188) ──
+
+  // Tutorial ping — gentle attention chime
+  tutorialPing() {
+    play(c => {
+      note(c, 880, 0, 0.15, 0.07, 'sine');
+      note(c, 1175, 0.08, 0.2, 0.06, 'sine');
+      note(c, 1568, 0.16, 0.15, 0.04, 'sine');
+    }, 'tutorialPing');
+  },
+
+  // Tutorial complete — achievement sound
+  tutorialComplete() {
+    play(c => {
+      note(c, 659, 0, 0.12, 0.1, 'sine');
+      note(c, 784, 0.08, 0.12, 0.1, 'sine');
+      note(c, 988, 0.16, 0.12, 0.1, 'sine');
+      note(c, 1319, 0.24, 0.25, 0.12, 'sine');
+      // Sparkle
+      note(c, 2637, 0.3, 0.2, 0.05, 'sine');
+    }, 'tutorialComplete');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

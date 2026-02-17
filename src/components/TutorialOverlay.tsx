@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getTutorialStepForPhase, completeTutorialStep, dismissTutorial } from '../tutorial';
 import { track } from '../analytics';
+import { sfx } from '../sound';
 import type { GamePhase } from '../types';
 
 export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
@@ -25,6 +26,7 @@ export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
         setStep(s);
         setVisible(true);
         updateSpotlight(s.targetSelector);
+        try { sfx.tutorialPing(); } catch {}
       }, 400);
       return () => clearTimeout(t);
     } else {
@@ -37,12 +39,14 @@ export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
   const handleDismiss = () => {
     completeTutorialStep(step.id);
     track('tutorial_step', { step: step.id });
+    try { sfx.tutorialComplete(); } catch {}
     setVisible(false);
   };
 
   const handleSkipAll = () => {
     dismissTutorial();
     track('tutorial_skip');
+    try { sfx.click(); } catch {}
     setVisible(false);
   };
 

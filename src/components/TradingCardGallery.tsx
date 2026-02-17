@@ -1,5 +1,6 @@
 // R187: Trading Card Gallery — Steam-style collectible card viewer
 import { useState, useMemo } from 'react';
+import { sfx } from '../sound';
 import {
   TRADING_CARDS,
   getCollectedCards,
@@ -230,7 +231,7 @@ export default function TradingCardGallery({ onClose, inline }: Props) {
           onClick={() => setSelectedCard(null)}
         >
           <div
-            onClick={e => { e.stopPropagation(); setFlipped(!flipped); }}
+            onClick={e => { e.stopPropagation(); setFlipped(!flipped); try { sfx.tradingCardFlip(); } catch {} }}
             className={selectedCard.rarity === 'legendary' ? 'trading-card-holo' : ''}
             style={{
               width: 280, minHeight: 400,

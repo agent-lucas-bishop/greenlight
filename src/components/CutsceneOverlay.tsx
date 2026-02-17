@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { CutsceneData } from '../cutscenes';
 import { resolveLines, markCutsceneSeen } from '../cutscenes';
+import { sfx } from '../sound';
 
 interface CutsceneOverlayProps {
   cutscene: CutsceneData;
@@ -21,6 +22,15 @@ export default function CutsceneOverlay({ cutscene, vars = {}, onComplete }: Cut
   const [completedLines, setCompletedLines] = useState<string[]>([]);
   const [showContinue, setShowContinue] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const startSounded = useRef(false);
+
+  // Play cutscene start sound on mount
+  useEffect(() => {
+    if (!startSounded.current) {
+      startSounded.current = true;
+      try { sfx.cutsceneStart(); } catch {}
+    }
+  }, []);
 
   const currentLine = lines[lineIndex] ?? '';
   const displayedText = currentLine.slice(0, charIndex);
@@ -33,7 +43,10 @@ export default function CutsceneOverlay({ cutscene, vars = {}, onComplete }: Cut
       return () => clearTimeout(t);
     }
     if (charIndex < currentLine.length) {
-      const t = setTimeout(() => setCharIndex(c => c + 1), speed);
+      const t = setTimeout(() => {
+        setCharIndex(c => c + 1);
+        try { sfx.cutsceneTextType(); } catch {}
+      }, speed);
       return () => clearTimeout(t);
     }
     // Line complete — pause then advance
@@ -58,6 +71,7 @@ export default function CutsceneOverlay({ cutscene, vars = {}, onComplete }: Cut
     // Continue
     setExiting(true);
     markCutsceneSeen(cutscene.id);
+    try { sfx.cutsceneEnd(); } catch {}
     setTimeout(onComplete, 500);
   }, [allDone, exiting, lines, cutscene.id, onComplete]);
 

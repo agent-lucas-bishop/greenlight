@@ -3,7 +3,7 @@ import { GameState, SeasonResult, RewardTier } from '../types';
 import { startGame } from '../gameStore';
 import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered, type EndingDef } from '../unlocks';
 import { sfx } from '../sound';
-import { addLeaderboardEntry } from '../leaderboard';
+import { addLeaderboardEntry, isNewHighScore, getEntryRank, getPlayerName, type LeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
@@ -408,6 +408,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [metaResult, setMetaResult] = useState<MetaXPResult | null>(null);
   const [showPrestigeConfirm, setShowPrestigeConfirm] = useState(false);
   const [newCardIds, setNewCardIds] = useState<string[]>([]);
+  const [highScoreRank, setHighScoreRank] = useState<number | null>(null);
+  const [leaderboardEntry, setLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
     history,
@@ -900,7 +902,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           maxWidth: 520,
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '2rem', marginBottom: 4 }}>{directorProfile.styleEmoji}</div>
+          <div ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; try { sfx.directorStyleReveal(); if (directorProfile.directorRating >= 75) setTimeout(() => sfx.auteurRatingUp(), 400); } catch {} } }} style={{ fontSize: '2rem', marginBottom: 4 }}>{directorProfile.styleEmoji}</div>
           <div style={{
             color: '#bb86fc',
             fontFamily: 'Bebas Neue',

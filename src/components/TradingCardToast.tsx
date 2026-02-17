@@ -13,7 +13,10 @@ export default function TradingCardToast({ cardId, onDone }: Props) {
   const card = TRADING_CARDS.find(c => c.id === cardId);
 
   useEffect(() => {
-    try { sfx.achievementUnlock(); } catch {}
+    try {
+      if (card?.rarity === 'legendary') sfx.legendaryCardReveal();
+      else sfx.cardUnlock();
+    } catch {}
     const t1 = setTimeout(() => setExiting(true), 3000);
     const t2 = setTimeout(onDone, 3500);
     return () => { clearTimeout(t1); clearTimeout(t2); };

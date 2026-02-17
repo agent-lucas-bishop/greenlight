@@ -23,7 +23,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
     if (picked) return;
     sfx.scriptSelect();
     setPicked(script.id);
-    setTimeout(() => pickScript(script), 500);
+    setTimeout(() => pickScript(script), 800);
   };
 
   return (
@@ -125,6 +125,11 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
               {!canAfford && !simplified && (
                 <div style={{ marginTop: 8, color: '#e67e22', fontSize: '0.75rem' }}>
                   ⚠️ Goes into debt (+${(script.cost - state.budget).toFixed(0)}M) — 20% interest/season
+                </div>
+              )}
+              {isPicked && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
+                  <div className="stamp-badge">GREENLIT</div>
                 </div>
               )}
             </div>

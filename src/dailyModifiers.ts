@@ -67,6 +67,34 @@ export const DAILY_MODIFIERS: DailyModifier[] = [
     description: 'Max draws reduced by 2, but clean wrap bonus is doubled.',
     shortDesc: '-2 max draws, clean wrap ×2',
   },
+  {
+    id: 'oscar_bait',
+    name: 'Oscar Bait',
+    emoji: '🎭',
+    description: 'Drama & Thriller quality +3, but Action & Comedy quality -2.',
+    shortDesc: 'Drama/Thriller +3, Action/Comedy -2',
+  },
+  {
+    id: 'summer_blockbuster',
+    name: 'Summer Blockbuster',
+    emoji: '🏖️',
+    description: 'Action & Sci-Fi scripts cost 20% less, but all other genres cost +$2.',
+    shortDesc: 'Action/Sci-Fi -20% cost, others +$2',
+  },
+  {
+    id: 'festival_circuit',
+    name: 'Festival Circuit',
+    emoji: '🎪',
+    description: 'Quality above 30 gives double reputation gains. Below 20 loses double rep.',
+    shortDesc: 'Quality>30 = double rep, <20 = double loss',
+  },
+  {
+    id: 'union_strike',
+    name: 'Union Strike',
+    emoji: '✊',
+    description: 'All crew cards cost +$2 to hire, but crew cards get +2 base quality.',
+    shortDesc: 'Crew +$2 cost, +2 quality',
+  },
 ];
 
 /** Get today's daily modifier using the daily seed */

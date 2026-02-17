@@ -7,6 +7,8 @@ import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
+import { awardRunXP, getPrestige, getPrestigeLevel, type RunXPData } from '../prestige';
+import { recordGenreMasteryFilms } from '../genreMastery';
 
 // ─── Helpers ───
 
@@ -116,7 +118,7 @@ function generateCareerSummary(state: GameState, isVictory: boolean, score: numb
 
 // ─── Share Text ───
 
-function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean, legacyRating: string): string {
+function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean, legacyRating: string, prestigeTitle?: string): string {
   const h = state.seasonHistory;
   const grid = h.map(s => {
     const isDisaster = s.quality <= 0;
@@ -131,7 +133,7 @@ function generateShareText(state: GameState, score: number, rank: string, isVict
     `${state.studioName || 'Studio'} · ${h.length} seasons`,
     grid,
     `Score: ${score} (${rank}) · $${totalBO.toFixed(1)}M`,
-    `Legacy: ${legacyRating} · Films: ${h.length}`,
+    `Legacy: ${legacyRating} · Films: ${h.length}${prestigeTitle ? ` · ${prestigeTitle}` : ''}`,
     bestFilm ? `Best: "${bestFilm.title}" $${bestFilm.boxOffice.toFixed(1)}M` : '',
     `greenlight-plum.vercel.app`,
   ].filter(Boolean);
@@ -212,6 +214,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [copied, setCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
+  const [prestigeResult, setPrestigeResult] = useState<ReturnType<typeof awardRunXP> | null>(null);
 
   const totalBO = state.totalEarnings;
   const bestFilm = history.length > 0 ? history.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
@@ -242,7 +245,9 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   }, [state.rivalHistory, state.cumulativeRivalEarnings]);
 
   const careerSummary = useMemo(() => generateCareerSummary(state, isVictory, score, rank), []);
-  const shareText = useMemo(() => generateShareText(state, score, rank, isVictory, legacy.rating), []);
+  const currentPrestige = getPrestige();
+  const currentPrestigeLevel = getPrestigeLevel(currentPrestige.xp);
+  const shareText = useMemo(() => generateShareText(state, score, rank, isVictory, legacy.rating, currentPrestigeLevel.title), []);
 
   useEffect(() => {
     if (isVictory) sfx.victory(); else sfx.flop();
@@ -293,6 +298,24 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         dailySeed: state.dailySeed,
         studioName: state.studioName || undefined,
       });
+      // Record genre mastery cross-run stats
+      recordGenreMasteryFilms(history.map(s => ({
+        genre: s.genre,
+        title: s.title,
+        boxOffice: s.boxOffice,
+        quality: s.quality,
+      })));
+      // Award prestige XP
+      const xpData: RunXPData = {
+        totalBoxOffice: state.totalEarnings,
+        achievementsUnlocked: achievements.length,
+        challengeCompleted: !!state.challengeId && isVictory,
+        legacyRating: legacy.rating,
+        isVictory,
+        filmCount: history.length,
+      };
+      const pResult = awardRunXP(xpData);
+      setPrestigeResult(pResult);
       markFirstRunComplete();
       trackRunEnd(score, isVictory);
       setRecorded(true);
@@ -512,6 +535,48 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             ))}
           </div>
           <p style={{ color: '#888', fontSize: '0.75rem', marginTop: 8 }}>Legacy perks apply to all future runs!</p>
+        </div>
+      )}
+
+      {/* ─── PRESTIGE XP ─── */}
+      {phase >= 5 && prestigeResult && (
+        <div className="animate-slide-down" style={{ marginTop: 24 }}>
+          <h3 style={{ color: 'var(--gold)', marginBottom: 12, letterSpacing: 1 }}>⭐ STUDIO PRESTIGE</h3>
+          <div style={{
+            background: 'rgba(212,168,67,0.08)', border: '1px solid var(--gold-dim)',
+            borderRadius: 12, padding: '16px 20px', maxWidth: 400, margin: '0 auto',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: '1.5rem' }}>{prestigeResult.newLevel.emoji}</span>
+              <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.3rem' }}>
+                {prestigeResult.newLevel.title}
+              </span>
+              <span style={{ color: '#666', fontSize: '0.75rem' }}>Lv.{prestigeResult.newLevel.level}</span>
+            </div>
+            {prestigeResult.leveledUp && (
+              <div style={{
+                background: 'rgba(46,204,113,0.15)', border: '1px solid #2ecc71',
+                borderRadius: 8, padding: '8px 12px', marginBottom: 12, textAlign: 'center',
+                color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1rem',
+                animation: 'comboAppear 0.5s ease',
+              }}>
+                🎉 LEVEL UP! {prestigeResult.oldLevel.title} → {prestigeResult.newLevel.title}
+              </div>
+            )}
+            <div style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '1.1rem', textAlign: 'center', marginBottom: 8 }}>
+              +{prestigeResult.xpGained} XP
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center' }}>
+              {prestigeResult.breakdown.map((b, i) => (
+                <span key={i} style={{
+                  fontSize: '0.65rem', color: '#888', background: 'rgba(255,255,255,0.05)',
+                  padding: '2px 8px', borderRadius: 4,
+                }}>
+                  {b.label}: +{b.xp}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

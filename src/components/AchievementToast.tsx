@@ -39,8 +39,26 @@ export default function AchievementToast({ achievement, onDone }: AchievementToa
         gap: 12,
         boxShadow: '0 4px 20px rgba(255,215,0,0.2)',
         minWidth: 240,
+        overflow: 'visible',
       }}
     >
+      {(achievement.secret || achievement.cosmeticReward) && (
+        <div className="achievement-confetti">
+          {Array.from({ length: 12 }, (_, i) => {
+            const angle = (i / 12) * Math.PI * 2;
+            const dist = 30 + Math.random() * 40;
+            return (
+              <span key={i} className="achievement-confetti-piece" style={{
+                left: '50%', top: '50%',
+                background: ['#ffd700', '#ff6b6b', '#2ecc71', '#3498db', '#e91e63'][i % 5],
+                '--tx': `${Math.cos(angle) * dist}px`,
+                '--ty': `${Math.sin(angle) * dist}px`,
+                animationDelay: `${i * 0.05}s`,
+              } as React.CSSProperties} />
+            );
+          })}
+        </div>
+      )}
       <span style={{ fontSize: '1.8rem' }}>{achievement.emoji}</span>
       <div>
         <div style={{

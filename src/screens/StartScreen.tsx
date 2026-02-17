@@ -13,6 +13,8 @@ import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
 import AchievementGallery from '../components/AchievementGallery';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
+import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress } from '../prestige';
+import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
@@ -418,6 +420,30 @@ export default function StartScreen() {
       <div className="start-title animate-title">GREENLIGHT</div>
       <div className="start-subtitle">A Movie Studio Roguelite</div>
 
+      {/* Prestige Level */}
+      {stats.runs > 0 && (() => {
+        const prestige = getPrestige();
+        const level = getPrestigeLevel(prestige.xp);
+        const xpProgress = getPrestigeXPProgress(prestige.xp);
+        const next = getNextPrestigeLevel(prestige.xp);
+        return (
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <span style={{ fontSize: '1.1rem' }}>{level.emoji}</span>
+            <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
+              {level.title}
+            </span>
+            {next && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 60, height: 4, background: '#222', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ width: `${xpProgress.progress * 100}%`, height: '100%', background: 'var(--gold)', borderRadius: 2 }} />
+                </div>
+                <span style={{ color: '#555', fontSize: '0.6rem' }}>Lv.{level.level}</span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Tab navigation */}
       {stats.runs > 0 && (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
@@ -599,6 +625,58 @@ export default function StartScreen() {
               </div>
             </div>
           )}
+
+          {/* Genre Mastery (cross-run) */}
+          {(() => {
+            const genreStats = getAllGenreStats();
+            if (genreStats.length === 0) return null;
+            const tierColors: Record<string, string> = { platinum: '#b9f2ff', gold: '#ffd700', silver: '#c0c0c0', bronze: '#cd7f32', none: '#555' };
+            return (
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ color: 'var(--gold)', fontSize: '0.9rem', marginBottom: 8, letterSpacing: 1 }}>🎬 GENRE MASTERY</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {genreStats.map(g => {
+                    const nextTier = MASTERY_THRESHOLDS.find(t => t.minBoxOffice > g.totalBoxOffice);
+                    const progressToNext = nextTier
+                      ? Math.min(1, (g.totalBoxOffice - g.tier.minBoxOffice) / (nextTier.minBoxOffice - g.tier.minBoxOffice))
+                      : 1;
+                    return (
+                      <div key={g.genre} style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                        background: 'rgba(255,255,255,0.02)', border: '1px solid #222', borderRadius: 6,
+                      }}>
+                        <span style={{ fontSize: '1rem' }}>{g.tier.emoji}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ color: tierColors[g.tier.tier], fontWeight: 700, fontSize: '0.8rem' }}>{g.genre}</span>
+                            <span style={{ color: '#666', fontSize: '0.6rem' }}>{g.tier.label}</span>
+                            {(g.tier.tier === 'gold' || g.tier.tier === 'platinum') && (
+                              <span style={{ color: '#2ecc71', fontSize: '0.55rem', background: 'rgba(46,204,113,0.1)', padding: '1px 5px', borderRadius: 3 }}>+1 Quality</span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, color: '#666', fontSize: '0.6rem', marginTop: 2 }}>
+                            <span>{g.filmsProduced} films</span>
+                            <span>${g.totalBoxOffice.toFixed(0)}M BO</span>
+                            <span>Avg Q: {g.avgQuality}</span>
+                          </div>
+                          {g.bestFilm && (
+                            <div style={{ color: '#555', fontSize: '0.55rem', marginTop: 1 }}>
+                              👑 "{g.bestFilm.title}" ${g.bestFilm.boxOffice.toFixed(1)}M
+                            </div>
+                          )}
+                          {nextTier && (
+                            <div style={{ width: '100%', height: 3, background: '#222', borderRadius: 2, marginTop: 3, overflow: 'hidden' }}>
+                              <div style={{ width: `${progressToNext * 100}%`, height: '100%', background: tierColors[g.tier.tier] || '#555', borderRadius: 2 }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Rank distribution */}
           {Object.keys(stats.careerStats.ranksAchieved || {}).length > 0 && (

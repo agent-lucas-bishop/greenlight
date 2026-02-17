@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getChallengeById } from '../challenges';
@@ -46,7 +46,30 @@ export default function Header({ state }: { state: GameState }) {
   const [muted, setMutedState] = useState(isMuted());
   const [volume, setVolumeState] = useState(getVolume());
   const [showVolume, setShowVolume] = useState(false);
+  const [budgetFlash, setBudgetFlash] = useState('');
+  const [strikeFlash, setStrikeFlash] = useState(false);
+  const prevBudget = useRef(state.budget);
+  const prevStrikes = useRef(state.strikes);
   const archetype = STUDIO_ARCHETYPES.find(a => a.id === state.studioArchetype);
+
+  useEffect(() => {
+    if (state.budget !== prevBudget.current) {
+      setBudgetFlash(state.budget > prevBudget.current ? 'budget-flash-green' : 'budget-flash-red');
+      const t = setTimeout(() => setBudgetFlash(''), 600);
+      prevBudget.current = state.budget;
+      return () => clearTimeout(t);
+    }
+  }, [state.budget]);
+
+  useEffect(() => {
+    if (state.strikes > prevStrikes.current) {
+      setStrikeFlash(true);
+      const t = setTimeout(() => setStrikeFlash(false), 800);
+      prevStrikes.current = state.strikes;
+      return () => clearTimeout(t);
+    }
+    prevStrikes.current = state.strikes;
+  }, [state.strikes]);
   const handleToggleMute = () => { const m = toggleMute(); setMutedState(m); if (!m) sfx.click(); };
   const handleVolume = (v: number) => { setVolume(v); setVolumeState(v); };
   return (
@@ -68,7 +91,7 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="Your money to hire talent and buy perks. Overspending creates debt." inline>
             <span className="label">Budget</span>
           </StatTooltip>
-          <span className="value">${state.budget.toFixed(1)}M</span>
+          <span className={`value ${budgetFlash}`}>${state.budget.toFixed(1)}M</span>
         </div>
         {state.debt > 0 && (
           <div className="header-stat">
@@ -82,7 +105,7 @@ export default function Header({ state }: { state: GameState }) {
           </StatTooltip>
           <span className="value">
             {Array.from({ length: 5 }, (_, i) => (
-              <span key={i} className={`rep-star ${i < state.reputation ? 'filled' : 'empty'}`}>★</span>
+              <span key={i} className={`rep-star ${i < state.reputation ? 'filled rep-star-fill' : 'empty'}`}>★</span>
             ))}
           </span>
         </div>
@@ -96,7 +119,7 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="Miss a box office target = 1 strike. 3 strikes and you're fired!" inline>
             <span className="label">Strikes</span>
           </StatTooltip>
-          <span className="value" style={{ color: state.strikes > 0 ? '#e74c3c' : undefined }}>
+          <span className={`value ${strikeFlash ? 'strike-new' : ''}`} style={{ color: state.strikes > 0 ? '#e74c3c' : undefined }}>
             {state.strikes}/{state.maxStrikes}
           </span>
         </div>

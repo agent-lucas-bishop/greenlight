@@ -98,6 +98,9 @@ export default function CastingScreen({ state }: { state: GameState }) {
   const allTalent = state.roster;
   const filledCount = state.castSlots.filter(s => s.talent).length;
   const assignedIds = new Set(state.castSlots.map(s => s.talent?.id).filter(Boolean));
+  const castNames = state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[];
+  const activeChemistryPairs = getActiveChemistry(castNames);
+  const chemistryNames = new Set(activeChemistryPairs.flatMap(c => [c.talent1, c.talent2]));
   const totalHeat = state.castSlots.reduce((s, c) => s + (c.talent?.heat || 0), 0);
   const totalSkill = state.castSlots.reduce((s, c) => s + (c.talent?.skill || 0), 0);
 
@@ -193,7 +196,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
               return (
               <div
                 key={i}
-                className={`cast-slot ${slot.talent ? 'filled' : ''} ${i === activeSlot ? 'active' : ''} ${blocked ? 'blocked' : ''}`}
+                className={`cast-slot ${slot.talent ? 'filled' : ''} ${i === activeSlot ? 'active' : ''} ${blocked ? 'blocked' : ''} ${slot.talent && chemistryNames.has(slot.talent.name) ? 'chemistry-sparkle-pair chemistry-sparkle' : ''}`}
                 onClick={() => {
                   if (blocked) return;
                   if (slot.talent) unassignTalent(i);

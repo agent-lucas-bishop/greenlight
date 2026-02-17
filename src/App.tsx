@@ -29,6 +29,9 @@ function App() {
   const [showNarrative, setShowNarrative] = useState(false);
   const [toastQueue, setToastQueue] = useState<AchievementDef[]>([]);
   const [checkedPhases, setCheckedPhases] = useState<string>('');
+  const [seasonOverlay, setSeasonOverlay] = useState<number | null>(null);
+  const [seasonOverlayExit, setSeasonOverlayExit] = useState(false);
+  const prevSeason = useState(state.season)[0];
   
   useEffect(() => subscribe(() => setState(getState())), []);
 
@@ -52,6 +55,17 @@ function App() {
       markNarrativeShown();
     }
   }, [state.phase]);
+
+  // Season announcement overlay
+  useEffect(() => {
+    if (state.phase === 'greenlight' && state.season > 1 && prevPhase === 'shop') {
+      setSeasonOverlay(state.season);
+      setSeasonOverlayExit(false);
+      const t1 = setTimeout(() => setSeasonOverlayExit(true), 1200);
+      const t2 = setTimeout(() => setSeasonOverlay(null), 1700);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+  }, [state.phase, state.season]);
 
   // Phase transition effect
   useEffect(() => {
@@ -123,6 +137,13 @@ function App() {
         />
       )}
       <DevStats />
+      {seasonOverlay !== null && (
+        <div className={`season-overlay ${seasonOverlayExit ? 'season-overlay-exit' : ''}`}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="season-number">SEASON {seasonOverlay}</div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

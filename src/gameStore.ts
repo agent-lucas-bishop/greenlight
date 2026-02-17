@@ -14,6 +14,7 @@ import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { saveGameState, clearSave } from './saveGame';
+import { getGenreMasteryBonus } from './genreMastery';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;

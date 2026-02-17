@@ -42,6 +42,7 @@ import StrategyTipsModal, { shouldShowStrategyTips } from '../components/Strateg
 import { extractShareData, type RunShareData } from '../sharing';
 import { checkCommunityChallenges, type RunSummary, type CommunityChallenge } from '../challenges';
 import ReplayViewer from '../components/ReplayViewer';
+import { detectAllSynergies } from '../synergies';
 
 // ─── Helpers ───
 
@@ -1047,6 +1048,15 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             <div className="label">Nominations</div>
             <div className="value">{nominations}</div>
           </div>
+          {(() => {
+            const synergyResult = detectAllSynergies(state);
+            return synergyResult.totalSynergyCount > 0 ? (
+              <div className="end-stat">
+                <div className="label">🔗 Synergies</div>
+                <div className="value" style={{ color: '#fbbf24' }}>{synergyResult.totalSynergyCount}</div>
+              </div>
+            ) : null;
+          })()}
           {state.festivalHistory.length > 0 && (
             <div className="end-stat">
               <div className="label">🎬 Festival Awards</div>

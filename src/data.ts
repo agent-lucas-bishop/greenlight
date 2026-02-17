@@ -6950,6 +6950,83 @@ ALL_SEASON_EVENTS.push(
   },
 );
 
+// ── NEW SEASON EVENTS (Round 130) ──
+
+ALL_SEASON_EVENTS.push(
+  {
+    id: 'studio_tour',
+    name: 'Studio Tour',
+    emoji: '🎟️',
+    description: 'Open your studio to the public. Earn +$2M from tour revenue.',
+    flavorText: 'Tourists in matching hats flood your backlot. One kid touches the Oscar replica. Security is overwhelmed. The gift shop sells out by noon.',
+    effect: 'studioTour',
+    rarity: 'common',
+  },
+  {
+    id: 'script_leak',
+    name: 'Script Leak',
+    emoji: '📄',
+    description: 'Your current script leaks online. Lose 1 reputation.',
+    flavorText: 'Someone left the third draft in a Starbucks. Reddit has a megathread. Your writer is inconsolable. Your lawyer is on line two.',
+    effect: 'scriptLeak',
+    rarity: 'rare',
+  },
+  {
+    id: 'film_festival_submit',
+    name: 'Film Festival',
+    emoji: '🎬🏆',
+    description: 'Submit your current film early. If quality > 30: +2 rep, +×0.3 multiplier. Otherwise, nothing.',
+    flavorText: 'The festival programmers saw a rough cut and went silent. Then one of them texted a single emoji: 🔥. You\'re in.',
+    effect: 'filmFestivalSubmit',
+    rarity: 'common',
+  },
+  {
+    id: 'union_negotiations',
+    name: 'Union Negotiations',
+    emoji: '🤝',
+    description: 'Pay $3M to settle union demands, or lose all crew card bonuses this season.',
+    flavorText: 'The union rep slides a napkin across the table with a number on it. Three million. Your crew watches from the hallway. The silence is deafening.',
+    effect: 'unionNegotiations',
+    rarity: 'rare',
+  },
+  {
+    id: 'streaming_deal_flat',
+    name: 'Streaming Deal (Flat Rate)',
+    emoji: '📺💵',
+    description: 'Take a guaranteed $8M flat rate for your next film. Skip box office tier calculation entirely.',
+    flavorText: 'StreamFlix offers a clean, simple deal: eight million, no strings, no theatrical window. Your agent says take it. Your ego says gamble. Your rent says take it.',
+    effect: 'streamingDealFlat',
+    rarity: 'common',
+  },
+  {
+    id: 'celebrity_cameo',
+    name: 'Celebrity Cameo',
+    emoji: '⭐🎥',
+    description: 'A celebrity drops by set. +3 quality boost, but 30% chance of scandal (-2 rep).',
+    flavorText: 'They showed up unannounced in a golf cart, wearing sunglasses indoors. "I heard you were shooting. Put me in." Your AD mouths "say yes" from behind the monitor.',
+    effect: 'celebrityCameo',
+    rarity: 'common',
+  },
+  {
+    id: 'tax_break',
+    name: 'Tax Break',
+    emoji: '🧾',
+    description: 'Government incentive: your next script costs $2 less.',
+    flavorText: 'The state film commission rubber-stamps your application. Two million in tax credits. Your accountant does a rare smile. You didn\'t even have to lie this time.',
+    effect: 'taxBreak',
+    rarity: 'common',
+  },
+  {
+    id: 'documentary_trend',
+    name: 'Documentary Trend',
+    emoji: '🎞️',
+    description: 'If your next film is Drama, double the market multiplier. Otherwise, no effect.',
+    flavorText: 'True crime is dead. Prestige docs are in. Every streamer wants "the next Icarus." If you\'re making drama, you\'re golden. If not... tough luck.',
+    effect: 'documentaryTrend',
+    rarity: 'common',
+  },
+);
+
 // ── NEW TALENT ──
 
 const HASSAN_IBRAHIM: Omit<Talent, 'id'> = {

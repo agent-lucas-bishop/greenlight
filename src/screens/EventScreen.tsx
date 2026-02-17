@@ -12,7 +12,7 @@ export default function EventScreen({ state }: { state: GameState }) {
   const handlePick = () => {
     if (!selectedId) return;
     const selected = events.find(e => e.id === selectedId);
-    const negativeEffects = ['scandal', 'talentPoached', 'awardSnub', 'rivalPoaching'];
+    const negativeEffects = ['scandal', 'talentPoached', 'awardSnub', 'rivalPoaching', 'scriptLeak', 'unionNegotiations'];
     if (selected && negativeEffects.includes(selected.effect)) {
       sfx.eventNegative();
     } else {

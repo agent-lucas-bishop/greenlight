@@ -708,6 +708,10 @@ function beginSeason() {
   if (state.activeSeasonEvent?.effect === 'creativeRetreat') {
     scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 3 }));
   }
+  // R130: Celebrity Cameo — +3 base quality
+  if (state.activeSeasonEvent?.effect === 'celebrityCameo') {
+    scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 3 }));
+  }
   // R80: Tax Incentive — scripts cost -30%, but locked to a random genre
   if (state.activeSeasonEvent?.effect === 'taxIncentive') {
     const allGenres: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Romance', 'Sci-Fi', 'Thriller'];
@@ -717,6 +721,10 @@ function beginSeason() {
   
   // R115: Market Crash — all script costs -$2 (min $1)
   if (state.activeSeasonEvent?.effect === 'marketCrash') {
+    scripts = scripts.map(s => ({ ...s, cost: Math.max(1, s.cost - 2) }));
+  }
+  // R130: Tax Break — next script costs $2 less
+  if (state.activeSeasonEvent?.effect === 'taxBreak') {
     scripts = scripts.map(s => ({ ...s, cost: Math.max(1, s.cost - 2) }));
   }
   // R115: Indie Darling Wave — scripts costing $3 or less get +5 base quality
@@ -1788,6 +1796,7 @@ export function resolveRelease() {
   }
 
   let multiplier = getMarketMultiplier(market, script.genre, rawQuality);
+  let filmFestivalSubmitBonus = false;
 
   // Legacy perk: Blockbuster Factory — all market multipliers +0.1
   const legacyPerksRelease = getActiveLegacyPerks();
@@ -1858,6 +1867,14 @@ export function resolveRelease() {
       const renaissanceGenre = allGenres[state.season % allGenres.length];
       if (script.genre === renaissanceGenre) multiplier += 0.6;
     }
+    // R130 events
+    if (se.effect === 'filmFestivalSubmit' && rawQuality > 30) {
+      filmFestivalSubmitBonus = true;
+      multiplier += 0.3;
+    }
+    if (se.effect === 'documentaryTrend' && script.genre === 'Drama') {
+      multiplier *= 2;
+    }
     if (se.effect === 'nostalgiaWave') {
       // Double genre mastery bonus (same-genre) — add it again
       const genreCount = state.genreMastery[script.genre] || 0;
@@ -1891,6 +1908,8 @@ export function resolveRelease() {
   let boxOffice: number;
   if (se?.effect === 'streamingBiddingWar') {
     boxOffice = Math.max(40, Math.round(rawQuality * 1.0 * repBonus * 10) / 10); // floor $40M, no market multiplier
+  } else if (se?.effect === 'streamingDealFlat') {
+    boxOffice = 8; // R130: flat $8M, skip tier calc
   } else {
     boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
   }
@@ -1966,6 +1985,9 @@ export function resolveRelease() {
   if (se?.effect === 'awardsCampaign' && rawQuality > 35) {
     repChange += 3;
   }
+
+  // R130: Film Festival Submit — +2 rep if quality > 30
+  if (filmFestivalSubmitBonus) repChange += 2;
 
   const newRep = Math.max(0, Math.min(5, currentRep + repChange));
   // Cosmic Harvest prestige ability: quality above 35 counts double for nomination threshold
@@ -2429,6 +2451,43 @@ export function pickSeasonEvent(eventId: string) {
       break;
     }
     // marketCrash, talentStrike, genreRenaissance, indieDarlingWave applied during beginSeason/pickScript/release
+    // R130 events
+    case 'studioTour': {
+      budget += 2;
+      break;
+    }
+    case 'scriptLeak': {
+      reputation = Math.max(0, reputation - 1);
+      break;
+    }
+    case 'filmFestivalSubmit': {
+      // Applied during release resolution
+      break;
+    }
+    case 'unionNegotiations': {
+      // Pay $3M upfront; if can't afford, crew bonuses lost (handled in production)
+      budget -= 3;
+      break;
+    }
+    case 'streamingDealFlat': {
+      // Applied during release — skip tier calc, flat $8M
+      break;
+    }
+    case 'celebrityCameo': {
+      // +3 quality applied during production; 30% scandal check applied here
+      if (rng() < 0.3) {
+        reputation = Math.max(0, reputation - 2);
+      }
+      break;
+    }
+    case 'taxBreak': {
+      // Applied during beginSeason/pickScript — next script costs $2 less
+      break;
+    }
+    case 'documentaryTrend': {
+      // Applied during release — if Drama, double multiplier
+      break;
+    }
   }
   
   // Genre Masterclass: +1 mastery for most-made genre (immutable update)

@@ -1167,7 +1167,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     starPowerReward: { amount: 40, label: '+40 Star Power' },
     check: (s) => {
       if (s.phase !== 'victory') return false;
-      return (s.rerollsUsed ?? 0) === 0;
+      return ((s as any).rerollsUsed ?? 0) === 0;
     },
   },
 
@@ -1183,8 +1183,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'epic',
     starPowerReward: { amount: 35, label: '+35 Star Power' },
     check: (s) => {
-      if (!s.production?.playedCards) return false;
-      const dramaCards = s.production.playedCards.filter(
+      if (!(s.production as any)?.playedCards) return false;
+      const dramaCards = ((s.production as any).playedCards as any[]).filter(
         (c: any) => c.tags?.includes('heart') || c.sourceType === 'actor'
       );
       return dramaCards.length >= 5 && s.currentScript?.genre === 'Drama';
@@ -1204,7 +1204,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     starPowerReward: { amount: 75, label: '+75 Star Power' },
     check: (s) => {
       if (s.phase !== 'victory') return false;
-      return s.roster.filter(t => t.role === 'director').length === 0;
+      return s.roster.filter(t => t.type === 'Director').length === 0;
     },
   },
 
@@ -1249,7 +1249,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'epic',
     starPowerReward: { amount: 40, label: '+40 Star Power' },
     check: (_s, u) => {
-      const archetypeWins = new Set(u.careerStats.archetypeWins || []);
+      const archetypeWins = new Set((u.careerStats as any).archetypeWins || []);
       return archetypeWins.size >= 3;
     },
   },
@@ -1292,7 +1292,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hint: 'Blow past expectations',
     rarity: 'epic',
     starPowerReward: { amount: 30, label: '+30 Star Power' },
-    check: (s) => s.seasonHistory.some(h => h.boxOffice >= (h.target || 1) * 3),
+    check: (s) => s.seasonHistory.some(h => h.boxOffice >= ((h as any).target || 1) * 3),
   },
 
   // LEGENDARY: The Completionist — unlock 50 achievements
@@ -1358,8 +1358,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hint: 'Keep playing dailies',
     rarity: 'rare',
     starPowerReward: { amount: 20, label: '+20 Star Power' },
-    check: (_s, u) => (u.careerStats.dailyChallengesCompleted || 0) >= 20,
-    progress: (_s, u) => ({ current: Math.min(u.careerStats.dailyChallengesCompleted || 0, 20), target: 20 }),
+    check: (_s, u) => ((u.careerStats as any).dailyChallengesCompleted || 0) >= 20,
+    progress: (_s, u) => ({ current: Math.min((u.careerStats as any).dailyChallengesCompleted || 0, 20), target: 20 }),
   },
 ];
 

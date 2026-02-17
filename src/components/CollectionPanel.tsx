@@ -11,6 +11,7 @@ import {
   type CollectionCardRarity,
 } from '../cardCollection';
 import type { TalentType, Genre } from '../types';
+import CardArtwork from './CardArtwork';
 
 const CardDetail = lazy(() => import('./CardDetail'));
 
@@ -193,25 +194,30 @@ export default function CollectionPanel({ onClose, inline }: Props) {
           const rc = RARITY_COLORS[card.rarity];
 
           return (
-            <div
+            <CardArtwork
               key={card.id}
-              onClick={() => discovered && setSelectedCardId(card.id)}
+              name={card.name}
+              role={card.role as TalentType}
+              rarity={card.rarity}
+              isFoil={entry?.isFoil}
               style={{
                 padding: '12px 10px',
                 borderRadius: 8,
                 cursor: discovered ? 'pointer' : 'default',
-                background: discovered ? rc.bg : 'rgba(0,0,0,0.3)',
                 border: `1px solid ${discovered ? rc.border : '#222'}`,
                 textAlign: 'center',
                 transition: 'transform 0.2s, box-shadow 0.2s',
-                position: 'relative',
                 filter: discovered ? 'none' : 'grayscale(1) brightness(0.3)',
                 minHeight: 120,
               }}
-              onMouseEnter={e => { if (discovered) { (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${rc.border}40`; } }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
+              className={discovered ? 'collection-card-item' : ''}
             >
-              {entry?.isFoil && <div className="foil-shimmer-card" />}
+              <div
+                onClick={() => discovered && setSelectedCardId(card.id)}
+                onMouseEnter={e => { if (discovered) { const p = e.currentTarget.parentElement as HTMLElement; p.style.transform = 'scale(1.05)'; p.style.boxShadow = `0 0 12px ${rc.border}40`; } }}
+                onMouseLeave={e => { const p = e.currentTarget.parentElement as HTMLElement; p.style.transform = ''; p.style.boxShadow = ''; }}
+                style={{ position: 'relative' }}
+              >
               {/* Favorite */}
               {discovered && (
                 <button
@@ -241,7 +247,8 @@ export default function CollectionPanel({ onClose, inline }: Props) {
                   {entry.isFoil && ' ✨'}
                 </div>
               )}
-            </div>
+              </div>
+            </CardArtwork>
           );
         })}
       </div>

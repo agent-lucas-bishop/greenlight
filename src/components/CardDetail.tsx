@@ -2,6 +2,8 @@
 import { useMemo } from 'react';
 import type { CollectionCardDef, CollectionEntry } from '../cardCollection';
 import { getRelatedCards, getCollection, getCardCatalog } from '../cardCollection';
+import type { TalentType } from '../types';
+import CardArtwork from './CardArtwork';
 
 const RARITY_COLORS: Record<string, { color: string; bg: string; border: string }> = {
   common: { color: '#999', bg: 'rgba(150,150,150,0.08)', border: '#555' },
@@ -32,15 +34,18 @@ export default function CardDetail({ card, entry, onClose, onSelectCard }: Props
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520, padding: 0, overflow: 'hidden' }}>
         <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
 
-        {/* Card Header */}
-        <div style={{
-          background: rarity.bg,
-          borderBottom: `2px solid ${rarity.border}`,
-          padding: '28px 24px 20px',
-          textAlign: 'center',
-          position: 'relative',
-        }}>
-          {entry?.isFoil && <div className="foil-shimmer-overlay" />}
+        {/* Card Header — R264: Generated CSS art background */}
+        <CardArtwork
+          name={card.name}
+          role={card.role as TalentType}
+          rarity={card.rarity}
+          isFoil={entry?.isFoil}
+          style={{
+            borderBottom: `2px solid ${rarity.border}`,
+            padding: '28px 24px 20px',
+            textAlign: 'center',
+          }}
+        >
           <div style={{ fontSize: '3rem', marginBottom: 8 }}>
             {ROLE_EMOJI[card.role] || '🎬'}
           </div>
@@ -65,7 +70,7 @@ export default function CardDetail({ card, entry, onClose, onSelectCard }: Props
               </span>
             )}
           </div>
-        </div>
+        </CardArtwork>
 
         {/* Stats & Info */}
         <div style={{ padding: '20px 24px' }}>

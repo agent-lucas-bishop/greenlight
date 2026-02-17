@@ -1,5 +1,5 @@
 # GREENLIGHT — State of the Game
-*After 57 rounds of iteration (Feb 15-16, 2026)*
+*After 58 rounds of iteration (Feb 15-16, 2026)*
 
 **Live:** https://greenlight-plum.vercel.app
 **Repo:** ~/.openclaw/workspace/greenlight
@@ -37,6 +37,7 @@ A movie studio roguelite — you're a film producer making 5 movies across 5 sea
 | Dev analytics + daily/share verification | R25 | ✅ |
 | Visual regression audit + CSS fixes | R54 | ✅ |
 | Accessibility audit + final polish | R56 | ✅ |
+| Tutorial & new player experience refresh | R58 | ✅ |
 
 ## Architecture
 ```
@@ -89,6 +90,28 @@ src/
 - Custom SVG favicon with 🎬 emoji on dark background already in place
 - Apple touch icon configured
 - PWA manifest present
+
+## Round 57 Changes — Integration Balance Pass
+
+### Bug Fixes
+- **Union Dispute event**: Fixed missing crew card quality bonus — crew action cards now correctly get +1 base quality when Union Dispute is active (previously only the +$2 cost increase was applied)
+- **Cosmic Harvest 'prestige' ability**: Implemented nomination quality boost — quality above 35 now counts double toward nomination threshold, matching the script's description
+
+### Balance Adjustments
+- **Wedding Season**: Cost increased from $1M → $2M. At $1M it had 2× the ROI of any other script, making it an auto-pick. Still the cheapest script but no longer free money
+- **Streaming Deal event**: Multiplier penalty increased from -×0.3 → -×0.4. Was profitable 75% of the time (should be situational). Now profitable ~55% — truly a tradeoff between cash now vs. box office later
+
+### Integration Verification
+- **Event system phase flow**: Verified clean transitions (release → shop → event → greenlight). Season 5 correctly skips events and goes to victory. Speed Run (3 seasons) works correctly with events between seasons 1→2 and 2→3
+- **Save/resume**: New event state fields (`seasonEventChoices`, `activeSeasonEvent`, `streamingDealActive`) serialize correctly through `stripFunctions()`
+- **New talent balance**: No auto-pick dominance detected. Power-per-cost ratios fall within existing talent range (1.0-2.3). Grace Okonkwo (skill 4 support, $9) is strong but not dominant
+- **New chemistry pairs**: All 8 R55 chemistry pairs verified — talent names match exactly, bonus values are in the established +2 to +4 range
+
+### Simulation Results (R57)
+- Overall win rate: 42.5% (200 runs) — healthy
+- Dynasty (Drama $7M): Highest ceiling but lowest ROI (7.4) — properly gated by cost
+- No never-pick scripts or talent detected
+- Event value spread: $1M to $8M for positive events — reasonable variance
 
 ## Round 55 Changes — Content Expansion & Replayability
 

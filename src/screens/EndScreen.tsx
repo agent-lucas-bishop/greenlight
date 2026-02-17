@@ -916,32 +916,85 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
-      {/* ─── RIVAL STANDINGS ─── */}
+      {/* ─── RIVAL LEADERBOARD (R180) ─── */}
       {phase >= 4 && rivalStandings.length > 0 && (
         <div style={{ marginTop: 24 }} className="animate-slide-down">
-          <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏢 RIVAL STANDINGS</h3>
-          <div className="rival-standings" style={{ maxWidth: 400, margin: '0 auto' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
-              background: 'rgba(212,168,67,0.1)', border: '1px solid var(--gold-dim)', borderRadius: 6, marginBottom: 4,
-            }}>
-              <span style={{ fontSize: '1rem' }}>⭐</span>
-              <span style={{ flex: 1, color: '#d4a843', fontWeight: 700, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{state.studioName || 'Your Studio'}</span>
-              <span style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '1rem', flexShrink: 0 }}>${totalBO.toFixed(1)}M</span>
+          <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏢 INDUSTRY LEADERBOARD</h3>
+          {state.nemesisStudio && (
+            <div style={{ textAlign: 'center', marginBottom: 8, fontSize: '0.75rem', color: '#e74c3c', fontStyle: 'italic' }}>
+              ⚔️ Nemesis: {state.nemesisStudio}
             </div>
-            {rivalStandings.map((r, i) => {
-              const isAhead = r.earnings > totalBO;
-              return (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px',
-                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+          )}
+          <div className="rival-standings" style={{ maxWidth: 500, margin: '0 auto' }}>
+            {/* Header row */}
+            <div style={{ display: 'flex', gap: 6, padding: '4px 12px', marginBottom: 4, fontSize: '0.6rem', color: '#666' }}>
+              <span style={{ width: 22 }}>#</span>
+              <span style={{ width: 24 }}></span>
+              <span style={{ flex: 1 }}>Studio</span>
+              {history.map((_, si) => (
+                <span key={si} style={{ width: 42, textAlign: 'right', flexShrink: 0 }}>S{si + 1}</span>
+              ))}
+              <span style={{ width: 60, textAlign: 'right', flexShrink: 0 }}>Total</span>
+            </div>
+            {(() => {
+              // Build leaderboard entries
+              const entries = [
+                {
+                  name: state.studioName || 'Your Studio',
+                  emoji: '⭐',
+                  isPlayer: true,
+                  isNemesis: false,
+                  seasonEarnings: history.map(h => h.boxOffice),
+                  total: totalBO,
+                  strategyLabel: undefined as string | undefined,
+                  reputation: state.reputation,
+                },
+                ...rivalStandings.map(r => ({
+                  name: r.name,
+                  emoji: r.emoji,
+                  isPlayer: false,
+                  isNemesis: state.nemesisStudio === r.name,
+                  seasonEarnings: state.rivalStats?.[r.name]?.seasonEarnings || [],
+                  total: r.earnings,
+                  strategyLabel: state.rivalStats?.[r.name] ? undefined : undefined,
+                  reputation: state.rivalStats?.[r.name]?.reputation || 3,
+                })),
+              ].sort((a, b) => b.total - a.total);
+
+              return entries.map((entry, i) => (
+                <div key={entry.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', marginBottom: 2, borderRadius: 6,
+                  background: entry.isPlayer ? 'rgba(212,168,67,0.1)' : entry.isNemesis ? 'rgba(231,76,60,0.08)' : 'transparent',
+                  border: entry.isPlayer ? '1px solid var(--gold-dim)' : entry.isNemesis ? '1px solid rgba(231,76,60,0.2)' : '1px solid transparent',
                 }}>
-                  <span style={{ fontSize: '1rem' }}>{r.emoji}</span>
-                  <span style={{ flex: 1, color: isAhead ? '#e74c3c' : '#888', fontSize: '0.8rem' }}>{r.name}</span>
-                  <span style={{ color: isAhead ? '#e74c3c' : '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>${r.earnings.toFixed(1)}M</span>
+                  <span style={{ fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: i === 0 ? '#ffd700' : '#666', width: 22 }}>#{i + 1}</span>
+                  <span style={{ fontSize: '0.9rem', width: 24 }}>{entry.emoji}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
+                      color: entry.isPlayer ? '#d4a843' : entry.isNemesis ? '#e74c3c' : '#ccc',
+                      fontSize: '0.8rem', fontWeight: entry.isPlayer ? 700 : 400,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block',
+                    }}>
+                      {entry.name}{entry.isNemesis ? ' ⚔️' : ''}
+                    </span>
+                  </div>
+                  {entry.seasonEarnings.map((se, si) => (
+                    <span key={si} style={{
+                      width: 42, textAlign: 'right', fontSize: '0.7rem', flexShrink: 0,
+                      color: entry.isPlayer ? '#d4a843' : '#888',
+                    }}>
+                      ${se.toFixed(0)}M
+                    </span>
+                  ))}
+                  <span style={{
+                    width: 60, textAlign: 'right', fontFamily: 'Bebas Neue', fontSize: '0.95rem', flexShrink: 0,
+                    color: i === 0 ? '#ffd700' : entry.isPlayer ? '#d4a843' : entry.isNemesis ? '#e74c3c' : '#aaa',
+                  }}>
+                    ${entry.total.toFixed(1)}M
+                  </span>
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         </div>
       )}

@@ -494,11 +494,12 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
           {generateRivalCommentary(state).map((c, i) => (
             <div key={i} style={{
               padding: '8px 12px', marginBottom: 6, borderRadius: 8,
-              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+              background: c.isNemesis ? 'rgba(231,76,60,0.08)' : 'rgba(255,255,255,0.03)',
+              border: c.isNemesis ? '1px solid rgba(231,76,60,0.2)' : '1px solid rgba(255,255,255,0.06)',
               fontSize: '0.78rem', color: '#bbb', fontStyle: 'italic',
             }}>
-              <span style={{ fontStyle: 'normal', fontWeight: 600, color: c.personality === 'aggressive' ? '#e74c3c' : c.personality === 'steady' ? '#3498db' : '#2ecc71' }}>
-                {c.studioEmoji} {c.studioName}:
+              <span style={{ fontStyle: 'normal', fontWeight: 600, color: c.isNemesis ? '#e74c3c' : c.personality === 'aggressive' ? '#e74c3c' : c.personality === 'steady' ? '#3498db' : '#2ecc71' }}>
+                {c.studioEmoji} {c.studioName}{c.isNemesis ? ' ⚔️' : ''}:
               </span>{' '}
               "{c.comment}"
             </div>

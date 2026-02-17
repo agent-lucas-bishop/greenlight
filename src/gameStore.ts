@@ -106,6 +106,7 @@ import { getGenreMasteryBonus } from './genreMastery';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
+import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;

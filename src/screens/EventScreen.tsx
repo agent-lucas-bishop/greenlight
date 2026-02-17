@@ -12,11 +12,28 @@ export default function EventScreen({ state }: { state: GameState }) {
   const handlePick = () => {
     if (!selectedId) return;
     const selected = events.find(e => e.id === selectedId);
-    const negativeEffects = ['scandal', 'talentPoached', 'awardSnub', 'rivalPoaching', 'scriptLeak', 'unionNegotiations'];
-    if (selected && negativeEffects.includes(selected.effect)) {
-      sfx.eventNegative();
+    // Play event-specific sound if available, else fall back to positive/negative
+    const eventSfxMap: Record<string, () => void> = {
+      studioTour: sfx.eventStudioTour,
+      scriptLeak: sfx.eventScriptLeak,
+      filmFestivalSubmit: sfx.eventFilmFestival,
+      filmFestivalAward: sfx.eventFilmFestival,
+      unionNegotiations: sfx.eventUnionNegotiations,
+      streamingDeal: sfx.eventStreamingDeal,
+      streamingDealFlat: sfx.eventStreamingDeal,
+      celebrityCameo: sfx.eventCelebrityCameo,
+      taxBreak: sfx.eventTaxBreak,
+      documentaryTrend: sfx.eventDocumentaryTrend,
+    };
+    if (selected && eventSfxMap[selected.effect]) {
+      eventSfxMap[selected.effect]();
     } else {
-      sfx.eventPositive();
+      const negativeEffects = ['scandal', 'talentPoached', 'awardSnub', 'rivalPoaching'];
+      if (selected && negativeEffects.includes(selected.effect)) {
+        sfx.eventNegative();
+      } else {
+        sfx.eventPositive();
+      }
     }
     setConfirmed(true);
     setTimeout(() => pickSeasonEvent(selectedId), 600);

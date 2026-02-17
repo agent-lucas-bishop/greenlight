@@ -714,6 +714,185 @@ export const sfx = {
     }, 'bond');
   },
 
+  // ── Event-specific sounds for R130 event types ──
+
+  // Studio tour — cash register cha-ching
+  eventStudioTour() {
+    play(c => {
+      // Drawer open click
+      noise(c, 0, 0.03, 0.12);
+      // Bell ring: two bright metallic tones
+      note(c, 1568, 0.04, 0.25, 0.14, 'sine');
+      note(c, 2093, 0.06, 0.3, 0.12, 'sine');
+      // Ka-ching shimmer
+      note(c, 3136, 0.08, 0.2, 0.06, 'sine');
+      // Coin rattle
+      note(c, 4000, 0.12, 0.08, 0.04, 'square');
+      note(c, 3500, 0.16, 0.06, 0.03, 'square');
+    }, 'evtStudioTour');
+  },
+
+  // Script leak — paper rustling + whisper tone
+  eventScriptLeak() {
+    play(c => {
+      // Paper rustle: bandpass-filtered noise bursts
+      const buf = c.createBuffer(1, c.sampleRate * 0.4, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 3000;
+      bp.Q.value = 1.5;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.1, c.currentTime);
+      g.gain.setValueAtTime(0.04, c.currentTime + 0.08);
+      g.gain.setValueAtTime(0.09, c.currentTime + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.4);
+      // Whisper tone — breathy low sine
+      note(c, 200, 0.1, 0.3, 0.04, 'sine');
+      note(c, 250, 0.15, 0.25, 0.03, 'sine');
+    }, 'evtScriptLeak');
+  },
+
+  // Film festival — applause + camera flashes
+  eventFilmFestival() {
+    play(c => {
+      // Applause: long filtered noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.8, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 2000;
+      bp.Q.value = 0.8;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.04, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.15);
+      g.gain.setValueAtTime(0.1, c.currentTime + 0.5);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.75);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.8);
+      // Camera flash clicks — bright high pings
+      note(c, 3000, 0.1, 0.02, 0.08, 'square');
+      note(c, 3200, 0.25, 0.02, 0.06, 'square');
+      note(c, 2800, 0.4, 0.02, 0.07, 'square');
+      note(c, 3100, 0.55, 0.02, 0.05, 'square');
+    }, 'evtFilmFest');
+  },
+
+  // Union negotiations — gavel bang
+  eventUnionNegotiations() {
+    play(c => {
+      // Heavy impact
+      note(c, 80, 0, 0.3, 0.25, 'sine');
+      note(c, 120, 0, 0.15, 0.15, 'triangle');
+      // Wood crack
+      noise(c, 0, 0.06, 0.2);
+      note(c, 500, 0, 0.04, 0.12, 'square');
+      // Resonance ring
+      note(c, 250, 0.05, 0.25, 0.06, 'sine');
+    }, 'evtUnion');
+  },
+
+  // Streaming deal — digital/electronic confirmation tone
+  eventStreamingDeal() {
+    play(c => {
+      // Digital blip ascending
+      note(c, 880, 0, 0.08, 0.1, 'square');
+      note(c, 1175, 0.06, 0.08, 0.1, 'square');
+      note(c, 1760, 0.12, 0.15, 0.12, 'sine');
+      // Confirmation chime
+      note(c, 1760, 0.25, 0.2, 0.08, 'sine');
+      note(c, 2093, 0.3, 0.25, 0.06, 'sine');
+    }, 'evtStreaming');
+  },
+
+  // Celebrity cameo — paparazzi camera clicks
+  eventCelebrityCameo() {
+    play(c => {
+      // Rapid shutter clicks
+      for (let i = 0; i < 5; i++) {
+        const t = i * 0.09;
+        noise(c, t, 0.03, 0.1 + Math.random() * 0.05);
+        note(c, 1800 + Math.random() * 400, t, 0.02, 0.06, 'square');
+      }
+      // Flash whine
+      note(c, 3000, 0.1, 0.15, 0.04, 'sine');
+      note(c, 3500, 0.3, 0.12, 0.03, 'sine');
+    }, 'evtCameo');
+  },
+
+  // Tax break — receipt printer sound
+  eventTaxBreak() {
+    play(c => {
+      // Printer chatter: rapid filtered noise bursts
+      const buf = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1800;
+      bp.Q.value = 3;
+      const g = c.createGain();
+      // Staccato printing pattern
+      g.gain.setValueAtTime(0.08, c.currentTime);
+      g.gain.setValueAtTime(0.02, c.currentTime + 0.04);
+      g.gain.setValueAtTime(0.08, c.currentTime + 0.08);
+      g.gain.setValueAtTime(0.02, c.currentTime + 0.12);
+      g.gain.setValueAtTime(0.08, c.currentTime + 0.16);
+      g.gain.setValueAtTime(0.02, c.currentTime + 0.2);
+      g.gain.setValueAtTime(0.07, c.currentTime + 0.24);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.5);
+      // Paper feed motor
+      note(c, 300, 0, 0.3, 0.04, 'sawtooth');
+      // End tear
+      noise(c, 0.35, 0.05, 0.08);
+    }, 'evtTaxBreak');
+  },
+
+  // Documentary trend — film projector whir
+  eventDocumentaryTrend() {
+    play(c => {
+      // Projector motor whir: filtered noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 600;
+      bp.Q.value = 5;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.03, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.08, c.currentTime + 0.15);
+      g.gain.setValueAtTime(0.07, c.currentTime + 0.4);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.55);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.6);
+      // Sprocket clicks
+      for (let i = 0; i < 8; i++) {
+        note(c, 400, i * 0.06, 0.015, 0.06, 'square');
+      }
+      // Warm projector hum
+      note(c, 120, 0, 0.5, 0.05, 'sine');
+    }, 'evtDocTrend');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

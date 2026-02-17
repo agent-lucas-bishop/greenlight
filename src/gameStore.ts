@@ -385,6 +385,10 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string) {
     maxSeasons = 3;
     maxStrikes = 2;
   }
+  if (challenge?.id === 'marathon') {
+    maxSeasons = 8;
+    maxStrikes = 4;
+  }
 
   setState({
     ...createInitialState(),
@@ -414,6 +418,8 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   if (state.gameMode === 'daily' && legacyPerks.some(p => p.effect === 'dailyBudget3')) budget += 3;
   // Challenge: Shoestring Budget
   if (state.challengeId === 'shoestring') budget = 8;
+  // Challenge: Budget Hell — start with $5M
+  if (state.challengeId === 'budget_hell') budget = 5;
   const studio = generateStudioName();
   trackRunStart(state.gameMode, state.challengeId, archetypeId);
   setState({ studioArchetype: archetypeId, budget, studioName: studio.name, studioTagline: studio.tagline, phase: 'neow' as GamePhase });
@@ -588,6 +594,13 @@ export function hireTalent(talent: Talent) {
   if ((state.dailyModifierId === 'union_strike' || state.dailyModifierId2 === 'union_strike') && talent.type === 'Crew') {
     actualCost += 2;
   }
+  // Challenge: Budget Hell — all hiring costs +$2
+  if (state.challengeId === 'budget_hell') actualCost += 2;
+  // Challenge: Auteur Mode — only 1 director allowed on roster
+  if (state.challengeId === 'auteur' && talent.type === 'Director') {
+    const existingDirectors = state.roster.filter(t => t.type === 'Director');
+    if (existingDirectors.length >= 1) return; // blocked
+  }
   if (state.roster.length >= 8) return;
   // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - actualCost;
@@ -616,6 +629,16 @@ export function hireTalent(talent: Talent) {
 export function fireTalent(talentId: string) {
   const assigned = new Set(state.castSlots.map(s => s.talent?.id).filter(Boolean));
   if (assigned.has(talentId)) return;
+  const talent = state.roster.find(t => t.id === talentId);
+  // Challenge: Auteur Mode — firing a director costs $10M and 1 reputation
+  if (state.challengeId === 'auteur' && talent?.type === 'Director') {
+    setState({
+      roster: state.roster.filter(t => t.id !== talentId),
+      budget: state.budget - 10,
+      reputation: Math.max(0, state.reputation - 1),
+    });
+    return;
+  }
   setState({ roster: state.roster.filter(t => t.id !== talentId) });
 }
 
@@ -1167,7 +1190,17 @@ export function calculateQuality(s: GameState): {
   const archetypeFocus = calculateArchetypeFocus(prod.tagsPlayed || {});
   const archetypeFocusBonus = archetypeFocus?.bonus || 0;
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus;
+  // Challenge: Auteur Mode — +3 quality per consecutive film with same director
+  let auteurBonus = 0;
+  if (s.challengeId === 'auteur') {
+    const director = s.castSlots.find(slot => slot.talent?.type === 'Director')?.talent;
+    if (director) {
+      // Count how many previous films this director has directed (based on season count, since they must direct all)
+      auteurBonus = s.seasonHistory.length * 3;
+    }
+  }
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + auteurBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;
@@ -1313,6 +1346,9 @@ export function resolveRelease() {
   const currentRep = state.reputation;
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
+  // Challenge: Budget Hell — box office ×1.5
+  if (state.challengeId === 'budget_hell') multiplier *= 1.5;
+
   const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const tier = getTier(boxOffice, target);
@@ -1332,7 +1368,7 @@ export function resolveRelease() {
 
   switch (tier) {
     case 'FLOP':
-      repChange = state.challengeId === 'critics_choice' ? -2 : -1;
+      repChange = (state.challengeId === 'critics_choice' || state.challengeId === 'critics_only') ? -2 : -1;
       const streamingSafety = state.industryEvent?.effect === 'streamingSafety';
       earnings = Math.round(boxOffice * (streamingSafety ? 0.75 : 0.6) * 10) / 10;
       break;
@@ -1349,6 +1385,14 @@ export function resolveRelease() {
       bonusMoney = state.challengeId === 'critics_choice' ? 32 : 22;
       break;
   }
+
+  // Challenge: Critics Only — +1 rep for HIT or better (on top of normal)
+  if (state.challengeId === 'critics_only' && tier !== 'FLOP') {
+    repChange += 1;
+  }
+
+  // Challenge: Auteur Mode — consecutive films with same director give +3 quality each
+  // (already baked into rawQuality via calculateQuality, but we track the bonus in rep)
 
   // Daily modifier: Festival Circuit — quality>30 doubles rep gains, <20 doubles rep loss
   if (state.dailyModifierId === 'festival_circuit' || state.dailyModifierId2 === 'festival_circuit') {
@@ -1466,6 +1510,18 @@ export function proceedFromRecap() {
     return;
   }
   if (state.season >= state.maxSeasons) {
+    // Critics Only: must reach 5-star reputation to win
+    if (state.challengeId === 'critics_only' && state.reputation < 5) {
+      clearSave();
+      setState({ phase: 'gameOver' });
+      return;
+    }
+    clearSave();
+    setState({ phase: 'victory' });
+    return;
+  }
+  // Critics Only: can win early by reaching 5 stars
+  if (state.challengeId === 'critics_only' && state.reputation >= 5) {
     clearSave();
     setState({ phase: 'victory' });
     return;
@@ -1512,7 +1568,8 @@ export function proceedToShop() {
 }
 
 export function buyPerk(perk: StudioPerk) {
-  const actualCost = state.challengeId === 'shoestring' ? perk.cost + 1 : perk.cost;
+  let actualCost = state.challengeId === 'shoestring' ? perk.cost + 1 : perk.cost;
+  if (state.challengeId === 'budget_hell') actualCost += 2;
   if (state.budget < actualCost || state.perks.length >= 5) return;
   setState({
     perks: [...state.perks, perk],

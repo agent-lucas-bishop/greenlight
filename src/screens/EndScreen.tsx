@@ -278,6 +278,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         archetype: state.studioArchetype || undefined,
         challengeId: state.challengeId,
         dailySeed: state.dailySeed,
+        filmCount: history.length,
       });
       recordEndingDiscovered(ending.id);
       const afterPerks = getActiveLegacyPerks();
@@ -313,6 +314,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         totalBoxOffice: state.totalEarnings,
         achievementsUnlocked: achievements.length,
         challengeCompleted: !!state.challengeId && isVictory,
+        challengeId: state.challengeId,
         legacyRating: legacy.rating,
         isVictory,
         filmCount: history.length,

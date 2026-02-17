@@ -256,7 +256,7 @@ export function getActiveLegacyPerks(): LegacyPerk[] {
   return LEGACY_PERKS.filter(p => p.check(u));
 }
 
-export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string; weeklySeed?: string }) {
+export function recordRunEnd(won: boolean, score: number, achievementIds: string[], gameMode: string = 'normal', seasonHistory?: { genre: string; tier: string; quality: number; hitTarget: boolean }[], dominantTag?: string, extras?: { totalEarnings?: number; rank?: string; archetype?: string; challengeId?: string; dailySeed?: string; weeklySeed?: string; filmCount?: number }) {
   const u = getUnlocks();
   u.totalRuns++;
   if (won) {
@@ -307,6 +307,10 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
     if (extras.archetype) u.careerStats.archetypesUsed[extras.archetype] = (u.careerStats.archetypesUsed[extras.archetype] || 0) + 1;
     if (extras.challengeId && won && !u.careerStats.challengesCompleted.includes(extras.challengeId)) {
       u.careerStats.challengesCompleted.push(extras.challengeId);
+    }
+    // Track auteur films for achievement
+    if (extras.challengeId === 'auteur') {
+      (u.careerStats as any).auteurFilms = ((u.careerStats as any).auteurFilms || 0) + (extras.filmCount || 0);
     }
     // Daily streak tracking
     if (extras.dailySeed) {

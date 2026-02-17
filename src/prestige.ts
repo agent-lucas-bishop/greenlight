@@ -74,6 +74,7 @@ export interface RunXPData {
   totalBoxOffice: number;
   achievementsUnlocked: number; // count of NEW achievements this run
   challengeCompleted: boolean;
+  challengeId?: string; // which challenge was completed
   legacyRating: string; // S/A/B/C/D/F
   isVictory: boolean;
   filmCount: number;
@@ -94,8 +95,12 @@ export function calculateRunXP(data: RunXPData): { total: number; breakdown: { l
   const achXP = data.achievementsUnlocked * 15;
   if (achXP > 0) breakdown.push({ label: 'Achievements', xp: achXP });
 
-  // Challenge completion: 40 XP
-  if (data.challengeCompleted) breakdown.push({ label: 'Challenge Mode', xp: 40 });
+  // Challenge completion: 40 XP base, +20 for harder challenges
+  if (data.challengeCompleted) {
+    const baseXP = 40;
+    const bonusXP = data.challengeId && ['budget_hell', 'critics_only', 'marathon', 'auteur'].includes(data.challengeId) ? 20 : 0;
+    breakdown.push({ label: 'Challenge Mode', xp: baseXP + bonusXP });
+  }
 
   // Legacy rating XP
   const legXP = LEGACY_XP[data.legacyRating] || 5;

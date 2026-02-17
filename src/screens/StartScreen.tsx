@@ -7,7 +7,7 @@ import type { StudioArchetypeId, GameMode } from '../types';
 import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
-import { CHALLENGE_MODES } from '../challenges';
+import { CHALLENGE_MODES, isChallengeUnlocked } from '../challenges';
 import { getDailyDateString } from '../seededRng';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
@@ -521,34 +521,79 @@ export default function StartScreen() {
         </>
       )}
 
-      {tab === 'challenges' && (
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: 20 }}>
-            Unique rule modifiers that change how you play. Each challenge has a score multiplier.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {CHALLENGE_MODES.map(c => (
-              <div key={c.id} className="card" style={{ padding: 16, cursor: 'pointer', transition: 'border-color 0.2s, transform 0.2s' }}
-                onClick={() => { setSelectedMode('challenge'); setSelectedChallenge(c.id); markRunStarted(); setShowArchetypes(true); }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#e67e22'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: '1.8rem' }}>{c.emoji}</span>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>
-                      {c.name} <span style={{ color: '#2ecc71', fontSize: '0.8rem' }}>×{c.scoreMultiplier} score</span>
-                    </div>
-                    <div style={{ color: '#aaa', fontSize: '0.8rem' }}>{c.description}</div>
-                    <div style={{ color: '#666', fontSize: '0.7rem', marginTop: 4 }}>
-                      {c.rules.map((r, i) => <span key={i}>• {r}{i < c.rules.length - 1 ? ' ' : ''}</span>)}
+      {tab === 'challenges' && (() => {
+        const unlockStats = { totalWins: stats.wins, challengesCompleted: stats.careerStats.challengesCompleted || [] };
+        const challengeBests: Record<string, { score: number; won: boolean }> = {};
+        for (const entry of leaderboard) {
+          if (entry.challenge && (!challengeBests[entry.challenge] || entry.score > challengeBests[entry.challenge].score)) {
+            challengeBests[entry.challenge] = { score: entry.score, won: entry.won };
+          }
+        }
+        return (
+          <div style={{ maxWidth: 600, margin: '0 auto' }}>
+            <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: 8 }}>
+              Unique rule modifiers that change how you play. Each challenge has a score multiplier.
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.7rem', color: '#2ecc71' }}>✓ {unlockStats.challengesCompleted.length} completed</span>
+              <span style={{ fontSize: '0.7rem', color: '#888' }}>•</span>
+              <span style={{ fontSize: '0.7rem', color: '#888' }}>{CHALLENGE_MODES.filter(c => isChallengeUnlocked(c, unlockStats)).length}/{CHALLENGE_MODES.length} unlocked</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {CHALLENGE_MODES.map(c => {
+                const unlocked = isChallengeUnlocked(c, unlockStats);
+                const completed = unlockStats.challengesCompleted.includes(c.id);
+                const best = challengeBests[c.id];
+                return (
+                  <div key={c.id} className="card" style={{
+                    padding: 16, cursor: unlocked ? 'pointer' : 'default',
+                    transition: 'border-color 0.2s, transform 0.2s',
+                    opacity: unlocked ? 1 : 0.5,
+                    borderColor: completed ? 'rgba(46,204,113,0.3)' : undefined,
+                  }}
+                    onClick={() => { if (!unlocked) return; setSelectedMode('challenge'); setSelectedChallenge(c.id); markRunStarted(); setShowArchetypes(true); }}
+                    onMouseEnter={e => { if (unlocked) { (e.currentTarget as HTMLElement).style.borderColor = completed ? '#2ecc71' : '#e67e22'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; } }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = completed ? 'rgba(46,204,113,0.3)' : ''; (e.currentTarget as HTMLElement).style.transform = ''; }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ fontSize: '1.8rem', position: 'relative' }}>
+                        {unlocked ? c.emoji : '🔒'}
+                        {completed && <span style={{ position: 'absolute', bottom: -4, right: -4, fontSize: '0.7rem' }}>✅</span>}
+                      </div>
+                      <div style={{ flex: 1, textAlign: 'left' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ color: unlocked ? '#e67e22' : '#666', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>
+                            {unlocked ? c.name : c.name}
+                          </span>
+                          <span style={{ color: '#2ecc71', fontSize: '0.75rem', background: 'rgba(46,204,113,0.1)', padding: '1px 6px', borderRadius: 4 }}>
+                            ×{c.scoreMultiplier} score
+                          </span>
+                          {best && (
+                            <span style={{ fontSize: '0.7rem', color: best.won ? '#2ecc71' : '#e74c3c', background: best.won ? 'rgba(46,204,113,0.1)' : 'rgba(231,76,60,0.1)', padding: '1px 6px', borderRadius: 4 }}>
+                              {best.won ? '🏆' : '💀'} Best: {best.score}pts
+                            </span>
+                          )}
+                        </div>
+                        {unlocked ? (
+                          <>
+                            <div style={{ color: '#aaa', fontSize: '0.8rem', marginTop: 2 }}>{c.description}</div>
+                            <div style={{ color: '#666', fontSize: '0.7rem', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              {c.rules.map((r, i) => <span key={i} style={{ display: 'block' }}>• {r}</span>)}
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ color: '#888', fontSize: '0.8rem', marginTop: 4 }}>
+                            🔒 {c.unlockRequirement || 'Unknown requirement'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {tab === 'leaderboard' && (
         <div style={{ maxWidth: 600, margin: '0 auto' }}>

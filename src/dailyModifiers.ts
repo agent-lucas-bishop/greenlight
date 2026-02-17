@@ -95,6 +95,35 @@ export const DAILY_MODIFIERS: DailyModifier[] = [
     description: 'All crew cards cost +$2 to hire, but crew cards get +2 base quality.',
     shortDesc: 'Crew +$2 cost, +2 quality',
   },
+  // Challenge-flavored daily modifiers (R68)
+  {
+    id: 'daily_auteur',
+    name: 'Auteur\'s Touch',
+    emoji: '🎬',
+    description: 'Using the same director for 2+ films gives +5 quality each. But only 2 directors in talent markets.',
+    shortDesc: 'Same director +5Q, fewer directors',
+  },
+  {
+    id: 'daily_budget_hell',
+    name: 'Budget Squeeze',
+    emoji: '🔥',
+    description: 'Starting budget -$5M. But all box office earnings +25%.',
+    shortDesc: '-$5M budget, +25% BO',
+  },
+  {
+    id: 'daily_critics_only',
+    name: 'Reputation Race',
+    emoji: '⭐',
+    description: 'Reputation changes are doubled (gains and losses). Hit 5 stars for +50 bonus score.',
+    shortDesc: 'Rep changes ×2',
+  },
+  {
+    id: 'daily_marathon',
+    name: 'Endurance Round',
+    emoji: '🏃',
+    description: '+1 extra season (6 total). Final target scales up to $74M.',
+    shortDesc: '+1 season, harder target',
+  },
 ];
 
 /** Get today's daily modifier using the daily seed */

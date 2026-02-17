@@ -5,6 +5,7 @@ import { isPerkLocked } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 import { sfx } from '../sound';
+import { getMoodBadge, getStatusBadge } from '../talentAging';
 
 function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void; canBuy: boolean }) {
   const [showCards, setShowCards] = useState(false);
@@ -26,6 +27,8 @@ function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void
       style={{ opacity: canBuy ? 1 : 0.3, cursor: canBuy ? 'pointer' : 'not-allowed', filter: canBuy ? 'none' : 'grayscale(0.5)', borderStyle: canBuy ? 'solid' : 'dashed' }}
     >
       <span className="talent-type" style={{ background: typeColors[t.type] || '#666' }}>{t.type}</span>
+      {(() => { const sb = getStatusBadge(t.name); return sb ? <span style={{ fontSize: '0.65rem', color: sb.color, fontWeight: 600 }} title={sb.description}>{sb.emoji} {sb.label}</span> : null; })()}
+      {(() => { const mb = getMoodBadge(t.name); return mb ? <span style={{ fontSize: '0.65rem', color: mb.color, fontWeight: 600 }} title={mb.description}>{mb.emoji} {mb.label}</span> : null; })()}
       <div className="card-title">{t.name}</div>
       <div>
         <span className="card-stat green">Skill {t.skill}</span>

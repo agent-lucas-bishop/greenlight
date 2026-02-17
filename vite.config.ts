@@ -12,9 +12,12 @@ export default defineConfig({
         manualChunks: {
           // R203: Split React into its own vendor chunk for better caching
           'vendor-react': ['react', 'react-dom'],
-          // Separate the heavy game data from UI code
-          'game-data': ['./src/data.ts', './src/narrative.ts', './src/rivals.ts'],
-          'game-engine': ['./src/gameStore.ts', './src/unlocks.ts', './src/challenges.ts'],
+          // R288: Combined game core — previously split caused circular chunk warnings
+          // because gameStore imports from data/narrative/rivals
+          'game-core': [
+            './src/data.ts', './src/narrative.ts', './src/rivals.ts',
+            './src/gameStore.ts', './src/unlocks.ts', './src/challenges.ts',
+          ],
         },
       },
     },

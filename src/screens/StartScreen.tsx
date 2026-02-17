@@ -10,7 +10,7 @@ import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES, isChallengeUnlocked } from '../challenges';
 import { getDailyDateString, getWeeklyDateString } from '../seededRng';
 import { getTodayModifier, getWeeklyModifiers } from '../dailyModifiers';
-import { getPersonalBests } from '../personalBests';
+import { getPersonalBests, getDailyStats } from '../personalBests';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
 import AchievementGallery from '../components/AchievementGallery';
@@ -885,22 +885,57 @@ export default function StartScreen() {
             );
           })()}
 
-          {/* Daily Streak */}
-          {stats.dailyStreak.best > 0 && (
-            <div style={{ marginBottom: 24, padding: 16, background: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.2)', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1rem', marginBottom: 4 }}>📅 DAILY STREAK</div>
-              <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
-                <div>
-                  <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>🔥 {stats.dailyStreak.current}</div>
-                  <div style={{ color: '#888', fontSize: '0.65rem' }}>Current</div>
+          {/* Daily Streak + Sparkline */}
+          {stats.dailyStreak.best > 0 && (() => {
+            const dailyStats = getDailyStats();
+            const history = dailyStats.recentHistory;
+            const maxScore = history.length > 0 ? Math.max(...history.map(h => h.score), 1) : 1;
+            return (
+              <div style={{ marginBottom: 24, padding: 16, background: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.2)', borderRadius: 8, textAlign: 'center' }}>
+                <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1rem', marginBottom: 4 }}>📅 DAILY STREAK</div>
+                <div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginBottom: history.length >= 3 ? 12 : 0 }}>
+                  <div>
+                    <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>🔥 {stats.dailyStreak.current}</div>
+                    <div style={{ color: '#888', fontSize: '0.65rem' }}>Current</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>⭐ {stats.dailyStreak.best}</div>
+                    <div style={{ color: '#888', fontSize: '0.65rem' }}>Best</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>{dailyStats.avgScore}</div>
+                    <div style={{ color: '#888', fontSize: '0.65rem' }}>Avg Score</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1.6rem' }}>⭐ {stats.dailyStreak.best}</div>
-                  <div style={{ color: '#888', fontSize: '0.65rem' }}>Best</div>
-                </div>
+                {/* Sparkline chart — last 30 daily scores */}
+                {history.length >= 3 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Last {history.length} Dailies</div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, justifyContent: 'center', height: 40 }}>
+                      {history.map((h, i) => {
+                        const pct = Math.max(8, (h.score / maxScore) * 100);
+                        const color = h.won ? '#2ecc71' : '#e74c3c';
+                        return (
+                          <div key={i} title={`${h.date}: ${h.score}pts ${h.won ? '🏆' : '💀'}`} style={{
+                            width: Math.max(6, Math.min(16, 240 / history.length)),
+                            height: `${pct}%`,
+                            background: color,
+                            borderRadius: 2,
+                            opacity: 0.8,
+                            transition: 'height 0.3s',
+                          }} />
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                      <span style={{ color: '#555', fontSize: '0.55rem' }}>{history[0]?.date}</span>
+                      <span style={{ color: '#555', fontSize: '0.55rem' }}>{history[history.length - 1]?.date}</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Lifetime Stats */}
           {stats.careerStats.totalFilms > 0 && (() => {

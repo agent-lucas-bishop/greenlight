@@ -76,7 +76,8 @@ function setState(partial: Partial<GameState>) {
   state = { ...state, ...partial };
   listeners.forEach(l => l());
   // Auto-save on every state change (phase transitions and mid-phase)
-  if (state.phase !== 'start') {
+  // Daily runs don't save — prevents save-scumming
+  if (state.phase !== 'start' && state.gameMode !== 'daily') {
     saveGameState(state);
   }
 }
@@ -390,6 +391,11 @@ function rebuildCardFunctions(cards: ProductionCard[]): void {
 }
 
 export function resumeGame(saved: Partial<GameState>) {
+  // Block resuming daily runs — no save-scumming allowed
+  if (saved.gameMode === 'daily') {
+    clearSave();
+    return;
+  }
   clearSave();
   state = { ...createInitialState(), ...saved };
 

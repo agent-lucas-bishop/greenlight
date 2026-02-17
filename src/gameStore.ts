@@ -82,7 +82,7 @@
  * ══════════════════════════════════════════════════════════════════════
  */
 
-import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, MarketingTier, PostProdOption } from './types';
+import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, CardAbility, MarketingTier, PostProdOption } from './types';
 import type { StudioArchetypeId, CardRarity } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,

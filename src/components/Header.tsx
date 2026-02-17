@@ -123,7 +123,7 @@ export default function Header({ state }: { state: GameState }) {
         onClick={handleToggleMute}
         onContextMenu={e => { e.preventDefault(); setShowVolume(!showVolume); }}
         title={muted ? 'Unmute (right-click for volume)' : 'Mute (right-click for volume)'}
-        style={{ right: 40 }}
+        style={{ right: 44 }}
       >
         {muted ? '🔇' : volume > 0.5 ? '🔊' : volume > 0 ? '🔉' : '🔈'}
       </button>

@@ -331,7 +331,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
       {/* ─── CAREER STATS ─── */}
       {phase >= 2 && (
-        <div className="end-stats animate-slide-down">
+        <div className="end-stats animate-slide-down" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 16 }}>
           <div className="end-stat">
             <div className="label">Total Box Office</div>
             <div className="value">${totalBO.toFixed(1)}M</div>

@@ -23,7 +23,7 @@ export default function DevStats() {
     <div style={{
       position: 'fixed', bottom: 12, right: 12, zIndex: 9999,
       background: 'rgba(0,0,0,0.92)', border: '1px solid #444',
-      borderRadius: 10, padding: '14px 18px', minWidth: 240,
+      borderRadius: 10, padding: '14px 18px', minWidth: 240, maxWidth: 'calc(100vw - 24px)',
       fontFamily: 'monospace', fontSize: '0.75rem', color: '#ccc',
       backdropFilter: 'blur(8px)', boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
     }}>

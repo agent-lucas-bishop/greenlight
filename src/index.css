@@ -204,7 +204,7 @@ h1, h2, h3, h4 {
 .header {
   background: linear-gradient(180deg, rgba(26,26,30,0.98) 0%, rgba(17,17,19,0.98) 100%);
   border-bottom: 1px solid rgba(212,168,67,0.2);
-  padding: 10px 56px 10px 24px;
+  padding: 10px 80px 10px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -512,6 +512,8 @@ h1, h2, h3, h4 {
 
 .prod-card-new {
   width: 165px;
+  min-width: 140px;
+  max-width: 200px;
   min-height: 150px;
   padding: 12px;
   border-radius: 10px;
@@ -1779,7 +1781,7 @@ h1, h2, h3, h4 {
   .header-stats { gap: 8px; }
   .header-stat .value { font-size: 1.1rem; }
   .header-stat .label { font-size: 0.55rem; }
-  .header-help-btn { width: 44px; height: 44px; font-size: 1.1rem; top: 4px; right: 6px; }
+  .header-help-btn { width: 36px; height: 36px; font-size: 1rem; top: 4px; right: 6px; }
 
   /* Card grids — single column on narrow phones */
   .card-grid-3, .card-grid-4, .card-grid-2 { grid-template-columns: 1fr; }
@@ -1969,8 +1971,8 @@ body {
     overflow-wrap: break-word;
     word-break: break-word;
   }
-  /* Fix header right padding for help button */
-  .header { padding-right: 52px; }
+  /* Fix header right padding for help + mute buttons */
+  .header { padding-right: 82px; }
 }
 
 /* Small phones — 360px (iPhone SE) */

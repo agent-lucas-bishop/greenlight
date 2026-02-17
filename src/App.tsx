@@ -22,6 +22,7 @@ import UnlockToast from './components/UnlockToast';
 import { checkUnlockConditions, UNLOCKABLE_DEFS } from './unlockableContent';
 import type { UnlockableDef } from './unlockableContent';
 import DevStats from './components/DevStats';
+import BottomNav from './components/BottomNav';
 import WorldEventBanner from './components/WorldEventBanner';
 import SeasonalBanner from './components/SeasonalBanner';
 import RetirementToast from './components/RetirementToast';
@@ -337,6 +338,7 @@ function App() {
           onChoice={resolveStoryEvent}
         />
       )}
+      <BottomNav state={state} />
       <DevStats />
       {seasonOverlay !== null && (
         <div className={`season-overlay ${seasonOverlayExit ? 'season-overlay-exit' : ''}`} onClick={() => { setSeasonOverlayExit(true); setTimeout(() => setSeasonOverlay(null), 500); }} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setSeasonOverlayExit(true); setTimeout(() => setSeasonOverlay(null), 500); } }} style={{ cursor: 'pointer' }}>

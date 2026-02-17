@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { trapFocus } from '../accessibility';
-import { isMuted, setMuted, getVolume, setVolume, getSfxVolume, setSfxVolume } from '../sound';
+import { isMuted, setMuted, getVolume, setVolume, getSfxVolume, setSfxVolume, getMusicVolume, setMusicVolume } from '../sound';
+import { getSettings, updateSettings, exportAllSaveData, importSaveData, resetAllProgress, type ColorblindMode } from '../settings';
 import { getStudioIdentity, setStudioIdentity, getRandomDefaultName, STUDIO_LOGOS, DEFAULT_STUDIO_NAMES, type StudioLogo } from '../studioIdentity';
 import { isStoryMomentsEnabled, setStoryMomentsEnabled } from '../cutscenes';
 import { resetTutorial, isTutorialComplete } from '../tutorial';
@@ -136,6 +137,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   const [muted, setMutedLocal] = useState(isMuted());
   const [volume, setVolumeLocal] = useState(getVolume());
   const [sfxVol, setSfxVolLocal] = useState(getSfxVolume());
+  const [musicVol, setMusicVolLocal] = useState(getMusicVolume());
 
   // Animation
   const [reduceMotion, setReduceMotion] = useState(document.documentElement.classList.contains('force-reduce-motion'));
@@ -147,7 +149,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   // Display
   const [textSize, setTextSize] = useState<'small' | 'medium' | 'large'>(() => LS.get('greenlight-text-size', 'medium') as any);
   const [highContrast, setHighContrast] = useState(() => LS.getBool('greenlight-high-contrast', false));
-  const [colorblindMode, setColorblindMode] = useState(() => LS.getBool('greenlight-colorblind', false));
+  const [colorblindMode, setColorblindMode] = useState<ColorblindMode>(() => (getSettings().visual.colorblindMode || 'off'));
 
   // Game
   const [autoSave, setAutoSave] = useState(() => LS.getBool('greenlight-auto-save', true));
@@ -163,9 +165,10 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
 
   /* ── handlers ──────────────────────────────────────────────── */
 
-  const handleMuteToggle = () => { const next = !muted; setMuted(next); setMutedLocal(next); };
-  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); setVolume(v); setVolumeLocal(v); };
-  const handleSfxVolume = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); setSfxVolume(v); setSfxVolLocal(v); };
+  const handleMuteToggle = () => { const next = !muted; setMuted(next); setMutedLocal(next); updateSettings({ audio: { ...getSettings().audio, muteAll: next } }); };
+  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); setVolume(v); setVolumeLocal(v); updateSettings({ audio: { ...getSettings().audio, masterVolume: Math.round(v * 100) } }); };
+  const handleSfxVolume = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); setSfxVolume(v); setSfxVolLocal(v); updateSettings({ audio: { ...getSettings().audio, sfxVolume: Math.round(v * 100) } }); };
+  const handleMusicVolume = (e: React.ChangeEvent<HTMLInputElement>) => { const v = parseFloat(e.target.value); setMusicVolume(v); setMusicVolLocal(v); updateSettings({ audio: { ...getSettings().audio, musicVolume: Math.round(v * 100) } }); };
 
   const handleReduceMotion = () => {
     const next = !reduceMotion;
@@ -192,10 +195,9 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
     document.documentElement.classList.toggle('high-contrast', v);
   };
 
-  const handleColorblind = (v: boolean) => {
-    setColorblindMode(v);
-    LS.set('greenlight-colorblind', String(v));
-    document.documentElement.classList.toggle('colorblind-mode', v);
+  const handleColorblind = (mode: ColorblindMode) => {
+    setColorblindMode(mode);
+    updateSettings({ visual: { ...getSettings().visual, colorblindMode: mode } });
   };
 
   const handleAutoSave = (v: boolean) => { setAutoSave(v); LS.set('greenlight-auto-save', String(v)); };
@@ -204,12 +206,8 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   const handleStoryMoments = (v: boolean) => { setShowStoryMoments(v); setStoryMomentsEnabled(v); };
 
   const handleExport = () => {
-    const data: Record<string, string> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k?.startsWith('greenlight')) data[k] = localStorage.getItem(k) || '';
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const json = exportAllSaveData();
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `greenlight-save-${new Date().toISOString().slice(0, 10)}.json`;
@@ -221,24 +219,18 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result as string);
-        if (typeof data !== 'object' || data === null) throw new Error('Invalid format');
-        let count = 0;
-        for (const [k, v] of Object.entries(data)) {
-          if (k.startsWith('greenlight') && typeof v === 'string') { localStorage.setItem(k, v); count++; }
-        }
-        setImportMsg(`✅ Imported ${count} entries. Reload to apply.`);
-      } catch {
-        setImportMsg('❌ Invalid save file.');
+      const result = importSaveData(reader.result as string);
+      if (result.success) {
+        setImportMsg(`✅ Imported ${result.count} entries. Reload to apply.`);
+      } else {
+        setImportMsg(`❌ ${result.error || 'Invalid save file.'}`);
       }
     };
     reader.readAsText(file);
   };
 
   const handleResetProgress = () => {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('greenlight'));
-    keys.forEach(k => localStorage.removeItem(k));
+    resetAllProgress();
     window.location.reload();
   };
 
@@ -290,6 +282,10 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
               <Label htmlFor="sfx-vol">SFX Volume <span style={{ color: '#666', fontSize: '0.75rem' }}>{Math.round(sfxVol * 100)}%</span></Label>
               <Slider id="sfx-vol" value={sfxVol} onChange={handleSfxVolume} disabled={muted} label={`SFX volume: ${Math.round(sfxVol * 100)}%`} />
             </Row>
+            <Row dimmed={muted}>
+              <Label htmlFor="music-vol">Music Volume <span style={{ color: '#666', fontSize: '0.75rem' }}>{Math.round(musicVol * 100)}%</span></Label>
+              <Slider id="music-vol" value={musicVol} onChange={handleMusicVolume} disabled={muted} label={`Music volume: ${Math.round(musicVol * 100)}%`} />
+            </Row>
           </div>
         );
       case 'animation':
@@ -331,8 +327,22 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
               <Toggle id="high-contrast-toggle" checked={highContrast} onChange={handleHighContrast} label="High contrast mode" />
             </Row>
             <Row>
-              <Label htmlFor="colorblind-toggle" sub="Adds patterns/icons alongside color indicators">Colorblind-Friendly</Label>
-              <Toggle id="colorblind-toggle" checked={colorblindMode} onChange={handleColorblind} label="Colorblind-friendly mode" />
+              <Label htmlFor="colorblind-select" sub="Adds patterns/icons alongside color indicators">Colorblind Mode</Label>
+              <select
+                id="colorblind-select"
+                value={colorblindMode}
+                onChange={e => handleColorblind(e.target.value as ColorblindMode)}
+                aria-label="Colorblind mode"
+                style={{
+                  background: '#1a1a1a', color: '#ccc', border: '1px solid #333',
+                  borderRadius: 6, padding: '6px 10px', fontSize: '0.8rem', cursor: 'pointer',
+                }}
+              >
+                <option value="off">Off</option>
+                <option value="protanopia">Protanopia (Red-weak)</option>
+                <option value="deuteranopia">Deuteranopia (Green-weak)</option>
+                <option value="tritanopia">Tritanopia (Blue-weak)</option>
+              </select>
             </Row>
           </div>
         );
@@ -355,6 +365,10 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             <Row>
               <Label htmlFor="story-moments-toggle" sub="Brief cinematic moments at key milestones">Show Story Moments</Label>
               <Toggle id="story-moments-toggle" checked={showStoryMoments} onChange={handleStoryMoments} label="Show story moments" />
+            </Row>
+            <Row>
+              <Label htmlFor="tutorial-hints-toggle" sub="Show contextual tips for new mechanics">Tutorial Hints</Label>
+              <Toggle id="tutorial-hints-toggle" checked={getSettings().gameplay.tutorialHints} onChange={v => updateSettings({ gameplay: { ...getSettings().gameplay, tutorialHints: v } })} label="Tutorial hints" />
             </Row>
             <div style={{ borderTop: '1px solid #333', paddingTop: 12, marginTop: 8 }}>
               <button

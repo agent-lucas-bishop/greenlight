@@ -37,8 +37,20 @@ export function setSfxVolume(v: number) {
   if (_sfxGain) _sfxGain.gain.value = _sfxVolume;
 }
 
+// Music volume (0.0 – 1.0) — separate channel for future music support
+let _musicVolume = typeof localStorage !== 'undefined' ? parseFloat(localStorage.getItem('greenlight-music-volume') || '1') : 1;
+if (isNaN(_musicVolume) || _musicVolume < 0 || _musicVolume > 1) _musicVolume = 1;
+
+export function getMusicVolume(): number { return _musicVolume; }
+export function setMusicVolume(v: number) {
+  _musicVolume = Math.max(0, Math.min(1, v));
+  try { localStorage.setItem('greenlight-music-volume', String(_musicVolume)); } catch {}
+  if (_musicGain) _musicGain.gain.value = _musicVolume;
+}
+
 let _masterGain: GainNode | null = null;
 let _sfxGain: GainNode | null = null;
+let _musicGain: GainNode | null = null;
 
 function getCtx(): AudioContext {
   if (!ctx) ctx = new AudioContext();
@@ -52,6 +64,11 @@ function getCtx(): AudioContext {
     _sfxGain = ctx.createGain();
     _sfxGain.gain.value = _sfxVolume;
     _sfxGain.connect(_masterGain);
+  }
+  if (!_musicGain) {
+    _musicGain = ctx.createGain();
+    _musicGain.gain.value = _musicVolume;
+    _musicGain.connect(_masterGain);
   }
   return ctx;
 }

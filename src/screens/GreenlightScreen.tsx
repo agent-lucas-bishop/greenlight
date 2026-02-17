@@ -7,6 +7,7 @@ import PhaseTip from '../components/PhaseTip';
 import { isSimplifiedRun } from '../onboarding';
 import { sfx } from '../sound';
 import { useSwipe } from '../hooks/useSwipe';
+import StatTooltip from '../components/StatTooltip';
 
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
@@ -50,14 +51,18 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
       {/* Genre Trends */}
       <div style={{ textAlign: 'center', marginBottom: 12, fontSize: '0.85rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 16px' }}>
         {state.hotGenres.length > 0 && (
-          <span style={{ color: '#2ecc71' }}>
-            🔥 Hot: <strong>{state.hotGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(+25%)</span>
-          </span>
+          <StatTooltip tip="Hot genres get +25% box office multiplier this season. Audiences are hungry for these!" inline>
+            <span style={{ color: '#2ecc71', cursor: 'help' }}>
+              🔥 Hot: <strong>{state.hotGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(+25%)</span>
+            </span>
+          </StatTooltip>
         )}
         {state.coldGenres.length > 0 && (
-          <span style={{ color: '#e74c3c' }}>
-            ❄️ Cold: <strong>{state.coldGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(-20%)</span>
-          </span>
+          <StatTooltip tip="Cold genres get −20% box office this season. The market's moved on — risky pick unless quality is high." inline>
+            <span style={{ color: '#e74c3c', cursor: 'help' }}>
+              ❄️ Cold: <strong>{state.coldGenres.join(', ')}</strong> <span style={{ color: '#888', fontSize: '0.75rem' }}>(-20%)</span>
+            </span>
+          </StatTooltip>
         )}
       </div>
 

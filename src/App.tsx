@@ -156,7 +156,15 @@ function App() {
       <DevStats />
       {seasonOverlay !== null && (
         <div className={`season-overlay ${seasonOverlayExit ? 'season-overlay-exit' : ''}`}>
-          <div style={{ textAlign: 'center' }}>
+          <div className="season-overlay-inner">
+            {seasonHeadline && (
+              <div className="season-headline">
+                <div className="season-headline-masthead">THE DAILY REEL</div>
+                <div className="season-headline-rule" />
+                <div className="season-headline-text">{seasonHeadline}</div>
+                <div className="season-headline-rule" />
+              </div>
+            )}
             <div className="season-number">SEASON {seasonOverlay}</div>
             {seasonTip && (
               <div style={{

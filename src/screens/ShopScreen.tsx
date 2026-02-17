@@ -92,8 +92,8 @@ export default function ShopScreen({ state }: { state: GameState }) {
     <div className="fade-in">
       <PhaseTip phase="shop" />
       <div className="phase-title">
-        <h2>🏠 Off-Season</h2>
-        <div className="subtitle">Budget: <strong style={{ color: 'var(--gold)' }}>${state.budget.toFixed(1)}M</strong> — Prepare for Season {state.season + 1}</div>
+        <h2>🏠 The Lot Is Quiet</h2>
+        <div className="subtitle">War chest: <strong style={{ color: 'var(--gold)' }}>${state.budget.toFixed(1)}M</strong> — Retool for Season {state.season + 1}</div>
       </div>
 
       {state.industryEvent && (
@@ -102,8 +102,8 @@ export default function ShopScreen({ state }: { state: GameState }) {
 
       {/* Studio Perks */}
       <div className="shop-section">
-        <h3>🎬 Studio Perks ({state.perks.length}/5)</h3>
-        {state.perks.length >= 5 && <p style={{ color: '#666', fontSize: '0.85rem' }}>Max perks reached!</p>}
+        <h3>🎬 Studio Upgrades ({state.perks.length}/5)</h3>
+        {state.perks.length >= 5 && <p style={{ color: '#666', fontSize: '0.85rem' }}>The studio is fully kitted out!</p>}
         <div className="card-grid card-grid-4">
           {state.perkMarket.map(perk => {
             const locked = isPerkLocked(perk as any);
@@ -135,7 +135,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
 
       {/* Hire Talent */}
       <div className="shop-section">
-        <h3>🎭 Hire Talent (Roster: {state.roster.length}/8)</h3>
+        <h3>🎭 Talent Agency (Roster: {state.roster.length}/8)</h3>
         <div className="card-grid card-grid-4">
           {state.talentMarket.map(t => {
             const canHire = state.budget >= t.cost && state.roster.length < 8;
@@ -247,7 +247,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
 
       <div className="btn-group" style={{ marginTop: 16 }}>
         <button className="btn btn-primary btn-glow" onClick={() => { sfx.seasonTransition(); nextSeason(); }}>
-          BEGIN SEASON {state.season + 1} →
+          LIGHTS, CAMERA — SEASON {state.season + 1} →
         </button>
       </div>
     </div>

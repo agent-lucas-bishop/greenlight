@@ -446,7 +446,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         )}
         <h2 style={{ color: isVictory ? '#d4a843' : '#e74c3c', margin: 0 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>
-          {ending.emoji} {ending.title}
+          {isVictory ? `${ending.emoji} ${ending.title}` : `${ending.emoji} THE STUDIO CLOSES ITS DOORS`}
         </h2>
         <div style={{ color: ending.color, fontSize: '0.85rem', fontStyle: 'italic', marginTop: 4 }}>
           {ending.subtitle}
@@ -899,7 +899,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       {phase >= 6 && (
         <div className="btn-group animate-slide-down" style={{ marginTop: 36 }}>
           <button className="btn btn-primary btn-glow" onClick={() => startGame()}>
-            🎬 NEW RUN
+            🎬 BACK TO THE DIRECTOR'S CHAIR
           </button>
         </div>
       )}

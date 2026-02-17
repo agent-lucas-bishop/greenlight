@@ -3010,3 +3010,168 @@ body {
 .force-reduce-motion .golden-burst { display: none !important; }
 .force-reduce-motion .prestige-burst { display: none !important; }
 .force-reduce-motion .talent-stagger { opacity: 1; animation: none !important; }
+
+/* ===== R100: LOADING SCREEN ===== */
+
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+  animation: fadeIn 0.6s ease;
+}
+
+.loading-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 60px rgba(212, 168, 67, 0.3);
+  margin-bottom: 4px;
+}
+
+.loading-subtitle {
+  color: rgba(212, 168, 67, 0.5);
+  font-size: 0.85rem;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  margin-bottom: 24px;
+}
+
+.loading-reel-container {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.loading-clapperboard {
+  width: 80px;
+  margin: 0 auto 12px;
+}
+.clapperboard-top {
+  height: 18px;
+  background: #222;
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+  transform-origin: bottom left;
+  animation: clapboardSnap 2s ease-in-out infinite;
+}
+.clapperboard-stripes {
+  display: flex;
+  height: 100%;
+}
+.clapperboard-stripe {
+  flex: 1;
+  background: var(--gold);
+}
+.clapperboard-stripe:nth-child(even) {
+  background: #111;
+}
+.clapperboard-body {
+  height: 28px;
+  background: #1a1a2e;
+  border: 2px solid var(--gold-dim);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.clapperboard-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.65rem;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+}
+@keyframes clapboardSnap {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  75% { transform: rotate(-25deg); }
+  80% { transform: rotate(0deg); }
+}
+
+.loading-reel-spinner {
+  font-size: 2rem;
+  color: var(--gold);
+  opacity: 0.5;
+}
+
+.loading-filmstrip {
+  width: 100%;
+  max-width: 300px;
+  overflow: hidden;
+  height: 12px;
+  margin-bottom: 24px;
+  opacity: 0.15;
+}
+.filmstrip-scroll {
+  white-space: nowrap;
+  color: var(--gold);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  animation: filmstripScroll 3s linear infinite;
+}
+@keyframes filmstripScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.loading-tip {
+  max-width: 380px;
+  color: rgba(212, 168, 67, 0.7);
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.6;
+}
+.loading-tip-label {
+  display: block;
+  font-style: normal;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(212, 168, 67, 0.35);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+/* ===== R100: SEASON NEWSPAPER HEADLINE ===== */
+
+.season-overlay-inner {
+  text-align: center;
+  max-width: 520px;
+  padding: 0 20px;
+}
+
+.season-headline {
+  margin-bottom: 24px;
+  animation: headlineReveal 0.8s ease forwards;
+  opacity: 0;
+}
+@keyframes headlineReveal {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.season-headline-masthead {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.35em;
+  color: rgba(212, 168, 67, 0.4);
+  margin-bottom: 6px;
+}
+
+.season-headline-rule {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.3), transparent);
+  margin: 6px 0;
+}
+
+.season-headline-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}

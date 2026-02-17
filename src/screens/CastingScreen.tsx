@@ -179,10 +179,14 @@ export default function CastingScreen({ state }: { state: GameState }) {
         return (active.length > 0 || potential.length > 0) ? (
           <div style={{ background: 'rgba(233,30,99,0.08)', borderRadius: 8, padding: '6px 12px', marginBottom: 12, fontSize: '0.75rem' }}>
             {active.map((c, i) => (
-              <div key={i} style={{ color: '#e91e63', fontWeight: 600 }}>💕 <strong>{c.name}</strong> ACTIVE — {c.description}</div>
+              <StatTooltip key={i} tip={`Chemistry bonus: +${c.qualityBonus} quality added to production when both are cast together. Heart ♥ cards get extra synergy from chemistry pairs.`} inline>
+                <div style={{ color: '#e91e63', fontWeight: 600, cursor: 'help' }}>💕 <strong>{c.name}</strong> ACTIVE — {c.description}</div>
+              </StatTooltip>
             ))}
             {potential.map((c, i) => (
-              <div key={`p${i}`} style={{ color: '#888' }}>💭 {c.talent1} + {c.talent2} = "{c.name}" (+{c.qualityBonus})</div>
+              <StatTooltip key={`p${i}`} tip={`Potential chemistry: cast both ${c.talent1} and ${c.talent2} together to unlock +${c.qualityBonus} bonus quality.`} inline>
+                <div style={{ color: '#888', cursor: 'help' }}>💭 {c.talent1} + {c.talent2} = "{c.name}" (+{c.qualityBonus})</div>
+              </StatTooltip>
             ))}
           </div>
         ) : null;
@@ -219,7 +223,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
                 ) : blocked ? (
                   <div style={{ color: '#e67e22', fontSize: '0.75rem' }}>📅 Blocked by schedule conflict</div>
                 ) : (
-                  <div style={{ color: '#444', fontSize: '0.8rem' }}>Empty — select talent →</div>
+                  <div style={{ color: '#444', fontSize: '0.8rem' }}>The casting couch awaits →</div>
                 )}
               </div>
             );})}
@@ -256,7 +260,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
 
           <div className="btn-group" style={{ flexDirection: 'column', marginTop: 16 }}>
             <button className="btn btn-primary" disabled={filledCount < 2} onClick={() => { sfx.seasonTransition(); startProduction(); }}>
-              BEGIN PRODUCTION →
+              ROLL CAMERA →
             </button>
             {filledCount < state.castSlots.length && (
               <span style={{ fontSize: '0.75rem', color: '#666' }}>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript, performReshoots, skipReshoots } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, goToPostProduction, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript, performReshoots, skipReshoots } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { getCardBackColor } from '../achievements';
@@ -791,7 +791,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           </div>
         )}
         {prod.isWrapped && (!prod.encoreState?.available || prod.encoreState.used) && (state.reshootsBudgetUsed || prod.incidentCount === 0 || state.budget < 5) && (
-          <AutoAdvance onAdvance={resolveRelease} delayMs={2500} label="📊 SEE BOX OFFICE →" />
+          <AutoAdvance onAdvance={goToPostProduction} delayMs={2500} label="🎬 POST-PRODUCTION →" />
         )}
       </div>
 

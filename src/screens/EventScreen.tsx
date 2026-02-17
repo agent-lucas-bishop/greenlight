@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GameState } from '../types';
-import { pickSeasonEvent, skipSeasonEvent } from '../gameStore';
+import { pickSeasonEvent, skipSeasonEvent, buyPRCampaign } from '../gameStore';
 import { sfx } from '../sound';
 import PhaseTip from '../components/PhaseTip';
 
@@ -115,6 +115,54 @@ export default function EventScreen({ state }: { state: GameState }) {
           );
         })}
       </div>
+
+      {/* R150: PR Campaign option */}
+      {!confirmed && !state.prCampaignActive && state.budget >= 2 && (
+        <div style={{
+          background: 'rgba(52,152,219,0.08)',
+          border: '1px solid rgba(52,152,219,0.3)',
+          borderRadius: 10,
+          padding: '12px 16px',
+          maxWidth: 500,
+          margin: '0 auto 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#3498db' }}>📢 PR Campaign</div>
+            <div style={{ color: '#999', fontSize: '0.75rem' }}>
+              Spend $2M to reduce rival interference this season (fewer rival actions, weaker effects).
+            </div>
+          </div>
+          <button
+            className="btn"
+            onClick={() => { sfx.click(); buyPRCampaign(); }}
+            style={{
+              background: 'rgba(52,152,219,0.2)',
+              border: '1px solid #3498db',
+              color: '#3498db',
+              padding: '6px 16px',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Buy $2M
+          </button>
+        </div>
+      )}
+      {state.prCampaignActive && (
+        <div style={{
+          color: '#2ecc71', fontSize: '0.8rem', marginBottom: 12,
+          background: 'rgba(46,204,113,0.1)', borderRadius: 8, padding: '6px 12px',
+          display: 'inline-block',
+        }}>
+          ✅ PR Campaign active — rival interference reduced this season
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
         <button

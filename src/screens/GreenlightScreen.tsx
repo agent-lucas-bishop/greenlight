@@ -58,6 +58,24 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
         <div className="event-banner animate-slide-down">📰 <strong>{state.industryEvent.name}</strong> — {state.industryEvent.description}</div>
       )}
 
+      {/* R150: Rival action notifications */}
+      {state.rivalActions && state.rivalActions.length > 0 && (
+        <div style={{ maxWidth: 600, margin: '0 auto 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {state.rivalActions.map((action, i) => (
+            <div key={i} className="animate-slide-down" style={{
+              background: 'rgba(231,76,60,0.08)',
+              border: '1px solid rgba(231,76,60,0.25)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
+              color: '#e74c3c',
+            }}>
+              🏢 {action.description}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Genre Trends */}
       <div style={{ textAlign: 'center', marginBottom: 12, fontSize: '0.85rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 16px' }}>
         {state.hotGenres.length > 0 && (

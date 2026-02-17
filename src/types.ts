@@ -147,11 +147,15 @@ export type GamePhase =
   | 'greenlight'
   | 'casting'
   | 'production'
+  | 'postProduction'
   | 'release'
   | 'shop'
   | 'event'
   | 'gameOver'
   | 'victory';
+
+export type MarketingTier = 'none' | 'standard' | 'premium' | 'viral';
+export type PostProdOption = 'directorsCut' | 'testScreening' | 'reshoot' | 'rushRelease';
 
 export interface CastSlot {
   slotType: SlotType;
@@ -311,6 +315,32 @@ export interface GameState {
   activeModifiers?: string[]; // IDs of toggled challenge modifiers
   weeklySeed?: string; // weekly seed display string
   retirementNotification?: string | null; // talent name that just retired
+  // R153: Post-Production Phase
+  postProdMarketing?: MarketingTier | null; // chosen marketing spend
+  postProdOption?: PostProdOption | null; // chosen post-production option
+  postProdMarketingMultiplier?: number; // resolved marketing multiplier (for viral randomness)
+  postProdTestScreeningTier?: string | null; // preview tier shown during test screening
+  // R150: Active Rival System
+  prCampaignActive: boolean; // $2M PR Campaign reduces rival interference this season
+  rivalActions: RivalAction[]; // rival actions applied this season
+}
+
+// ─── RIVAL ACTIONS (R150) ───
+export type RivalActionType = 'snipeTalent' | 'stealScript' | 'competingFilm';
+
+export interface RivalAction {
+  studioName: string;
+  studioEmoji: string;
+  actionType: RivalActionType;
+  description: string;
+  /** For snipeTalent: index of talent removed from market */
+  removedTalentIndex?: number;
+  /** For stealScript: index of script blocked from greenlight */
+  blockedScriptIndex?: number;
+  /** For competingFilm: multiplier penalty applied */
+  multiplierPenalty?: number;
+  /** Genre of competing film (for competingFilm action) */
+  competingGenre?: Genre;
 }
 
 export interface SeasonEventChoice {

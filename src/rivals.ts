@@ -1,5 +1,5 @@
 import { rng } from './seededRng';
-import { Genre, RewardTier, GameState } from './types';
+import { Genre, RewardTier, GameState, RivalAction, RivalActionType } from './types';
 
 // ─── RIVAL STUDIOS ───
 // Three distinct rivals with personality, strategy, and trash talk
@@ -615,6 +615,65 @@ export const SEASON_IDENTITIES: SeasonIdentity[] = [
 
 export function getSeasonIdentity(season: number): SeasonIdentity {
   return SEASON_IDENTITIES[Math.min(season - 1, SEASON_IDENTITIES.length - 1)];
+}
+
+// ─── R150: RIVAL ACTIONS ───
+// Each season, 1-2 rivals take an action that interferes with the player.
+// PR Campaign ($2M) reduces interference (fewer actions, weaker effects).
+
+export function generateRivalActions(season: number, prCampaignActive: boolean, playerGenre?: string): RivalAction[] {
+  const actions: RivalAction[] = [];
+  // Pick 1-3 rivals to act this season (PR campaign: max 1)
+  const maxActions = prCampaignActive ? 1 : (season <= 1 ? 1 : (rng() < 0.4 ? 3 : 2));
+  const shuffled = [...RIVAL_STUDIOS].sort(() => rng() - 0.5);
+  const actingRivals = shuffled.slice(0, maxActions);
+
+  for (const rival of actingRivals) {
+    // Aggressive rivals prefer competing films; scrappy prefer sniping talent; steady prefer stealing scripts
+    const roll = rng();
+    let actionType: RivalActionType;
+    if (rival.personality === 'aggressive') {
+      actionType = roll < 0.5 ? 'competingFilm' : roll < 0.8 ? 'snipeTalent' : 'stealScript';
+    } else if (rival.personality === 'scrappy') {
+      actionType = roll < 0.5 ? 'snipeTalent' : roll < 0.8 ? 'stealScript' : 'competingFilm';
+    } else {
+      actionType = roll < 0.5 ? 'stealScript' : roll < 0.8 ? 'competingFilm' : 'snipeTalent';
+    }
+
+    // PR campaign weakens effects
+    const dampening = prCampaignActive ? 0.5 : 1.0;
+
+    if (actionType === 'snipeTalent') {
+      actions.push({
+        studioName: rival.name,
+        studioEmoji: rival.emoji,
+        actionType: 'snipeTalent',
+        description: `${rival.emoji} ${rival.name} poached a talent from the market!`,
+        removedTalentIndex: Math.floor(rng() * 6), // will be clamped to actual market size
+      });
+    } else if (actionType === 'stealScript') {
+      actions.push({
+        studioName: rival.name,
+        studioEmoji: rival.emoji,
+        actionType: 'stealScript',
+        description: `${rival.emoji} ${rival.name} snatched a script before you could greenlight it!`,
+        blockedScriptIndex: Math.floor(rng() * 3), // will be clamped
+      });
+    } else {
+      const penalty = (0.1 + rng() * 0.2) * dampening; // 0.1-0.3 (halved with PR)
+      const genre = playerGenre || rival.genrePool[Math.floor(rng() * rival.genrePool.length)];
+      actions.push({
+        studioName: rival.name,
+        studioEmoji: rival.emoji,
+        actionType: 'competingFilm',
+        description: `${rival.emoji} ${rival.name} released a competing ${genre} film! (−${penalty.toFixed(1)}× multiplier)`,
+        multiplierPenalty: Math.round(penalty * 100) / 100,
+        competingGenre: genre as Genre,
+      });
+    }
+  }
+
+  return actions;
 }
 
 export { RIVAL_STUDIOS };

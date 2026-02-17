@@ -82,7 +82,7 @@
  * ══════════════════════════════════════════════════════════════════════
  */
 
-import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag } from './types';
+import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, MarketingTier, PostProdOption } from './types';
 import type { StudioArchetypeId } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
@@ -94,10 +94,11 @@ import type { SeasonEventChoice } from './types';
 import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, getWeeklySeed, getWeeklyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
-import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand } from './rivals';
+import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand, generateRivalActions } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { addFilmToArchive, getCurrentRunNumber } from './filmArchive';
 import { isSimplifiedRun } from './onboarding';
+import { resetAgingState, ageTalentOnMarket, recordHire, recordFilmResult, tickPeakCounters, checkHungryMood, applyAgingToTalent, getMoodQualityBonus, generateRisingStar, resetRisingStarNames, getAgingData } from './talentAging';
 import { sfx } from './sound';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { careerSessionStart, careerTrackTalentHire, careerTrackFilmComplete } from './careerAnalytics';
@@ -160,6 +161,8 @@ function createInitialState(): GameState {
     extendedCutAvailable: false,
     extendedCutUsed: false,
     reshootsBudgetUsed: false,
+    prCampaignActive: false,
+    rivalActions: [],
   };
 }
 
@@ -577,6 +580,8 @@ export function resumeGame(saved: Partial<GameState>) {
 
 export function startGame(mode: GameMode = 'normal', challengeId?: string, activeModifiers?: string[]) {
   clearSave();
+  resetAgingState();
+  resetRisingStarNames();
   // Activate seeded RNG for daily/weekly runs
   if (mode === 'daily') {
     activateSeed(getDailySeed());
@@ -771,7 +776,21 @@ function beginSeason() {
     scripts = [state.pendingSequelScript, ...scripts];
   }
 
-  setState({ scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold, pendingSequelScript: null });
+  // R150: Generate rival actions for this season
+  const rivalActions = generateRivalActions(state.season, state.prCampaignActive);
+
+  // Apply stealScript actions: remove blocked scripts
+  for (const action of rivalActions) {
+    if (action.actionType === 'stealScript' && action.blockedScriptIndex !== undefined && scripts.length > 1) {
+      const idx = Math.min(action.blockedScriptIndex, scripts.length - 1);
+      // Don't block sequel scripts
+      if (!scripts[idx].legendary) {
+        scripts.splice(idx, 1);
+      }
+    }
+  }
+
+  setState({ scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold, pendingSequelScript: null, rivalActions, prCampaignActive: false });
 }
 
 export function pickScript(script: Script) {
@@ -808,6 +827,21 @@ export function pickScript(script: Script) {
       cards: t.cards.map(c => c.cardType === 'action' ? { ...c, baseQuality: c.baseQuality + 1 } : c),
     } : t);
   }
+  // R150: Apply snipeTalent rival actions — remove talent from market
+  for (const action of (state.rivalActions || [])) {
+    if (action.actionType === 'snipeTalent' && action.removedTalentIndex !== undefined && market.length > 1) {
+      const idx = Math.min(action.removedTalentIndex, market.length - 1);
+      market.splice(idx, 1);
+    }
+  }
+
+  // Talent Aging: apply aging modifiers to market talent & inject rising star
+  market = market.map(t => applyAgingToTalent(t));
+  if (state.season >= 2) {
+    const star = generateRisingStar(state.season);
+    market.push(star);
+  }
+
   // Daily modifier: Summer Blockbuster — Action/Sci-Fi -20% cost, others +$2
   let scriptCost = script.cost;
   if (state.dailyModifierId === 'summer_blockbuster' || state.dailyModifierId2 === 'summer_blockbuster') {
@@ -899,6 +933,9 @@ export function hireTalent(talent: Talent) {
   if (hiredTalent.elitePassiveEffect === 'rosterSkillBoost') {
     updatedRoster = updatedRoster.map(t => ({ ...t, skill: t.skill + 1 }));
   }
+
+  // Record hire for aging system
+  recordHire(hiredTalent.name);
 
   setState({
     roster: [...updatedRoster, hiredTalent],
@@ -1760,7 +1797,10 @@ export function calculateQuality(s: GameState): {
   // Talent Loyalty: +2 quality per loyal talent in cast
   const loyaltyBonus = s.castSlots.reduce((sum, slot) => sum + (slot.talent ? getLoyaltyQualityBonus(slot.talent.name) : 0), 0);
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus;
+  // Talent Mood: quality bonuses from hot/hungry moods
+  const moodBonus = s.castSlots.reduce((sum, slot) => sum + (slot.talent ? getMoodQualityBonus(slot.talent.name) : 0), 0);
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus + moodBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;
@@ -1802,6 +1842,111 @@ function getTier(boxOffice: number, target: number): RewardTier {
   if (ratio >= 1.25 * cd) return 'SMASH';
   if (ratio >= 1.0 * cd) return 'HIT';
   return 'FLOP';
+}
+
+// ─── R153: POST-PRODUCTION PHASE ───
+
+export function goToPostProduction() {
+  setState({
+    phase: 'postProduction',
+    postProdMarketing: null,
+    postProdOption: null,
+    postProdMarketingMultiplier: undefined,
+    postProdTestScreeningTier: null,
+  });
+}
+
+export function pickMarketing(tier: MarketingTier) {
+  const costs: Record<MarketingTier, number> = { none: 0, standard: 2, premium: 4, viral: 1 };
+  const multipliers: Record<MarketingTier, number> = { none: 1.0, standard: 1.2, premium: 1.5, viral: 1.0 };
+  const cost = costs[tier];
+
+  let mult = multipliers[tier];
+  if (tier === 'viral') {
+    mult = 0.8 + rng() * 1.2; // 0.8x to 2.0x
+    mult = Math.round(mult * 100) / 100;
+  }
+
+  setState({
+    budget: state.budget - cost,
+    postProdMarketing: tier,
+    postProdMarketingMultiplier: mult,
+  });
+}
+
+export function pickPostProdOption(option: PostProdOption) {
+  const prod = state.production;
+  if (!prod) return;
+
+  switch (option) {
+    case 'directorsCut': {
+      // +5 quality, +$1M cost
+      setState({
+        budget: state.budget - 1,
+        postProdOption: option,
+        production: { ...prod, qualityTotal: prod.qualityTotal + 5 },
+      });
+      break;
+    }
+    case 'testScreening': {
+      // Preview tier, no bonus. Calculate what tier would be.
+      const { rawQuality } = calculateQuality(state);
+      const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
+      const mkt = state.postProdMarketingMultiplier || 1.0;
+      const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][state.reputation] || 1.0;
+      const estimatedBO = rawQuality * mkt * repBonus;
+      const ratio = estimatedBO / target;
+      let previewTier = 'FLOP';
+      if (ratio >= 1.5) previewTier = 'BLOCKBUSTER';
+      else if (ratio >= 1.25) previewTier = 'SMASH';
+      else if (ratio >= 1.0) previewTier = 'HIT';
+      setState({
+        postProdOption: option,
+        postProdTestScreeningTier: previewTier,
+      });
+      break;
+    }
+    case 'reshoot': {
+      // Reroll 2 lowest cards in played pile, +$3M
+      if (state.budget < 3) return;
+      const played = [...prod.played];
+      // Find 2 lowest-value action cards
+      const actionIndices = played
+        .map((c, i) => ({ card: c, idx: i }))
+        .filter(x => x.card.cardType === 'action')
+        .sort((a, b) => (a.card.totalValue || a.card.baseQuality) - (b.card.totalValue || b.card.baseQuality));
+      const rerollCount = Math.min(2, actionIndices.length);
+      for (let i = 0; i < rerollCount; i++) {
+        const idx = actionIndices[i].idx;
+        const oldCard = played[idx];
+        const newBase = oldCard.baseQuality + Math.floor(rng() * 5) - 1; // -1 to +3 shift
+        played[idx] = { ...oldCard, baseQuality: newBase, totalValue: newBase + (oldCard.synergyBonus || 0), name: '🎬 Reshoot Take' };
+      }
+      // Recalculate quality
+      let qualityTotal = 0;
+      for (const c of played) qualityTotal += c.totalValue || c.baseQuality;
+
+      setState({
+        budget: state.budget - 3,
+        postProdOption: option,
+        production: { ...prod, played, qualityTotal },
+      });
+      break;
+    }
+    case 'rushRelease': {
+      // Skip post-prod, -$1M refund but -10 quality
+      setState({
+        budget: state.budget + 1,
+        postProdOption: option,
+        production: { ...prod, qualityTotal: prod.qualityTotal - 10 },
+      });
+      break;
+    }
+  }
+}
+
+export function confirmPostProduction() {
+  resolveRelease();
 }
 
 export function resolveRelease() {
@@ -1925,6 +2070,15 @@ export function resolveRelease() {
     }
   }
 
+  // R150: Apply competingFilm rival actions — reduce multiplier if same genre
+  for (const action of (state.rivalActions || [])) {
+    if (action.actionType === 'competingFilm' && action.multiplierPenalty) {
+      if (!action.competingGenre || action.competingGenre === script.genre) {
+        multiplier -= action.multiplierPenalty;
+      }
+    }
+  }
+
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
   // Studio archetype effects
   if (state.studioArchetype === 'blockbuster') multiplier += 0.2;
@@ -1969,6 +2123,11 @@ export function resolveRelease() {
   } else {
     boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
   }
+
+  // R153: Apply marketing multiplier from post-production phase
+  const marketingMult = state.postProdMarketingMultiplier || 1.0;
+  boxOffice = Math.round(boxOffice * marketingMult * 10) / 10;
+
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const tier = getTier(boxOffice, target);
 
@@ -2628,6 +2787,12 @@ export function pickSeasonEvent(eventId: string) {
     phase: 'greenlight',
   });
   beginSeason();
+}
+
+// R150: PR Campaign — spend $2M to reduce rival interference this season
+export function buyPRCampaign() {
+  if (state.budget < 2 || state.prCampaignActive) return;
+  setState({ budget: state.budget - 2, prCampaignActive: true });
 }
 
 export function skipSeasonEvent() {

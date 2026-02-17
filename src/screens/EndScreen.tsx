@@ -364,6 +364,14 @@ function getAchievements(state: GameState): { icon: string; name: string; desc: 
     a.push({ icon: '🎬', name: 'Franchise King', desc: 'Built a 3-film franchise' });
   }
 
+  // R150: Top Studio — finish #1 overall in rival leaderboard
+  if (state.cumulativeRivalEarnings && Object.keys(state.cumulativeRivalEarnings).length > 0) {
+    const rivalMax = Math.max(...Object.values(state.cumulativeRivalEarnings));
+    if (state.totalEarnings >= rivalMax) {
+      a.push({ icon: '🏢', name: 'Top Studio', desc: 'Finished #1 in the industry' });
+    }
+  }
+
   return a;
 }
 

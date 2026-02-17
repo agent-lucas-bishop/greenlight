@@ -1,0 +1,22 @@
+{
+  "name": "GREENLIGHT — A Movie Studio Roguelite",
+  "short_name": "GREENLIGHT",
+  "description": "Run a movie studio. Greenlight films, cast stars, chase box office glory in this roguelite card game.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#d4a843",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png"
+    }
+  ]
+}

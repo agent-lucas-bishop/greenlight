@@ -37,6 +37,7 @@ const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
 const SynergyCodex = lazy(() => import('../components/SynergyDisplay').then(m => ({ default: m.SynergyCodex })));
 const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
+const CampaignSelect = lazy(() => import('../components/CampaignSelect'));
 const PlayerProfileModal = lazy(() => import('../components/PlayerProfile'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
@@ -449,7 +450,8 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'create' | 'synergies'>('play');
+  const [tab, setTab] = useState<'play' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'create' | 'synergies'>('play');
+  const [showCampaignSelect, setShowCampaignSelect] = useState(false);
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
   const [showNamePrompt, setShowNamePrompt] = useState(false);
@@ -851,6 +853,7 @@ export default function StartScreen() {
       {stats.runs > 0 && (() => {
         const tabDefs: { id: typeof tab; emoji: string; label: string; shortLabel?: string }[] = [
           { id: 'play', emoji: '🎬', label: 'PLAY' },
+          { id: 'campaigns' as const, emoji: '📖', label: 'CAMPAIGNS' },
           { id: 'stats', emoji: '📊', label: 'STATS' },
           { id: 'dashboard', emoji: '📈', label: 'DASHBOARD', shortLabel: 'DASH' },
           { id: 'achievements', emoji: '🏆', label: 'ACHIEVEMENTS', shortLabel: 'ACHV' },
@@ -1556,6 +1559,12 @@ export default function StartScreen() {
       {tab === 'create' && (
         <Suspense fallback={<SkeletonLoader />}>
           <CardCreator onClose={() => setTab('play')} />
+        </Suspense>
+      )}
+
+      {tab === 'campaigns' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <CampaignSelect onBack={() => setTab('play')} />
         </Suspense>
       )}
 

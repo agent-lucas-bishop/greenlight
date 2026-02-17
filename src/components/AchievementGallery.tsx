@@ -255,6 +255,20 @@ function AchievementCard({ achievement }: { achievement: GalleryAchievement }) {
           🎨 {ach.cosmeticReward.label}
         </div>
       )}
+
+      {/* Star Power reward */}
+      {(ach as any).starPowerReward && (
+        <div style={{
+          marginTop: isUnlocked && ach.cosmeticReward ? 4 : 8,
+          padding: '2px 8px', borderRadius: 4,
+          background: isUnlocked ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.02)',
+          color: isUnlocked ? '#ffd700' : '#444',
+          fontSize: '0.5rem',
+          border: `1px solid ${isUnlocked ? 'rgba(255,215,0,0.2)' : '#1a1a1a'}`,
+        }}>
+          ⭐ {(ach as any).starPowerReward.label}
+        </div>
+      )}
     </div>
   );
 }

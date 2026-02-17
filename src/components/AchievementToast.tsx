@@ -91,6 +91,11 @@ export default function AchievementToast({ achievement, onDone }: AchievementToa
             🎨 Unlocked: {achievement.cosmeticReward.label}
           </div>
         )}
+        {(achievement as any).starPowerReward && (
+          <div style={{ color: '#ffd700', fontSize: '0.65rem', marginTop: 2 }}>
+            ⭐ {(achievement as any).starPowerReward.label}
+          </div>
+        )}
       </div>
     </div>
   );

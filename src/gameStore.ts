@@ -130,6 +130,7 @@ const COMPOSERS_COST: Record<string, number> = Object.fromEntries(
   getComposerOptions().map(c => [c.name, c.cost])
 );
 import { generateCriticReviews } from './criticReviews';
+import { loadCampaignData, updateCampaignAfterFilm, getActiveCampaign, type CampaignFilmRecord } from './campaigns';
 import { getSeasonalBOMultiplier, getSeasonalQualityBonus } from './seasonalEvents';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';

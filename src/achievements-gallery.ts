@@ -79,8 +79,15 @@ export const RARITY_DEFS: Record<AchievementRarity, RarityDef> = {
   legendary: { id: 'legendary', label: 'Legendary', color: '#f39c12', glowColor: 'rgba(243,156,18,0.4)',  percentile: '~2%' },
 };
 
-/** Assign rarity based on achievement properties */
+/** Assign rarity based on achievement properties — uses explicit rarity field if set */
 export function getAchievementRarity(ach: AchievementDef): AchievementRarity {
+  // Use explicit rarity from v2 achievements if available
+  if ((ach as any).rarity) {
+    const r = (ach as any).rarity;
+    // Map 'uncommon' to itself, others match
+    if (r === 'common' || r === 'uncommon' || r === 'rare' || r === 'epic' || r === 'legendary') return r;
+  }
+
   // Secret achievements are at least rare
   if (ach.secret) return 'epic';
 

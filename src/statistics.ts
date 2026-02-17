@@ -60,6 +60,8 @@ function loadStats(): LifetimeStats {
 
 function saveStats(stats: LifetimeStats): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+  // R236: Mirror to greenlight-stats key
+  try { localStorage.setItem('greenlight-stats', JSON.stringify(stats)); } catch {}
 }
 
 function defaultStats(): LifetimeStats {

@@ -1,8 +1,15 @@
-// Achievements system — persistent cross-run achievements with categories and cosmetic rewards
+// Achievements system v2 — persistent cross-run achievements with categories, rarity, and star power rewards
 import { getUnlocks, saveUnlocks, type UnlockState, ENDINGS } from './unlocks';
 import type { GameState } from './types';
+import { getEnabledWorkshopCards } from './cardCreator';
 
 export type AchievementCategory = 'milestone' | 'skill' | 'discovery' | 'fun' | 'secret';
+export type AchievementRarityLevel = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface StarPowerReward {
+  amount: number;
+  label: string;
+}
 
 export interface AchievementDef {
   id: string;
@@ -12,7 +19,9 @@ export interface AchievementDef {
   description: string;
   hint: string; // shown when locked
   secret?: boolean; // hidden until unlocked
+  rarity?: AchievementRarityLevel; // common/rare/epic/legendary
   cosmeticReward?: CosmeticReward;
+  starPowerReward?: StarPowerReward;
   check: (state: GameState, unlocks: UnlockState) => boolean;
   progress?: (state: GameState, unlocks: UnlockState) => { current: number; target: number } | null;
 }
@@ -565,12 +574,213 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'skill',
     description: 'Complete a run on Mogul difficulty with a positive score',
     hint: 'Survive the hardest difficulty and come out ahead',
+    rarity: 'legendary',
+    starPowerReward: { amount: 50, label: '+50 Star Power' },
     check: (s) => {
       if (s.phase !== 'victory') return false;
       if (s.difficulty !== 'mogul') return false;
       const baseScore = Math.round(s.totalEarnings * s.reputation * (1 + s.seasonHistory.filter(h => h.nominated).length * 0.2));
       return baseScore > 0;
     },
+  },
+
+  // ─── R236: Achievements v2 — Production Category ───
+  {
+    id: 'first_film',
+    name: 'First Film',
+    emoji: '🎥',
+    category: 'milestone',
+    description: 'Release your very first film. Every legend starts somewhere.',
+    hint: 'Make your debut',
+    rarity: 'common',
+    starPowerReward: { amount: 5, label: '+5 Star Power' },
+    check: (s) => s.seasonHistory.length >= 1,
+  },
+  {
+    id: 'fifty_films',
+    name: 'Film Factory',
+    emoji: '🏭',
+    category: 'discovery',
+    description: 'Produce 50 films across all runs — a prolific career',
+    hint: 'Keep the cameras rolling',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (_s, u) => u.careerStats.totalFilms >= 50,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.totalFilms, 50), target: 50 }),
+  },
+  {
+    id: 'hundred_films',
+    name: 'Century of Cinema',
+    emoji: '🎞️',
+    category: 'discovery',
+    description: 'Produce 100 films across all runs — a lifetime in pictures',
+    hint: 'A hundred stories told',
+    rarity: 'epic',
+    starPowerReward: { amount: 40, label: '+40 Star Power' },
+    check: (_s, u) => u.careerStats.totalFilms >= 100,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.totalFilms, 100), target: 100 }),
+  },
+
+  // ─── R236: Financial Category ───
+  {
+    id: 'first_million',
+    name: 'First Million',
+    emoji: '💵',
+    category: 'milestone',
+    description: 'Earn your first $1M at the box office',
+    hint: 'Every fortune starts small',
+    rarity: 'common',
+    starPowerReward: { amount: 5, label: '+5 Star Power' },
+    check: (s) => s.totalEarnings >= 1,
+  },
+  {
+    id: 'hundred_million_club',
+    name: 'Hundred Million Club',
+    emoji: '💰',
+    category: 'milestone',
+    description: 'Earn $100M+ in a single run',
+    hint: 'Join the exclusive club',
+    rarity: 'rare',
+    starPowerReward: { amount: 15, label: '+15 Star Power' },
+    check: (s) => s.totalEarnings >= 100,
+  },
+  {
+    id: 'debt_free',
+    name: 'Debt Free',
+    emoji: '🏦',
+    category: 'milestone',
+    description: 'Repay all loans and finish a run with zero debt',
+    hint: 'Clean books, clear conscience',
+    rarity: 'rare',
+    starPowerReward: { amount: 15, label: '+15 Star Power' },
+    check: (s) => s.phase === 'victory' && s.debt === 0 && s.activeLoans.length === 0,
+  },
+
+  // ─── R236: Genre Mastery (one per genre) ───
+  ...(['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'] as const).map(genre => ({
+    id: `genre_master_${genre.toLowerCase().replace('-', '')}` as string,
+    name: `${genre} Maestro`,
+    emoji: ({ Action: '💥', Comedy: '😂', Drama: '🎭', Horror: '👻', 'Sci-Fi': '🚀', Romance: '❤️', Thriller: '🔪' })[genre] || '🎬',
+    category: 'discovery' as AchievementCategory,
+    description: `Make 10+ ${genre} films across all runs`,
+    hint: `Become the master of ${genre}`,
+    rarity: 'uncommon' as AchievementRarityLevel,
+    starPowerReward: { amount: 10, label: '+10 Star Power' },
+    check: (_s: GameState, u: UnlockState) => (u.careerStats.genreFilms[genre] || 0) >= 10,
+    progress: (_s: GameState, u: UnlockState) => ({ current: Math.min(u.careerStats.genreFilms[genre] || 0, 10), target: 10 }),
+  } as AchievementDef)),
+  {
+    id: 'genre_hopper',
+    name: 'Genre Hopper',
+    emoji: '🦘',
+    category: 'fun',
+    description: 'Make a different genre every season in a single run (5+ seasons)',
+    hint: 'Never repeat yourself',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (s) => {
+      if (s.seasonHistory.length < 5) return false;
+      const genres = s.seasonHistory.map(h => h.genre);
+      // Each consecutive pair must differ
+      for (let i = 1; i < genres.length; i++) {
+        if (genres[i] === genres[i - 1]) return false;
+      }
+      return true;
+    },
+  },
+
+  // ─── R236: Special Category ───
+  {
+    id: 'sequel_king',
+    name: 'Sequel King',
+    emoji: '👑',
+    category: 'skill',
+    description: 'Build 3 successful franchises (each with 2+ films)',
+    hint: 'The king of franchises',
+    rarity: 'epic',
+    starPowerReward: { amount: 30, label: '+30 Star Power' },
+    check: (s) => {
+      const successful = Object.values(s.franchises).filter(f => f.films.length >= 2 && f.films.some(ff => ff.tier !== 'FLOP'));
+      return successful.length >= 3;
+    },
+  },
+  {
+    id: 'card_collector',
+    name: 'Card Collector',
+    emoji: '🃏',
+    category: 'discovery',
+    description: 'Hire 50+ unique talent across all runs',
+    hint: 'Gotta collect them all',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (_s, u) => (u.careerStats.uniqueTalentHired?.length || 0) >= 50,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.uniqueTalentHired?.length || 0, 50), target: 50 }),
+  },
+  {
+    id: 'workshop_wizard',
+    name: 'Workshop Wizard',
+    emoji: '🧙',
+    category: 'discovery',
+    description: 'Create 10 custom crew cards in the Workshop',
+    hint: 'Master the card workshop',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: () => {
+      try { return getEnabledWorkshopCards().length >= 10; } catch { return false; }
+    },
+  },
+  {
+    id: 'critics_darling_streak',
+    name: "Critics' Darling Streak",
+    emoji: '🌟',
+    category: 'skill',
+    description: 'Get 5 nominated films in a row',
+    hint: 'The critics love everything you touch',
+    rarity: 'epic',
+    starPowerReward: { amount: 35, label: '+35 Star Power' },
+    check: (s) => {
+      let streak = 0;
+      for (const h of s.seasonHistory) {
+        if (h.nominated) { streak++; if (streak >= 5) return true; }
+        else streak = 0;
+      }
+      return false;
+    },
+  },
+
+  // ─── R236: Secret Achievements (5 total — adding 2 more) ───
+  {
+    id: 'secret_franchise_flop',
+    name: 'Franchise Killer',
+    emoji: '💣',
+    category: 'secret',
+    description: 'Have a franchise sequel FLOP after the original was a BLOCKBUSTER',
+    hint: '???',
+    secret: true,
+    rarity: 'epic',
+    starPowerReward: { amount: 25, label: '+25 Star Power' },
+    check: (s) => {
+      for (const f of Object.values(s.franchises)) {
+        if (f.films.length >= 2) {
+          const first = f.films[0];
+          const hasFlop = f.films.slice(1).some(ff => ff.tier === 'FLOP');
+          if (first.tier === 'BLOCKBUSTER' && hasFlop) return true;
+        }
+      }
+      return false;
+    },
+  },
+  {
+    id: 'secret_zero_budget_win',
+    name: 'Penny Cinema',
+    emoji: '🪙',
+    category: 'secret',
+    description: 'Win a run while finishing with exactly $0 budget',
+    hint: '???',
+    secret: true,
+    rarity: 'legendary',
+    starPowerReward: { amount: 50, label: '+50 Star Power' },
+    check: (s) => s.phase === 'victory' && Math.abs(s.budget) < 0.1 && s.debt === 0,
   },
 ];
 
@@ -612,16 +822,53 @@ export function checkAchievements(state: GameState): AchievementDef[] {
   return newlyEarned;
 }
 
-// Persist newly earned achievements
+// Persist newly earned achievements + grant star power rewards
 export function persistAchievements(ids: string[]) {
   const u = getUnlocks();
+  let starPowerEarned = 0;
   for (const id of ids) {
     if (!u.achievements.includes(id)) {
       u.achievements.push(id);
       saveAchievementDate(id);
+      const ach = ACHIEVEMENTS.find(a => a.id === id);
+      if (ach?.starPowerReward) {
+        starPowerEarned += ach.starPowerReward.amount;
+      }
     }
   }
   saveUnlocks(u);
+  // Grant star power to prestige shop
+  if (starPowerEarned > 0) {
+    try {
+      const shopKey = 'greenlight_prestige_shop';
+      const raw = localStorage.getItem(shopKey);
+      if (raw) {
+        const shop = JSON.parse(raw);
+        shop.starPower = (shop.starPower || 0) + starPowerEarned;
+        localStorage.setItem(shopKey, JSON.stringify(shop));
+      }
+    } catch { /* ignore */ }
+  }
+  // Mirror to greenlight-achievements key
+  syncAchievementsStorage();
+}
+
+// Sync achievements to greenlight-achievements localStorage key
+function syncAchievementsStorage() {
+  try {
+    const u = getUnlocks();
+    const dates = getAchievementDates();
+    const data = {
+      unlocked: u.achievements,
+      dates,
+      totalStarPowerEarned: u.achievements.reduce((sum, id) => {
+        const ach = ACHIEVEMENTS.find(a => a.id === id);
+        return sum + (ach?.starPowerReward?.amount || 0);
+      }, 0),
+      lastUpdated: new Date().toISOString(),
+    };
+    localStorage.setItem('greenlight-achievements', JSON.stringify(data));
+  } catch { /* ignore */ }
 }
 
 // Get all unlocked achievement IDs

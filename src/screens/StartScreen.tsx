@@ -702,6 +702,27 @@ export default function StartScreen() {
         );
       })()}
 
+      {/* R259: Active New Game+ Perks Badge */}
+      {(() => {
+        const ngpPerks = getActiveNGPPerks();
+        if (ngpPerks.length === 0) return null;
+        return (
+          <div style={{
+            textAlign: 'center', marginTop: 6, display: 'flex', flexWrap: 'wrap',
+            gap: 4, justifyContent: 'center', maxWidth: 360, margin: '6px auto 0',
+          }}>
+            {ngpPerks.map(p => (
+              <span key={p.id} title={p.description} style={{
+                fontSize: '0.6rem', color: '#aaa', background: 'rgba(46,204,113,0.08)',
+                padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(46,204,113,0.15)',
+              }}>
+                {p.emoji} {p.effectLabel}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* R171: Meta-Progression Level & XP Bar */}
       {stats.runs > 0 && (() => {
         const meta = getMetaProgression();

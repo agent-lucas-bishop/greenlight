@@ -31,12 +31,14 @@ const StatsPanel = lazy(() => import('../components/StatsPanel'));
 const FilmArchive = lazy(() => import('../components/FilmArchive'));
 const CareerStatsDashboard = lazy(() => import('../components/CareerStatsDashboard'));
 const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
+const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
 import { getAllUnlockableStatus } from '../unlockableContent';
 import { isEndlessUnlocked } from '../endgame';
+import { getCollectionProgress } from '../tradingCards';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
@@ -419,7 +421,7 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame'>('play');
+  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards'>('play');
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
   const handleToggleMute = () => { const m = toggleMute(); setMutedLocal(m); if (!m) sfx.click(); };
@@ -737,7 +739,7 @@ export default function StartScreen() {
       {/* Tab navigation */}
       {stats.runs > 0 && (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
-          {(['play', 'stats', 'dashboard', 'achievements', 'career', 'history', 'archive', 'hallOfFame', ...(!simplified ? ['challenges', 'leaderboard'] as const : [])] as const).map(t => (
+          {(['play', 'stats', 'dashboard', 'achievements', 'cards', 'career', 'history', 'archive', 'hallOfFame', ...(!simplified ? ['challenges', 'leaderboard'] as const : [])] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               background: tab === t ? 'rgba(212,168,67,0.15)' : 'transparent',
               border: `1px solid ${tab === t ? 'var(--gold-dim)' : '#333'}`,
@@ -745,7 +747,7 @@ export default function StartScreen() {
               cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.05em',
               transition: 'all 0.2s', minHeight: 44,
             }}>
-              {t === 'play' ? '🎬 PLAY' : t === 'stats' ? '📊 STATS' : t === 'dashboard' ? '📈 DASHBOARD' : t === 'achievements' ? '🏆 ACHIEVEMENTS' : t === 'career' ? '🏛️ CAREER' : t === 'history' ? '📜 RUNS' : t === 'archive' ? '🎞️ ARCHIVE' : t === 'hallOfFame' ? '🏛️ HALL OF FAME' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 LEADERBOARD'}
+              {t === 'play' ? '🎬 PLAY' : t === 'stats' ? '📊 STATS' : t === 'dashboard' ? '📈 DASHBOARD' : t === 'achievements' ? '🏆 ACHIEVEMENTS' : t === 'cards' ? `🃏 CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})` : t === 'career' ? '🏛️ CAREER' : t === 'history' ? '📜 RUNS' : t === 'archive' ? '🎞️ ARCHIVE' : t === 'hallOfFame' ? '🏛️ HALL OF FAME' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 LEADERBOARD'}
             </button>
           ))}
         </div>
@@ -1424,6 +1426,13 @@ export default function StartScreen() {
       {tab === 'hallOfFame' && (
         <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading...</div>}>
           <HallOfFameTab />
+        </Suspense>
+      )}
+
+      {/* ─── TRADING CARDS TAB ─── */}
+      {tab === 'cards' && (
+        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading cards...</div>}>
+          <TradingCardGallery onClose={() => setTab('play')} inline />
         </Suspense>
       )}
 

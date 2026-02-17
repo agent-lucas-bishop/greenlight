@@ -23,6 +23,8 @@ import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '.
 import { getDifficultyBadge } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
 import { buildDirectorProfile, recordDirectorRun, getDirectorCareer, type DirectorProfile } from '../directorProfile';
+import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionProgress } from '../tradingCards';
+import TradingCardToast from '../components/TradingCardToast';
 
 // ─── Helpers ───
 
@@ -405,6 +407,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [prestigeResult, setPrestigeResult] = useState<ReturnType<typeof awardRunXP> | null>(null);
   const [metaResult, setMetaResult] = useState<MetaXPResult | null>(null);
   const [showPrestigeConfirm, setShowPrestigeConfirm] = useState(false);
+  const [newCardIds, setNewCardIds] = useState<string[]>([]);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
     history,
@@ -626,6 +629,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       }
       // R186: Record director profile for career tracking
       recordDirectorRun(directorProfile);
+      // R187: Check trading card unlocks
+      const cardState = { ...state, _endScore: score, _tripleCrown: awardsResult?.tripleCrown };
+      const newCards = checkTradingCardUnlocks(cardState);
+      if (newCards.length > 0) setNewCardIds(newCards);
       markFirstRunComplete();
       trackRunEnd(score, isVictory);
       careerTrackRunEnd({
@@ -1609,6 +1616,39 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
+      {/* ─── TRADING CARDS ─── */}
+      {phase >= 7 && newCardIds.length > 0 && (
+        <div className="animate-slide-down" style={{ marginTop: 24 }}>
+          <h3 style={{ color: 'var(--gold)', marginBottom: 12, letterSpacing: 1 }}>🃏 NEW TRADING CARDS</h3>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {newCardIds.map(id => {
+              const card = TRADING_CARDS.find(c => c.id === id);
+              if (!card) return null;
+              const rarity = RARITY_CONFIG[card.rarity];
+              return (
+                <div key={id} className={card.rarity === 'legendary' ? 'trading-card-holo' : ''} style={{
+                  width: 130, padding: '12px 10px', textAlign: 'center',
+                  background: `linear-gradient(135deg, ${rarity.bgGlow}, rgba(0,0,0,0.6))`,
+                  border: `2px solid ${rarity.borderColor}`,
+                  borderRadius: 10, animation: 'comboAppear 0.5s ease',
+                }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>🃏</div>
+                  <div style={{ color: rarity.color, fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: 1 }}>
+                    {card.name}
+                  </div>
+                  <div style={{ color: rarity.color, fontSize: '0.6rem', textTransform: 'uppercase', opacity: 0.7 }}>
+                    {rarity.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ color: '#888', fontSize: '0.7rem', marginTop: 8 }}>
+            {(() => { const p = getCollectionProgress(); return `Collection: ${p.collected}/${p.total}`; })()}
+          </div>
+        </div>
+      )}
+
       {/* ─── PLAY AGAIN ─── */}
       {phase >= 7 && (
         <div className="btn-group animate-slide-down" style={{ marginTop: 36 }}>
@@ -1616,6 +1656,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             🎬 BACK TO THE DIRECTOR'S CHAIR
           </button>
         </div>
+      )}
+
+      {/* R187: Trading card toast queue */}
+      {newCardIds.length > 0 && phase >= 5 && (
+        <TradingCardToast
+          cardId={newCardIds[0]}
+          onDone={() => setNewCardIds(prev => prev.slice(1))}
+        />
       )}
     </div>
   );

@@ -4180,3 +4180,51 @@ body::after {
   .cutscene-enter { animation: none !important; opacity: 1; }
   .cutscene-exit { animation: none !important; opacity: 0; }
 }
+
+/* ─── R187: Trading Card Holographic Effect ─── */
+.trading-card-holo {
+  position: relative;
+  overflow: hidden;
+}
+.trading-card-holo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(155,89,182,0) 0%,
+    rgba(155,89,182,0.15) 25%,
+    rgba(52,152,219,0.15) 50%,
+    rgba(46,204,113,0.15) 75%,
+    rgba(155,89,182,0) 100%
+  );
+  background-size: 200% 200%;
+  animation: holoShimmer 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+.trading-card-holo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255,255,255,0.08) 50%,
+    transparent 70%
+  );
+  background-size: 300% 300%;
+  animation: holoGlint 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+}
+@keyframes holoShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes holoGlint {
+  0%, 100% { background-position: 200% 200%; }
+  50% { background-position: 0% 0%; }
+}

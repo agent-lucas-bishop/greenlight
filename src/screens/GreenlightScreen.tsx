@@ -91,7 +91,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
               style={{ width: 10, height: 10, borderRadius: '50%', border: 'none', cursor: 'pointer',
                 background: i === mobileIdx ? 'var(--gold)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s' }} />
           ))}
-          <span style={{ fontSize: '0.7rem', color: '#555', marginLeft: 4 }}>← swipe →</span>
+          <span style={{ fontSize: '0.7rem', color: '#999', marginLeft: 4 }}>← swipe →</span>
         </div>
       )}
       <div className="card-grid card-grid-3" {...swipeHandlers}>
@@ -136,7 +136,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
               </div>
               <div className="card-body">
                 Slots: {script.slots.join(', ')}
-                <div style={{ marginTop: 6, fontSize: '0.75rem', color: '#666' }}>
+                <div style={{ marginTop: 6, fontSize: '0.75rem', color: '#999' }}>
                   📦 {script.cards?.length || 0} script cards added to production deck
                 </div>
                 {script.abilityDesc && (

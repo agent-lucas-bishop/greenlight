@@ -4907,23 +4907,23 @@ export const ALL_PERKS: PerkDef[] = [
   { name: 'Casting Network', cost: 8, description: 'See 6 talent in market instead of 4', effect: 'moreTalent' },
   { name: 'Marketing Machine', cost: 10, description: 'Choose your market condition', effect: 'chooseMarket' },
   { name: 'Independent Spirit', cost: 6, description: 'If total Heat ≤ 4, +×0.5 mult', effect: 'indieSpirit' },
-  { name: 'Genre Specialist', cost: 5, description: 'Pick a genre for permanent +×0.3', effect: 'genreSpec' },
+  { name: 'Genre Specialist', cost: 7, description: 'Pick a genre for permanent +×0.3', effect: 'genreSpec' },
   { name: 'Crisis Manager', cost: 8, description: 'Incident card quality penalties halved', effect: 'crisisManager' },
   { name: 'Buzz Machine', cost: 10, description: 'If quality > 35, +×0.5 mult', effect: 'buzz' },
-  { name: 'Insurance Policy', cost: 15, description: 'Disasters reduce quality 25% instead of losing all', effect: 'insurance' },
+  { name: 'Insurance Policy', cost: 11, description: 'Disasters reduce quality 25% instead of losing all', effect: 'insurance' },
   { name: 'Precision Filmmaking', cost: 8, description: 'Clean Wrap bonus increased to +8', effect: 'precisionFilm' },
   { name: 'Prestige Label', cost: 12, description: 'Award nominations give +×0.3 mult', effect: 'prestige' },
   { name: 'Talent Scout', cost: 7, description: 'Peek at talent before hiring', effect: 'talentScout' },
   { name: 'Development Slate', cost: 6, description: 'See 4 scripts instead of 3', effect: 'devSlate' },
   // ─── New R92 Perks ───
   { name: 'Second Unit', cost: 7, description: 'See 1 extra script choice each season', effect: 'secondUnit' },
-  { name: 'Method Acting', cost: 9, description: '+5 quality if lead actor skill ≥ 7', effect: 'methodActing' },
+  { name: 'Method Acting', cost: 9, description: '+5 quality if lead actor skill ≥ 6', effect: 'methodActing' },
   { name: 'Viral Marketing', cost: 6, description: '×1.2 box office multiplier if script cost < $15M', effect: 'viralMarketing' },
   { name: 'Genre Pivot', cost: 8, description: 'Making a different genre than last film gives +3 quality', effect: 'genrePivot' },
   { name: 'Sequel Rights', cost: 10, description: 'Same genre as last film: +$10M box office', effect: 'sequelRights' },
   { name: 'Chaos Dividend', cost: 11, description: '+3 quality per Incident in production (max +9). Dangerous but rewarding.', effect: 'chaosDividend', prestigeRequired: 3 },
   { name: 'Talent Agency', cost: 14, description: 'All hired talent gets +1 Skill. Expensive but elite.', effect: 'talentAgency', prestigeRequired: 5 },
-  { name: 'Completion Bond', cost: 4, description: 'Insurance: if your next film FLOPs, it\'s upgraded to a MISS (no strike). One-use, consumed on trigger.', effect: 'completionBond' },
+  { name: 'Completion Bond', cost: 6, description: 'Insurance: if your next film FLOPs, it\'s upgraded to a MISS (no strike). One-use, consumed on trigger.', effect: 'completionBond' },
 ];
 
 export function generatePerkMarket(count: number, owned: string[]): (StudioPerk & { prestigeRequired?: number })[] {

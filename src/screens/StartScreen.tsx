@@ -261,11 +261,11 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
                   <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem', fontWeight: 600 }}>
                     {entry.won ? '🏆 WON' : '💀 LOST'}
                   </span>
-                  <span style={{ color: '#555', fontSize: '0.7rem' }}>{entry.date}</span>
+                  <span style={{ color: '#999', fontSize: '0.7rem' }}>{entry.date}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{entry.score} pts</div>
-                  <span style={{ color: '#555', fontSize: '0.8rem', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : '' }}>▾</span>
+                  <span style={{ color: '#999', fontSize: '0.8rem', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : '' }}>▾</span>
                 </div>
               </div>
 
@@ -307,14 +307,14 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
                   <div style={{ display: 'flex', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
                     {bestFilm && (
                       <div style={{ flex: 1, minWidth: 140 }}>
-                        <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👑 Best</div>
+                        <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👑 Best</div>
                         <div style={{ color: '#2ecc71', fontSize: '0.8rem', fontWeight: 600 }}>"{bestFilm.title}"</div>
                         <div style={{ color: '#888', fontSize: '0.65rem' }}>{bestFilm.genre} · {bestFilm.tier}{bestFilm.boxOffice != null ? ` · $${bestFilm.boxOffice.toFixed(1)}M` : ''}</div>
                       </div>
                     )}
                     {worstFilm && worstFilm !== bestFilm && (
                       <div style={{ flex: 1, minWidth: 140 }}>
-                        <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💀 Worst</div>
+                        <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💀 Worst</div>
                         <div style={{ color: '#e74c3c', fontSize: '0.8rem', fontWeight: 600 }}>"{worstFilm.title}"</div>
                         <div style={{ color: '#888', fontSize: '0.65rem' }}>{worstFilm.genre} · {worstFilm.tier}{worstFilm.boxOffice != null ? ` · $${worstFilm.boxOffice.toFixed(1)}M` : ''}</div>
                       </div>
@@ -322,13 +322,13 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
                   </div>
 
                   {/* Full filmography */}
-                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Full Filmography</div>
+                  <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Full Filmography</div>
                   {entry.films.map((f, j) => (
                     <div key={j} style={{
                       display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0',
                       borderBottom: j < entry.films.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
                     }}>
-                      <span style={{ color: '#555', fontFamily: 'Bebas Neue', fontSize: '0.8rem', width: 24 }}>S{f.season || j + 1}</span>
+                      <span style={{ color: '#999', fontFamily: 'Bebas Neue', fontSize: '0.8rem', width: 24 }}>S{f.season || j + 1}</span>
                       <span style={{ color: tierColors[f.tier], fontSize: '0.9rem' }}>
                         {({ BLOCKBUSTER: '🟩', SMASH: '🟨', HIT: '🟧', FLOP: '🟥' } as Record<string, string>)[f.tier] || '⬜'}
                       </span>
@@ -347,15 +347,15 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
                   <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{entry.seasons}</div>
-                      <div style={{ color: '#666', fontSize: '0.55rem' }}>SEASONS</div>
+                      <div style={{ color: '#999', fontSize: '0.55rem' }}>SEASONS</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{'★'.repeat(entry.reputation)}{'☆'.repeat(Math.max(0, 5 - entry.reputation))}</div>
-                      <div style={{ color: '#666', fontSize: '0.55rem' }}>REPUTATION</div>
+                      <div style={{ color: '#999', fontSize: '0.55rem' }}>REPUTATION</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>${entry.earnings.toFixed(1)}M</div>
-                      <div style={{ color: '#666', fontSize: '0.55rem' }}>TOTAL BO</div>
+                      <div style={{ color: '#999', fontSize: '0.55rem' }}>TOTAL BO</div>
                     </div>
                   </div>
                 </div>
@@ -526,7 +526,7 @@ export default function StartScreen() {
                 <div style={{ width: 60, height: 4, background: '#222', borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{ width: `${xpProgress.progress * 100}%`, height: '100%', background: 'var(--gold)', borderRadius: 2 }} />
                 </div>
-                <span style={{ color: '#555', fontSize: '0.6rem' }}>Lv.{level.level}</span>
+                <span style={{ color: '#999', fontSize: '0.6rem' }}>Lv.{level.level}</span>
               </div>
             )}
           </div>
@@ -539,7 +539,7 @@ export default function StartScreen() {
         if (scaling.prestigeLevel < 1) return null;
         return (
           <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: '0.7rem' }}>
-            <span style={{ color: '#666' }}>Difficulty:</span>
+            <span style={{ color: '#999' }}>Difficulty:</span>
             <span style={{ color: scaling.scalingPercent > 0 ? '#e74c3c' : scaling.prestigeLevel >= 3 ? '#f39c12' : '#666', fontFamily: 'Bebas Neue', letterSpacing: '0.05em' }}>
               {scaling.difficultyLabel}
             </span>
@@ -549,7 +549,7 @@ export default function StartScreen() {
               </span>
             )}
             {scaling.activePerksCount > 0 && (
-              <span style={{ color: '#555', fontSize: '0.6rem' }}>
+              <span style={{ color: '#999', fontSize: '0.6rem' }}>
                 • {scaling.activePerksCount} perk{scaling.activePerksCount > 1 ? 's' : ''}
               </span>
             )}
@@ -615,12 +615,12 @@ export default function StartScreen() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span>{todayMod.emoji}</span>
                       <span style={{ color: '#ccc', fontWeight: 600 }}>{todayMod.name}</span>
-                      <span style={{ color: '#666' }}>— {todayMod.shortDesc}</span>
+                      <span style={{ color: '#999' }}>— {todayMod.shortDesc}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span>{weeklyMod1.emoji}</span>
                       <span style={{ color: '#ccc', fontWeight: 600 }}>{weeklyMod1.name}</span>
-                      <span style={{ color: '#666' }}>— {weeklyMod1.shortDesc}</span>
+                      <span style={{ color: '#999' }}>— {weeklyMod1.shortDesc}</span>
                     </div>
                   </div>
                   <div style={{ color: '#444', fontSize: '0.6rem', marginTop: 6 }}>
@@ -641,7 +641,7 @@ export default function StartScreen() {
             )}
             <button className="btn btn-small" onClick={() => setShowHelp(true)}>HOW TO PLAY</button>
           </div>
-          <div style={{ marginTop: 40, display: 'flex', gap: 24, color: '#555', fontSize: '0.75rem' }}>
+          <div style={{ marginTop: 40, display: 'flex', gap: 24, color: '#999', fontSize: '0.75rem' }}>
             <span>🎬 5 Seasons</span><span>🎭 Push Your Luck</span><span>⭐ Build Your Studio</span><span>🏆 Chase the Oscar</span>
           </div>
           {stats.runs > 0 && (
@@ -651,7 +651,7 @@ export default function StartScreen() {
           )}
           {stats.legacyPerks.length > 0 && !simplified && (
             <div style={{ marginTop: 16, maxWidth: 500, margin: '16px auto 0' }}>
-              <div style={{ color: '#555', fontSize: '0.7rem', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Legacy Perks</div>
+              <div style={{ color: '#999', fontSize: '0.7rem', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Legacy Perks</div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {stats.legacyPerks.map(p => (
                   <span key={p.id} title={p.description} style={{
@@ -720,7 +720,7 @@ export default function StartScreen() {
                         {unlocked ? (
                           <>
                             <div style={{ color: '#aaa', fontSize: '0.8rem', marginTop: 2 }}>{c.description}</div>
-                            <div style={{ color: '#666', fontSize: '0.7rem', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <div style={{ color: '#999', fontSize: '0.7rem', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
                               {c.rules.map((r, i) => <span key={i} style={{ display: 'block' }}>• {r}</span>)}
                             </div>
                           </>
@@ -766,7 +766,7 @@ export default function StartScreen() {
                   <div style={{ color: '#ccc', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {entry.films.map(f => f.title).join(' → ')}
                   </div>
-                  <div style={{ color: '#666', fontSize: '0.65rem', display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                  <div style={{ color: '#999', fontSize: '0.65rem', display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
                     <span>{entry.date}</span>
                     <span>· {entry.archetype}</span>
                     <span>· {entry.mode === 'newGamePlus' ? 'NG+' : entry.mode === 'directorMode' ? 'Dir' : entry.mode === 'daily' ? 'Daily' : entry.mode === 'challenge' ? 'Ch' : 'Std'}</span>
@@ -797,7 +797,7 @@ export default function StartScreen() {
             ].map((s, i) => (
               <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '12px 8px', textAlign: 'center' }}>
                 <div style={{ color: s.color, fontFamily: 'Bebas Neue', fontSize: '1.3rem' }}>{s.value}</div>
-                <div style={{ color: '#666', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+                <div style={{ color: '#999', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -814,7 +814,7 @@ export default function StartScreen() {
                   }}>{genre} ×{count}</span>
                 ))}
               </div>
-              <div style={{ color: '#555', fontSize: '0.65rem', marginTop: 6 }}>
+              <div style={{ color: '#999', fontSize: '0.65rem', marginTop: 6 }}>
                 {Object.keys(stats.careerStats.genreFilms).length}/7 genres discovered
               </div>
             </div>
@@ -843,18 +843,18 @@ export default function StartScreen() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ color: tierColors[g.tier.tier], fontWeight: 700, fontSize: '0.8rem' }}>{g.genre}</span>
-                            <span style={{ color: '#666', fontSize: '0.6rem' }}>{g.tier.label}</span>
+                            <span style={{ color: '#999', fontSize: '0.6rem' }}>{g.tier.label}</span>
                             {(g.tier.tier === 'gold' || g.tier.tier === 'platinum') && (
                               <span style={{ color: '#2ecc71', fontSize: '0.55rem', background: 'rgba(46,204,113,0.1)', padding: '1px 5px', borderRadius: 3 }}>+1 Quality</span>
                             )}
                           </div>
-                          <div style={{ display: 'flex', gap: 8, color: '#666', fontSize: '0.6rem', marginTop: 2 }}>
+                          <div style={{ display: 'flex', gap: 8, color: '#999', fontSize: '0.6rem', marginTop: 2 }}>
                             <span>{g.filmsProduced} films</span>
                             <span>${g.totalBoxOffice.toFixed(0)}M BO</span>
                             <span>Avg Q: {g.avgQuality}</span>
                           </div>
                           {g.bestFilm && (
-                            <div style={{ color: '#555', fontSize: '0.55rem', marginTop: 1 }}>
+                            <div style={{ color: '#999', fontSize: '0.55rem', marginTop: 1 }}>
                               👑 "{g.bestFilm.title}" ${g.bestFilm.boxOffice.toFixed(1)}M
                             </div>
                           )}
@@ -883,7 +883,7 @@ export default function StartScreen() {
                   return (
                     <div key={r} style={{ textAlign: 'center' }}>
                       <div style={{ color: colors[r], fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{r}</div>
-                      <div style={{ color: '#666', fontSize: '0.7rem' }}>×{count}</div>
+                      <div style={{ color: '#999', fontSize: '0.7rem' }}>×{count}</div>
                     </div>
                   );
                 })}
@@ -903,26 +903,26 @@ export default function StartScreen() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                   <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{o.bestScore}</div>
-                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Score</div>
+                    <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Score</div>
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>${o.bestEarnings.toFixed(1)}M</div>
-                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Earnings</div>
+                    <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Earnings</div>
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>${o.highestSingleFilmBO.toFixed(1)}M</div>
-                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Single Film</div>
-                    {o.highestSingleFilmTitle && <div style={{ color: '#555', fontSize: '0.55rem' }}>"{o.highestSingleFilmTitle}"</div>}
+                    <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Single Film</div>
+                    {o.highestSingleFilmTitle && <div style={{ color: '#999', fontSize: '0.55rem' }}>"{o.highestSingleFilmTitle}"</div>}
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{o.fastestWin ?? '—'}</div>
-                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase' }}>Fastest Win (Films)</div>
+                    <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Fastest Win (Films)</div>
                   </div>
                 </div>
                 {/* Challenge mode bests */}
                 {Object.keys(pb.modes).length > 1 && (
                   <details style={{ marginTop: 8 }}>
-                    <summary style={{ color: '#666', fontSize: '0.7rem', cursor: 'pointer' }}>Per-mode records ({Object.keys(pb.modes).length} modes)</summary>
+                    <summary style={{ color: '#999', fontSize: '0.7rem', cursor: 'pointer' }}>Per-mode records ({Object.keys(pb.modes).length} modes)</summary>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
                       {Object.entries(pb.modes).map(([key, rec]) => (
                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: 4, fontSize: '0.7rem' }}>
@@ -962,7 +962,7 @@ export default function StartScreen() {
                 {/* Sparkline chart — last 30 daily scores */}
                 {history.length >= 3 && (
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Last {history.length} Dailies</div>
+                    <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Last {history.length} Dailies</div>
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, justifyContent: 'center', height: 40 }}>
                       {history.map((h, i) => {
                         const pct = Math.max(8, (h.score / maxScore) * 100);
@@ -980,8 +980,8 @@ export default function StartScreen() {
                       })}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                      <span style={{ color: '#555', fontSize: '0.55rem' }}>{history[0]?.date}</span>
-                      <span style={{ color: '#555', fontSize: '0.55rem' }}>{history[history.length - 1]?.date}</span>
+                      <span style={{ color: '#999', fontSize: '0.55rem' }}>{history[0]?.date}</span>
+                      <span style={{ color: '#999', fontSize: '0.55rem' }}>{history[history.length - 1]?.date}</span>
                     </div>
                   </div>
                 )}
@@ -1005,7 +1005,7 @@ export default function StartScreen() {
                       <span style={{ fontSize: '1.2rem' }}>{m.emoji}</span>
                       <div>
                         <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{m.value}</div>
-                        <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{m.label}</div>
+                        <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{m.label}</div>
                       </div>
                     </div>
                   ))}
@@ -1030,8 +1030,8 @@ export default function StartScreen() {
                     <div style={{ color: m.unlocked ? '#2ecc71' : '#aaa', fontSize: '0.85rem', fontWeight: 600 }}>
                       {m.name} {m.unlocked && '✓'}
                     </div>
-                    <div style={{ color: '#666', fontSize: '0.7rem' }}>{m.description}</div>
-                    <div style={{ color: '#555', fontSize: '0.65rem' }}>{m.progressText}</div>
+                    <div style={{ color: '#999', fontSize: '0.7rem' }}>{m.description}</div>
+                    <div style={{ color: '#999', fontSize: '0.65rem' }}>{m.progressText}</div>
                   </div>
                   {!m.unlocked && (
                     <div style={{ width: 60, height: 6, background: '#222', borderRadius: 3, overflow: 'hidden' }}>
@@ -1076,7 +1076,7 @@ export default function StartScreen() {
                         <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem', fontWeight: 600 }}>
                           {entry.won ? '🏆 WON' : '💀 LOST'}
                         </span>
-                        <span style={{ color: '#555', fontSize: '0.7rem' }}>{entry.date}</span>
+                        <span style={{ color: '#999', fontSize: '0.7rem' }}>{entry.date}</span>
                       </div>
                       <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{entry.score} pts</div>
                     </div>
@@ -1113,7 +1113,7 @@ export default function StartScreen() {
                       ))}
                     </div>
                     {bestFilm && (
-                      <div style={{ color: '#555', fontSize: '0.6rem', marginTop: 4 }}>
+                      <div style={{ color: '#999', fontSize: '0.6rem', marginTop: 4 }}>
                         Best: "{bestFilm.title}" ({bestFilm.tier})
                       </div>
                     )}

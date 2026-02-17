@@ -94,7 +94,7 @@ function App() {
     }
   }, [state.phase, state.season]);
 
-  // Phase transition effect
+  // Phase transition effect + focus management
   useEffect(() => {
     if (state.phase !== prevPhase) {
       setTransitioning(true);
@@ -102,6 +102,11 @@ function App() {
       const t = setTimeout(() => {
         setTransitioning(false);
         setPrevPhase(state.phase);
+        // Move focus to main content for screen readers on phase change
+        const main = document.getElementById('main-content');
+        if (main) {
+          main.focus({ preventScroll: true });
+        }
       }, 300);
       return () => clearTimeout(t);
     }
@@ -132,7 +137,7 @@ function App() {
       <div className="spotlight" aria-hidden="true" />
       {state.phase !== 'start' && <Header state={state} />}
       <div className="film-strip" aria-hidden="true" />
-      <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite">
+      <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite" tabIndex={-1} style={{ outline: 'none' }}>
         <Suspense fallback={<LoadingScreen />}>
           {renderPhase()}
         </Suspense>

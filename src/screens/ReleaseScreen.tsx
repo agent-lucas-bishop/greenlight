@@ -194,7 +194,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       <div className="phase-title">
         <h2>🎞️ Release Day</h2>
         <div className="subtitle" style={{ fontSize: '1.1rem', color: '#d4a843' }}>"{filmTitle}"</div>
-        <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 2 }}>a {state.currentScript?.genre} film by {state.studioName || 'Your Studio'}</div>
+        <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 2 }}>a {state.currentScript?.genre} film by {state.studioName || 'Your Studio'}</div>
       </div>
 
       {/* Core results: film name, quality, box office, tier */}
@@ -220,8 +220,10 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
         <div
           className={`tier-banner tier-${tier.toLowerCase()} animate-slide-down`}
           style={{ background: config.bg, borderColor: config.color }}
+          aria-live="assertive"
+          role="status"
         >
-          <div className="tier-emoji">{config.emoji}</div>
+          <div className="tier-emoji" aria-hidden="true">{config.emoji}</div>
           <div className="tier-label" style={{ color: config.color }}>{config.label}</div>
           <div className="tier-subtitle">{config.subtitle}</div>
         </div>
@@ -296,7 +298,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
               </div>
 
               {/* Market info */}
-              <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#666' }}>
+              <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#999' }}>
                 Market: {state.activeMarket?.name}
               </div>
 
@@ -306,7 +308,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
                   <div key={i} className="cast-credit">
                     <span style={{ color: '#999' }}>{slot.slotType}: </span>
                     <span style={{ color: '#d4a843' }}>{slot.talent.name}</span>
-                    <span style={{ color: '#666' }}> (S{slot.talent.skill}/H{slot.talent.heat})</span>
+                    <span style={{ color: '#999' }}> (S{slot.talent.skill}/H{slot.talent.heat})</span>
                   </div>
                 ))}
               </div>
@@ -372,7 +374,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
                 <div style={{ color: film.isPlayer ? '#d4a843' : '#ccc', fontSize: '0.85rem', fontWeight: film.isPlayer ? 'bold' : 'normal' }}>
                   {film.title}
                 </div>
-                <div style={{ color: '#666', fontSize: '0.7rem' }}>
+                <div style={{ color: '#999', fontSize: '0.7rem' }}>
                   {film.name} · {film.genre}
                 </div>
               </div>
@@ -415,16 +417,16 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
                     {entry.name}
                   </span>
                   {entry.personality && (
-                    <span style={{ color: '#666', fontSize: '0.65rem', marginLeft: 6 }}>
+                    <span style={{ color: '#999', fontSize: '0.65rem', marginLeft: 6 }}>
                       {entry.personality === 'aggressive' ? '🔥' : entry.personality === 'steady' ? '📊' : '🎪'}
                     </span>
                   )}
                 </div>
                 {entry.strategyLabel && (
-                  <div style={{ fontSize: '0.6rem', color: '#555', marginTop: 1 }}>{entry.strategyLabel}</div>
+                  <div style={{ fontSize: '0.6rem', color: '#999', marginTop: 1 }}>{entry.strategyLabel}</div>
                 )}
                 {entry.latestFilm && (
-                  <div style={{ fontSize: '0.65rem', color: '#777', marginTop: 1 }}>
+                  <div style={{ fontSize: '0.65rem', color: '#999', marginTop: 1 }}>
                     Latest: <em>{entry.latestFilm.title}</em> ({entry.latestFilm.genre}) — {TIER_EMOJI[entry.latestFilm.tier]} ${entry.latestFilm.boxOffice.toFixed(1)}M
                   </div>
                 )}

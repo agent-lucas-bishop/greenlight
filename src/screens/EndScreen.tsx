@@ -586,7 +586,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
                 borderBottom: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap',
               }}>
-                <span style={{ color: '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
+                <span style={{ color: '#999', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
                 <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
                 <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
                 <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
@@ -685,7 +685,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
               <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.3rem' }}>
                 {prestigeResult.newLevel.title}
               </span>
-              <span style={{ color: '#666', fontSize: '0.75rem' }}>Lv.{prestigeResult.newLevel.level}</span>
+              <span style={{ color: '#999', fontSize: '0.75rem' }}>Lv.{prestigeResult.newLevel.level}</span>
             </div>
             {prestigeResult.leveledUp && (
               <div style={{
@@ -755,23 +755,23 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
               )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, textAlign: 'center' }}>
                 <div>
-                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Today</div>
+                  <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Today</div>
                   <div style={{ color: aboveAvg ? '#2ecc71' : '#e74c3c', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{score}</div>
                 </div>
                 <div>
-                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Avg</div>
+                  <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Avg</div>
                   <div style={{ color: '#3498db', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{dailyStats.avgScore}</div>
                 </div>
                 <div>
-                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Daily</div>
+                  <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Daily</div>
                   <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>{dailyStats.bestScore}</div>
                 </div>
                 <div>
-                  <div style={{ color: '#666', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Streak</div>
+                  <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Streak</div>
                   <div style={{ color: '#f39c12', fontFamily: 'Bebas Neue', fontSize: '1.4rem' }}>🔥 {unlocks.dailyStreak.current}</div>
                 </div>
               </div>
-              <div style={{ marginTop: 12, display: 'flex', gap: 6, justifyContent: 'center', color: '#555', fontSize: '0.65rem' }}>
+              <div style={{ marginTop: 12, display: 'flex', gap: 6, justifyContent: 'center', color: '#999', fontSize: '0.65rem' }}>
                 <span>{dailyStats.totalDailyRuns} dailies played</span>
                 <span>·</span>
                 <span>{dailyStats.winRate}% win rate</span>

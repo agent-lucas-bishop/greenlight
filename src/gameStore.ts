@@ -1570,7 +1570,7 @@ export function calculateQuality(s: GameState): {
   }
 
   // Method Acting perk: +5 quality if lead skill >= 7
-  const methodActingBonus = s.perks.some(p => p.effect === 'methodActing') && s.castSlots.some(sl => sl.slotType === 'Lead' && sl.talent && sl.talent.skill >= 7) ? 5 : 0;
+  const methodActingBonus = s.perks.some(p => p.effect === 'methodActing') && s.castSlots.some(sl => sl.slotType === 'Lead' && sl.talent && sl.talent.skill >= 6) ? 5 : 0;
 
   // Genre Pivot perk: +3 quality if genre differs from last film
   const lastGenre = s.seasonHistory.length > 0 ? s.seasonHistory[s.seasonHistory.length - 1].genre : null;

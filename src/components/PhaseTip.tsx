@@ -41,7 +41,7 @@ export default function PhaseTip({ phase }: { phase: string }) {
             Don't show tips again
           </label>
         </div>
-        <button className="phase-tip-dismiss" onClick={handleDismiss}>✕</button>
+        <button className="phase-tip-dismiss" onClick={handleDismiss} aria-label="Dismiss tip">✕</button>
       </div>
     </div>
   );

@@ -316,7 +316,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         return (
           <div style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4 }}>
-              <span style={{ color: '#888' }}>Quality: <strong className={qualityPunch ? 'quality-punch' : ''} style={{ color: '#d4a843', display: 'inline-block' }}>{rawQuality}</strong> / ~{neededQuality} needed</span>
+              <span style={{ color: '#999' }}>Quality: <strong className={qualityPunch ? 'quality-punch' : ''} style={{ color: '#d4a843', display: 'inline-block' }} aria-live="polite">{rawQuality}</strong> / ~{neededQuality} needed</span>
               <span style={{ color: progressColor, fontWeight: 600 }}>{meterLabel}</span>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 8, overflow: 'hidden' }}>

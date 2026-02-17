@@ -401,8 +401,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' };
 
   return (
-    <div className="end-screen fade-in" style={{ paddingBottom: 60 }}>
-      {isVictory && <VictoryParticles />}
+    <div className={`end-screen fade-in ${!isVictory ? 'end-screen-defeat' : ''}`} style={{ paddingBottom: 60 }}>
+      {isVictory && <><VictoryParticles /><div className="victory-starburst" aria-hidden="true" /></>}
 
       {/* ─── TITLE ─── */}
       <div style={{ marginBottom: 8 }}>

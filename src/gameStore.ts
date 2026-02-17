@@ -1,3 +1,87 @@
+/*
+ * ══════════════════════════════════════════════════════════════════════
+ * BALANCE NOTES R110 — Economy Audit & Tuning Pass
+ * ══════════════════════════════════════════════════════════════════════
+ *
+ * 1. BUDGET CURVE (Start → 10 seasons)
+ *    - Start: $15 (Neow +$10 → $25, Blockbuster +$5 → $20-30)
+ *    - Season stipend: $5/season provides adequate death-spiral protection
+ *    - FLOP floor: 60% BO + $5 stipend → even a bad $15 BO film yields $14
+ *    - No dead spots found. Season 2→3 target jump (+36%) is steepest but
+ *      offset by genre mastery (+4) and growing roster. Budget accumulates
+ *      naturally at $30-50 by mid-game.
+ *    - Money becomes less constraining by season 4-5 for skilled players,
+ *      but debt mechanics and talent baggage costs prevent it from being
+ *      truly meaningless. No changes needed.
+ *
+ * 2. TALENT COST vs VALUE
+ *    - Cheap talent (skill 3, $6) = 0.50 skill/$ — best raw efficiency
+ *    - Mid talent (skill 4, $10) = 0.40 skill/$
+ *    - Expensive talent (skill 5, $15-18) = 0.28-0.33 skill/$
+ *    - Chemistry pairs (+3 quality) make cheap talent far superior on ROI:
+ *      two $6 talents with chemistry = effective +9 skill for $12 (0.75/dollar)
+ *    - Expensive talent justified by: better card pools, synergy upside,
+ *      and Method Acting perk. No cost changes needed, but Method Acting
+ *      threshold lowered from skill ≥7 to ≥6 to broaden viability
+ *      (only 4 talent in pool had skill 7+, making the $9 perk too narrow).
+ *
+ * 3. PERK TIER ANALYSIS (ranked by EV per dollar)
+ *    ── ALWAYS BUY ──
+ *    • Genre Specialist ($5→$7): permanent +0.3 mult = ~$5-8/film. Was $5,
+ *      auto-buy for any strategy. Raised to $7 — still excellent but not free.
+ *    • Completion Bond ($4→$6): saves a strike, game-saving value. Was $4,
+ *      absurdly cheap for what it does. Raised to $6.
+ *    • Independent Spirit ($6): +0.5 mult if Heat ≤4 = ~$8-10/film. Conditional
+ *      but incredible for indie builds. Fair at $6.
+ *    ── STRONG ──
+ *    • Viral Marketing ($6): ×1.2 if script <$15 = ~$5-8/film. Great value.
+ *    • Development Slate ($6): +1 script choice. Solid utility.
+ *    • Marketing Machine ($10): choose market = ~$5-8/film. Reliable.
+ *    • Buzz Machine ($10): +0.5 mult if quality>35 = huge late game.
+ *    • Sequel Rights ($10): +10 quality same genre = strong for focused builds.
+ *    ── SITUATIONAL ──
+ *    • Crisis Manager ($8): ~$2-4/film. Good if incident-heavy deck.
+ *    • Precision Filmmaking ($8): ~$3/film if clean-wrapping consistently.
+ *    • Genre Pivot ($8): +3 quality if switching genres. Anti-synergy with mastery.
+ *    • Chaos Dividend ($11): high risk/reward, prestige-gated. Fair.
+ *    • Reshoots Budget ($12): ~$3-5/film value. Expensive for what it is.
+ *    • Prestige Label ($12): conditional on nominations. Niche.
+ *    ── NEVER BUY (was) ──
+ *    • Insurance Policy ($15→$11): disaster protection is rare-case insurance.
+ *      Was $15 — never worth it. Lowered to $11 for consideration in high-risk
+ *      builds (Chaos archetype, Chaos Dividend combos).
+ *    • Talent Agency ($14): +1 skill all hired, prestige-gated. Fair for late-game.
+ *
+ * 4. SCRIPT QUALITY DISTRIBUTION
+ *    Quality = scriptBase + talentSkill + production + cleanWrap + ability
+ *             + mastery + chemistry + focus + vision
+ *    - Floor: ~6 (bad script + weak cast + disaster production)
+ *    - Typical: ~35-45 (decent script + good cast + clean production)
+ *    - Ceiling: ~85-95 (optimal everything, season 5+ bonuses)
+ *    - BLOCKBUSTER requires BO ≥ target × 1.5
+ *      Season 1: need ~$30 BO → quality ~30 with mult 1.0 → achievable
+ *      Season 5: need ~$93 BO → quality ~62 with mult 1.5 → achievable
+ *      without legendary scripts IF player has good multiplier stacking.
+ *    - Legendary scripts not required but make BLOCKBUSTER more consistent.
+ *
+ * 5. PRESTIGE SCALING
+ *    Veteran scaling (prestige 5+): +5% targets per level above 4
+ *    - P5: +5%, P8: +20%, P10: +30%, P12: +40%
+ *    - Feels appropriate: legacy perks accumulate power (+$2-5 start budget,
+ *      cheaper talent, genre mastery head start) and scaling offsets this.
+ *    - Season target curve: [20, 28, 38, 50, 62, 74, 86, 98]
+ *      Jumps: +40%, +36%, +32%, +24%, +19%, +16%, +14%
+ *      Steepest early, tapering late — correct feel for roguelite difficulty.
+ *    - NG+ (×1.4) and Director Mode (×1.8) provide clear challenge tiers.
+ *
+ * 6. CHANGES MADE
+ *    - Genre Specialist: $5 → $7 (was auto-buy, now competitive)
+ *    - Completion Bond: $4 → $6 (was absurdly cheap for strike insurance)
+ *    - Insurance Policy: $15 → $11 (was never worth buying)
+ *    - Method Acting: skill ≥7 → ≥6 (too few qualifying talent at ≥7)
+ * ══════════════════════════════════════════════════════════════════════
+ */
+
 import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag } from './types';
 import type { StudioArchetypeId } from './types';
 import {

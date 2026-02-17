@@ -15,6 +15,7 @@ import { isSimplifiedRun } from './onboarding';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
+import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -391,6 +392,8 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string) {
     gameMode: mode,
     challengeId,
     dailySeed: mode === 'daily' ? getDailyDateString() : undefined,
+    dailyModifierId: mode === 'daily' ? getTodayModifier().id : undefined,
+    dailyModifierId2: mode === 'daily' ? getWeeklyModifiers()[0].id : undefined,
     maxSeasons,
     maxStrikes,
   });
@@ -1151,7 +1154,9 @@ export function calculateQuality(s: GameState): {
   const inRunMastery = (s.genreMastery[script.genre] || 0) * masteryPerFilm;
   // Cross-run genre mastery: Gold+ tier gives +1 quality
   const crossRunMasteryBonus = getGenreMasteryBonus(script.genre);
-  const genreMasteryBonus = inRunMastery + crossRunMasteryBonus;
+  // Legacy perk: Franchise King — 2+ films same genre in one run gives +3 quality each
+  const franchiseBonus = (legacyPerks.some(p => p.effect === 'franchiseBonus') && (s.genreMastery[script.genre] || 0) >= 1) ? 3 : 0;
+  const genreMasteryBonus = inRunMastery + crossRunMasteryBonus + franchiseBonus;
 
   // Chemistry bonus
   const castNames = s.castSlots.map(slot => slot.talent?.name).filter(Boolean) as string[];
@@ -1400,7 +1405,11 @@ export function resolveRelease() {
   }).filter(t => t.filmsLeft === undefined || t.filmsLeft > 0);
 
   // Generate rival films for this season (rivals chase hot genres)
-  const rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres);
+  let rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres);
+  // Legacy perk: Rival Nemesis — rivals get -10% box office
+  if (legacyPerksRelease.some(p => p.effect === 'rivalHandicap')) {
+    rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * 0.9 * 10) / 10 }));
+  }
   const newCumulativeRivalEarnings = { ...state.cumulativeRivalEarnings };
   for (const rf of rivalFilms) {
     newCumulativeRivalEarnings[rf.studioName] = (newCumulativeRivalEarnings[rf.studioName] || 0) + rf.boxOffice;
@@ -1468,6 +1477,20 @@ export function proceedToShop() {
   const perkMarket = generatePerkMarket(4, state.perks.map(p => p.name));
   const talentMarket = generateTalentMarket(4, state.season, state.roster);
   const event = INDUSTRY_EVENTS[Math.floor(rng() * INDUSTRY_EVENTS.length)];
+  
+  // Legacy perk: Talent Scout — guarantee at least one 4+ skill talent in shop
+  const legacyPerksShop = getActiveLegacyPerks();
+  if (legacyPerksShop.some(p => p.effect === 'guaranteeEliteTalent')) {
+    const hasElite = talentMarket.some(t => t.skill >= 4);
+    if (!hasElite && talentMarket.length > 0) {
+      // Replace the weakest talent with a regenerated high-skill one
+      const elite = generateTalentMarket(8, state.season, state.roster).find(t => t.skill >= 4);
+      if (elite) {
+        const weakestIdx = talentMarket.reduce((wIdx, t, i) => t.skill < talentMarket[wIdx].skill ? i : wIdx, 0);
+        talentMarket[weakestIdx] = elite;
+      }
+    }
+  }
   
   // Apply talent drought effect to market size
   let finalTalentMarket = talentMarket;
@@ -1551,7 +1574,9 @@ export function payDebt(amount: number) {
 
 export function nextSeason() {
   // Generate 3-4 season events for player to choose from
-  const eventCount = rng() < 0.4 ? 4 : 3;
+  const legacyPerksEvent = getActiveLegacyPerks();
+  const extraChoice = legacyPerksEvent.some(p => p.effect === 'extraEventChoice') ? 1 : 0;
+  const eventCount = (rng() < 0.4 ? 4 : 3) + extraChoice;
   const events = generateSeasonEvents(eventCount, RIVAL_EVENTS);
   const eventChoices: SeasonEventChoice[] = events.map(e => ({
     id: e.id,

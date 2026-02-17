@@ -21,7 +21,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
 
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (picked) return;
-    sfx.scriptSelect();
+    sfx.greenlightStamp();
     setPicked(script.id);
     setTimeout(() => pickScript(script), 800);
   };

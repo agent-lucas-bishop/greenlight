@@ -120,7 +120,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       setPhase(1);
       if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); }
       else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); }
-      else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); }
+      else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); setTimeout(() => sfx.strikeAdded(), 400); }
       else { sfx.hit(); }
       setTimeout(() => setScreenFlash(''), 800);
     }, 1600);

@@ -1,6 +1,7 @@
 // Achievement toast — gold notification that slides in from the top
 import { useState, useEffect } from 'react';
 import type { AchievementDef } from '../achievements';
+import { sfx } from '../sound';
 
 interface AchievementToastProps {
   achievement: AchievementDef;
@@ -11,6 +12,7 @@ export default function AchievementToast({ achievement, onDone }: AchievementToa
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
+    sfx.achievementUnlock();
     const exitTimer = setTimeout(() => setExiting(true), 2500);
     const doneTimer = setTimeout(onDone, 3000);
     return () => { clearTimeout(exitTimer); clearTimeout(doneTimer); };

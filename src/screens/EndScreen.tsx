@@ -297,6 +297,9 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         won: isVictory,
         dailySeed: state.dailySeed,
         studioName: state.studioName || undefined,
+        prestigeLevel: currentPrestigeLevel.level,
+        prestigeTitle: currentPrestigeLevel.title,
+        legacyRating: legacy.rating,
       });
       // Record genre mastery cross-run stats
       recordGenreMasteryFilms(history.map(s => ({

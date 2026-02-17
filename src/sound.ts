@@ -324,6 +324,35 @@ export const sfx = {
     });
   },
 
+  // Achievement unlock — bright chime arpeggio
+  achievementUnlock() {
+    play(c => {
+      note(c, 1047, 0, 0.15, 0.1, 'sine');
+      note(c, 1319, 0.08, 0.15, 0.1, 'sine');
+      note(c, 1568, 0.16, 0.15, 0.1, 'sine');
+      note(c, 2093, 0.24, 0.3, 0.12, 'sine');
+      note(c, 2637, 0.32, 0.25, 0.06, 'sine');
+    }, 'achievement');
+  },
+
+  // Strike added — warning buzz
+  strikeAdded() {
+    play(c => {
+      note(c, 80, 0, 0.3, 0.2, 'sawtooth');
+      note(c, 65, 0.05, 0.25, 0.15, 'sawtooth');
+      noise(c, 0, 0.1, 0.1);
+    }, 'strike');
+  },
+
+  // Greenlight stamp — dramatic low thud
+  greenlightStamp() {
+    play(c => {
+      note(c, 60, 0, 0.4, 0.25, 'sine');
+      note(c, 120, 0, 0.2, 0.12, 'triangle');
+      noise(c, 0, 0.08, 0.2);
+    }, 'greenlight');
+  },
+
   // Nomination fanfare — brief prestige chime
   nomination() {
     play(c => {

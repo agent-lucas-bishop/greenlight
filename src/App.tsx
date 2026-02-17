@@ -58,7 +58,7 @@ function App() {
 
   // Season announcement overlay
   useEffect(() => {
-    if (state.phase === 'greenlight' && state.season > 1 && prevPhase === 'shop') {
+    if (state.phase === 'greenlight' && state.season > 1 && (prevPhase === 'shop' || prevPhase === 'event')) {
       setSeasonOverlay(state.season);
       setSeasonOverlayExit(false);
       const t1 = setTimeout(() => setSeasonOverlayExit(true), 1200);

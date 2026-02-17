@@ -28,6 +28,9 @@ export interface LeaderboardEntry {
   won: boolean;
   dailySeed?: string; // date string if daily run
   studioName?: string;
+  prestigeLevel?: number;
+  prestigeTitle?: string;
+  legacyRating?: string;
 }
 
 const LB_KEY = 'greenlight_leaderboard';

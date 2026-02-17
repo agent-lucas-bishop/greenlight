@@ -576,6 +576,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           }, 0),
           seasonsCompleted: history.length,
           rank,
+          sequelsProduced: Object.keys(state.sequelOrigins || {}).length,
+          wonAward: history.some(s => (s as any).award || (s as any).nominated),
+          runDurationSeconds: (() => { try { const s = localStorage.getItem('greenlight_run_start_time'); return s ? Math.floor((Date.now() - parseInt(s, 10)) / 1000) : 0; } catch { return 0; } })(),
+          maxFranchiseLength: Math.max(0, ...Object.values(state.franchises || {}).map((f: any) => (f.sequelNumber || 0) + 1)),
         };
         const newlyDone = checkCommunityChallenges(runSummary);
         if (newlyDone.length > 0) setCompletedCommunity(newlyDone);

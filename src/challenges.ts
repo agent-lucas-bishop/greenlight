@@ -204,6 +204,14 @@ export interface RunSummary {
   streakFilmsNoFlop: number;
   seasonsCompleted: number;
   rank: string;
+  /** Number of franchise sequels produced in run */
+  sequelsProduced: number;
+  /** Whether player won an award (nomination or award) */
+  wonAward: boolean;
+  /** Run duration in seconds */
+  runDurationSeconds: number;
+  /** Max franchise chain length in this run */
+  maxFranchiseLength: number;
 }
 
 // ─── Daily Challenge Pool ───
@@ -372,6 +380,66 @@ const DAILY_CHALLENGE_POOL: ChallengeTemplate[] = [
     progress: (s) => Math.min(1, s.seasonsCompleted / 5),
     goal: 5,
   },
+  {
+    title: 'Franchise Builder',
+    description: 'Build a franchise with 3+ sequels',
+    emoji: '🎬',
+    xpReward: 100,
+    check: (s) => s.maxFranchiseLength >= 3,
+    progress: (s) => Math.min(1, s.maxFranchiseLength / 3),
+    goal: 3,
+  },
+  {
+    title: 'Speed Demon',
+    description: 'Complete a run in under 5 minutes',
+    emoji: '⚡',
+    xpReward: 100,
+    check: (s) => s.won && s.runDurationSeconds > 0 && s.runDurationSeconds <= 300,
+    progress: (s) => s.won ? (s.runDurationSeconds <= 300 ? 1 : Math.max(0, 1 - (s.runDurationSeconds - 300) / 300)) : 0,
+  },
+  {
+    title: 'Award Winner',
+    description: 'Win an award in a run',
+    emoji: '🏆',
+    xpReward: 75,
+    check: (s) => s.wonAward,
+    progress: (s) => s.wonAward ? 1 : 0,
+  },
+  {
+    title: 'Flawless Run',
+    description: 'Greenlight 3 films without any flopping',
+    emoji: '💎',
+    xpReward: 100,
+    check: (s) => s.filmsProduced >= 3 && s.flopCount === 0,
+    progress: (s) => s.flopCount === 0 ? Math.min(1, s.filmsProduced / 3) : 0,
+    goal: 3,
+  },
+  {
+    title: 'Big Earner',
+    description: 'Reach $100M box office in one run',
+    emoji: '💵',
+    xpReward: 100,
+    check: (s) => s.totalEarnings >= 100,
+    progress: (s) => Math.min(1, s.totalEarnings / 100),
+    goal: 100,
+  },
+  {
+    title: 'Sequel Machine',
+    description: 'Produce 2+ sequels in one run',
+    emoji: '🔄',
+    xpReward: 75,
+    check: (s) => s.sequelsProduced >= 2,
+    progress: (s) => Math.min(1, s.sequelsProduced / 2),
+    goal: 2,
+  },
+  {
+    title: 'Quick Producer',
+    description: 'Complete a run in under 10 minutes',
+    emoji: '⏱️',
+    xpReward: 50,
+    check: (s) => s.won && s.runDurationSeconds > 0 && s.runDurationSeconds <= 600,
+    progress: (s) => s.won ? (s.runDurationSeconds <= 600 ? 1 : 0) : 0,
+  },
 ];
 
 // ─── Weekly Challenge Pool ───
@@ -457,7 +525,7 @@ export function getDailyChallenges(): CommunityChallenge[] {
   const seed = getDailySeed();
   const rng = mulberry32(seed ^ 0xDA11C); // unique salt for community challenges
   // Pick 2-3 daily challenges
-  const count = rng() < 0.4 ? 2 : 3;
+  const count = 3; // Always 3 daily challenges
   const indices: number[] = [];
   while (indices.length < count) {
     const idx = Math.floor(rng() * DAILY_CHALLENGE_POOL.length);
@@ -579,6 +647,11 @@ export function getChallengeStreakData(): ChallengeStreakData {
 }
 
 function updateChallengeStreak(): void {
+  // Only update streak when ALL 3 daily challenges are completed
+  const dailyChallenges = getDailyChallenges();
+  const allDailyDone = dailyChallenges.every(c => isCommunityChallCompleted(c.id));
+  if (!allDailyDone) return;
+
   const today = getDailyDateString();
   const streak = getChallengeStreakData();
   if (streak.lastDate === today) return;

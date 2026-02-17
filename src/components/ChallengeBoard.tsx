@@ -12,7 +12,9 @@ import {
   getChallengeXP,
   getUnlockedCardVariants,
   type CommunityChallenge,
+  type RunSummary,
 } from '../challenges';
+import { getCurrentProgress } from '../dailyChallengesTracker';
 
 function timeUntilMidnight(): string {
   const now = new Date();
@@ -37,7 +39,7 @@ function timeUntilMonday(): string {
   return d > 0 ? `${d}d ${h}h` : `${h}h`;
 }
 
-function ChallengeCard({ challenge, completed }: { challenge: CommunityChallenge; completed: boolean }) {
+function ChallengeCard({ challenge, completed, runProgress }: { challenge: CommunityChallenge; completed: boolean; runProgress?: Partial<RunSummary> }) {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
@@ -98,21 +100,34 @@ function ChallengeCard({ challenge, completed }: { challenge: CommunityChallenge
         </div>
       </div>
 
-      {/* Progress bar (only show if not completed) */}
-      {!completed && (
-        <div style={{
-          height: 4, borderRadius: 2,
-          background: 'rgba(255,255,255,0.08)',
-          overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%', borderRadius: 2,
-            background: 'linear-gradient(90deg, var(--gold), #f59e0b)',
-            width: '0%', // No run-time progress without active run
-            transition: 'width 0.5s ease',
-          }} />
-        </div>
-      )}
+      {/* Progress bar */}
+      {!completed && (() => {
+        const prog = runProgress && challenge.progress ? challenge.progress(runProgress as RunSummary) : 0;
+        const pct = Math.min(100, Math.round(prog * 100));
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              flex: 1, height: 6, borderRadius: 3,
+              background: 'rgba(255,255,255,0.08)',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%', borderRadius: 3,
+                background: pct >= 100
+                  ? 'linear-gradient(90deg, var(--gold), #fbbf24)'
+                  : 'linear-gradient(90deg, #60a5fa, #3b82f6)',
+                width: `${pct}%`,
+                transition: 'width 0.5s ease',
+              }} />
+            </div>
+            {pct > 0 && (
+              <span style={{ fontSize: '0.7rem', color: pct >= 100 ? 'var(--gold)' : '#888', minWidth: 32, textAlign: 'right' }}>
+                {pct}%
+              </span>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -123,6 +138,7 @@ export default function ChallengeBoard({ onClose }: { onClose: () => void }) {
 
   const dailyChallenges = getDailyChallenges();
   const weeklyChallenges = getWeeklyChallenges();
+  const runProgress = getCurrentProgress();
   const streak = getChallengeStreakData();
   const totalXP = getChallengeXP();
   const variants = getUnlockedCardVariants();
@@ -145,10 +161,10 @@ export default function ChallengeBoard({ onClose }: { onClose: () => void }) {
         <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
 
         <h2 style={{ color: 'var(--gold)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>🏅</span> Community Challenges
+          <span>🏅</span> Daily Challenges
         </h2>
         <p style={{ color: '#888', fontSize: '0.8rem', margin: '0 0 16px 0' }}>
-          Same challenges for every player — complete them to earn XP and unlock special card variants!
+          3 new challenges every day — same for all players! Complete them to earn XP and unlock card variants.
         </p>
 
         {/* Stats bar */}
@@ -196,7 +212,7 @@ export default function ChallengeBoard({ onClose }: { onClose: () => void }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {dailyChallenges.map(c => (
-              <ChallengeCard key={c.id} challenge={c} completed={isCommunityChallCompleted(c.id)} />
+              <ChallengeCard key={c.id} challenge={c} completed={isCommunityChallCompleted(c.id)} runProgress={runProgress} />
             ))}
           </div>
         </div>
@@ -214,7 +230,7 @@ export default function ChallengeBoard({ onClose }: { onClose: () => void }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {weeklyChallenges.map(c => (
-              <ChallengeCard key={c.id} challenge={c} completed={isCommunityChallCompleted(c.id)} />
+              <ChallengeCard key={c.id} challenge={c} completed={isCommunityChallCompleted(c.id)} runProgress={runProgress} />
             ))}
           </div>
         </div>

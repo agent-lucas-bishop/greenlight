@@ -708,6 +708,8 @@ export function resumeGame(saved: Partial<GameState>) {
 
 export function startGame(mode: GameMode = 'normal', challengeId?: string, activeModifiers?: string[], difficulty: Difficulty = 'studio', gameModifiers?: GameModifiers) {
   clearSave();
+  // R292: Track run start time for daily challenges
+  try { localStorage.setItem('greenlight_run_start_time', String(Date.now())); } catch {}
   resetAgingState();
   resetRisingStarNames();
   // Activate seeded RNG for daily/weekly runs
@@ -2930,6 +2932,34 @@ export function resolveRelease() {
 
   // R255: Auto-save at end of film release
   autoSave();
+
+  // R292: Update daily challenges mid-run progress
+  try {
+    const updState = state; // state was just updated via setState above, read fresh
+    const history = updState.seasonHistory || [];
+    const genres = history.map((s: any) => s.genre);
+    const progressData = {
+      won: false,
+      genres,
+      totalEarnings: updState.totalEarnings,
+      maxSingleFilmBO: Math.max(0, ...history.map((s: any) => s.boxOffice || 0)),
+      filmsProduced: history.length,
+      sRankCount: history.filter((s: any) => s.tier === 'BLOCKBUSTER' && (s.quality || 0) >= 90).length,
+      hitCount: history.filter((s: any) => s.tier === 'HIT' || s.tier === 'BLOCKBUSTER').length,
+      blockbusterCount: history.filter((s: any) => s.tier === 'BLOCKBUSTER').length,
+      flopCount: history.filter((s: any) => s.tier === 'FLOP').length,
+      reputation: updState.reputation,
+      uniqueGenres: new Set(genres).size,
+      seasonsCompleted: history.length,
+      sequelsProduced: Object.keys(updState.sequelOrigins || {}).length,
+      wonAward: history.some((s: any) => s.award || s.nominated),
+      maxFranchiseLength: Math.max(0, ...Object.values(updState.franchises || {}).map((f: any) => (f.sequelNumber || 0) + 1)),
+    };
+    localStorage.setItem('greenlight_daily_challenges_progress', JSON.stringify({
+      date: new Date().toISOString().slice(0, 10),
+      partial: { ...progressData, runDurationSeconds: (() => { try { const s = localStorage.getItem('greenlight_run_start_time'); return s ? Math.floor((Date.now() - parseInt(s, 10)) / 1000) : 0; } catch { return 0; } })() },
+    }));
+  } catch {}
 
   // R235: Campaign objective tracking after film release
   try {

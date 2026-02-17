@@ -338,7 +338,7 @@ export function generateRivalSeason(season: number, target: number, hotGenres?: 
 
 // ─── RIVALRY LEADERBOARD ───
 
-export interface LeaderboardEntry {
+export interface RivalryLeaderboardEntry {
   name: string;
   emoji: string;
   totalEarnings: number;
@@ -347,9 +347,9 @@ export interface LeaderboardEntry {
   filmCount: number;
 }
 
-export function getRivalryLeaderboard(state: GameState): LeaderboardEntry[] {
+export function getRivalryLeaderboard(state: GameState): RivalryLeaderboardEntry[] {
   const seasonCount = state.seasonHistory.length;
-  const entries: LeaderboardEntry[] = [
+  const entries: RivalryLeaderboardEntry[] = [
     {
       name: state.studioName || 'Your Studio',
       emoji: '🎬',

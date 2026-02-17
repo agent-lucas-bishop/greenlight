@@ -67,9 +67,13 @@ import { getChallengeFromUrl, clearChallengeFromUrl } from '../challengeEditor';
 import type { CustomChallenge } from '../challengeEditor';
 import { getCollectionProgress } from '../tradingCards';
 import { getCollectionStats } from '../cardCollection';
+import { createMultiplayerSession, saveMultiplayerSession } from '../multiplayer';
+import type { MultiplayerSettings } from '../multiplayer';
+import type { StudioArchetypeId as MPArchetypeId } from '../types';
 
 const DailyLeaderboard = lazy(() => import('../components/DailyLeaderboard'));
 const SaveSlotsPanel = lazy(() => import('../components/SaveSlotsPanel'));
+const MultiplayerLobby = lazy(() => import('../components/MultiplayerLobby'));
 
 const EventCalendar = lazy(() => import('../components/EventCalendar'));
 
@@ -495,6 +499,7 @@ export default function StartScreen() {
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [showPrestigePanel, setShowPrestigePanel] = useState(false);
   const [showSaveSlots, setShowSaveSlots] = useState(false);
+  const [showMultiplayerLobby, setShowMultiplayerLobby] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('studio');
   const [selectedGameModifiers, setSelectedGameModifiers] = useState<GameModifiers | undefined>(undefined);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
@@ -1038,6 +1043,9 @@ export default function StartScreen() {
             )}
             <button className="btn btn-small" onClick={() => setShowSaveSlots(true)} style={{ color: '#3498db', borderColor: 'rgba(52,152,219,0.3)' }}>
               💾 SAVES
+            </button>
+            <button className="btn btn-small" onClick={() => setShowMultiplayerLobby(true)} style={{ color: '#9b59b6', borderColor: 'rgba(155,89,182,0.3)' }}>
+              👥 MULTIPLAYER
             </button>
             <button className="btn btn-small" onClick={() => setShowHelp(true)}>HOW TO PLAY</button>
           </div>
@@ -1764,6 +1772,27 @@ export default function StartScreen() {
         <Suspense fallback={null}>
           <PlayerProfileModal onClose={() => setShowPlayerProfile(false)} />
         </Suspense>
+      )}
+
+      {showMultiplayerLobby && (
+        <div className="modal-overlay" onClick={() => setShowMultiplayerLobby(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 750, maxHeight: '90vh', overflow: 'auto' }}>
+            <button className="modal-close" onClick={() => setShowMultiplayerLobby(false)} aria-label="Close">✕</button>
+            <Suspense fallback={null}>
+              <MultiplayerLobby
+                onBack={() => setShowMultiplayerLobby(false)}
+                onStart={(settings: MultiplayerSettings, players: { name: string; studioName: string; archetype: MPArchetypeId }[]) => {
+                  const session = createMultiplayerSession(settings, players);
+                  saveMultiplayerSession(session);
+                  setShowMultiplayerLobby(false);
+                  // Store session id so App can pick it up
+                  localStorage.setItem('greenlight_mp_active', session.id);
+                  window.location.reload();
+                }}
+              />
+            </Suspense>
+          </div>
+        </div>
       )}
 
       {/* Player Name Prompt */}

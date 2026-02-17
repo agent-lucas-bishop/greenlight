@@ -188,6 +188,39 @@ function generateShareText(state: GameState, score: number, rank: string, isVict
   return lines.filter(l => l !== undefined).join('\n');
 }
 
+// ─── Count Up ───
+
+function CountUpInt({ target, duration = 1500 }: { target: number; duration?: number }) {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      setCurrent(Math.round(target * eased));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+  return <>{current}</>;
+}
+
+function GoldenBurst({ elaborate }: { elaborate?: boolean }) {
+  const particles = Array.from({ length: elaborate ? 16 : 10 }, (_, i) => {
+    const angle = (i / (elaborate ? 16 : 10)) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+    const dist = 40 + Math.random() * (elaborate ? 80 : 50);
+    return { tx: Math.cos(angle) * dist, ty: Math.sin(angle) * dist, delay: Math.random() * 0.2 };
+  });
+  return (
+    <div className={`golden-burst ${elaborate ? 'prestige-burst' : ''}`} style={{ position: 'relative', display: 'inline-block' }}>
+      {particles.map((p, i) => (
+        <span key={i} className="golden-particle" style={{ '--tx': `${p.tx}px`, '--ty': `${p.ty}px`, animationDelay: `${p.delay}s` } as React.CSSProperties} />
+      ))}
+    </div>
+  );
+}
+
 // ─── Particles ───
 
 function VictoryParticles() {
@@ -510,7 +543,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
           <div className="end-stat">
             <div className="label">Score</div>
-            <div className="value">{score}</div>
+            <div className="value"><CountUpInt target={score} duration={1500} /></div>
           </div>
           <div className="end-stat">
             <div className="label">Final Rep</div>
@@ -660,8 +693,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 borderRadius: 8, padding: '8px 12px', marginBottom: 12, textAlign: 'center',
                 color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1rem',
                 animation: 'comboAppear 0.5s ease',
+                position: 'relative', overflow: 'visible',
               }}>
                 🎉 LEVEL UP! {prestigeResult.oldLevel.title} → {prestigeResult.newLevel.title}
+                <GoldenBurst elaborate />
               </div>
             )}
             {prestigeResult.leveledUp && PRESTIGE_REWARDS[prestigeResult.newLevel.level] && (() => {

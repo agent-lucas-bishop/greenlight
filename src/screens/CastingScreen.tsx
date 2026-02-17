@@ -271,8 +271,8 @@ export default function CastingScreen({ state }: { state: GameState }) {
             Your Roster ({allTalent.length}/8)
           </h4>
           <div className="card-grid card-grid-2" style={{ marginBottom: 24 }}>
-            {allTalent.map(t => (
-              <div key={t.id}>
+            {allTalent.map((t, idx) => (
+              <div key={t.id} className="talent-stagger" style={{ animationDelay: `${idx * 0.08}s` }}>
                 <TalentCard
                   t={t}
                   onClick={() => assignedIds.has(t.id) ? undefined : handleAssign(t)}
@@ -301,8 +301,8 @@ export default function CastingScreen({ state }: { state: GameState }) {
             </div>
           )}
           <div className="card-grid card-grid-2">
-            {state.talentMarket.map(t => (
-              <div key={t.id}>
+            {state.talentMarket.map((t, idx) => (
+              <div key={t.id} className="talent-stagger" style={{ animationDelay: `${idx * 0.08}s` }}>
                 <TalentCard
                   t={t}
                   onClick={() => hireTalent(t)}

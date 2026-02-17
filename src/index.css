@@ -2129,11 +2129,11 @@ body {
 
 /* Staggered card entrance */
 .card-stagger { opacity: 0; animation: cardStaggerIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.card-stagger:nth-child(1) { animation-delay: 0.05s; }
-.card-stagger:nth-child(2) { animation-delay: 0.12s; }
-.card-stagger:nth-child(3) { animation-delay: 0.19s; }
-.card-stagger:nth-child(4) { animation-delay: 0.26s; }
-.card-stagger:nth-child(5) { animation-delay: 0.33s; }
+.card-stagger:nth-child(1) { animation-delay: 0s; }
+.card-stagger:nth-child(2) { animation-delay: 0.08s; }
+.card-stagger:nth-child(3) { animation-delay: 0.16s; }
+.card-stagger:nth-child(4) { animation-delay: 0.24s; }
+.card-stagger:nth-child(5) { animation-delay: 0.32s; }
 .card-stagger:nth-child(6) { animation-delay: 0.40s; }
 @keyframes cardStaggerIn {
   0% { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -2915,3 +2915,98 @@ body {
     animation: tapPulse 0.25s ease !important;
   }
 }
+
+/* ===== R96: JUICE & GAME FEEL ===== */
+
+/* --- Screen Shake (disasters/strikes) --- */
+.screen-shake {
+  animation: screenShake 0.2s ease;
+}
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(3px, -1px); }
+  60% { transform: translate(-2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+/* --- Streak/Combo Overlay --- */
+.streak-overlay {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  pointer-events: none;
+  animation: streakAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), streakFadeOut 0.5s ease 1.5s forwards;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.2rem;
+  color: #f39c12;
+  text-shadow: 0 0 20px rgba(243, 156, 18, 0.6), 0 2px 4px rgba(0,0,0,0.8);
+  white-space: nowrap;
+  letter-spacing: 0.1em;
+}
+@keyframes streakAppear {
+  0% { transform: translateX(-50%) scale(0.3) rotate(-10deg); opacity: 0; }
+  60% { transform: translateX(-50%) scale(1.2) rotate(3deg); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1) rotate(0); opacity: 1; }
+}
+@keyframes streakFadeOut {
+  0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+}
+
+/* --- Golden Particle Burst (BLOCKBUSTER/SMASH) --- */
+.golden-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.golden-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffd700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+  animation: goldenBurst 1s ease-out forwards;
+}
+@keyframes goldenBurst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+/* --- Prestige Burst (more elaborate) --- */
+.prestige-burst .golden-particle {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #ffd700, #ff6b6b);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.9), 0 0 20px rgba(255, 107, 107, 0.4);
+  animation: prestigeBurst 1.5s ease-out forwards;
+}
+@keyframes prestigeBurst {
+  0% { transform: translate(0, 0) scale(1.5); opacity: 1; }
+  50% { opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+/* --- Talent card stagger in casting --- */
+.talent-stagger { opacity: 0; animation: cardStaggerIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .screen-shake { animation: none !important; }
+  .streak-overlay { animation: none !important; opacity: 0 !important; }
+  .golden-burst { display: none !important; }
+  .prestige-burst { display: none !important; }
+  .talent-stagger { opacity: 1; animation: none !important; }
+}
+.force-reduce-motion .screen-shake { animation: none !important; }
+.force-reduce-motion .streak-overlay { animation: none !important; opacity: 0 !important; }
+.force-reduce-motion .golden-burst { display: none !important; }
+.force-reduce-motion .prestige-burst { display: none !important; }
+.force-reduce-motion .talent-stagger { opacity: 1; animation: none !important; }

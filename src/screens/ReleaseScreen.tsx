@@ -28,6 +28,39 @@ function CountUp({ target, duration = 1500 }: { target: number; duration?: numbe
   return <span className={done ? 'box-office-final' : 'box-office-counting'}>${current.toFixed(1)}M</span>;
 }
 
+function GoldenBurst({ elaborate }: { elaborate?: boolean }) {
+  const particles = Array.from({ length: elaborate ? 16 : 10 }, (_, i) => {
+    const angle = (i / (elaborate ? 16 : 10)) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+    const dist = 40 + Math.random() * (elaborate ? 80 : 50);
+    return {
+      tx: Math.cos(angle) * dist,
+      ty: Math.sin(angle) * dist,
+      delay: Math.random() * 0.2,
+    };
+  });
+  return (
+    <div className={`golden-burst ${elaborate ? 'prestige-burst' : ''}`}>
+      {particles.map((p, i) => (
+        <span key={i} className="golden-particle" style={{
+          '--tx': `${p.tx}px`,
+          '--ty': `${p.ty}px`,
+          animationDelay: `${p.delay}s`,
+        } as React.CSSProperties} />
+      ))}
+    </div>
+  );
+}
+
+function StreakOverlay({ streak }: { streak: number }) {
+  if (streak < 2) return null;
+  const fires = '🔥'.repeat(Math.min(streak, 5));
+  return (
+    <div className="streak-overlay">
+      {fires} {streak}x Streak!
+    </div>
+  );
+}
+
 function ConfettiBurst({ color }: { color: 'gold' | 'red' }) {
   const colors = color === 'gold' 
     ? ['#d4a843', '#f0c75e', '#ffd700', '#e8b84b', '#fff3c4']
@@ -79,6 +112,19 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   const [showDetails, setShowDetails] = useState(false);
   const [screenFlash, setScreenFlash] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showShake, setShowShake] = useState(false);
+  const [showGoldenBurst, setShowGoldenBurst] = useState(false);
+
+  // Calculate streak: consecutive non-flop films ending with this one
+  const streak = (() => {
+    const hist = state.seasonHistory;
+    let count = 0;
+    for (let i = hist.length - 1; i >= 0; i--) {
+      if (hist[i].tier !== 'FLOP') count++;
+      else break;
+    }
+    return count;
+  })();
 
   const season = state.seasonHistory.length;
   const identity = getSeasonIdentity(season);
@@ -126,9 +172,9 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
     sfx.boxOfficeReveal();
     const t1 = setTimeout(() => {
       setPhase(1);
-      if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); }
-      else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); }
-      else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); setTimeout(() => sfx.strikeAdded(), 400); }
+      if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); setShowGoldenBurst(true); }
+      else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); setShowGoldenBurst(true); }
+      else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); setTimeout(() => sfx.strikeAdded(), 400); setShowShake(true); setTimeout(() => setShowShake(false), 250); }
       else { sfx.hit(); }
       setTimeout(() => setScreenFlash(''), 800);
     }, 1600);
@@ -140,8 +186,10 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus } = calculateQuality(state);
 
   return (
-    <div className={`box-office fade-in ${screenFlash}`}>
+    <div className={`box-office fade-in ${screenFlash} ${showShake ? 'screen-shake' : ''}`}>
       {showConfetti && <ConfettiBurst color={tier === 'BLOCKBUSTER' ? 'gold' : 'gold'} />}
+      {phase >= 1 && streak >= 2 && <StreakOverlay streak={streak} />}
+      {showGoldenBurst && phase >= 1 && <GoldenBurst />}
       <div className="phase-title">
         <h2>🎞️ Release Day</h2>
         <div className="subtitle" style={{ fontSize: '1.1rem', color: '#d4a843' }}>"{filmTitle}"</div>

@@ -3175,3 +3175,93 @@ body {
   letter-spacing: 0.04em;
   line-height: 1.4;
 }
+
+/* ===== R102: LEGENDARY SCRIPTS & ELITE TALENT ===== */
+
+/* Legendary script gold shimmer */
+@keyframes legendaryShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.card.legendary-script {
+  border: 2px solid #ffd700 !important;
+  position: relative;
+  overflow: hidden;
+}
+.card.legendary-script::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255, 215, 0, 0.08) 40%,
+    rgba(255, 215, 0, 0.15) 50%,
+    rgba(255, 215, 0, 0.08) 60%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: legendaryShimmer 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 12px;
+}
+.card.legendary-script:hover {
+  border-color: #ffe066 !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.25), 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.legendary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, #ffd700, #f0a000);
+  color: #1a1a2e;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Elite talent diamond border */
+@keyframes diamondPulse {
+  0%, 100% { border-color: rgba(185, 242, 255, 0.6); box-shadow: 0 0 8px rgba(185, 242, 255, 0.15); }
+  50% { border-color: rgba(185, 242, 255, 0.9); box-shadow: 0 0 16px rgba(185, 242, 255, 0.3); }
+}
+
+.card.elite-talent {
+  border: 2px solid rgba(185, 242, 255, 0.6) !important;
+  animation: diamondPulse 4s ease-in-out infinite;
+  position: relative;
+}
+.card.elite-talent::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(185, 242, 255, 0.1), transparent 40%, transparent 60%, rgba(185, 242, 255, 0.1));
+  pointer-events: none;
+  z-index: 0;
+}
+.card.elite-talent:hover {
+  box-shadow: 0 0 24px rgba(185, 242, 255, 0.3), 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.elite-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, #b9f2ff, #7ec8e3);
+  color: #1a1a2e;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+}

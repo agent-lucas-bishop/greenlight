@@ -4771,6 +4771,10 @@ export function generateSeasonEvents(count: number, extraEvents?: SeasonEvent[])
 
 export function generateScripts(count: number, _season: number): Script[] {
   const pool = [...ALL_SCRIPTS];
+  // Prestige 4+: add legendary scripts to pool
+  if (_cachedPrestigeLevel >= 4) {
+    pool.push(...LEGENDARY_SCRIPTS);
+  }
   const result: Script[] = [];
   for (let i = 0; i < count && pool.length > 0; i++) {
     const idx = Math.floor(rng() * pool.length);
@@ -4812,7 +4816,9 @@ export function generateTalentMarket(count: number, _season: number, currentRost
     }
   }
 
-  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW].filter(t => !rosterNames.has(t.name));
+  // Prestige 4+: include elite talent in the pool
+  const elitePool = _cachedPrestigeLevel >= 4 ? [...ELITE_LEADS, ...ELITE_SUPPORTS, ...ELITE_DIRECTORS, ...ELITE_CREW] : [];
+  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW, ...elitePool].filter(t => !rosterNames.has(t.name));
   while (result.length < count) {
     const available = allTalent.filter(t => !usedNames.has(t.name));
     if (available.length === 0) break;
@@ -6592,3 +6598,162 @@ export function getActiveChemistry(castNames: string[]): Chemistry[] {
     castNames.includes(c.talent1) && castNames.includes(c.talent2)
   );
 }
+
+// ─── R102: LEGENDARY SCRIPTS (Prestige 4+) ───
+
+const OPUS_MAGNUM_CARDS: CardTemplate[] = [
+  { name: 'Symphonic Structure', cardType: 'action', baseQuality: 2, synergyText: '🎯💕✨ +1 per UNIQUE tag type played (max +5). A three-act masterpiece.', synergyCondition: (ctx) => { const u = Object.keys(ctx.tagsPlayed).length; return u > 0 ? { bonus: Math.min(u, 5), description: `${u} tag types = symphonic!` } : { bonus: 0 }; }, riskTag: '🟢', tags: ['precision', 'heart', 'spectacle'] as CardTag[] },
+  { name: 'The Third Act', cardType: 'action', baseQuality: 2, synergyText: '+4 if draw 5+. +2 if Director card played. The masterpiece reveals itself.', synergyCondition: (ctx) => { let b = ctx.drawNumber >= 5 ? 4 : 0; if (ctx.playedCards.some(c => c.sourceType === 'director')) b += 2; return b > 0 ? { bonus: b, description: 'The third act lands!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['precision', 'heart'] as CardTag[] },
+  { name: 'Grand Ambition', cardType: 'challenge', baseQuality: 0, synergyText: 'Challenge: Bet next card has high value. Win +6, Lose -4. Worthy of the opus.', synergyCondition: noSynergy, riskTag: '🟡', challengeBet: { ...betNextIsHighValue(), successBonus: 6, failPenalty: -4 }, tags: ['spectacle'] as CardTag[] },
+  { name: 'Scope Creep', cardType: 'incident', baseQuality: -5, synergyText: 'The vision grew too large. Lose $2M. But adds all three tag types.', synergyCondition: () => ({ bonus: 0, budgetMod: -2, description: 'Ambition has a price!' }), riskTag: '🔴', tags: ['precision', 'heart', 'spectacle'] as CardTag[] },
+];
+
+const FRANCHISE_CARDS: CardTemplate[] = [
+  { name: 'Franchise Hook', cardType: 'action', baseQuality: 2, synergyText: '✨🔥 +2 per Spectacle tag + 1 per Momentum tag (max +7). Set up the universe.', synergyCondition: (ctx) => { const b = Math.min((ctx.tagsPlayed['spectacle'] || 0) * 2 + (ctx.tagsPlayed['momentum'] || 0), 7); return b > 0 ? { bonus: b, description: 'Franchise potential!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['spectacle', 'momentum'] as CardTag[] },
+  { name: 'Universe Building', cardType: 'action', baseQuality: 2, synergyText: '+3 if Crew card played. +2 if 4+ cards played. World-building at scale.', synergyCondition: (ctx) => { let b = ctx.playedCards.some(c => c.sourceType === 'crew') ? 3 : 0; if (ctx.playedCards.length >= 4) b += 2; return b > 0 ? { bonus: b, description: 'The universe expands!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['spectacle'] as CardTag[] },
+  { name: 'Sequel Tease', cardType: 'action', baseQuality: 1, synergyText: '+5 if quality ≥ 20. Post-credits scene that breaks the internet.', synergyCondition: (ctx) => ctx.totalQuality >= 20 ? { bonus: 5, description: 'POST-CREDITS SCENE!' } : { bonus: 0 }, riskTag: '🟢', tags: ['momentum', 'spectacle'] as CardTag[] },
+  { name: 'Franchise Fatigue', cardType: 'incident', baseQuality: -6, synergyText: 'Audience burned out. Lose $3M. Spectacle tags soften the blow.', synergyCondition: (ctx) => (ctx.tagsPlayed['spectacle'] || 0) >= 3 ? { bonus: 2, budgetMod: -3, description: 'VFX saved it somewhat.' } : { bonus: 0, budgetMod: -3, description: 'Franchise fatigue!' }, riskTag: '🔴', tags: ['spectacle'] as CardTag[] },
+];
+
+const MIDNIGHT_MASTERPIECE_CARDS: CardTemplate[] = [
+  { name: 'Creeping Dread', cardType: 'action', baseQuality: 1, synergyText: '💀 +3 per Incident played (max +9). Each disaster makes it scarier.', synergyCondition: (ctx) => { const b = Math.min(ctx.incidentCount * 3, 9); return b > 0 ? { bonus: b, description: `${ctx.incidentCount} incidents = pure terror!` } : { bonus: 0 }; }, riskTag: '🟢', tags: ['chaos'] as CardTag[] },
+  { name: 'The Twist', cardType: 'action', baseQuality: 2, synergyText: '💀 +4 if quality is currently negative. The darkness IS the point.', synergyCondition: (ctx) => ctx.totalQuality < 0 ? { bonus: 4, description: 'From darkness, brilliance!' } : { bonus: 0 }, riskTag: '🟢', tags: ['chaos', 'heart'] as CardTag[] },
+  { name: 'Jump Scare', cardType: 'challenge', baseQuality: 0, synergyText: 'Challenge: Bet next card is an Incident. Win +8, Lose -2. Lean into the chaos!', synergyCondition: noSynergy, riskTag: '🟡', challengeBet: { description: 'Bet the next card IS an Incident', successBonus: 8, failPenalty: -2, condition: (ctx) => ctx.remainingDeck.length > 0 && ctx.remainingDeck[0].cardType === 'incident', oddsHint: (ctx) => { const r = ctx.remainingDeck; const n = r.filter(c => c.cardType === 'incident').length; return `${n} of ${r.length} are Incidents (${r.length > 0 ? Math.round(n/r.length*100) : 0}%)`; } }, tags: ['chaos'] as CardTag[] },
+  { name: 'Cursed Production', cardType: 'incident', baseQuality: -3, synergyText: '💀 Only -3 (soft for an incident). Adds 2 Chaos tags. The curse feeds the art.', synergyCondition: noSynergy, riskTag: '🔴', tags: ['chaos', 'chaos'] as CardTag[] },
+  { name: 'Real Haunting', cardType: 'incident', baseQuality: -4, synergyText: '💀 Something happened on set. Lose $1M. But +3 quality if 3+ Chaos tags.', synergyCondition: (ctx) => (ctx.tagsPlayed['chaos'] || 0) >= 3 ? { bonus: 3, budgetMod: -1, description: 'The haunting IS the film!' } : { bonus: 0, budgetMod: -1, description: 'Unexplained events...' }, riskTag: '🔴', tags: ['chaos'] as CardTag[] },
+];
+
+export const LEGENDARY_SCRIPTS: Omit<Script, 'id'>[] = [
+  {
+    title: 'Opus Magnum',
+    genre: 'Drama',
+    baseScore: 12,
+    slots: ['Lead', 'Support', 'Director', 'Crew', 'Wild'],
+    cost: 20,
+    cards: OPUS_MAGNUM_CARDS,
+    ability: 'opusMagnum',
+    abilityDesc: 'Opus Magnum: 3 keyword tags (Precision + Heart + Spectacle). Each unique tag type in production adds +2 quality.',
+    legendary: true,
+    keywordTags: ['precision', 'heart', 'spectacle'],
+  },
+  {
+    title: 'The Franchise',
+    genre: 'Action',
+    baseScore: 10,
+    slots: ['Lead', 'Support', 'Director', 'Crew', 'Wild'],
+    cost: 22,
+    cards: FRANCHISE_CARDS,
+    ability: 'franchise',
+    abilityDesc: 'Franchise: If this hits BLOCKBUSTER+, you get a free sequel script next season with +5 base quality!',
+    legendary: true,
+    keywordTags: ['spectacle', 'momentum'],
+  },
+  {
+    title: 'Midnight Masterpiece',
+    genre: 'Horror',
+    baseScore: 9,
+    slots: ['Lead', 'Support', 'Director', 'Crew', 'Wild'],
+    cost: 18,
+    cards: MIDNIGHT_MASTERPIECE_CARDS,
+    ability: 'midnightMasterpiece',
+    abilityDesc: 'Midnight Masterpiece: Incidents add +3 quality instead of hurting. Chaos IS the art.',
+    legendary: true,
+    keywordTags: ['chaos'],
+  },
+];
+
+// ─── R102: ELITE TALENT (Prestige 4+) ───
+
+const DIVINE_DIRECTOR: Omit<Talent, 'id'> = {
+  name: 'Isabella Divine',
+  type: 'Director',
+  skill: 9,
+  heat: 2,
+  cost: 16,
+  filmsLeft: 2,
+  trait: 'The Oracle',
+  traitDesc: '👑 ELITE: +2 quality to ALL films for the rest of the run (not just hers). Legendary vision.',
+  elite: true,
+  elitePassive: '+2 quality to ALL films for the rest of the run',
+  elitePassiveEffect: 'globalQualityBoost',
+  cards: [
+    { name: 'Divine Vision', cardType: 'action', baseQuality: 3, synergyText: '👑 Multiply total quality by ×1.3. If 4+ unique tags: ×1.5!', synergyCondition: (ctx) => { const u = Object.keys(ctx.tagsPlayed).length; const mult = u >= 4 ? 1.5 : 1.3; return { bonus: 0, multiply: mult, description: `Divine Vision ×${mult}!` }; }, riskTag: '🟢', tags: ['precision', 'spectacle'] as CardTag[] },
+    { name: 'Oracle\'s Insight', cardType: 'action', baseQuality: 2, synergyText: '🎯 +3 if 0 Incidents. +2 per Precision tag (max +4). Perfect foresight.', synergyCondition: (ctx) => { let b = ctx.incidentCount === 0 ? 3 : 0; b += Math.min((ctx.tagsPlayed['precision'] || 0) * 2, 4); return b > 0 ? { bonus: b, description: 'She saw it all coming!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['precision'] as CardTag[] },
+    { name: 'Impossible Standard', cardType: 'challenge', baseQuality: 0, synergyText: 'Challenge: Bet next card has high value. Win +7, Lose -5.', synergyCondition: noSynergy, riskTag: '🟡', challengeBet: { ...betNextIsHighValue(), successBonus: 7, failPenalty: -5 }, tags: ['precision'] as CardTag[] },
+    { name: 'Creative Burnout', cardType: 'incident', baseQuality: -5, synergyText: 'Even legends burn out. Forces extra draw.', synergyCondition: () => ({ bonus: 0, description: 'Isabella demands perfection!' }), riskTag: '🔴', special: 'forceExtraDraw' },
+  ],
+};
+
+const DOUBLE_CHEMISTRY_LEAD: Omit<Talent, 'id'> = {
+  name: 'Sebastian Montague',
+  type: 'Lead',
+  skill: 8,
+  heat: 3,
+  cost: 15,
+  filmsLeft: 3,
+  genreBonus: { genre: 'Romance', bonus: 3 },
+  trait: 'The Heartthrob',
+  traitDesc: '👑 ELITE: Chemistry bonuses are DOUBLED when he\'s in the cast. Irresistible screen presence.',
+  elite: true,
+  elitePassive: 'Chemistry bonuses doubled',
+  elitePassiveEffect: 'doubleChemistry',
+  cards: [
+    { name: 'Magnetic Presence', cardType: 'action', baseQuality: 2, synergyText: '💕 +2 per Actor card played (max +6). +2 per Heart tag (max +4). Everyone shines around him.', synergyCondition: (ctx) => { let b = Math.min(ctx.playedCards.filter(c => c.sourceType === 'actor').length * 2, 6); b += Math.min((ctx.tagsPlayed['heart'] || 0) * 2, 4); return b > 0 ? { bonus: b, description: 'Magnetic chemistry!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['heart'] as CardTag[] },
+    { name: 'Leading Man Moment', cardType: 'action', baseQuality: 2, synergyText: '💕✨ +3 if Director card played. +3 if 4+ Heart tags. The audience melts.', synergyCondition: (ctx) => { let b = ctx.playedCards.some(c => c.sourceType === 'director') ? 3 : 0; if ((ctx.tagsPlayed['heart'] || 0) >= 4) b += 3; return b > 0 ? { bonus: b, description: 'Audience swoons!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['heart', 'spectacle'] as CardTag[] },
+    { name: 'Romantic Gambit', cardType: 'challenge', baseQuality: 0, synergyText: 'Challenge: Bet next card is from an Actor. Win +6, Lose -3.', synergyCondition: noSynergy, riskTag: '🟡', challengeBet: { ...betNextIsFromActor(), successBonus: 6, failPenalty: -3 }, tags: ['heart'] as CardTag[] },
+    { name: 'Tabloid Heartbreak', cardType: 'incident', baseQuality: -5, synergyText: 'Romance off-screen went wrong. Lose $2M. But Heart tags persist.', synergyCondition: () => ({ bonus: 0, budgetMod: -2, description: 'Tabloid heartbreak!' }), riskTag: '🔴', tags: ['heart'] as CardTag[] },
+    { name: 'Ego Clash', cardType: 'incident', baseQuality: -4, synergyText: 'Too many stars. Poisons next card.', synergyCondition: noSynergy, riskTag: '🔴', special: 'poisonNext' },
+  ],
+};
+
+const AUTEUR_CREW: Omit<Talent, 'id'> = {
+  name: 'The Auteur Collective',
+  type: 'Crew',
+  skill: 8,
+  heat: 1,
+  cost: 14,
+  trait: 'Tag Alchemists',
+  traitDesc: '👑 ELITE: Replaces one random keyword tag on the script with a guaranteed-synergy tag matching your cast.',
+  elite: true,
+  elitePassive: 'Replaces one script keyword tag with a synergy-matching tag',
+  elitePassiveEffect: 'tagAlchemy',
+  cards: [
+    { name: 'Synergy Engineering', cardType: 'action', baseQuality: 2, synergyText: '🎯 +2 per unique tag type in production (max +8). Tag specialists.', synergyCondition: (ctx) => { const u = Object.keys(ctx.tagsPlayed).length; return u > 0 ? { bonus: Math.min(u * 2, 8), description: `${u} tag types = alchemy!` } : { bonus: 0 }; }, riskTag: '🟢', tags: ['precision', 'spectacle'] as CardTag[] },
+    { name: 'Perfect Setup', cardType: 'action', baseQuality: 2, synergyText: '+3 if Actor card played. +2 if Crew card played. Technical perfection.', synergyCondition: (ctx) => { let b = ctx.playedCards.some(c => c.sourceType === 'actor') ? 3 : 0; if (ctx.playedCards.some(c => c.sourceType === 'crew')) b += 2; return b > 0 ? { bonus: b, description: 'Perfect technical setup!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['precision'] as CardTag[] },
+    { name: 'Creative Overhaul', cardType: 'action', baseQuality: 1, synergyText: 'Remove 1 Incident from deck. +2 if 3+ Precision tags. Clean production.', synergyCondition: (ctx) => (ctx.tagsPlayed['precision'] || 0) >= 3 ? { bonus: 2, description: 'Precision overhaul!' } : { bonus: 0 }, riskTag: '🟢', special: 'removeRed', tags: ['precision'] as CardTag[] },
+    { name: 'Over-Engineering', cardType: 'incident', baseQuality: -4, synergyText: 'Too clever. Lose $2M in rewrites.', synergyCondition: () => ({ bonus: 0, budgetMod: -2, description: 'Over-engineered!' }), riskTag: '🔴' },
+  ],
+};
+
+const GLOBAL_BUFF_SUPPORT: Omit<Talent, 'id'> = {
+  name: 'Zara Osei-Mensah',
+  type: 'Support',
+  skill: 8,
+  heat: 1,
+  cost: 12,
+  genreBonus: { genre: 'Drama', bonus: 2 },
+  trait: 'The Muse',
+  traitDesc: '👑 ELITE: Inspires everyone. +1 Skill to ALL other talent in your roster for the rest of the run.',
+  elite: true,
+  elitePassive: '+1 Skill to all other roster talent',
+  elitePassiveEffect: 'rosterSkillBoost',
+  cards: [
+    { name: 'Inspirational Presence', cardType: 'action', baseQuality: 2, synergyText: '💕 +1 per other Actor card played (max +4). +2 per Heart tag (max +4). She lifts everyone.', synergyCondition: (ctx) => { let b = Math.min(ctx.playedCards.filter(c => c.sourceType === 'actor').length, 4); b += Math.min((ctx.tagsPlayed['heart'] || 0) * 2, 4); return b > 0 ? { bonus: b, description: 'Everyone plays better around her!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['heart'] as CardTag[] },
+    { name: 'Ensemble Elevation', cardType: 'action', baseQuality: 2, synergyText: '+2 per unique source type played (max +6). The whole team rises.', synergyCondition: (ctx) => { const t = new Set(ctx.playedCards.map(c => c.sourceType)); return t.size > 0 ? { bonus: Math.min(t.size * 2, 6), description: `${t.size} source types elevated!` } : { bonus: 0 }; }, riskTag: '🟢', tags: ['heart', 'precision'] as CardTag[] },
+    { name: 'Muse\'s Touch', cardType: 'action', baseQuality: 1, synergyText: 'Next card drawn gets +3. The muse blesses the next take.', synergyCondition: () => ({ bonus: 0, description: 'Blessing the next draw!' }), riskTag: '🟢', special: 'buffNext', tags: ['heart'] as CardTag[] },
+    { name: 'Muse Exhaustion', cardType: 'incident', baseQuality: -4, synergyText: 'Even muses tire. But adds Heart tag.', synergyCondition: noSynergy, riskTag: '🔴', tags: ['heart'] as CardTag[] },
+  ],
+};
+
+export const ELITE_LEADS: Omit<Talent, 'id'>[] = [DOUBLE_CHEMISTRY_LEAD];
+export const ELITE_SUPPORTS: Omit<Talent, 'id'>[] = [GLOBAL_BUFF_SUPPORT];
+export const ELITE_DIRECTORS: Omit<Talent, 'id'>[] = [DIVINE_DIRECTOR];
+export const ELITE_CREW: Omit<Talent, 'id'>[] = [AUTEUR_CREW];
+
+// Chemistry for elite talent
+ALL_CHEMISTRY.push(
+  { talent1: 'Isabella Divine', talent2: 'Sebastian Montague', name: 'Divine Romance', description: 'The greatest director meets the greatest star. +5 quality.', qualityBonus: 5 },
+  { talent1: 'Zara Osei-Mensah', talent2: 'Sebastian Montague', name: 'Muse & Star', description: 'The muse inspires the heartthrob. +4 quality.', qualityBonus: 4 },
+  { talent1: 'Isabella Divine', talent2: 'The Auteur Collective', name: 'Visionary Alliance', description: 'Oracle director + tag alchemists. +4 quality.', qualityBonus: 4 },
+  { talent1: 'Zara Osei-Mensah', talent2: 'Grace Okonkwo', name: 'Heart Sisters', description: 'Two hearts beating as one. +3 quality.', qualityBonus: 3 },
+);

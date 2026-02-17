@@ -32,7 +32,7 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
 
   return (
     <div
-      className={`card talent-card talent-role-${t.type.toLowerCase()} ${highlight ? 'selected' : ''}`}
+      className={`card talent-card talent-role-${t.type.toLowerCase()} ${highlight ? 'selected' : ''} ${(t as any).elite ? 'elite-talent' : ''}`}
       onClick={onClick}
       onKeyDown={e => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
       tabIndex={onClick && !dimmed ? 0 : -1}
@@ -46,6 +46,7 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
       }}
     >
       <span className="talent-type" style={{ background: typeColors[t.type] || '#666' }}>{typeEmoji[t.type]} {t.type}</span>
+      {(t as any).elite && <span className="elite-badge">💎 ELITE</span>}
       <div className="card-title" style={{ fontSize: '1rem' }}>{t.name}</div>
       
       {/* Summary line: cost + key tags */}

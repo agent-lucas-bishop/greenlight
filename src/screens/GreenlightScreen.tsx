@@ -95,10 +95,11 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           const hasMarketMatch = state.marketConditions.some(m => m.genreBonus === script.genre);
           
           const genreClass = 'genre-' + script.genre.toLowerCase().replace('-', '');
+          const isLegendary = !!(script as any).legendary;
           return (
             <div
               key={script.id}
-              className={`card tap-target card-stagger ${genreClass} ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''} ${isMobile && expandedId === script.id && !picked ? 'mobile-expanded' : ''}`}
+              className={`card tap-target card-stagger ${genreClass} ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''} ${isMobile && expandedId === script.id && !picked ? 'mobile-expanded' : ''} ${isLegendary ? 'legendary-script' : ''}`}
               onClick={() => handlePick(script)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(script); } }}
               tabIndex={picked ? -1 : 0}
@@ -109,6 +110,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
               }}
             >
               <div className="card-subtitle" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                {isLegendary && <span className="legendary-badge">⭐ LEGENDARY</span>}
                 <span className={`genre-label ${script.genre.toLowerCase().replace('-', '')}`}>{script.genre}</span>
                 {state.hotGenres.includes(script.genre as any) && <span style={{ color: '#2ecc71', fontSize: '0.65rem' }}>🔥 HOT</span>}
                 {state.coldGenres.includes(script.genre as any) && <span style={{ color: '#e74c3c', fontSize: '0.65rem' }}>❄️ COLD</span>}

@@ -83,6 +83,7 @@
  */
 
 import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag, CardAbility, MarketingTier, PostProdOption, SoundtrackData } from './types';
+import { detectAllSynergies, markCombosDiscovered, type CombinedSynergyResult } from './synergies';
 import type { StudioArchetypeId, CardRarity } from './types';
 import { generateAudienceReactions, type AudienceReaction } from './audienceReactions';
 import {
@@ -2051,7 +2052,11 @@ export function calculateQuality(s: GameState): {
   // R212: Story event morale bonus
   const storyMorale = s.storyMoraleBonus || 0;
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus + moodBonus + directorStyleQualityBonus + storyMorale;
+  // R257: Combo synergy quality bonus
+  const comboSynergyResult = detectAllSynergies(s);
+  const comboSynergyQualityBonus = comboSynergyResult.totalQualityBonus;
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus + moodBonus + directorStyleQualityBonus + storyMorale + comboSynergyQualityBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;
@@ -2429,6 +2434,16 @@ export function resolveRelease() {
 
   // Challenge: Budget Hell — box office ×1.5
   if (state.challengeId === 'budget_hell') multiplier *= 1.5;
+
+  // R257: Combo synergy BO multiplier
+  const releaseSynergyResult = detectAllSynergies(state);
+  if (releaseSynergyResult.totalBoxOfficeMultiplier > 1) {
+    multiplier *= releaseSynergyResult.totalBoxOfficeMultiplier;
+  }
+  // R257: Mark combos as discovered
+  if (releaseSynergyResult.comboSynergies.length > 0) {
+    markCombosDiscovered(releaseSynergyResult.comboSynergies.map(c => c.combo.id));
+  }
 
   // Streaming Bidding War: flat $40M, no multiplier
   let boxOffice: number;

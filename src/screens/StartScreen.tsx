@@ -53,6 +53,10 @@ import { getAllUnlockableStatus } from '../unlockableContent';
 import { isEndlessUnlocked } from '../endgame';
 import { EndlessRecords, EndlessLauncherInfo } from '../components/EndlessPanel';
 import { DailyChallengeCard } from '../components/DailyChallenge';
+import { ChallengeEditor } from '../components/ChallengeEditor';
+import { ChallengeImport } from '../components/ChallengeImport';
+import { getChallengeFromUrl, clearChallengeFromUrl } from '../challengeEditor';
+import type { CustomChallenge } from '../challengeEditor';
 import { getCollectionProgress } from '../tradingCards';
 import { getCollectionStats } from '../cardCollection';
 
@@ -463,6 +467,8 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events'>('play');
+  const [dailySubTab, setDailySubTab] = useState<'challenge' | 'create' | 'import'>('challenge');
+  const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
@@ -993,24 +999,75 @@ export default function StartScreen() {
 
       {tab === 'daily' && (
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <DailyChallengeCard onStart={(type) => {
-            if (type === 'daily') {
-              sfx.dailyStart();
-              setTimeout(() => sfx.dailyChallengeFanfare(), 300);
-              const arch = getDailyArchetype();
-              startGame('daily', undefined, undefined, 'studio');
-              pickArchetype(arch);
-            } else {
-              setSelectedMode('weekly');
-              setSelectedChallenge(undefined);
-              setShowDifficulty(true);
-            }
-          }} />
-          <div style={{ marginTop: 24 }}>
-            <Suspense fallback={<SkeletonLoader />}>
-              <DailyLeaderboard inline />
-            </Suspense>
+          {/* Sub-tabs */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {([
+              { id: 'challenge' as const, label: '🎯 DAILY', color: '#3498db' },
+              { id: 'create' as const, label: '🔧 CREATE', color: '#f39c12' },
+              { id: 'import' as const, label: '📥 IMPORT', color: '#9b59b6' },
+            ] as const).map(st => (
+              <button key={st.id} className="btn btn-small"
+                style={{ color: dailySubTab === st.id ? st.color : '#666', borderColor: dailySubTab === st.id ? st.color : 'rgba(255,255,255,0.1)', background: dailySubTab === st.id ? `${st.color}15` : 'transparent' }}
+                onClick={() => setDailySubTab(st.id)}>{st.label}</button>
+            ))}
           </div>
+
+          {/* URL challenge prompt */}
+          {urlChallenge && dailySubTab === 'challenge' && (
+            <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: 'rgba(243,156,18,0.08)', border: '1px solid rgba(243,156,18,0.3)' }}>
+              <div style={{ color: '#f39c12', fontWeight: 'bold', marginBottom: 6 }}>🔧 Custom Challenge Detected!</div>
+              <div style={{ color: '#ddd', fontSize: '0.85rem', marginBottom: 8 }}>"{urlChallenge.name}" {urlChallenge.author ? `by ${urlChallenge.author}` : ''}</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-small" style={{ color: '#2ecc71', borderColor: '#2ecc71' }}
+                  onClick={() => { setDailySubTab('import'); clearChallengeFromUrl(); }}>
+                  🎬 View & Play
+                </button>
+                <button className="btn btn-small" style={{ color: '#888' }}
+                  onClick={() => { setUrlChallenge(null); clearChallengeFromUrl(); }}>Dismiss</button>
+              </div>
+            </div>
+          )}
+
+          {dailySubTab === 'challenge' && (
+            <>
+              <DailyChallengeCard onStart={(type) => {
+                if (type === 'daily') {
+                  sfx.dailyStart();
+                  setTimeout(() => sfx.dailyChallengeFanfare(), 300);
+                  const arch = getDailyArchetype();
+                  startGame('daily', undefined, undefined, 'studio');
+                  pickArchetype(arch);
+                } else {
+                  setSelectedMode('weekly');
+                  setSelectedChallenge(undefined);
+                  setShowDifficulty(true);
+                }
+              }} />
+              <div style={{ marginTop: 24 }}>
+                <Suspense fallback={<SkeletonLoader />}>
+                  <DailyLeaderboard inline />
+                </Suspense>
+              </div>
+            </>
+          )}
+
+          {dailySubTab === 'create' && (
+            <ChallengeEditor onClose={() => setDailySubTab('challenge')} />
+          )}
+
+          {dailySubTab === 'import' && (
+            <ChallengeImport
+              initialChallenge={urlChallenge}
+              onClose={() => { setDailySubTab('challenge'); setUrlChallenge(null); }}
+              onPlay={(ch) => {
+                // Start a custom challenge game with the modifiers applied
+                sfx.click();
+                const gm = ch.modifiers;
+                if (ch.genre) gm.genreRestriction = ch.genre;
+                startGame('normal', undefined, undefined, 'studio', gm);
+              }}
+            />
+          )}
         </div>
       )}
 

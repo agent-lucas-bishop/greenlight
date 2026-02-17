@@ -8,6 +8,7 @@ import {
 } from '../modding';
 import { getAllCustomCards, type CustomCard } from '../customCards';
 import { customCardsToModPack } from '../modding';
+import { sfx } from '../sound';
 
 /* ── tiny helpers ─────────────────────────────── */
 
@@ -67,11 +68,12 @@ function ModCard({ mod, onRefresh }: { mod: ModPack; onRefresh: () => void }) {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const handleToggle = () => { toggleModPack(mod.id); onRefresh(); };
+  const handleToggle = () => { toggleModPack(mod.id); sfx.modToggleClick(); onRefresh(); };
   const handleRemove = () => { if (confirm(`Remove "${mod.name}"?`)) { removeModPack(mod.id); onRefresh(); } };
   const handleExportJSON = () => {
     const json = exportModPack(mod.id);
     if (!json) return;
+    sfx.modExportChime();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -177,6 +179,7 @@ export default function ModManager() {
     if (!importText.trim()) return;
     const result = importModPack(importText.trim());
     if (result.mod) {
+      sfx.modImportSuccess();
       setImportResult({ ok: true, msg: `Imported "${result.mod.name}" (${cardCount(result.mod)})${result.warnings.length ? ` ⚠ ${result.warnings.join(', ')}` : ''}` });
       setImportText('');
       refresh();
@@ -193,6 +196,7 @@ export default function ModManager() {
       const text = reader.result as string;
       const result = importModPack(text);
       if (result.mod) {
+        sfx.modImportSuccess();
         setImportResult({ ok: true, msg: `Imported "${result.mod.name}" from file` });
         refresh();
       } else {
@@ -217,6 +221,7 @@ export default function ModManager() {
     const a = document.createElement('a');
     a.href = url; a.download = `${name.replace(/\s+/g, '_')}.json`; a.click();
     URL.revokeObjectURL(url);
+    sfx.modExportChime();
     setShowExportDialog(false);
     setImportResult({ ok: true, msg: `Exported ${cards.length} custom cards as "${name}"` });
   };

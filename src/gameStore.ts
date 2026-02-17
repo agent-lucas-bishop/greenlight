@@ -2696,9 +2696,7 @@ export function proceedToShop() {
   const modEvents = getEnabledModEvents().map(me => ({
     name: me.name,
     description: me.description,
-    effect: (state: GameState) => {
-      if (me.qualityMod) state.production.qualityBonus = (state.production.qualityBonus || 0) + me.qualityMod;
-    },
+    effect: `modEvent_${me.name}`,
   }));
   const eventPool = [...INDUSTRY_EVENTS, ...modEvents];
   const event = eventPool[Math.floor(rng() * eventPool.length)];

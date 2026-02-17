@@ -4799,8 +4799,8 @@ const OSCAR_BAIT_SCRIPT: Omit<Script, 'id'> = {
 function modScriptToPool(ms: CustomScript): Omit<Script, 'id'> {
   const e = ms.cardEffect;
   const cards: CardTemplate[] = [
-    { name: `${ms.name} — Core`, cardType: 'action', baseQuality: Math.max(0, ms.baseScore - 3), synergyText: ms.description || 'Modded script card', riskTag: '🟢' },
-    { name: `${ms.name} — Vision`, cardType: 'action', baseQuality: e.qualityBonus, synergyText: ms.description || 'Modded bonus', riskTag: e.qualityBonus >= 3 ? '🟡' : '🟢' },
+    { name: `${ms.name} — Core`, cardType: 'action', baseQuality: Math.max(0, ms.baseScore - 3), synergyText: ms.description || 'Modded script card', synergyCondition: null, riskTag: '🟢' },
+    { name: `${ms.name} — Vision`, cardType: 'action', baseQuality: e.qualityBonus, synergyText: ms.description || 'Modded bonus', synergyCondition: null, riskTag: e.qualityBonus >= 3 ? '🟡' : '🟢' },
     customCardToCardTemplate(ms),
   ];
   return {
@@ -4810,14 +4810,13 @@ function modScriptToPool(ms: CustomScript): Omit<Script, 'id'> {
     baseScore: ms.baseScore,
     slots: ms.slots,
     cards,
-    description: ms.description || `Custom mod script`,
   };
 }
 
 function modTalentToPool(mt: CustomTalent): Omit<Talent, 'id'> {
   const cards: CardTemplate[] = [
     customCardToCardTemplate(mt),
-    { name: `${mt.name} — Skill`, cardType: 'action', baseQuality: Math.ceil(mt.skill / 2), synergyText: 'Talent contribution', riskTag: '🟢' },
+    { name: `${mt.name} — Skill`, cardType: 'action', baseQuality: Math.ceil(mt.skill / 2), synergyText: 'Talent contribution', synergyCondition: null, riskTag: '🟢' },
   ];
   return {
     name: mt.name,
@@ -4825,7 +4824,6 @@ function modTalentToPool(mt: CustomTalent): Omit<Talent, 'id'> {
     skill: mt.skill,
     cost: mt.cost,
     cards,
-    description: mt.description || `Custom mod talent`,
   };
 }
 

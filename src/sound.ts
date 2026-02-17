@@ -2174,6 +2174,114 @@ export const sfx = {
     }, 'eventEnd');
   },
 
+  // ── R208: Accessibility sounds ──
+
+  // Focus change — very subtle soft tick for accessibility focus navigation
+  a11yFocusChange() {
+    play(c => {
+      note(c, 1800, 0, 0.03, 0.025, 'sine');
+    }, 'a11yFocus');
+  },
+
+  // Screen reader announcement — gentle two-tone confirmation
+  a11yAnnounce() {
+    play(c => {
+      note(c, 880, 0, 0.08, 0.04, 'sine');
+      note(c, 1100, 0.05, 0.1, 0.03, 'sine');
+    }, 'a11yAnnounce');
+  },
+
+  // ── R208: Mod system sounds ──
+
+  // Mod import success — satisfying unbox/reveal chime
+  modImportSuccess() {
+    play(c => {
+      // Unbox click
+      noise(c, 0, 0.04, 0.1);
+      // Ascending confirmation: E5 → G#5 → B5
+      note(c, 659, 0.05, 0.15, 0.1, 'sine');
+      note(c, 831, 0.12, 0.15, 0.1, 'sine');
+      note(c, 988, 0.19, 0.2, 0.12, 'sine');
+      // Sparkle tail
+      note(c, 1976, 0.25, 0.2, 0.05, 'sine');
+      note(c, 2637, 0.3, 0.15, 0.03, 'sine');
+    }, 'modImport');
+  },
+
+  // Mod toggle click — mechanical switch with distinct on/off character
+  modToggleClick() {
+    play(c => {
+      note(c, 1100, 0, 0.04, 0.09, 'square');
+      note(c, 1500, 0.03, 0.05, 0.06, 'triangle');
+      noise(c, 0.01, 0.025, 0.05);
+    }, 'modToggle');
+  },
+
+  // Mod export chime — bright descending export confirmation
+  modExportChime() {
+    play(c => {
+      // Descending chime: B5 → G#5 → E5 (wrapping/packaging feel)
+      note(c, 988, 0, 0.12, 0.1, 'sine');
+      note(c, 831, 0.08, 0.12, 0.1, 'sine');
+      note(c, 659, 0.16, 0.18, 0.12, 'sine');
+      // Confirmation ping
+      note(c, 1319, 0.28, 0.15, 0.06, 'sine');
+    }, 'modExport');
+  },
+
+  // ── R208: Global Leaderboard API sounds ──
+
+  // Global leaderboard load whoosh — sweeping reveal
+  globalLeaderboardLoad() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(150, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(900, c.currentTime + 0.18);
+      o.frequency.exponentialRampToValueAtTime(300, c.currentTime + 0.3);
+      g.gain.setValueAtTime(0.08, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.4);
+      noise(c, 0, 0.18, 0.06);
+      // Subtle resolve tone
+      note(c, 523, 0.2, 0.15, 0.04, 'triangle');
+    }, 'globalLbLoad');
+  },
+
+  // New global high score fanfare — grander than local newHighScore
+  newGlobalHighScore() {
+    play(c => {
+      // Dramatic brass fanfare: C4 → E4 → G4 → C5 → E5 → G5 → C6
+      note(c, 262, 0, 0.3, 0.12, 'sawtooth');
+      note(c, 330, 0.08, 0.28, 0.12, 'sawtooth');
+      note(c, 392, 0.16, 0.28, 0.12, 'sawtooth');
+      note(c, 523, 0.24, 0.3, 0.16, 'triangle');
+      note(c, 659, 0.34, 0.28, 0.14, 'triangle');
+      note(c, 784, 0.44, 0.3, 0.14, 'triangle');
+      note(c, 1047, 0.54, 0.5, 0.18, 'sine');
+      // Victory shimmer cascade
+      note(c, 1568, 0.6, 0.4, 0.07, 'sine');
+      note(c, 2093, 0.65, 0.35, 0.06, 'sine');
+      note(c, 2637, 0.7, 0.3, 0.05, 'sine');
+      note(c, 3520, 0.75, 0.25, 0.04, 'sine');
+      // Deep bass resolve
+      note(c, 131, 0.54, 0.6, 0.1, 'sine');
+      // Cymbal wash
+      noise(c, 0.5, 0.35, 0.08);
+    }, 'newGlobalHS');
+  },
+
+  // Score submission confirmation — brief positive blip
+  scoreSubmitConfirm() {
+    play(c => {
+      note(c, 880, 0, 0.08, 0.1, 'sine');
+      note(c, 1175, 0.05, 0.1, 0.08, 'sine');
+      note(c, 1568, 0.1, 0.12, 0.06, 'sine');
+    }, 'scoreSubmit');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

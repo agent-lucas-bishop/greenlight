@@ -36,6 +36,8 @@ export function announce(message: string, priority: 'polite' | 'assertive' = 'po
   requestAnimationFrame(() => {
     el.textContent = message;
   });
+  // R208: Subtle audio confirmation for screen reader announcements
+  import('./sound').then(m => m.sfx.a11yAnnounce()).catch(() => {});
 }
 
 /** Announce phase changes */
@@ -122,6 +124,8 @@ export function useCardGridKeys(
       return;
     }
     cards[nextIdx].focus();
+    // R208: Subtle tone on focus change
+    import('./sound').then(m => m.sfx.a11yFocusChange()).catch(() => {});
   };
   
   return handler;

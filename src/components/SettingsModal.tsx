@@ -377,10 +377,37 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         );
-      case 'data':
+      case 'data': {
+        const audit = auditStorage();
+        const usedKB = (audit.totalBytes / 1024).toFixed(1);
+        const topKeys = audit.keys.filter(k => k.exists && k.bytes > 0).slice(0, 5);
         return (
           <div className="settings-section" style={{ borderBottom: 'none' }}>
             <SectionH3>Data Management</SectionH3>
+
+            {/* R203: Storage usage display */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #333', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ color: '#aaa', fontSize: '0.75rem' }}>💾 Storage Usage</span>
+                <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{usedKB} KB</span>
+              </div>
+              {topKeys.map(k => (
+                <div key={k.key} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#666', padding: '2px 0' }}>
+                  <span>{k.key.replace('greenlight_', '').replace('greenlight-', '')}</span>
+                  <span>{(k.bytes / 1024).toFixed(1)} KB</span>
+                </div>
+              ))}
+              {audit.orphanedKeys.length > 0 && (
+                <div style={{ marginTop: 4, fontSize: '0.6rem', color: '#e67e22' }}>
+                  ⚠️ {audit.orphanedKeys.length} orphaned key(s)
+                </div>
+              )}
+              <button className="btn btn-small" onClick={() => { clearNonEssentialStorage(); setTab('data'); }}
+                style={{ marginTop: 8, width: '100%', fontSize: '0.7rem', color: '#e67e22', borderColor: '#e67e22' }}>
+                🧹 Clear Non-Essential Data (keeps settings & save)
+              </button>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <button className="btn btn-small" onClick={handleExport} style={{ width: '100%' }} aria-label="Export save data">
                 📥 Export Save Data
@@ -412,6 +439,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         );
+      }
       case 'keyboard':
         return (
           <div className="settings-section" style={{ borderBottom: 'none' }}>

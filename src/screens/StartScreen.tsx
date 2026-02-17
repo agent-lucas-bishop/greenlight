@@ -601,32 +601,30 @@ export default function StartScreen() {
             <p style={{ color: '#666', fontSize: '0.9rem' }}>No runs recorded yet. Complete a run to see your scores here!</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '30px 50px 1fr 60px 50px 60px', gap: 8, padding: '8px 12px', color: '#555', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <span>#</span><span>Rank</span><span>Details</span><span>Score</span><span>Mode</span><span>Result</span>
-              </div>
+              <div className="leaderboard-header" style={{ display: 'none' }} />
               {leaderboard.slice(0, 15).map((entry, i) => (
                 <div key={entry.id} style={{
-                  display: 'grid', gridTemplateColumns: '30px 50px 1fr 60px 50px 60px', gap: 8,
-                  padding: '8px 12px', background: i === 0 ? 'rgba(212,168,67,0.08)' : 'rgba(255,255,255,0.02)',
-                  borderRadius: 6, alignItems: 'center', border: `1px solid ${i === 0 ? 'var(--gold-dim)' : '#222'}`,
+                  padding: '10px 12px', background: i === 0 ? 'rgba(212,168,67,0.08)' : 'rgba(255,255,255,0.02)',
+                  borderRadius: 8, border: `1px solid ${i === 0 ? 'var(--gold-dim)' : '#222'}`,
                 }}>
-                  <span style={{ color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#555', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{i + 1}</span>
-                  <span style={{ color: { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' }[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{entry.rank}</span>
-                  <div>
-                    <div style={{ color: '#ccc', fontSize: '0.75rem' }}>
-                      {entry.films.map(f => f.title).join(' → ')}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#555', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>#{i + 1}</span>
+                      <span style={{ color: { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' }[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{entry.rank}</span>
+                      <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem', fontWeight: 600 }}>{entry.won ? '✓ Won' : '✗ Lost'}</span>
                     </div>
-                    <div style={{ color: '#666', fontSize: '0.65rem' }}>
-                      {entry.date} · {entry.archetype}
-                      {entry.challenge && ` · ${CHALLENGE_MODES.find(c => c.id === entry.challenge)?.emoji || ''} ${CHALLENGE_MODES.find(c => c.id === entry.challenge)?.name || entry.challenge}`}
-                      {entry.dailySeed && ' · 📅 Daily'}
-                    </div>
+                    <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{entry.score} pts</span>
                   </div>
-                  <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{entry.score}</span>
-                  <span style={{ color: '#666', fontSize: '0.65rem' }}>
-                    {entry.mode === 'newGamePlus' ? 'NG+' : entry.mode === 'directorMode' ? 'Dir' : entry.mode === 'daily' ? 'Daily' : entry.mode === 'challenge' ? 'Ch' : 'Std'}
-                  </span>
-                  <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.75rem' }}>{entry.won ? '✓ Won' : '✗ Lost'}</span>
+                  <div style={{ color: '#ccc', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {entry.films.map(f => f.title).join(' → ')}
+                  </div>
+                  <div style={{ color: '#666', fontSize: '0.65rem', display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                    <span>{entry.date}</span>
+                    <span>· {entry.archetype}</span>
+                    <span>· {entry.mode === 'newGamePlus' ? 'NG+' : entry.mode === 'directorMode' ? 'Dir' : entry.mode === 'daily' ? 'Daily' : entry.mode === 'challenge' ? 'Ch' : 'Std'}</span>
+                    {entry.challenge && <span>· {CHALLENGE_MODES.find(c => c.id === entry.challenge)?.emoji || ''} {CHALLENGE_MODES.find(c => c.id === entry.challenge)?.name || entry.challenge}</span>}
+                    {entry.dailySeed && <span>· 📅 Daily</span>}
+                  </div>
                 </div>
               ))}
             </div>

@@ -6,6 +6,7 @@ import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 import StatTooltip from '../components/StatTooltip';
 import { sfx } from '../sound';
+import { useSwipe } from '../hooks/useSwipe';
 
 function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onClick?: () => void; compact?: boolean; dimmed?: boolean; highlight?: boolean }) {
   const [expanded, setExpanded] = useState(false);
@@ -281,7 +282,7 @@ export default function CastingScreen({ state }: { state: GameState }) {
                 {!assignedIds.has(t.id) && (
                   <button
                     className="btn btn-danger btn-small"
-                    style={{ width: '100%', marginTop: 4, fontSize: '0.7rem', padding: '3px 8px' }}
+                    style={{ width: '100%', marginTop: 4, fontSize: '0.75rem' }}
                     onClick={(e) => { e.stopPropagation(); fireTalent(t.id); }}
                   >
                     FIRE

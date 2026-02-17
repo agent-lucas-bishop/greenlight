@@ -87,7 +87,7 @@ export default function AchievementGallery({ onClose }: { onClose: () => void })
                   ({catUnlocked}/{catAchs.length})
                 </span>
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(150px, 100%), 1fr))', gap: 8 }}>
                 {visibleAchs.map(ach => {
                   const isUnlocked = unlocked.includes(ach.id);
                   const date = dates[ach.id];

@@ -112,12 +112,15 @@ import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } f
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
 import { generateWorldEvents, tickWorldEvents, getWorldEventBOMultiplier, getWorldEventTalentCostMultiplier, getWorldEventBudgetMultiplier, getWorldEventQualityBonus, getWorldEventStreamingBonus, type ActiveWorldEvent } from './worldEvents';
+import { checkStoryEvents } from './storyEvents';
+import type { StoryEventOutcome } from './storyEvents';
 
 // R179: Composer cost lookup
 const COMPOSERS_COST: Record<string, number> = Object.fromEntries(
   getComposerOptions().map(c => [c.name, c.cost])
 );
 import { generateCriticReviews } from './criticReviews';
+import { getSeasonalBOMultiplier, getSeasonalQualityBonus } from './seasonalEvents';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
 import { getDifficultyConfig } from './difficulty';
@@ -196,6 +199,9 @@ function createInitialState(): GameState {
     activeWorldEvents: [],
     worldEventHistory: [],
     worldEventEndedThisSeason: [],
+    pendingStoryEvent: null,
+    firedStoryEventIds: [],
+    storyMoraleBonus: 0,
   };
 }
 
@@ -1912,7 +1918,10 @@ export function calculateQuality(s: GameState): {
   const directorStyleResult = getDirectorStyleBonus(s.seasonHistory, script.genre);
   const directorStyleQualityBonus = directorStyleResult.qualityBonus;
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus + moodBonus + directorStyleQualityBonus;
+  // R212: Story event morale bonus
+  const storyMorale = s.storyMoraleBonus || 0;
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus + eliteGlobalBonus + loyaltyBonus + moodBonus + directorStyleQualityBonus + storyMorale;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;
@@ -2261,6 +2270,9 @@ export function resolveRelease() {
   const isSequel = !!(state.sequelOrigins[script.title]);
   rawQuality += getWorldEventQualityBonus(state.activeWorldEvents, script.genre as Genre, script.cost);
 
+  // R210: Seasonal event quality bonus (real-world calendar)
+  rawQuality += getSeasonalQualityBonus(script.genre as Genre);
+
   // Challenge: Budget Hell — box office ×1.5
   if (state.challengeId === 'budget_hell') multiplier *= 1.5;
 
@@ -2277,6 +2289,10 @@ export function resolveRelease() {
   // R197: World event BO multiplier
   const worldEventBOMult = getWorldEventBOMultiplier(state.activeWorldEvents, script.genre as Genre, isSequel);
   boxOffice = Math.round(boxOffice * worldEventBOMult * 10) / 10;
+
+  // R210: Seasonal event BO multiplier (real-world calendar)
+  const seasonalBOMult = getSeasonalBOMultiplier(script.genre as Genre);
+  boxOffice = Math.round(boxOffice * seasonalBOMult * 10) / 10;
 
   // R197: World event streaming bonus (e.g. pandemic)
   const streamingWorldBonus = getWorldEventStreamingBonus(state.activeWorldEvents);

@@ -20,6 +20,7 @@ import { checkUnlockConditions, UNLOCKABLE_DEFS } from './unlockableContent';
 import type { UnlockableDef } from './unlockableContent';
 import DevStats from './components/DevStats';
 import WorldEventBanner from './components/WorldEventBanner';
+import SeasonalBanner from './components/SeasonalBanner';
 import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 import { sfx } from './sound';
@@ -240,6 +241,7 @@ function App() {
           <div className="weather-particle p4" />
         </div>
       )}
+      {state.phase !== 'start' && <SeasonalBanner />}
       {state.phase !== 'start' && <Header state={state} />}
       {state.phase !== 'start' && state.activeWorldEvents && state.activeWorldEvents.length > 0 && (
         <WorldEventBanner events={state.activeWorldEvents} currentSeason={state.season} />

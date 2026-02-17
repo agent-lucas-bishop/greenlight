@@ -7,9 +7,10 @@ import {
   getLifetimeStats, getRecentRuns, getDifficultyWinRates, getTrend,
   backfillFromLeaderboard, type RunStats, type LifetimeStats,
 } from '../statistics';
+import { getActiveSeasonalEvents, type SeasonalEvent } from '../seasonalEvents';
 import { sfx } from '../sound';
 
-type SubTab = 'overview' | 'records' | 'genres' | 'difficulty' | 'history';
+type SubTab = 'overview' | 'records' | 'genres' | 'difficulty' | 'history' | 'seasonal';
 
 const TREND_ICONS: Record<string, { icon: string; color: string; label: string }> = {
   up: { icon: '📈', color: '#2ecc71', label: 'Improving' },
@@ -53,6 +54,7 @@ export default function StatsDashboard() {
     { key: 'genres', label: '🎭 Genres' },
     { key: 'difficulty', label: '⚡ Difficulty' },
     { key: 'history', label: '📜 History' },
+    { key: 'seasonal', label: '📅 Seasonal' },
   ];
 
   return (
@@ -77,6 +79,7 @@ export default function StatsDashboard() {
       {subTab === 'genres' && <GenreSection stats={stats} />}
       {subTab === 'difficulty' && <DifficultySection />}
       {subTab === 'history' && <HistorySection expandedRun={expandedRun} setExpandedRun={setExpandedRun} />}
+      {subTab === 'seasonal' && <SeasonalSection />}
     </div>
   );
 }
@@ -554,6 +557,88 @@ export function EndScreenStatsSummary() {
             <div style={{ color: TREND_ICONS[trend.bo].color, fontSize: '0.5rem' }}>{TREND_ICONS[trend.bo].label}</div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Seasonal Events ───
+
+function SeasonalSection() {
+  const activeEvents = getActiveSeasonalEvents();
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const currentMonth = new Date().getMonth();
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ textAlign: 'center', marginBottom: 8 }}>
+        <div style={{ fontSize: '0.8rem', fontFamily: 'Bebas Neue', letterSpacing: '0.08em', color: '#aaa' }}>
+          📅 Current Month: {MONTH_NAMES[currentMonth]}
+        </div>
+        {activeEvents.length > 0 ? (
+          <div style={{ color: activeEvents[0].themeColor, fontSize: '0.75rem', marginTop: 4 }}>
+            {activeEvents.length} active event{activeEvents.length > 1 ? 's' : ''} right now!
+          </div>
+        ) : (
+          <div style={{ color: '#666', fontSize: '0.7rem', marginTop: 4 }}>No seasonal events active this month.</div>
+        )}
+      </div>
+
+      {/* Active events highlighted */}
+      {activeEvents.map((event: SeasonalEvent) => (
+        <div key={event.id} style={{
+          background: `${event.themeColor}15`,
+          border: `1px solid ${event.themeColor}50`,
+          borderRadius: 8, padding: 14,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: '1.2rem' }}>{event.emoji}</span>
+            <span style={{ fontFamily: 'Bebas Neue', fontSize: '0.85rem', color: event.themeColor, letterSpacing: '0.06em' }}>
+              {event.name}
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.6rem', color: '#888', background: '#222', borderRadius: 4, padding: '2px 6px' }}>
+              ACTIVE NOW
+            </span>
+          </div>
+          <div style={{ fontSize: '0.65rem', color: '#999', marginBottom: 6 }}>{event.description}</div>
+          <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', color: '#aaa', flexWrap: 'wrap' }}>
+            <span>Genres: <strong style={{ color: event.themeColor }}>{event.affectedGenres.join(', ')}</strong></span>
+            {event.boMultiplier !== 1.0 && <span>BO: <strong style={{ color: '#2ecc71' }}>×{event.boMultiplier.toFixed(2)}</strong></span>}
+            {event.qualityBonus > 0 && <span>Quality: <strong style={{ color: '#3b82f6' }}>+{event.qualityBonus}</strong></span>}
+            {event.criticBonus > 0 && <span>Critic: <strong style={{ color: '#d4a843' }}>+{event.criticBonus}</strong></span>}
+          </div>
+        </div>
+      ))}
+
+      {/* Full calendar */}
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: '0.7rem', fontFamily: 'Bebas Neue', color: '#888', letterSpacing: '0.08em', marginBottom: 8 }}>
+          Year-Round Calendar
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+          {MONTH_NAMES.map((name, i) => {
+            const events = getActiveSeasonalEvents(i);
+            const isNow = i === currentMonth;
+            return (
+              <div key={i} style={{
+                background: isNow ? 'rgba(212,168,67,0.1)' : '#1a1a1a',
+                border: `1px solid ${isNow ? 'var(--gold-dim)' : '#333'}`,
+                borderRadius: 6, padding: '6px 8px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '0.6rem', color: isNow ? 'var(--gold)' : '#888', fontFamily: 'Bebas Neue' }}>{name}</div>
+                {events.length > 0 ? (
+                  <div style={{ marginTop: 2 }}>
+                    {events.map(e => (
+                      <div key={e.id} style={{ fontSize: '0.85rem' }} title={e.name}>{e.emoji}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.55rem', color: '#444', marginTop: 2 }}>—</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

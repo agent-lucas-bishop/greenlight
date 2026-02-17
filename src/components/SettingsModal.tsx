@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { isMuted, setMuted, getVolume, setVolume, getSfxVolume, setSfxVolume } from '../sound';
 import { getStudioIdentity, setStudioIdentity, getRandomDefaultName, STUDIO_LOGOS, DEFAULT_STUDIO_NAMES, type StudioLogo } from '../studioIdentity';
+import { isStoryMomentsEnabled, setStoryMomentsEnabled } from '../cutscenes';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -120,6 +121,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   const [autoSave, setAutoSave] = useState(() => LS.getBool('greenlight-auto-save', true));
   const [confirmEndTurn, setConfirmEndTurn] = useState(() => LS.getBool('greenlight-confirm-end-turn', false));
   const [showTooltips, setShowTooltips] = useState(() => LS.getBool('greenlight-show-tooltips', true));
+  const [showStoryMoments, setShowStoryMoments] = useState(() => isStoryMomentsEnabled());
 
   // Data
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -166,6 +168,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   const handleAutoSave = (v: boolean) => { setAutoSave(v); LS.set('greenlight-auto-save', String(v)); };
   const handleConfirmEndTurn = (v: boolean) => { setConfirmEndTurn(v); LS.set('greenlight-confirm-end-turn', String(v)); };
   const handleShowTooltips = (v: boolean) => { setShowTooltips(v); LS.set('greenlight-show-tooltips', String(v)); };
+  const handleStoryMoments = (v: boolean) => { setShowStoryMoments(v); setStoryMomentsEnabled(v); };
 
   const handleExport = () => {
     const data: Record<string, string> = {};
@@ -315,6 +318,10 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             <Row>
               <Label htmlFor="tooltips-toggle" sub="Show helpful hints on hover">Show Tooltips</Label>
               <Toggle id="tooltips-toggle" checked={showTooltips} onChange={handleShowTooltips} label="Show tooltips" />
+            </Row>
+            <Row>
+              <Label htmlFor="story-moments-toggle" sub="Brief cinematic moments at key milestones">Show Story Moments</Label>
+              <Toggle id="story-moments-toggle" checked={showStoryMoments} onChange={handleStoryMoments} label="Show story moments" />
             </Row>
           </div>
         );

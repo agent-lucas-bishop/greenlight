@@ -7,6 +7,8 @@ import TutorialOverlay from './components/TutorialOverlay';
 import StudioFoundingNarrative from './components/StudioFoundingNarrative';
 import { shouldShowNarrative, markNarrativeShown } from './onboarding';
 import { isTutorialActive } from './tutorial';
+import { CUTSCENES, isStoryMomentsEnabled, hasCutsceneBeenSeen, type CutsceneData } from './cutscenes';
+import CutsceneOverlay from './components/CutsceneOverlay';
 import { getRandomTip } from './loadingTips';
 import LoadingScreen from './components/LoadingScreen';
 import { checkAchievements, persistAchievements } from './achievements';
@@ -45,6 +47,7 @@ function App() {
   const [seasonOverlayExit, setSeasonOverlayExit] = useState(false);
   const [seasonTip, setSeasonTip] = useState('');
   const [seasonHeadline, setSeasonHeadline] = useState('');
+  const [activeCutscene, setActiveCutscene] = useState<{ data: CutsceneData; vars?: Record<string, string> } | null>(null);
   
   useEffect(() => subscribe(() => setState(getState())), []);
 
@@ -81,6 +84,47 @@ function App() {
       markNarrativeShown();
     }
   }, [state.phase]);
+
+  // R183: Cutscene trigger system
+  useEffect(() => {
+    if (!isStoryMomentsEnabled()) return;
+    const s = state;
+    const tryShow = (id: string, vars?: Record<string, string>) => {
+      if (!hasCutsceneBeenSeen(id) && CUTSCENES[id]) {
+        setActiveCutscene({ data: CUTSCENES[id], vars });
+      }
+    };
+
+    // Game start: when entering first greenlight (season 1)
+    if (s.phase === 'greenlight' && s.season === 1 && s.seasonHistory.length === 0) {
+      tryShow('gameStart');
+    }
+
+    // First BLOCKBUSTER
+    if (s.phase === 'release' && s.lastTier === 'BLOCKBUSTER' && !s.seasonHistory.some(h => h.tier === 'BLOCKBUSTER')) {
+      tryShow('firstBlockbuster');
+    }
+
+    // First FLOP
+    if (s.phase === 'release' && s.lastTier === 'FLOP' && !s.seasonHistory.some(h => h.tier === 'FLOP')) {
+      tryShow('firstFlop');
+    }
+
+    // Nemesis appears
+    if (s.nemesisStudio && s.phase === 'release') {
+      tryShow('nemesisAppears', { rivalName: s.nemesisStudio });
+    }
+
+    // Endless mode start (season > maxSeasons in endless)
+    if (s.gameMode === 'endless' && s.phase === 'greenlight' && s.season === s.maxSeasons + 1) {
+      tryShow('endlessMode');
+    }
+
+    // Final season (non-endless)
+    if (s.gameMode !== 'endless' && s.phase === 'greenlight' && s.season === s.maxSeasons && s.season > 1) {
+      tryShow('finalSeason');
+    }
+  }, [state.phase, state.season, state.lastTier, state.nemesisStudio, state.gameMode]);
 
   // Season announcement overlay
   useEffect(() => {
@@ -210,6 +254,13 @@ function App() {
         <RetirementToast
           talentName={state.retirementNotification}
           onDone={clearRetirementNotification}
+        />
+      )}
+      {activeCutscene && (
+        <CutsceneOverlay
+          cutscene={activeCutscene.data}
+          vars={activeCutscene.vars}
+          onComplete={() => setActiveCutscene(null)}
         />
       )}
       <DevStats />

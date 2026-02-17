@@ -245,7 +245,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
 
       {/* Critic quote */}
       {phase >= 1 && criticQuote && (
-        <div className="animate-slide-down" style={{
+        <div className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.criticRevealSwoosh(); setTimeout(() => { if (lastResult && lastResult.tier !== 'FLOP') sfx.freshTomatoSplat(); else sfx.rottenSquish(); }, 300); } }} style={{
           marginTop: 12,
           padding: '10px 16px',
           background: 'rgba(255,255,255,0.03)',
@@ -264,7 +264,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
 
       {/* R179: Soundtrack card */}
       {phase >= 1 && state.postProdSoundtrack && (
-        <div className="animate-slide-down" style={{
+        <div className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.soundtrackQualityReveal(state.postProdSoundtrack!.qualityRating || 3); } }} style={{
           marginTop: 12,
           padding: '10px 16px',
           background: 'rgba(230, 126, 34, 0.08)',

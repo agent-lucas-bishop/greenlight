@@ -4049,8 +4049,134 @@ body::after {
 /* Awards — no particles, just prestigious glow */
 .weather-awards .weather-particle { display: none; }
 
+/* ── R183: Cutscene Overlay ─────────────────────────────────── */
+
+.cutscene-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cutscene-enter {
+  animation: cutsceneFadeIn 0.8s ease-out forwards;
+}
+.cutscene-exit {
+  animation: cutsceneFadeOut 0.5s ease-in forwards;
+}
+
+@keyframes cutsceneFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes cutsceneFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.cutscene-letterbox {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #000;
+  z-index: 1;
+}
+.cutscene-letterbox-top { top: 0; }
+.cutscene-letterbox-bottom { bottom: 0; }
+
+.cutscene-content {
+  position: relative;
+  z-index: 2;
+  max-width: 560px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.cutscene-line {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 1.25rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 8px 0;
+  letter-spacing: 0.02em;
+}
+
+.cutscene-line-done {
+  opacity: 0.5;
+}
+
+.cutscene-line-active {
+  opacity: 1;
+}
+
+.cutscene-cursor {
+  display: inline-block;
+  color: var(--gold, #d4a843);
+  animation: cutsceneBlink 0.7s step-end infinite;
+  font-size: 0.9em;
+  margin-left: 2px;
+  vertical-align: baseline;
+}
+
+@keyframes cutsceneBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cutscene-continue {
+  position: absolute;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold, #d4a843);
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  animation: cutscenePulse 2s ease-in-out infinite;
+}
+
+.cutscene-continue-arrow {
+  animation: cutsceneArrowBounce 1.2s ease-in-out infinite;
+}
+
+@keyframes cutscenePulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes cutsceneArrowBounce {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+.cutscene-skip-hint {
+  position: absolute;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .weather-particles { display: none !important; }
   .season-theme-icon { animation: none !important; }
+  .cutscene-cursor { animation: none !important; }
+  .cutscene-continue { animation: none !important; }
+  .cutscene-continue-arrow { animation: none !important; }
+  .cutscene-enter { animation: none !important; opacity: 1; }
+  .cutscene-exit { animation: none !important; opacity: 0; }
 }

@@ -1424,6 +1424,349 @@ export const sfx = {
     }, 'buildingUnlock');
   },
 
+  // ── R182: Critics (R173) ──
+
+  // Review reveal swoosh — quick sweep up
+  criticRevealSwoosh() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(200, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1200, c.currentTime + 0.15);
+      o.frequency.exponentialRampToValueAtTime(400, c.currentTime + 0.25);
+      g.gain.setValueAtTime(0.1, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.28);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.3);
+      noise(c, 0, 0.12, 0.06);
+    }, 'criticSwoosh');
+  },
+
+  // Fresh tomato splat — bright wet impact
+  freshTomatoSplat() {
+    play(c => {
+      // Wet splat: filtered noise burst
+      const buf = c.createBuffer(1, c.sampleRate * 0.2, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1400;
+      bp.Q.value = 1.2;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.15, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.18);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime); src.stop(c.currentTime + 0.2);
+      // Bright positive tone
+      note(c, 880, 0.02, 0.12, 0.08, 'sine');
+      note(c, 1175, 0.06, 0.1, 0.06, 'sine');
+    }, 'freshSplat');
+  },
+
+  // Rotten squish — low wet thud
+  rottenSquish() {
+    play(c => {
+      const buf = c.createBuffer(1, c.sampleRate * 0.25, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 600;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.14, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.22);
+      src.connect(lp).connect(g).connect(getMaster());
+      src.start(c.currentTime); src.stop(c.currentTime + 0.25);
+      note(c, 120, 0, 0.2, 0.12, 'sine');
+    }, 'rottenSquish');
+  },
+
+  // Critic consensus fanfare — dramatic reveal chord
+  criticConsensusFanfare() {
+    play(c => {
+      note(c, 392, 0, 0.2, 0.12, 'sawtooth');
+      note(c, 523, 0.08, 0.2, 0.12, 'sawtooth');
+      note(c, 659, 0.16, 0.25, 0.14, 'triangle');
+      note(c, 784, 0.24, 0.35, 0.12, 'triangle');
+      note(c, 1047, 0.32, 0.3, 0.08, 'sine');
+      noise(c, 0.15, 0.15, 0.06);
+    }, 'criticFanfare');
+  },
+
+  // ── R182: Card Abilities (R174) ──
+
+  // Ability activate shimmer — pitch varies by type
+  abilityActivate(abilityType?: string) {
+    play(c => {
+      const pitchMap: Record<string, number> = {
+        combo: 880, momentum: 1047, wildcard: 1175, insurance: 659, spotlight: 1319,
+      };
+      const base = pitchMap[abilityType || ''] || 988;
+      note(c, base, 0, 0.15, 0.1, 'sine');
+      note(c, base * 1.25, 0.05, 0.15, 0.1, 'sine');
+      note(c, base * 1.5, 0.1, 0.2, 0.12, 'sine');
+      note(c, base * 2, 0.15, 0.25, 0.06, 'sine');
+      noise(c, 0.1, 0.08, 0.03);
+    }, 'abilityActivate');
+  },
+
+  // Insurance block shield — protective resonant clang
+  insuranceBlockShield() {
+    play(c => {
+      note(c, 400, 0, 0.3, 0.18, 'sine');
+      note(c, 800, 0.01, 0.25, 0.14, 'sine');
+      note(c, 1200, 0.03, 0.2, 0.1, 'sine');
+      note(c, 200, 0, 0.4, 0.12, 'triangle');
+      noise(c, 0, 0.06, 0.12);
+      note(c, 1600, 0.08, 0.25, 0.05, 'sine');
+    }, 'insuranceShield');
+  },
+
+  // ── R182: Festivals (R176) ──
+
+  // Festival entry drum roll
+  festivalDrumRoll() {
+    play(c => {
+      // Rapid snare-like hits accelerating
+      for (let i = 0; i < 12; i++) {
+        const t = i * (0.06 - i * 0.003);
+        const v = 0.06 + i * 0.005;
+        noise(c, Math.max(0, t), 0.03, v);
+        note(c, 180 + i * 5, Math.max(0, t), 0.03, v * 0.6, 'square');
+      }
+      // Final hit
+      note(c, 100, 0.5, 0.3, 0.2, 'sine');
+      noise(c, 0.5, 0.08, 0.15);
+    }, 'drumRoll');
+  },
+
+  // Nomination chime — bright ascending
+  festivalNominationChime() {
+    play(c => {
+      note(c, 1047, 0, 0.15, 0.1, 'sine');
+      note(c, 1319, 0.08, 0.15, 0.1, 'sine');
+      note(c, 1568, 0.16, 0.2, 0.12, 'sine');
+      note(c, 2093, 0.24, 0.3, 0.08, 'sine');
+    }, 'festNomChime');
+  },
+
+  // Festival winner fanfare
+  festivalWinnerFanfare() {
+    play(c => {
+      note(c, 523, 0, 0.2, 0.14, 'sawtooth');
+      note(c, 659, 0.1, 0.2, 0.14, 'sawtooth');
+      note(c, 784, 0.2, 0.2, 0.14, 'triangle');
+      note(c, 1047, 0.3, 0.4, 0.16, 'sine');
+      note(c, 1568, 0.35, 0.35, 0.06, 'sine');
+      note(c, 2093, 0.4, 0.3, 0.04, 'sine');
+      noise(c, 0.25, 0.15, 0.06);
+    }, 'festWinner');
+  },
+
+  // Grand prize orchestral blast
+  festivalGrandPrize() {
+    play(c => {
+      // Deep bass impact
+      note(c, 55, 0, 0.8, 0.25, 'sine');
+      note(c, 82, 0, 0.6, 0.18, 'triangle');
+      // Brass stab
+      note(c, 220, 0.02, 0.5, 0.15, 'sawtooth');
+      note(c, 330, 0.04, 0.45, 0.12, 'sawtooth');
+      note(c, 440, 0.06, 0.4, 0.1, 'sawtooth');
+      // Resolve chord
+      note(c, 523, 0.2, 0.5, 0.12, 'triangle');
+      note(c, 659, 0.25, 0.45, 0.1, 'triangle');
+      note(c, 784, 0.3, 0.45, 0.1, 'triangle');
+      note(c, 1047, 0.35, 0.5, 0.08, 'sine');
+      // Cymbal wash
+      noise(c, 0.1, 0.5, 0.12);
+      // Shimmer cascade
+      note(c, 2093, 0.4, 0.4, 0.05, 'sine');
+      note(c, 2637, 0.45, 0.35, 0.04, 'sine');
+      note(c, 3520, 0.5, 0.3, 0.03, 'sine');
+    }, 'grandPrize');
+  },
+
+  // Laurel stamp — heavy stamp thud + metallic ring
+  festivalLaurelStamp() {
+    play(c => {
+      note(c, 70, 0, 0.3, 0.22, 'sine');
+      note(c, 140, 0, 0.15, 0.12, 'triangle');
+      noise(c, 0, 0.06, 0.18);
+      // Metallic ring
+      note(c, 1200, 0.03, 0.25, 0.06, 'sine');
+      note(c, 1800, 0.05, 0.2, 0.04, 'sine');
+    }, 'laurelStamp');
+  },
+
+  // ── R182: Endgame (R177) ──
+
+  // Hall of fame entrance theme — grand orchestral swell
+  hallOfFameEntrance() {
+    play(c => {
+      // String swell
+      note(c, 165, 0, 0.8, 0.1, 'sawtooth');
+      note(c, 220, 0, 0.8, 0.08, 'sawtooth');
+      note(c, 330, 0.1, 0.7, 0.08, 'sawtooth');
+      // Brass fanfare
+      note(c, 440, 0.3, 0.5, 0.12, 'sawtooth');
+      note(c, 523, 0.35, 0.45, 0.1, 'triangle');
+      note(c, 659, 0.4, 0.45, 0.1, 'triangle');
+      note(c, 784, 0.45, 0.5, 0.1, 'triangle');
+      // Resolve
+      note(c, 1047, 0.6, 0.6, 0.08, 'sine');
+      // Shimmer
+      noise(c, 0.3, 0.3, 0.06);
+      note(c, 2093, 0.65, 0.4, 0.04, 'sine');
+      note(c, 2637, 0.7, 0.35, 0.03, 'sine');
+    }, 'hofEntrance');
+  },
+
+  // Legacy film archive — projector whir + warm nostalgic tone
+  legacyFilmArchive() {
+    play(c => {
+      // Projector whir
+      const buf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 500;
+      bp.Q.value = 4;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.05, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.07, c.currentTime + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.55);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime); src.stop(c.currentTime + 0.6);
+      // Warm nostalgic chord
+      note(c, 262, 0.1, 0.5, 0.08, 'triangle');
+      note(c, 330, 0.15, 0.45, 0.06, 'triangle');
+      note(c, 392, 0.2, 0.4, 0.06, 'sine');
+    }, 'legacyArchive');
+  },
+
+  // Endless mode start drone — ominous building tone
+  endlessModeStartDrone() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(55, c.currentTime);
+      o.frequency.linearRampToValueAtTime(110, c.currentTime + 1.0);
+      g.gain.setValueAtTime(0.001, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.5);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.2);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 1.3);
+      // Sub-bass rumble
+      note(c, 40, 0, 1.0, 0.08, 'sine');
+      // High tension tone
+      note(c, 880, 0.4, 0.6, 0.03, 'sine');
+      note(c, 1175, 0.6, 0.5, 0.02, 'sine');
+    }, 'endlessDrone');
+  },
+
+  // Milestone unlock celebration — bright triumphant chime
+  milestoneUnlockCelebration() {
+    play(c => {
+      note(c, 784, 0, 0.15, 0.12, 'sine');
+      note(c, 988, 0.08, 0.15, 0.12, 'sine');
+      note(c, 1175, 0.16, 0.15, 0.12, 'sine');
+      note(c, 1568, 0.24, 0.3, 0.15, 'sine');
+      // Sparkle
+      note(c, 2637, 0.3, 0.25, 0.06, 'sine');
+      note(c, 3520, 0.35, 0.2, 0.04, 'sine');
+      noise(c, 0.25, 0.1, 0.04);
+    }, 'milestoneUnlock');
+  },
+
+  // ── R182: Soundtrack (R179) ──
+
+  // Composer hiring confirmation — musical cha-ching
+  composerHireConfirm() {
+    play(c => {
+      // Musical notes (like a short melody)
+      note(c, 523, 0, 0.12, 0.1, 'sine');
+      note(c, 659, 0.08, 0.12, 0.1, 'sine');
+      note(c, 784, 0.16, 0.15, 0.12, 'sine');
+      // Confirmation chime
+      note(c, 1047, 0.25, 0.2, 0.08, 'sine');
+      note(c, 1568, 0.3, 0.15, 0.05, 'sine');
+    }, 'composerHire');
+  },
+
+  // Soundtrack quality reveal — scales with rating (1-5)
+  soundtrackQualityReveal(rating: number) {
+    play(c => {
+      // More notes and higher pitch for better ratings
+      const baseFreq = 400 + rating * 60;
+      const vol = 0.06 + rating * 0.015;
+      for (let i = 0; i < Math.min(rating + 1, 6); i++) {
+        note(c, baseFreq + i * 120, i * 0.08, 0.2, vol, 'sine');
+      }
+      // Shimmer for high ratings
+      if (rating >= 3) {
+        note(c, 2093, 0.3, 0.25, 0.04, 'sine');
+      }
+      if (rating >= 4) {
+        note(c, 2637, 0.35, 0.2, 0.03, 'sine');
+        note(c, 3520, 0.4, 0.15, 0.02, 'sine');
+      }
+    }, 'soundtrackReveal');
+  },
+
+  // ── R182: Rivals (R180) ──
+
+  // Nemesis theme — ominous dark motif
+  nemesisTheme() {
+    play(c => {
+      // Dark tritone (devil's interval)
+      note(c, 110, 0, 0.5, 0.15, 'sawtooth');
+      note(c, 156, 0.05, 0.45, 0.12, 'sawtooth'); // tritone of A2
+      // Low rumble
+      note(c, 55, 0, 0.6, 0.1, 'sine');
+      // Creeping high tone
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(440, c.currentTime + 0.2);
+      o.frequency.linearRampToValueAtTime(466, c.currentTime + 0.6); // quarter-tone bend
+      g.gain.setValueAtTime(0.04, c.currentTime + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.7);
+      o.connect(g).connect(getMaster());
+      o.start(c.currentTime + 0.2); o.stop(c.currentTime + 0.75);
+      noise(c, 0, 0.1, 0.08);
+    }, 'nemesis');
+  },
+
+  // Rival leaderboard reveal — sequential reveal cascade
+  rivalLeaderboardReveal() {
+    play(c => {
+      // Ticker-tape ascending pings
+      for (let i = 0; i < 5; i++) {
+        note(c, 600 + i * 100, i * 0.1, 0.08, 0.08, 'triangle');
+      }
+      // Drum roll underneath
+      for (let i = 0; i < 8; i++) {
+        noise(c, i * 0.06, 0.03, 0.04 + i * 0.003);
+      }
+      // Final reveal chord
+      note(c, 523, 0.5, 0.3, 0.1, 'triangle');
+      note(c, 659, 0.5, 0.3, 0.08, 'triangle');
+      note(c, 784, 0.5, 0.3, 0.08, 'triangle');
+      note(c, 1047, 0.55, 0.25, 0.06, 'sine');
+    }, 'rivalReveal');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

@@ -26,6 +26,7 @@ const ProductionScreen = lazy(() => import('./screens/ProductionScreen'));
 const PostProductionScreen = lazy(() => import('./screens/PostProductionScreen'));
 const ReleaseScreen = lazy(() => import('./screens/ReleaseScreen'));
 const ShopScreen = lazy(() => import('./screens/ShopScreen'));
+const CardWorkshop = lazy(() => import('./components/CardWorkshop'));
 const EventScreen = lazy(() => import('./screens/EventScreen'));
 const EndScreen = lazy(() => import('./screens/EndScreen'));
 
@@ -73,7 +74,7 @@ function App() {
 
   // Season announcement overlay
   useEffect(() => {
-    if (state.phase === 'greenlight' && state.season > 1 && (prevPhase === 'shop' || prevPhase === 'event')) {
+    if (state.phase === 'greenlight' && state.season > 1 && (prevPhase === 'shop' || prevPhase === 'event' || prevPhase === 'workshop')) {
       setSeasonOverlay(state.season);
       setSeasonOverlayExit(false);
       setSeasonTip(getRandomTip());
@@ -137,6 +138,7 @@ function App() {
         return <ReleaseScreen state={state} rivalFilms={latestRivals?.films || []} />;
       }
       case 'shop': return <ShopScreen state={state} />;
+      case 'workshop': return <CardWorkshop state={state} />;
       case 'event': return <EventScreen state={state} />;
       case 'gameOver': return <EndScreen state={state} type="gameover" />;
       case 'victory': return <EndScreen state={state} type="victory" />;

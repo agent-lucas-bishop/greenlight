@@ -303,6 +303,11 @@ function getAchievements(state: GameState): { icon: string; name: string; desc: 
   if (history.length >= 2 && history.slice(-2).every(h => h.tier === 'FLOP')) a.push({ icon: '💀', name: 'Death Spiral', desc: '2 flops in a row' });
   if (state.reputation >= 5) a.push({ icon: '👑', name: 'A-List Studio', desc: 'Reached max reputation' });
 
+  // R136: Franchise King — build a 3-film franchise in a single run
+  if (state.franchises && Object.values(state.franchises).some(f => f.films.length >= 3)) {
+    a.push({ icon: '🎬', name: 'Franchise King', desc: 'Built a 3-film franchise' });
+  }
+
   return a;
 }
 
@@ -688,6 +693,31 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ─── FRANCHISES ─── */}
+      {phase >= 3 && state.franchises && Object.keys(state.franchises).length > 0 && (
+        <div style={{ marginTop: 24 }} className="animate-slide-down">
+          <h3 style={{ color: '#e67e22', marginBottom: 12, letterSpacing: 1 }}>🎬 FRANCHISES</h3>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {Object.values(state.franchises).filter(f => f.films.length >= 2).map((f, i) => (
+              <div key={i} style={{
+                background: 'rgba(230,126,34,0.1)', border: '1px solid rgba(230,126,34,0.3)',
+                borderRadius: 8, padding: '10px 16px', textAlign: 'center', minWidth: 140,
+              }}>
+                <div style={{ color: '#e67e22', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>
+                  {f.rootTitle} ({f.films.length} films)
+                </div>
+                <div style={{ color: '#888', fontSize: '0.75rem', marginTop: 4 }}>
+                  Total BO: ${f.totalBoxOffice.toFixed(1)}M
+                </div>
+                <div style={{ color: '#666', fontSize: '0.65rem', marginTop: 2 }}>
+                  {f.films.map(ff => ff.title).join(' → ')}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

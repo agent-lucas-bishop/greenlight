@@ -1917,6 +1917,19 @@ export function resolveRelease() {
   const currentRep = state.reputation;
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
+  // R136: Franchise sequel multiplier bonus & fatigue
+  const franchiseRootForMult = state.sequelOrigins[script.title];
+  if (franchiseRootForMult && state.franchises[franchiseRootForMult]) {
+    const f = state.franchises[franchiseRootForMult];
+    // Inherit 50% of original's market multiplier as a bonus
+    multiplier += f.lastMarketMultiplier * 0.5;
+    // Franchise Fatigue: 4th sequel (5th+ film) gets -0.2 multiplier
+    const filmNum = f.sequelNumber + 1; // this is the next film in the franchise
+    if (filmNum >= 4) {
+      multiplier -= 0.2 * (filmNum - 3);
+    }
+  }
+
   // Challenge: Budget Hell — box office ×1.5
   if (state.challengeId === 'budget_hell') multiplier *= 1.5;
 
@@ -2024,22 +2037,81 @@ export function resolveRelease() {
     nominated,
   };
 
-  // Legendary script: The Franchise — BLOCKBUSTER+ generates a free sequel script next season
+  // ─── R136: FRANCHISE / SEQUEL SYSTEM ───
   let pendingSequelScript = state.pendingSequelScript;
-  if (script.ability === 'franchise' && tier === 'BLOCKBUSTER') {
+  let franchises = { ...state.franchises };
+  let sequelOrigins = { ...state.sequelOrigins };
+  const filmTitle_ = generateFilmTitle(script.genre, prod.tagsPlayed);
+
+  // Determine franchise root title for this film
+  const franchiseRoot = sequelOrigins[script.title] || null;
+
+  // Update franchise tracker if this film is part of a franchise
+  if (franchiseRoot && franchises[franchiseRoot]) {
+    const f = { ...franchises[franchiseRoot] };
+    f.films = [...f.films, { title: script.title, season: state.season, quality: rawQuality, boxOffice, tier }];
+    f.totalBoxOffice += boxOffice;
+    f.sequelNumber = f.films.length;
+    f.lastQuality = rawQuality;
+    f.lastCost = script.cost;
+    f.lastMarketMultiplier = multiplier;
+    franchises[franchiseRoot] = f;
+  }
+
+  // Generate sequel if SMASH HIT or BLOCKBUSTER
+  if (tier === 'SMASH' || tier === 'BLOCKBUSTER') {
+    const rootTitle = franchiseRoot || script.title;
+
+    // Create franchise entry if this is the first film
+    if (!franchises[rootTitle]) {
+      franchises[rootTitle] = {
+        rootTitle,
+        genre: script.genre as Genre,
+        films: [{ title: script.title, season: state.season, quality: rawQuality, boxOffice, tier }],
+        totalBoxOffice: boxOffice,
+        sequelNumber: 1,
+        lastQuality: rawQuality,
+        lastCost: script.cost,
+        lastMarketMultiplier: multiplier,
+      };
+    }
+
+    const franchise = franchises[rootTitle];
+    const sequelNum = franchise.sequelNumber + 1;
+    const suffixes = ['II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    const suffix = suffixes[sequelNum - 2] || `${sequelNum}`;
+    const sequelTitle = `${rootTitle} ${suffix}`;
+
+    // Sequel quality: original quality × 0.7 (diminishing returns)
+    let sequelBaseScore = Math.round(franchise.lastQuality * 0.7);
+    // Franchise Fatigue: after the 2nd sequel (3rd+ film), -5 base quality per sequel beyond 2nd
+    if (sequelNum > 2) {
+      sequelBaseScore -= (sequelNum - 2) * 5;
+    }
+    sequelBaseScore = Math.max(1, sequelBaseScore);
+
+    // Sequel cost: original cost + $2M
+    const sequelCost = franchise.lastCost + 2;
+
+    // Legendary script: The Franchise — BLOCKBUSTER generates a free sequel
+    const isFranchiseAbility = script.ability === 'franchise' && tier === 'BLOCKBUSTER';
+
     pendingSequelScript = {
-      id: `sequel-${script.id}-${Date.now()}`,
-      title: `${script.title} II`,
+      id: `sequel-${rootTitle}-${sequelNum}-${Date.now()}`,
+      title: sequelTitle,
       genre: script.genre as Genre,
-      baseScore: script.baseScore + 5,
+      baseScore: isFranchiseAbility ? sequelBaseScore + 5 : sequelBaseScore,
       slots: script.slots,
-      cost: 0, // free sequel!
+      cost: isFranchiseAbility ? 0 : sequelCost,
       cards: script.cards,
       ability: script.ability,
-      abilityDesc: script.abilityDesc,
-      legendary: true,
+      abilityDesc: `Sequel to ${rootTitle}. Inherits ${Math.round(franchise.lastMarketMultiplier * 50)}% market bonus.`,
+      legendary: isFranchiseAbility,
       keywordTags: script.keywordTags,
     };
+
+    // Track sequel origin so we can link it back to the franchise
+    sequelOrigins[sequelTitle] = rootTitle;
   }
 
   let newRoster = [...state.roster];
@@ -2150,6 +2222,8 @@ export function resolveRelease() {
     activeSeasonEvent: null,
     streamingDealActive: false,
     pendingSequelScript,
+    franchises,
+    sequelOrigins,
   });
 }
 

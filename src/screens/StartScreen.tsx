@@ -872,7 +872,7 @@ export default function StartScreen() {
               </button>
             )}
             {isEndlessUnlocked() && (
-              <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { clearSave(); markRunStarted(); setSelectedMode('endless' as any); setSelectedChallenge(undefined); setSelectedDifficulty('mogul'); setShowArchetypes(true); }}>
+              <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { sfx.endlessModeStartDrone(); clearSave(); markRunStarted(); setSelectedMode('endless' as any); setSelectedChallenge(undefined); setSelectedDifficulty('mogul'); setShowArchetypes(true); }}>
                 ♾️ ENDLESS MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(No season limit)</span>
               </button>
             )}

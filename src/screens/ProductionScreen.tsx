@@ -302,6 +302,14 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         setCombo(0);
       }
       
+      // R182: Card ability activation sounds
+      if (newCard.abilityActivated && newCard.ability) {
+        setTimeout(() => {
+          if (newCard.ability === 'insurance') sfx.insuranceBlockShield();
+          else sfx.abilityActivate(newCard.ability);
+        }, 200);
+      }
+
       // Quality punch animation
       setQualityPunch(true);
       setTimeout(() => setQualityPunch(false), 300);

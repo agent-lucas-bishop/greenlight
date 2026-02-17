@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { sfx } from '../sound';
 import {
   getHallOfFameTop10,
   getHallOfFameByEarnings,
@@ -28,6 +29,15 @@ export default function HallOfFameTab() {
   const milestones = getMilestoneProgress();
   const activeTitles = getActiveTitles();
   const endlessLb = getEndlessLeaderboard();
+
+  // R182: Play entrance theme on first mount
+  const entrancePlayed = useRef(false);
+  useEffect(() => {
+    if (!entrancePlayed.current && top10.length > 0) {
+      entrancePlayed.current = true;
+      sfx.hallOfFameEntrance();
+    }
+  }, []);
 
   const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' };
   const tierColors: Record<string, string> = { BLOCKBUSTER: '#2ecc71', SMASH: '#f1c40f', HIT: '#e67e22', FLOP: '#e74c3c' };
@@ -123,7 +133,7 @@ export default function HallOfFameTab() {
           borderRadius: 6, padding: '6px 14px', color: sortMode === 'earnings' ? 'var(--gold)' : '#666',
           cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.8rem',
         }}>By Earnings</button>
-        <button onClick={() => setShowLegacy(!showLegacy)} style={{
+        <button onClick={() => { if (!showLegacy) sfx.legacyFilmArchive(); setShowLegacy(!showLegacy); }} style={{
           background: showLegacy ? 'rgba(155,89,182,0.15)' : 'transparent',
           border: `1px solid ${showLegacy ? 'rgba(155,89,182,0.4)' : '#333'}`,
           borderRadius: 6, padding: '6px 14px', color: showLegacy ? '#bb86fc' : '#666',

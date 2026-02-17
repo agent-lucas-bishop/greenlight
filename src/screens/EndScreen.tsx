@@ -918,10 +918,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
       {/* ─── RIVAL LEADERBOARD (R180) ─── */}
       {phase >= 4 && rivalStandings.length > 0 && (
-        <div style={{ marginTop: 24 }} className="animate-slide-down">
+        <div style={{ marginTop: 24 }} className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.rivalLeaderboardReveal(); } }}>
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏢 INDUSTRY LEADERBOARD</h3>
           {state.nemesisStudio && (
-            <div style={{ textAlign: 'center', marginBottom: 8, fontSize: '0.75rem', color: '#e74c3c', fontStyle: 'italic' }}>
+            <div ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.nemesisTheme(); } }} style={{ textAlign: 'center', marginBottom: 8, fontSize: '0.75rem', color: '#e74c3c', fontStyle: 'italic' }}>
               ⚔️ Nemesis: {state.nemesisStudio}
             </div>
           )}

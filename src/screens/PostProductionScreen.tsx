@@ -34,7 +34,7 @@ export default function PostProductionScreen({ state }: { state: GameState }) {
 
   const handleHireComposer = (name: string, cost: number) => {
     if (cost > state.budget) return;
-    sfx.click();
+    sfx.composerHireConfirm();
     setSelectedComposer(name);
     hireComposer(name, cost);
     setPhase('postprod');

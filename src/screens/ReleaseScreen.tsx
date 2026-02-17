@@ -245,7 +245,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
 
       {/* Critic quote */}
       {phase >= 1 && criticQuote && (
-        <div className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.criticRevealSwoosh(); setTimeout(() => { if (lastResult && lastResult.tier !== 'FLOP') sfx.freshTomatoSplat(); else sfx.rottenSquish(); }, 300); } }} style={{
+        <div className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.criticRevealSwoosh(); setTimeout(() => { if (lastResult && lastResult.tier !== 'FLOP') { sfx.freshTomatoSplat(); if (lastResult.tier === 'BLOCKBUSTER') setTimeout(() => sfx.criticConsensusFanfare(), 300); } else sfx.rottenSquish(); }, 300); } }} style={{
           marginTop: 12,
           padding: '10px 16px',
           background: 'rgba(255,255,255,0.03)',

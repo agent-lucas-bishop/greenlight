@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { GameState } from '../types';
 import { submitToFestival, skipFestival } from '../gameStore';
 import { canSubmitToFestival, getFestival, getAwardLabel, getLaurelBadge, type FestivalId } from '../filmFestivals';
@@ -17,7 +17,7 @@ export default function FestivalScreen({ state }: { state: GameState }) {
 
   const handleSubmit = () => {
     if (!selectedFestival || filmIndex < 0) return;
-    sfx.click();
+    sfx.festivalDrumRoll();
     setSubmitted(true);
     submitToFestival(selectedFestival, filmIndex);
   };
@@ -33,6 +33,17 @@ export default function FestivalScreen({ state }: { state: GameState }) {
   };
 
   // Show result screen after submission
+  // Play festival result sound once
+  const festSoundPlayed = useRef(false);
+  useEffect(() => {
+    if (result && !festSoundPlayed.current) {
+      festSoundPlayed.current = true;
+      if (result.award === 'grandPrize') setTimeout(() => sfx.festivalGrandPrize(), 100);
+      else if (result.award === 'winner') setTimeout(() => { sfx.festivalWinnerFanfare(); setTimeout(() => sfx.festivalLaurelStamp(), 400); }, 100);
+      else if (result.award === 'nomination') setTimeout(() => sfx.festivalNominationChime(), 100);
+    }
+  }, [result]);
+
   if (result) {
     const awardColor = result.award === 'grandPrize' ? '#f1c40f' : result.award === 'winner' ? '#2ecc71' : result.award === 'nomination' ? '#3498db' : '#e74c3c';
     return (

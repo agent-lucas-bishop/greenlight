@@ -9,6 +9,7 @@ import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
 import { careerTrackRunEnd } from '../careerAnalytics';
 import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, hasMilestone, type RunXPData } from '../prestige';
+import { awardMetaXP, getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, canPrestige, performPrestige, getPrestigeBadgeEmoji, type MetaRunXPInput, type MetaXPResult } from '../metaProgression';
 import { recordGenreMasteryFilms } from '../genreMastery';
 import { recordZeroFlopsRun, recordAllModifiersWin } from '../unlockableContent';
 import { getStudioLegacy, type StudioLegacy } from '../studioLegacy';
@@ -400,6 +401,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
   const [prestigeResult, setPrestigeResult] = useState<ReturnType<typeof awardRunXP> | null>(null);
+  const [metaResult, setMetaResult] = useState<MetaXPResult | null>(null);
+  const [showPrestigeConfirm, setShowPrestigeConfirm] = useState(false);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
     history,
@@ -446,7 +449,9 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   }, []);
 
   useEffect(() => {
-    if (isVictory) sfx.victory(); else sfx.flop();
+    if (state.gameMode === 'daily') {
+      sfx.dailyChallengeComplete();
+    } else if (isVictory) sfx.victory(); else sfx.flop();
     const timers = [
       setTimeout(() => setPhase(1), 600),
       setTimeout(() => setPhase(2), 1400),
@@ -513,6 +518,13 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       // Daily challenge: update streak and history
       if (state.gameMode === 'daily') {
         updateDailyStreak();
+        // R170: Streak milestone sound every 7 days
+        try {
+          const u = JSON.parse(localStorage.getItem('greenlight_unlocks') || '{}');
+          if (u.dailyStreak?.current && u.dailyStreak.current % 7 === 0) {
+            setTimeout(() => sfx.streakMilestone(), 1200);
+          }
+        } catch {}
         completeDailyAttempt(score);
         addDailyHistoryEntry({
           date: new Date().toISOString().slice(0, 10),
@@ -555,6 +567,15 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       const pResult = awardRunXP(xpData);
       setPrestigeResult(pResult);
       if (pResult.leveledUp) setTimeout(() => sfx.prestigeUp(), 3600);
+      // R171: Meta-progression XP
+      const metaInput: MetaRunXPInput = {
+        score,
+        filmCount: history.length,
+        achievementCount: achievements.length,
+        isVictory,
+      };
+      const mResult = awardMetaXP(metaInput);
+      setMetaResult(mResult);
       // Record personal bests
       const modifierNames: string[] = [];
       if (state.dailyModifierId) { const m = getModifierById(state.dailyModifierId); if (m) modifierNames.push(m.name); }
@@ -992,6 +1013,149 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         </div>
       )}
+
+      {/* ─── META-PROGRESSION (R171) ─── */}
+      {phase >= 6 && metaResult && (() => {
+        const meta = getMetaProgression();
+        const xpProg = getMetaXPProgress(meta.xp);
+        const nextLvl = getNextMetaLevel(meta.xp);
+        const prestigeBadge = getPrestigeBadgeEmoji(meta.prestigeCount);
+        return (
+          <div className="animate-slide-down" style={{ marginTop: 24 }}>
+            <h3 style={{ color: '#9b59b6', marginBottom: 12, letterSpacing: 1 }}>🎬 STUDIO PROGRESSION</h3>
+            <div style={{
+              background: 'rgba(155,89,182,0.08)', border: '1px solid rgba(155,89,182,0.3)',
+              borderRadius: 12, padding: '16px 20px', maxWidth: 420, margin: '0 auto',
+            }}>
+              {/* Level display */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: '1.5rem' }}>{metaResult.newLevel.emoji}</span>
+                <span style={{ color: '#9b59b6', fontFamily: 'Bebas Neue', fontSize: '1.3rem' }}>
+                  {metaResult.newLevel.title}
+                </span>
+                <span style={{ color: '#999', fontSize: '0.75rem' }}>Lv.{metaResult.newLevel.level}/20</span>
+                {prestigeBadge && <span style={{ fontSize: '1.2rem' }}>{prestigeBadge}</span>}
+              </div>
+
+              {/* Level up notification */}
+              {metaResult.leveledUp && (
+                <div style={{
+                  background: 'rgba(46,204,113,0.15)', border: '1px solid #2ecc71',
+                  borderRadius: 8, padding: '8px 12px', marginBottom: 12, textAlign: 'center',
+                  color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1rem',
+                  animation: 'comboAppear 0.5s ease',
+                }}>
+                  🎉 LEVEL UP! Lv.{metaResult.oldLevel.level} → Lv.{metaResult.newLevel.level}
+                  <GoldenBurst />
+                </div>
+              )}
+
+              {/* New unlocks */}
+              {metaResult.unlocksGained.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  {metaResult.unlocksGained.map((u, i) => (
+                    <div key={i} style={{
+                      background: 'rgba(155,89,182,0.15)', border: '1px solid rgba(155,89,182,0.4)',
+                      borderRadius: 6, padding: '6px 10px', marginBottom: 4, textAlign: 'center',
+                      color: '#bb86fc', fontSize: '0.8rem',
+                    }}>
+                      🔓 {u}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* XP gained */}
+              <div style={{ color: '#9b59b6', fontFamily: 'Bebas Neue', fontSize: '1.1rem', textAlign: 'center', marginBottom: 8 }}>
+                +{metaResult.xpGained} Studio XP
+              </div>
+
+              {/* XP breakdown */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', marginBottom: 12 }}>
+                {metaResult.breakdown.map((b, i) => (
+                  <span key={i} style={{
+                    fontSize: '0.65rem', color: '#888', background: 'rgba(255,255,255,0.05)',
+                    padding: '2px 8px', borderRadius: 4,
+                  }}>
+                    {b.label}: +{b.xp}
+                  </span>
+                ))}
+              </div>
+
+              {/* XP progress bar */}
+              {nextLvl && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#888', marginBottom: 4 }}>
+                    <span>Lv.{metaResult.newLevel.level}</span>
+                    <span>{xpProg.earned}/{xpProg.needed} XP</span>
+                    <span>Lv.{nextLvl.level}</span>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                    <div style={{
+                      background: 'linear-gradient(90deg, #9b59b6, #bb86fc)',
+                      height: '100%', width: `${xpProg.progress * 100}%`,
+                      borderRadius: 4, transition: 'width 1s ease',
+                    }} />
+                  </div>
+                </div>
+              )}
+              {!nextLvl && (
+                <div style={{ textAlign: 'center', color: '#ffd700', fontSize: '0.8rem', fontFamily: 'Bebas Neue' }}>
+                  ✨ MAX LEVEL — STUDIO LEGEND ✨
+                </div>
+              )}
+
+              {/* Prestige button */}
+              {canPrestige() && !showPrestigeConfirm && (
+                <button className="btn" onClick={() => setShowPrestigeConfirm(true)} style={{
+                  marginTop: 8, background: 'rgba(255,215,0,0.15)', border: '1px solid #ffd700',
+                  color: '#ffd700', padding: '8px 20px', fontSize: '0.85rem', cursor: 'pointer',
+                  fontFamily: 'Bebas Neue', letterSpacing: 1, width: '100%',
+                }}>
+                  👑 PRESTIGE (Reset to Lv.1 for permanent badge + bonus)
+                </button>
+              )}
+              {showPrestigeConfirm && (
+                <div style={{
+                  background: 'rgba(255,215,0,0.1)', border: '2px solid #ffd700',
+                  borderRadius: 8, padding: '12px', marginTop: 8, textAlign: 'center',
+                }}>
+                  <div style={{ color: '#ffd700', fontSize: '0.85rem', marginBottom: 8 }}>
+                    Reset to Level 1? You'll keep a permanent badge and +5% XP bonus.
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                    <button className="btn" onClick={() => {
+                      const result = performPrestige();
+                      if (result.success) {
+                        setMetaResult(prev => prev ? { ...prev, newLevel: getMetaLevel(0) } : prev);
+                        setShowPrestigeConfirm(false);
+                      }
+                    }} style={{
+                      background: 'rgba(255,215,0,0.2)', border: '1px solid #ffd700',
+                      color: '#ffd700', padding: '6px 16px', cursor: 'pointer',
+                    }}>
+                      ✅ Prestige!
+                    </button>
+                    <button className="btn" onClick={() => setShowPrestigeConfirm(false)} style={{
+                      background: 'rgba(255,255,255,0.05)', border: '1px solid #666',
+                      color: '#999', padding: '6px 16px', cursor: 'pointer',
+                    }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Prestige count display */}
+              {meta.prestigeCount > 0 && (
+                <div style={{ textAlign: 'center', marginTop: 8, color: '#ffd700', fontSize: '0.75rem' }}>
+                  {Array.from({ length: meta.prestigeCount }, (_, i) => getPrestigeBadgeEmoji(i + 1)).join(' ')} Prestige {meta.prestigeCount}/{5}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ─── DAILY/WEEKLY SCORE BREAKDOWN ─── */}
       {phase >= 3 && (state.gameMode === 'daily' || state.gameMode === 'weekly') && (() => {

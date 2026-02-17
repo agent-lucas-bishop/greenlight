@@ -98,10 +98,10 @@ function WorkshopCard({ card, isSelected, onClick }: { card: ProductionCard; isS
 
 function UpgradePanel({ card, budget, onDone }: { card: ProductionCard; budget: number; onDone: () => void }) {
   const actions = [
-    { label: '⬆️ Enhance (+3 quality)', cost: 2, action: () => workshopEnhance(card.id), available: true },
+    { label: '⬆️ Enhance (+3 quality)', cost: 2, action: () => { sfx.workshopEnhance(); workshopEnhance(card.id); }, available: true },
     { label: '🔄 Transmute (change type)', cost: 3, action: null as (() => void) | null, available: true, isTransmute: true },
-    { label: '🗑️ Remove (thin deck)', cost: 1, action: () => { workshopRemove(card.id); onDone(); }, available: true },
-    { label: '📋 Duplicate (copy card)', cost: 4, action: () => workshopDuplicate(card.id), available: true },
+    { label: '🗑️ Remove (thin deck)', cost: 1, action: () => { sfx.workshopRemove(); workshopRemove(card.id); onDone(); }, available: true },
+    { label: '📋 Duplicate (copy card)', cost: 4, action: () => { sfx.workshopDuplicate(); workshopDuplicate(card.id); }, available: true },
   ];
 
   return (
@@ -139,7 +139,7 @@ function TransmuteButtons({ card, budget, cost }: { card: ProductionCard; budget
             key={t}
             className="btn"
             disabled={budget < cost}
-            onClick={() => { sfx.purchase(); workshopTransmute(card.id, t); }}
+            onClick={() => { sfx.workshopTransmute(); workshopTransmute(card.id, t); }}
             style={{ fontSize: '0.7rem', flex: 1, opacity: budget < cost ? 0.4 : 1 }}
           >
             {t.toUpperCase()}

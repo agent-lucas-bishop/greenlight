@@ -105,6 +105,7 @@ import { careerSessionStart, careerTrackTalentHire, careerTrackFilmComplete } fr
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
+import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
@@ -693,6 +694,8 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   if (state.gameMode === 'daily' && legacyPerks.some(p => p.effect === 'dailyBudget3')) budget += 3;
   // R128: Prestige milestone P8 — +$2M bonus budget
   if (hasMilestone('budget_bonus')) budget += 2;
+  // R171: Meta-progression budget bonus (Level 5: +$1M, plus prestige stacking)
+  budget += getMetaBudgetBonus();
   // R128: Legacy run bonuses — $1M per 2 prestige levels
   const legacyBonuses = getLegacyRunBonuses();
   budget += legacyBonuses.budgetBonus;
@@ -741,7 +744,7 @@ export function pickNeow(choice: number) {
   // R128: Legacy run bonuses — +1 starting reputation per prestige level (cap +5)
   const legacyRunBonuses = getLegacyRunBonuses();
   const diffConfigNeow = getDifficultyConfig(state.difficulty);
-  const startReputation = Math.min(diffConfigNeow.startReputation + legacyRunBonuses.reputationBonus + getRetirementRepBonus(), 5);
+  const startReputation = Math.min(diffConfigNeow.startReputation + legacyRunBonuses.reputationBonus + getRetirementRepBonus() + getMetaReputationBonus(), 5);
   setState({ neowChoice: choice, roster, budget, perks, genreMastery, reputation: startReputation, phase: 'greenlight' as GamePhase });
   beginSeason();
 }
@@ -766,7 +769,7 @@ function beginSeason() {
   }
   const devSlate = state.perks.some(p => p.effect === 'devSlate');
   const secondUnit = state.perks.some(p => p.effect === 'secondUnit');
-  const baseScriptCount = 3 + (devSlate ? 1 : 0) + (secondUnit ? 1 : 0);
+  const baseScriptCount = 3 + (devSlate ? 1 : 0) + (secondUnit ? 1 : 0) + getExtraStartingScripts();
   let scripts = generateScripts(baseScriptCount, state.season);
   // Typecast challenge: only show scripts matching locked genre
   if (state.challengeId === 'typecast' && state.lockedGenre) {

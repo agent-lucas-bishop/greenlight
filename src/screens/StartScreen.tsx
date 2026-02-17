@@ -31,6 +31,7 @@ const StatsPanel = lazy(() => import('../components/StatsPanel'));
 const FilmArchive = lazy(() => import('../components/FilmArchive'));
 const CareerStatsDashboard = lazy(() => import('../components/CareerStatsDashboard'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
+import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
 import { getAllUnlockableStatus } from '../unlockableContent';
@@ -636,6 +637,59 @@ export default function StartScreen() {
         );
       })()}
 
+      {/* R171: Meta-Progression Level & XP Bar */}
+      {stats.runs > 0 && (() => {
+        const meta = getMetaProgression();
+        const level = getMetaLevel(meta.xp);
+        const xpProg = getMetaXPProgress(meta.xp);
+        const nextLvl = getNextMetaLevel(meta.xp);
+        const badge = getPrestigeBadgeEmoji(meta.prestigeCount);
+        return (
+          <div style={{
+            marginTop: 12, background: 'rgba(155,89,182,0.06)', border: '1px solid rgba(155,89,182,0.2)',
+            borderRadius: 10, padding: '10px 16px', maxWidth: 320, margin: '12px auto 0',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <span style={{ fontSize: '1rem' }}>{level.emoji}</span>
+              <span style={{ color: '#bb86fc', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                {level.title}
+              </span>
+              <span style={{ color: '#888', fontSize: '0.65rem' }}>Lv.{level.level}</span>
+              {badge && <span style={{ fontSize: '0.9rem' }}>{badge}</span>}
+              {isStudioLegend() && <span style={{ color: '#ffd700', fontSize: '0.65rem', fontFamily: 'Bebas Neue' }}>★ LEGEND</span>}
+            </div>
+            {nextLvl ? (
+              <div style={{ marginTop: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.55rem', color: '#888', marginBottom: 2 }}>
+                  <span>{xpProg.earned} XP</span>
+                  <span>{xpProg.needed} XP to Lv.{nextLvl.level}</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 3, height: 6, overflow: 'hidden' }}>
+                  <div style={{
+                    background: 'linear-gradient(90deg, #9b59b6, #bb86fc)',
+                    height: '100%', width: `${xpProg.progress * 100}%`, borderRadius: 3,
+                  }} />
+                </div>
+                {nextLvl.unlock && (
+                  <div style={{ textAlign: 'center', marginTop: 4, color: '#9b59b6', fontSize: '0.55rem', fontStyle: 'italic' }}>
+                    Next: {nextLvl.unlock}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', marginTop: 4, color: '#ffd700', fontSize: '0.65rem', fontFamily: 'Bebas Neue' }}>
+                ✨ MAX LEVEL ✨
+              </div>
+            )}
+            {meta.prestigeCount > 0 && (
+              <div style={{ textAlign: 'center', marginTop: 4, fontSize: '0.6rem', color: '#ffd700' }}>
+                {Array.from({ length: meta.prestigeCount }, (_, i) => getPrestigeBadgeEmoji(i + 1)).join(' ')} Prestige {meta.prestigeCount}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Mogul Title (P10) */}
       {hasMilestone('mogul_title') && (
         <div style={{ marginTop: 4, textAlign: 'center' }}>
@@ -714,7 +768,7 @@ export default function StartScreen() {
             </button>
             {/* Daily Run — fixed setup: Studio difficulty, random archetype from seed, 3 seasons */}
             <button className="btn btn-small" style={{ color: 'var(--blue)', borderColor: 'var(--blue)', opacity: dailyDone ? 0.5 : 1 }}
-              onClick={() => { if (!dailyDone) { sfx.dailyStart(); const arch = getDailyArchetype(); startGame('daily', undefined, undefined, 'studio'); pickArchetype(arch); } }}>
+              onClick={() => { if (!dailyDone) { sfx.dailyStart(); setTimeout(() => sfx.dailyChallengeFanfare(), 300); const arch = getDailyArchetype(); startGame('daily', undefined, undefined, 'studio'); pickArchetype(arch); } }}>
               📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
               {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
               {stats.dailyStreak.current > 0 && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}

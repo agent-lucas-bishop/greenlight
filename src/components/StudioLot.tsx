@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
+import { sfx } from '../sound';
 
 /**
  * StudioLot — A visual studio lot that grows with career progress.
@@ -112,6 +113,20 @@ export default function StudioLot({ compact }: { compact?: boolean }) {
   injectStyles();
   const buildings = useMemo(() => updateStudioLotBuildings(), []);
   const total = countBuildings(buildings);
+
+  // R170: Play building unlock sound when new buildings detected
+  const hasPlayed = useRef(false);
+  useEffect(() => {
+    if (hasPlayed.current) return;
+    try {
+      const prev = parseInt(localStorage.getItem('greenlight_studio_lot_count') || '0', 10);
+      if (total > prev && prev > 0) {
+        hasPlayed.current = true;
+        setTimeout(() => sfx.buildingUnlock(), 400);
+      }
+      localStorage.setItem('greenlight_studio_lot_count', String(total));
+    } catch {}
+  }, [total]);
   const w = compact ? 320 : 440;
   const h = compact ? 180 : 240;
 

@@ -3,6 +3,7 @@ import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getStudioIdentity } from '../studioIdentity';
 import { getDifficultyBadge } from '../difficulty';
+import { getMetaProgression, getMetaLevel, getPrestigeBadgeEmoji, isStudioLegend } from '../metaProgression';
 // Reputation tier helper (duplicated from EndScreen to avoid circular import)
 function getRepTier(rep: number): { name: string; color: string } {
   if (rep >= 12) return { name: 'Legendary', color: '#ff6b6b' };
@@ -112,7 +113,9 @@ export default function Header({ state }: { state: GameState }) {
   const handleVolume = (v: number) => { setVolume(v); setVolumeState(v); };
   return (
     <div className="header">
-      <h1>{identity?.logo || '🎬'} {identity?.name?.toUpperCase() || (state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT')}</h1>
+      <h1>{identity?.logo || '🎬'} {identity?.name?.toUpperCase() || (state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT')}
+        {(() => { const m = getMetaProgression(); const ml = getMetaLevel(m.xp); const pb = getPrestigeBadgeEmoji(m.prestigeCount); return m.level > 1 ? <span style={{ fontSize: '0.5em', color: '#bb86fc', marginLeft: 8, verticalAlign: 'middle', fontWeight: 400 }}>{ml.emoji} Lv.{ml.level}{pb ? ` ${pb}` : ''}{isStudioLegend() ? ' ★' : ''}</span> : null; })()}
+      </h1>
       {(state.studioTagline || archetype) && (
         <div style={{ fontSize: '0.6rem', color: '#666', fontStyle: 'italic', marginTop: -4, marginBottom: 4, letterSpacing: '0.05em' }}>
           {archetype && <span>{archetype.emoji} {archetype.name}</span>}

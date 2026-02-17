@@ -18,6 +18,7 @@ import type { UnlockableDef } from './unlockableContent';
 import DevStats from './components/DevStats';
 import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
+import { sfx } from './sound';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -86,6 +87,14 @@ function App() {
       setSeasonOverlay(state.season);
       setSeasonOverlayExit(false);
       setSeasonTip(getRandomTip());
+      // R170: Season-themed transition sounds
+      const theme = getSeasonTheme(state.season);
+      if (theme.name === 'Spring') sfx.seasonSpring();
+      else if (theme.name === 'Summer') sfx.seasonSummer();
+      else if (theme.name === 'Autumn') sfx.seasonAutumn();
+      else if (theme.name === 'Winter') sfx.seasonWinter();
+      else if (theme.name === 'Awards') sfx.seasonAwards();
+      else sfx.seasonTransition();
       // Generate newspaper headline from last season's results
       const lastSeason = state.seasonHistory[state.seasonHistory.length - 1];
       if (lastSeason) {

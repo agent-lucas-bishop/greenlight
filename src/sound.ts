@@ -1127,6 +1127,303 @@ export const sfx = {
     }, 'risingStar');
   },
 
+  // ── R170: Daily Challenge sounds ──
+
+  // Daily challenge fanfare — special intro when starting daily
+  dailyChallengeFanfare() {
+    play(c => {
+      // Trumpet-like ascending call
+      note(c, 392, 0, 0.15, 0.12, 'sawtooth');
+      note(c, 523, 0.1, 0.15, 0.12, 'sawtooth');
+      note(c, 659, 0.2, 0.15, 0.14, 'sawtooth');
+      note(c, 784, 0.3, 0.3, 0.16, 'sawtooth');
+      // Resolve chord
+      note(c, 523, 0.35, 0.35, 0.08, 'triangle');
+      note(c, 659, 0.35, 0.35, 0.08, 'triangle');
+      note(c, 784, 0.35, 0.35, 0.1, 'triangle');
+      // Shimmer
+      note(c, 1568, 0.4, 0.3, 0.05, 'sine');
+      note(c, 2093, 0.45, 0.25, 0.04, 'sine');
+    }, 'dailyFanfare');
+  },
+
+  // Daily challenge completion jingle — distinct from normal victory
+  dailyChallengeComplete() {
+    play(c => {
+      // Quick ascending staccato
+      note(c, 659, 0, 0.1, 0.12, 'triangle');
+      note(c, 784, 0.08, 0.1, 0.12, 'triangle');
+      note(c, 988, 0.16, 0.1, 0.12, 'triangle');
+      note(c, 1319, 0.24, 0.2, 0.14, 'sine');
+      // Stamp/seal thud
+      note(c, 80, 0.3, 0.2, 0.15, 'sine');
+      noise(c, 0.3, 0.06, 0.1);
+      // Sparkle tail
+      note(c, 2637, 0.35, 0.3, 0.05, 'sine');
+      note(c, 3520, 0.4, 0.25, 0.04, 'sine');
+    }, 'dailyComplete');
+  },
+
+  // Streak milestone — every 7 days, celebratory escalating chime
+  streakMilestone() {
+    play(c => {
+      // Triumphant ascending: C E G C' E'
+      note(c, 523, 0, 0.15, 0.12, 'sine');
+      note(c, 659, 0.1, 0.15, 0.12, 'sine');
+      note(c, 784, 0.2, 0.15, 0.12, 'sine');
+      note(c, 1047, 0.3, 0.2, 0.14, 'sine');
+      note(c, 1319, 0.4, 0.3, 0.16, 'sine');
+      // Warm bass resolve
+      note(c, 262, 0.35, 0.4, 0.1, 'triangle');
+      // High sparkle overlay
+      note(c, 2637, 0.45, 0.35, 0.06, 'sine');
+      note(c, 3520, 0.5, 0.3, 0.04, 'sine');
+      note(c, 4186, 0.55, 0.25, 0.03, 'sine');
+      noise(c, 0.45, 0.15, 0.04);
+    }, 'streakMilestone');
+  },
+
+  // ── R170: Card Workshop sounds ──
+
+  // Enhance — magical shimmer
+  workshopEnhance() {
+    play(c => {
+      // Rising shimmer tones
+      note(c, 880, 0, 0.2, 0.08, 'sine');
+      note(c, 1175, 0.05, 0.2, 0.08, 'sine');
+      note(c, 1568, 0.1, 0.2, 0.1, 'sine');
+      note(c, 2093, 0.15, 0.25, 0.1, 'sine');
+      // Sparkle dust
+      note(c, 3520, 0.2, 0.2, 0.04, 'sine');
+      note(c, 4186, 0.25, 0.15, 0.03, 'sine');
+      noise(c, 0.15, 0.1, 0.03);
+    }, 'wsEnhance');
+  },
+
+  // Transmute — morphing/warping sound
+  workshopTransmute() {
+    play(c => {
+      // Warping oscillator
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(200, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.15);
+      o.frequency.exponentialRampToValueAtTime(300, c.currentTime + 0.3);
+      o.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.4);
+      g.gain.setValueAtTime(0.08, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.5);
+      // Morphing overtone
+      note(c, 1200, 0.1, 0.15, 0.05, 'sine');
+      note(c, 800, 0.25, 0.15, 0.05, 'sine');
+      noise(c, 0.05, 0.1, 0.04);
+    }, 'wsTransmute');
+  },
+
+  // Remove — shredding paper sound
+  workshopRemove() {
+    play(c => {
+      // Paper shredding: rapid filtered noise bursts
+      const buf = c.createBuffer(1, c.sampleRate * 0.4, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 3500;
+      bp.Q.value = 1.5;
+      const g = c.createGain();
+      // Staccato shredding pattern
+      g.gain.setValueAtTime(0.12, c.currentTime);
+      g.gain.setValueAtTime(0.04, c.currentTime + 0.05);
+      g.gain.setValueAtTime(0.11, c.currentTime + 0.1);
+      g.gain.setValueAtTime(0.03, c.currentTime + 0.15);
+      g.gain.setValueAtTime(0.1, c.currentTime + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.4);
+      // Tearing accents
+      note(c, 2000, 0.02, 0.03, 0.06, 'square');
+      note(c, 1600, 0.12, 0.03, 0.05, 'square');
+      note(c, 1800, 0.22, 0.03, 0.04, 'square');
+    }, 'wsRemove');
+  },
+
+  // Duplicate — echo/clone effect
+  workshopDuplicate() {
+    play(c => {
+      // Original tone
+      note(c, 880, 0, 0.15, 0.12, 'sine');
+      note(c, 1175, 0.05, 0.15, 0.1, 'sine');
+      // Echo 1 (slightly quieter, delayed)
+      note(c, 880, 0.12, 0.15, 0.08, 'sine');
+      note(c, 1175, 0.17, 0.15, 0.06, 'sine');
+      // Echo 2 (quieter still)
+      note(c, 880, 0.24, 0.15, 0.05, 'sine');
+      note(c, 1175, 0.29, 0.15, 0.04, 'sine');
+      // Clone confirmation ping
+      note(c, 1568, 0.35, 0.2, 0.08, 'sine');
+    }, 'wsDuplicate');
+  },
+
+  // ── R170: Card Rarity sounds ──
+
+  // Rare card draw — blue sparkle
+  cardRare() {
+    play(c => {
+      // Bright ascending sparkle
+      note(c, 988, 0, 0.12, 0.1, 'sine');
+      note(c, 1319, 0.06, 0.12, 0.1, 'sine');
+      note(c, 1568, 0.12, 0.15, 0.12, 'sine');
+      // Shimmery tail
+      note(c, 2637, 0.18, 0.2, 0.05, 'sine');
+      note(c, 3136, 0.22, 0.18, 0.04, 'sine');
+    }, 'cardRare');
+  },
+
+  // Epic card draw — dramatic purple reveal with bass
+  cardEpic() {
+    play(c => {
+      // Deep bass impact
+      note(c, 55, 0, 0.5, 0.2, 'sine');
+      note(c, 82, 0, 0.4, 0.12, 'triangle');
+      // Dramatic reveal chord
+      note(c, 220, 0.05, 0.3, 0.1, 'sawtooth');
+      note(c, 330, 0.08, 0.25, 0.08, 'sawtooth');
+      // High shimmer cascade
+      note(c, 1568, 0.12, 0.3, 0.08, 'sine');
+      note(c, 2093, 0.16, 0.25, 0.06, 'sine');
+      note(c, 2637, 0.2, 0.25, 0.05, 'sine');
+      note(c, 3520, 0.24, 0.2, 0.04, 'sine');
+      noise(c, 0.05, 0.15, 0.08);
+    }, 'cardEpic');
+  },
+
+  // ── R170: Season Transition sounds ──
+
+  // Spring — birdsong chime
+  seasonSpring() {
+    play(c => {
+      // Birdsong: quick chirpy notes
+      note(c, 1568, 0, 0.08, 0.1, 'sine');
+      note(c, 2093, 0.06, 0.06, 0.08, 'sine');
+      note(c, 1760, 0.1, 0.1, 0.08, 'sine');
+      note(c, 2349, 0.18, 0.06, 0.07, 'sine');
+      note(c, 1976, 0.22, 0.12, 0.09, 'sine');
+      // Warm chime resolve
+      note(c, 784, 0.3, 0.3, 0.1, 'triangle');
+      note(c, 988, 0.3, 0.3, 0.08, 'triangle');
+      note(c, 1319, 0.35, 0.25, 0.06, 'sine');
+    }, 'seasonSpring');
+  },
+
+  // Summer — warm swell
+  seasonSummer() {
+    play(c => {
+      // Warm rising pad
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(220, c.currentTime);
+      o.frequency.linearRampToValueAtTime(440, c.currentTime + 0.5);
+      g.gain.setValueAtTime(0.001, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.6);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.65);
+      // Overtones
+      note(c, 440, 0.1, 0.4, 0.06, 'sine');
+      note(c, 659, 0.15, 0.35, 0.05, 'sine');
+      note(c, 880, 0.2, 0.3, 0.04, 'sine');
+    }, 'seasonSummer');
+  },
+
+  // Autumn — rustling leaves
+  seasonAutumn() {
+    play(c => {
+      // Rustling: filtered noise with gentle decay
+      const buf = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 2000;
+      bp.Q.value = 0.8;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.06, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, c.currentTime + 0.1);
+      g.gain.setValueAtTime(0.08, c.currentTime + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.5);
+      // Gentle wind tone
+      note(c, 300, 0, 0.4, 0.04, 'sine');
+      note(c, 450, 0.1, 0.3, 0.03, 'sine');
+    }, 'seasonAutumn');
+  },
+
+  // Winter — crystalline
+  seasonWinter() {
+    play(c => {
+      // Ice crystal pings — high, bright, sparse
+      note(c, 2093, 0, 0.2, 0.08, 'sine');
+      note(c, 2637, 0.08, 0.2, 0.07, 'sine');
+      note(c, 3136, 0.16, 0.2, 0.06, 'sine');
+      note(c, 3520, 0.24, 0.25, 0.05, 'sine');
+      // Crystalline shimmer
+      note(c, 4186, 0.3, 0.2, 0.04, 'sine');
+      // Cold undertone
+      note(c, 523, 0, 0.4, 0.05, 'triangle');
+    }, 'seasonWinter');
+  },
+
+  // Awards season — orchestral swell
+  seasonAwards() {
+    play(c => {
+      // Full orchestral swell: strings + brass
+      note(c, 220, 0, 0.6, 0.12, 'sawtooth');
+      note(c, 330, 0, 0.6, 0.1, 'sawtooth');
+      note(c, 440, 0.05, 0.55, 0.1, 'triangle');
+      // Brass resolve
+      note(c, 523, 0.15, 0.45, 0.1, 'sawtooth');
+      note(c, 659, 0.2, 0.4, 0.08, 'triangle');
+      note(c, 784, 0.25, 0.4, 0.08, 'triangle');
+      // Cymbal shimmer
+      noise(c, 0.1, 0.3, 0.08);
+      // High sparkle
+      note(c, 1568, 0.3, 0.35, 0.05, 'sine');
+      note(c, 2093, 0.35, 0.3, 0.04, 'sine');
+    }, 'seasonAwards');
+  },
+
+  // ── R170: Studio Lot sounds ──
+
+  // Building unlock — construction hammer + tada
+  buildingUnlock() {
+    play(c => {
+      // Hammer hits
+      note(c, 120, 0, 0.1, 0.2, 'sine');
+      noise(c, 0, 0.05, 0.15);
+      note(c, 140, 0.12, 0.08, 0.15, 'sine');
+      noise(c, 0.12, 0.04, 0.12);
+      // Tada fanfare
+      note(c, 523, 0.25, 0.2, 0.12, 'triangle');
+      note(c, 659, 0.3, 0.2, 0.12, 'triangle');
+      note(c, 784, 0.35, 0.2, 0.12, 'triangle');
+      note(c, 1047, 0.4, 0.35, 0.15, 'sine');
+      // Sparkle
+      note(c, 2093, 0.45, 0.25, 0.05, 'sine');
+      note(c, 2637, 0.5, 0.2, 0.04, 'sine');
+    }, 'buildingUnlock');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

@@ -214,6 +214,15 @@ export default function ProductionScreen({ state }: { state: GameState }) {
     setTimeout(() => {
       drawProductionCards();
       setIsDrawing(false);
+      // R170: Play rarity sound for drawn cards
+      const s = getState();
+      const drawn = s.production?.currentDraw?.choosable;
+      if (drawn) {
+        const hasEpic = drawn.some((card: any) => card.rarity === 'epic');
+        const hasRare = drawn.some((card: any) => card.rarity === 'rare');
+        if (hasEpic) setTimeout(() => sfx.cardEpic(), 100);
+        else if (hasRare) setTimeout(() => sfx.cardRare(), 100);
+      }
       setTimeout(() => scrollRef.current?.scrollTo({ left: scrollRef.current.scrollWidth, behavior: 'smooth' }), 50);
     }, 550);
   };

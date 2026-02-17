@@ -728,6 +728,10 @@ export function pickScript(script: Script) {
   if (state.activeSeasonEvent?.effect === 'actorsStrike') {
     market = market.map(t => t.type === 'Lead' ? { ...t, cost: t.cost * 2, skill: t.skill + 2 } : t);
   }
+  // R115: Talent Strike — can't hire new talent, empty market
+  if (state.activeSeasonEvent?.effect === 'talentStrike') {
+    market = [];
+  }
   // Season event: Union Dispute — crew costs +$2, but crew cards get +1 base quality
   if (state.activeSeasonEvent?.effect === 'unionDispute') {
     market = market.map(t => t.type === 'Crew' ? {
@@ -1810,6 +1814,14 @@ export function resolveRelease() {
     // R80 events
     if (se.effect === 'foreignDistributionDeal') { multiplier += 0.3; rawQuality -= 5; }
     if (se.effect === 'castingScandal') rawQuality += 10; // +$10M worth via quality boost
+    // R115 events
+    if (se.effect === 'marketCrash') multiplier -= 0.2;
+    if (se.effect === 'genreRenaissance') {
+      // Random genre gets +0.6 — use season as seed for consistency
+      const allGenres: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Romance', 'Sci-Fi', 'Thriller'];
+      const renaissanceGenre = allGenres[state.season % allGenres.length];
+      if (script.genre === renaissanceGenre) multiplier += 0.6;
+    }
     if (se.effect === 'nostalgiaWave') {
       // Double genre mastery bonus (same-genre) — add it again
       const genreCount = state.genreMastery[script.genre] || 0;
@@ -1912,6 +1924,11 @@ export function resolveRelease() {
   // Daily modifier: Award Season — rep gains doubled
   if (state.dailyModifierId === 'award_season' || state.dailyModifierId2 === 'award_season') {
     if (repChange > 0) repChange *= 2;
+  }
+
+  // R115: Awards Campaign — if quality > 35, gain +3 rep
+  if (se?.effect === 'awardsCampaign' && rawQuality > 35) {
+    repChange += 3;
   }
 
   const newRep = Math.max(0, Math.min(5, currentRep + repChange));

@@ -359,7 +359,7 @@ export function getPrestigeGenreMasteryBonuses(): string[] {
     const genreKey = `genre_mastery_${i}_genre`;
     const upgradeLevel = state.upgrades[`genre_mastery_${i}`] || 0;
     if (upgradeLevel > 0) {
-      const chosen = (state as Record<string, unknown>)[genreKey] as string | undefined;
+      const chosen = (state as unknown as Record<string, unknown>)[genreKey] as string | undefined;
       if (chosen) genres.push(chosen);
     }
   }
@@ -369,7 +369,7 @@ export function getPrestigeGenreMasteryBonuses(): string[] {
 /** Set chosen genre for a genre mastery slot */
 export function setGenreMasteryChoice(slot: number, genre: string): void {
   const state = getPrestigeShop();
-  (state as Record<string, unknown>)[`genre_mastery_${slot}_genre`] = genre;
+  (state as unknown as Record<string, unknown>)[`genre_mastery_${slot}_genre`] = genre;
   savePrestigeShop(state);
 }
 

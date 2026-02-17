@@ -1559,6 +1559,110 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         );
       })()}
 
+      {/* ─── R227: STAR POWER & PRESTIGE RESET ─── */}
+      {phase >= 6 && endTab === 'progression' && starPowerEarnings.length > 0 && (
+        <div className="animate-slide-down" style={{ marginTop: 24 }}>
+          <h3 style={{ color: '#ffd700', marginBottom: 12, letterSpacing: 1 }}>⭐ STAR POWER EARNED</h3>
+          <div style={{
+            background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.25)',
+            borderRadius: 12, padding: '16px 20px', maxWidth: 400, margin: '0 auto', textAlign: 'center',
+          }}>
+            <div style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '1.3rem', marginBottom: 8 }}>
+              +{starPowerEarnings.reduce((s, e) => s + e.amount, 0)} ⭐
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', marginBottom: 12 }}>
+              {starPowerEarnings.map((e, i) => (
+                <span key={i} style={{
+                  fontSize: '0.65rem', color: '#888', background: 'rgba(255,255,255,0.05)',
+                  padding: '2px 8px', borderRadius: 4,
+                }}>
+                  {e.source}: +{e.amount}⭐
+                </span>
+              ))}
+            </div>
+            <div style={{ color: '#888', fontSize: '0.7rem' }}>
+              Balance: {getPrestigeShop().starPower} ⭐ | Prestige: {getPrestigeStarsDisplay() || 'None'}
+            </div>
+          </div>
+
+          {/* Prestige Reset option after Mogul win */}
+          {isVictory && state.difficulty === 'mogul' && canPrestigeReset() && !prestigeResetDone && !showPrestigeResetConfirm && (
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
+              <button className="btn" onClick={() => setShowPrestigeResetConfirm(true)} style={{
+                background: 'rgba(255,215,0,0.15)', border: '2px solid #ffd700',
+                color: '#ffd700', padding: '10px 24px', cursor: 'pointer',
+                fontFamily: 'Bebas Neue', fontSize: '1rem', letterSpacing: 1,
+              }}>
+                ⭐ PRESTIGE UP — Reset for Permanent Bonuses
+              </button>
+            </div>
+          )}
+
+          {showPrestigeResetConfirm && !prestigeResetDone && (
+            <div style={{
+              background: 'rgba(255,215,0,0.08)', border: '2px solid #ffd700',
+              borderRadius: 12, padding: '16px', marginTop: 12, maxWidth: 400, margin: '12px auto 0',
+            }}>
+              <h4 style={{ color: '#ffd700', textAlign: 'center', marginBottom: 8 }}>⭐ Prestige Reset</h4>
+              <div style={{ color: '#ccc', fontSize: '0.8rem', marginBottom: 12 }}>
+                <div style={{ marginBottom: 8 }}><strong style={{ color: '#2ecc71' }}>What you KEEP:</strong></div>
+                <ul style={{ margin: 0, paddingLeft: 16, color: '#aaa', fontSize: '0.75rem' }}>
+                  <li>All purchased upgrades (budget, cards, shields, etc.)</li>
+                  <li>All Star Power currency</li>
+                  <li>Unlocked cosmetics</li>
+                  <li>Achievements and statistics</li>
+                </ul>
+                <div style={{ marginTop: 8, marginBottom: 8 }}><strong style={{ color: '#e74c3c' }}>What RESETS:</strong></div>
+                <ul style={{ margin: 0, paddingLeft: 16, color: '#aaa', fontSize: '0.75rem' }}>
+                  <li>Current run progress</li>
+                </ul>
+                <div style={{ marginTop: 8 }}><strong style={{ color: '#ffd700' }}>What you GAIN:</strong></div>
+                <ul style={{ margin: 0, paddingLeft: 16, color: '#ffd700', fontSize: '0.75rem' }}>
+                  <li>+1 Prestige Level (new cosmetics unlock!)</li>
+                  <li>Bonus Star Power reward</li>
+                </ul>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                <button className="btn" onClick={() => {
+                  const result = performPrestigeReset();
+                  if (result.success) {
+                    setPrestigeResetDone(true);
+                    setShowPrestigeResetConfirm(false);
+                  }
+                }} style={{
+                  background: 'rgba(255,215,0,0.2)', border: '1px solid #ffd700',
+                  color: '#ffd700', padding: '8px 20px', cursor: 'pointer', fontFamily: 'Bebas Neue',
+                }}>
+                  ⭐ Prestige!
+                </button>
+                <button className="btn" onClick={() => setShowPrestigeResetConfirm(false)} style={{
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid #666',
+                  color: '#999', padding: '8px 20px', cursor: 'pointer',
+                }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {prestigeResetDone && (
+            <div style={{
+              background: 'rgba(255,215,0,0.12)', border: '2px solid #ffd700',
+              borderRadius: 12, padding: '16px', marginTop: 12, maxWidth: 400, margin: '12px auto 0',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: 4 }}>{getPrestigeStarsDisplay()}</div>
+              <div style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>
+                PRESTIGE {getPrestigeShop().prestigeLevel}!
+              </div>
+              <div style={{ color: '#888', fontSize: '0.75rem', marginTop: 4 }}>
+                New cosmetics and bonuses await in the Prestige Shop.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ─── DAILY/WEEKLY SCORE BREAKDOWN ─── */}
       {phase >= 3 && endTab === 'details' && (state.gameMode === 'daily' || state.gameMode === 'weekly') && (() => {
         const h = state.seasonHistory;

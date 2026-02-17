@@ -110,6 +110,7 @@ import { getGenreMasteryBonus } from './genreMastery';
 import { getDirectorStyleBonus } from './directorProfile';
 import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
+import { getPrestigeShopBudgetBonus, getPrestigeRepShield, getPrestigeExtraCardDraw, getPrestigeLuckyBreakChance, getPrestigeTalentScoutBonus } from './prestigeShop';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
 import { generateWorldEvents, tickWorldEvents, getWorldEventBOMultiplier, getWorldEventTalentCostMultiplier, getWorldEventBudgetMultiplier, getWorldEventQualityBonus, getWorldEventStreamingBonus, type ActiveWorldEvent } from './worldEvents';
@@ -767,6 +768,8 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   if (hasMilestone('budget_bonus')) budget += 2;
   // R171: Meta-progression budget bonus (Level 5: +$1M, plus prestige stacking)
   budget += getMetaBudgetBonus();
+  // R227: Prestige shop budget bonus
+  budget += getPrestigeShopBudgetBonus();
   // R128: Legacy run bonuses — $1M per 2 prestige levels
   const legacyBonuses = getLegacyRunBonuses();
   budget += legacyBonuses.budgetBonus;
@@ -2752,7 +2755,10 @@ export function resolveRelease() {
     budget: state.budget + finalEarnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost + streamingDealIncome,
     totalEarnings: state.totalEarnings + finalEarnings + streamingDealIncome,
     reputation: Math.max(0, Math.min(5, newRep + debtRepPenalty)),
-    strikes: (tier === 'FLOP' && !state.completionBond) ? state.strikes + 1 : state.strikes,
+    strikes: (tier === 'FLOP' && !state.completionBond) ? (
+      // R227: Prestige reputation shield — absorb first N strikes
+      state.strikes < getPrestigeRepShield() ? state.strikes : state.strikes + 1
+    ) : state.strikes,
     completionBond: (tier === 'FLOP' && state.completionBond) ? false : state.completionBond,
     extendedCutAvailable: tier !== 'FLOP',
     extendedCutUsed: false,

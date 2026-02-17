@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { getState, subscribe, clearRetirementNotification, resolveStoryEvent } from './gameStore';
+import { getState, subscribe, clearRetirementNotification, resolveStoryEvent, resolveNarrativeEvent } from './gameStore';
 import StoryEventModal from './components/StoryEventModal';
+import NarrativeEventCard from './components/NarrativeEvent';
 import { GameState } from './types';
 import StartScreen from './screens/StartScreen';
 import Header from './components/Header';
@@ -361,6 +362,12 @@ function App() {
         <StoryEventModal
           event={state.pendingStoryEvent}
           onChoice={resolveStoryEvent}
+        />
+      )}
+      {state.pendingNarrativeEvent && (
+        <NarrativeEventCard
+          event={state.pendingNarrativeEvent}
+          onResolve={resolveNarrativeEvent}
         />
       )}
       <BottomNav state={state} />

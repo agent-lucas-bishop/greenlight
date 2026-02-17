@@ -119,6 +119,8 @@ import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
 import { generateWorldEvents, tickWorldEvents, getWorldEventBOMultiplier, getWorldEventTalentCostMultiplier, getWorldEventBudgetMultiplier, getWorldEventQualityBonus, getWorldEventStreamingBonus, type ActiveWorldEvent } from './worldEvents';
 import { checkStoryEvents } from './storyEvents';
 import type { StoryEventOutcome } from './storyEvents';
+import { checkNarrativeEvents, MAX_NARRATIVE_PER_SEASON } from './narrativeEvents';
+import type { NarrativeOutcome } from './narrativeEvents';
 import {
   generateLoanOffers, accrueInterest, checkDefaults, repayLoan,
   generateInvestmentOffers, collectInvestmentIncome,
@@ -219,6 +221,11 @@ function createInitialState(): GameState {
     pendingStoryEvent: null,
     firedStoryEventIds: [],
     storyMoraleBonus: 0,
+    // R263: Narrative Events
+    pendingNarrativeEvent: null,
+    firedNarrativeEventIds: [],
+    narrativeChainUnlocked: [],
+    narrativeEventsThisSeason: 0,
     // R221: Economy
     activeLoans: [],
     loanOffers: [],
@@ -883,6 +890,17 @@ function beginSeason() {
     // Modal will show; resolveStoryEvent → proceedToShop won't work here,
     // so we return and let the modal resolve, then re-enter beginSeason via resolveStoryEventBeginSeason
     return;
+  }
+
+  // R263: Check narrative events (max 1-2 per season, between productions)
+  if ((state.narrativeEventsThisSeason || 0) < MAX_NARRATIVE_PER_SEASON) {
+    const firedNarrative = new Set(state.firedNarrativeEventIds || []);
+    const chainUnlocked = new Set(state.narrativeChainUnlocked || []);
+    const narrativeEvents = checkNarrativeEvents(state, firedNarrative, chainUnlocked, 1);
+    if (narrativeEvents.length > 0) {
+      setState({ pendingNarrativeEvent: narrativeEvents[0] });
+      return; // modal shows; resolveNarrativeEvent resumes beginSeason
+    }
   }
   // Apply season identity budget bonus (seasons 3+ give extra budget)
   const identity = getSeasonIdentity(state.season);
@@ -2984,6 +3002,25 @@ export function resolveStoryEvent(outcome: StoryEventOutcome) {
   }
 }
 
+/** R263: Resolve a narrative event choice and resume game flow. */
+export function resolveNarrativeEvent(outcome: NarrativeOutcome, chainsTo?: string) {
+  const event = state.pendingNarrativeEvent;
+  if (!event) return;
+  const newChains = [...(state.narrativeChainUnlocked || [])];
+  if (chainsTo) newChains.push(chainsTo);
+  setState({
+    pendingNarrativeEvent: null,
+    firedNarrativeEventIds: [...(state.firedNarrativeEventIds || []), event.id],
+    narrativeChainUnlocked: newChains,
+    narrativeEventsThisSeason: (state.narrativeEventsThisSeason || 0) + 1,
+    reputation: Math.max(0, Math.min(5, state.reputation + outcome.reputation)),
+    budget: state.budget + outcome.budget,
+    storyMoraleBonus: (state.storyMoraleBonus || 0) + outcome.morale,
+  });
+  // Resume beginSeason flow
+  beginSeason();
+}
+
 // ─── R221: ECONOMY ACTIONS ───
 
 export function toggleFinancePanel() {
@@ -3382,6 +3419,7 @@ export function nextSeason() {
     worldEventHistory: [...state.worldEventHistory, ...endedEvents],
     worldEventEndedThisSeason: endedEvents,
     reputation: Math.max(0, Math.min(5, state.reputation + repChange)),
+    narrativeEventsThisSeason: 0, // R263: reset per-season counter
   });
 }
 

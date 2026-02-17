@@ -381,6 +381,11 @@ export interface GameState {
   pendingStoryEvent: import('./storyEvents').StoryEvent | null;
   firedStoryEventIds: string[];
   storyMoraleBonus: number; // quality bonus from morale, applied next film then cleared
+  // R263: Narrative Events
+  pendingNarrativeEvent: import('./narrativeEvents').NarrativeEvent | null;
+  firedNarrativeEventIds: string[];
+  narrativeChainUnlocked: string[]; // chain ids unlocked by player choices
+  narrativeEventsThisSeason: number; // how many narrative events fired this season
   // R221: Advanced Economy & Financial System
   activeLoans: import('./economy').Loan[];
   loanOffers: import('./economy').Loan[];

@@ -65,6 +65,35 @@ src/
 - **Mobile works.** Fluid typography, touch targets, responsive grids.
 - **Clean codebase.** R24 audit found no contradictions, no state bugs, -100 lines.
 
+## Round 58 Changes — Tutorial & New Player Experience Refresh
+
+### Progressive Disclosure
+- **Challenges tab hidden** until first run is complete — new players only see Play, Career, History
+- **Leaderboard tab hidden** until first run complete
+- **Legacy perks** hidden on start screen until first run complete
+- Genre trends (hot/cold) and debt already hidden for first run (existing R14 behavior)
+
+### Keyword Tooltip System (NEW)
+- `KeywordBadge` component: inline hover/tap tooltips explaining each card keyword
+- `KeywordGlossary` component: visual glossary of all 5 keywords (Momentum, Precision, Chaos, Heart, Spectacle)
+- Each keyword has color-coded badge, emoji, and plain-English explanation of strategy
+
+### Header Stat Tooltips
+- Budget, Reputation, Strikes, and Target labels now show explanatory tooltips on hover/tap
+- Uses existing `StatTooltip` component for consistency
+
+### How to Play Updated
+- Added **Card Keywords** section with interactive glossary (hover for details)
+- Added **Season Events** section explaining the between-season event system
+- Added **Encore** mechanic explanation
+- Added **Studio Archetype** explanation
+- Reworded Tags section to be clearer about the focus mechanic
+
+### Event Phase Onboarding
+- New `PhaseTip` for event phase with strategy advice
+- New `TutorialOverlay` step for events during guided tutorial
+- Step indicators updated to include event phase (7 dots instead of 6)
+
 ## Round 56 Changes
 
 ### Accessibility Audit

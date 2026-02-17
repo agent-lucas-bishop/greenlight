@@ -95,16 +95,16 @@ export function getAchievementRarity(ach: AchievementDef): AchievementRarity {
   if (ach.cosmeticReward) return 'rare';
 
   // Check for known hard achievements
-  const hardIds = ['rank_s', 'prestige_mogul', 'moguls_gambit', 'billion_club', 'speed_demon_threshold'];
+  const hardIds = ['rank_s', 'prestige_mogul', 'moguls_gambit', 'billion_club', 'speed_demon_threshold', 'the_mogul_billion', 'award_sweep', 'speed_run_15', 'perfect_critic_score', 'secret_the_auteur'];
   if (hardIds.includes(ach.id)) return 'legendary';
 
-  const epicIds = ['perfect_run', 'five_star_studio', 'marathon_finisher', 'all_star_cast', 'blockbuster_trio'];
+  const epicIds = ['perfect_run', 'five_star_studio', 'marathon_finisher', 'all_star_cast', 'blockbuster_trio', 'critical_darling_niche', 'franchise_king', 'genre_specialist', 'indie_spirit', 'triple_threat'];
   if (epicIds.includes(ach.id)) return 'epic';
 
-  const rareIds = ['half_billion', 'box_office_king', 'rival_crusher', 'auteur_master', 'prestige_oscar_bait'];
+  const rareIds = ['half_billion', 'box_office_king', 'rival_crusher', 'auteur_master', 'prestige_oscar_bait', 'box_office_bomb', 'budget_master', 'comeback_kid', 'festival_darling', 'nemesis_defeated', 'world_event_survivor', 'double_down'];
   if (rareIds.includes(ach.id)) return 'rare';
 
-  const uncommonIds = ['five_wins', 'genre_master', 'ending_collector', 'daily_driver', 'twenty_films', 'chemistry_lab', 'prestige_studio_lot'];
+  const uncommonIds = ['five_wins', 'genre_master', 'ending_collector', 'daily_driver', 'twenty_films', 'chemistry_lab', 'prestige_studio_lot', 'cult_classic', 'soundtrack_maestro', 'loan_shark'];
   if (uncommonIds.includes(ach.id)) return 'uncommon';
 
   return 'common';
@@ -162,6 +162,9 @@ export const TROPHY_ACHIEVEMENT_IDS = [
   'moguls_gambit',
   'billion_club',
   'blockbuster_trio',
+  'the_mogul_billion',
+  'award_sweep',
+  'secret_the_auteur',
 ];
 
 export function getTrophyShelfAchievements(): GalleryAchievement[] {

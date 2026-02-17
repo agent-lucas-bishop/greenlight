@@ -249,9 +249,11 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
         </select>
         <select value={filterDifficulty} onChange={e => setFilterDifficulty(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
           <option value="all">All Difficulties</option>
-          <option value="indie">🎥 Indie</option>
-          <option value="studio">🎬 Studio</option>
-          <option value="mogul">💀 Mogul</option>
+          <option value="indie">🟢 Easy</option>
+          <option value="studio">🟡 Normal</option>
+          <option value="mogul">🔴 Hard</option>
+          <option value="nightmare">💀 Nightmare</option>
+          <option value="custom">⚙️ Custom</option>
         </select>
         <select value={filterResult} onChange={e => setFilterResult(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
           <option value="all">Win & Loss</option>
@@ -501,86 +503,14 @@ export default function StartScreen() {
 
   if (showDifficulty) {
     return (
-      <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
-        <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>Choose Difficulty</h2>
-        <p style={{ color: '#888', marginBottom: 16, fontSize: '0.9rem' }}>How tough do you want Hollywood to be?</p>
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 800, margin: '0 auto' }}>
-          {DIFFICULTIES.map(d => (
-            <div
-              key={d.id}
-              className="card"
-              onClick={() => { (d.id === 'indie' ? sfx.difficultyIndie : d.id === 'mogul' ? sfx.difficultyMogul : sfx.difficultyStudio)(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); }}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (d.id === 'indie' ? sfx.difficultyIndie : d.id === 'mogul' ? sfx.difficultyMogul : sfx.difficultyStudio)(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); } }}
-              tabIndex={0}
-              role="button"
-              aria-label={`${d.name} (${d.label}): ${d.description}`}
-              style={{ cursor: 'pointer', padding: 20, flex: '1 1 200px', maxWidth: 240, textAlign: 'center', transition: 'transform 0.2s, border-color 0.2s', borderColor: d.id === 'studio' ? 'rgba(212,168,67,0.3)' : undefined }}
-              onMouseEnter={e => { try { sfx.difficultyCompareHover(); } catch {} (e.currentTarget as HTMLElement).style.borderColor = d.color; (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = d.id === 'studio' ? 'rgba(212,168,67,0.3)' : ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
-            >
-              {d.id === 'studio' && (
-                <div style={{ fontSize: '0.65rem', color: 'var(--gold)', background: 'rgba(212,168,67,0.15)', border: '1px solid rgba(212,168,67,0.3)', borderRadius: 4, padding: '2px 8px', marginBottom: 8, display: 'inline-block' }}>
-                  DEFAULT
-                </div>
-              )}
-              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{d.emoji}</div>
-              <div style={{ color: d.color, fontWeight: 700, fontSize: '1.1rem', marginBottom: 4 }}>{d.name}</div>
-              <div style={{ color: '#999', fontSize: '0.7rem', fontFamily: 'Bebas Neue', letterSpacing: '0.05em', marginBottom: 8 }}>{d.label.toUpperCase()}</div>
-              <div style={{ color: '#aaa', fontSize: '0.8rem', lineHeight: 1.5, marginBottom: 12 }}>{d.description}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.7rem', color: '#888', textAlign: 'left' }}>
-                <span>💰 ${d.startBudget}M budget</span>
-                <span>{'⭐'.repeat(d.startReputation)} reputation</span>
-                <span>📅 {d.maxSeasons} seasons</span>
-                {d.marketMultiplierBonus > 0 && <span style={{ color: '#2ecc71' }}>📈 +{d.marketMultiplierBonus} market bonus</span>}
-                {d.incidentFrequencyMod > 1 && <span style={{ color: '#e74c3c' }}>⚠️ +{Math.round((d.incidentFrequencyMod - 1) * 100)}% incidents</span>}
-                {d.rivalAggressiveness > 1 && <span style={{ color: '#e74c3c' }}>🏢 Aggressive rivals</span>}
-                {d.rivalAggressiveness < 1 && <span style={{ color: '#2ecc71' }}>🏢 Passive rivals</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Difficulty Comparison Table */}
-        <div style={{ marginTop: 28, maxWidth: 700, margin: '28px auto 0' }}>
-          <div style={{ color: '#777', fontSize: '0.7rem', fontFamily: 'Bebas Neue', letterSpacing: '0.08em', marginBottom: 8, textAlign: 'center' }}>
-            DETAILED COMPARISON
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', color: '#ccc' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(212,168,67,0.3)' }}>
-                  <th style={{ textAlign: 'left', padding: '8px 10px', color: 'var(--gold)', fontWeight: 600 }}></th>
-                  {DIFFICULTIES.map(d => (
-                    <th key={d.id} style={{ textAlign: 'center', padding: '8px 10px', color: d.color, fontWeight: 700 }}>
-                      {d.emoji} {d.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { label: 'Starting Budget', key: 'startBudget', fmt: (v: number) => `$${v}M` },
-                  { label: 'Starting Reputation', key: 'startReputation', fmt: (v: number) => '⭐'.repeat(v) },
-                  { label: 'Seasons', key: 'maxSeasons', fmt: (v: number) => `${v} seasons` },
-                  { label: 'Max Strikes', key: 'maxStrikes', fmt: (_v: number, d: any) => d.id === 'indie' ? '4' : d.id === 'mogul' ? '2' : '3' },
-                  { label: 'Market Bonus', key: 'marketMultiplierBonus', fmt: (v: number) => v > 0 ? `+${(v * 100).toFixed(0)}%` : '—' },
-                  { label: 'Incident Rate', key: 'incidentFrequencyMod', fmt: (v: number) => v > 1 ? `+${Math.round((v - 1) * 100)}%` : 'Normal' },
-                  { label: 'Rival Aggression', key: 'rivalAggressiveness', fmt: (v: number) => v < 1 ? 'Passive' : v > 1 ? 'Aggressive' : 'Normal' },
-                ].map(row => (
-                  <tr key={row.label} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '6px 10px', color: '#999', fontWeight: 500 }}>{row.label}</td>
-                    {DIFFICULTIES.map(d => (
-                      <td key={d.id} style={{ textAlign: 'center', padding: '6px 10px' }}>
-                        {row.fmt((d as any)[row.key], d)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <DifficultySelect
+        onSelect={(diff, mods) => {
+          setSelectedDifficulty(diff);
+          setSelectedGameModifiers(mods);
+          setShowDifficulty(false);
+          setShowArchetypes(true);
+        }}
+      />
     );
   }
 
@@ -613,8 +543,8 @@ export default function StartScreen() {
             <div
               key={a.id}
               className="card"
-              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers, selectedDifficulty); pickArchetype(a.id as StudioArchetypeId); }}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers, selectedDifficulty); pickArchetype(a.id as StudioArchetypeId); } }}
+              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers, selectedDifficulty, selectedGameModifiers); pickArchetype(a.id as StudioArchetypeId); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers, selectedDifficulty, selectedGameModifiers); pickArchetype(a.id as StudioArchetypeId); } }}
               tabIndex={0}
               role="button"
               aria-label={`${a.name}: ${a.description}${isRecommended ? ' (Recommended for beginners)' : ''}`}

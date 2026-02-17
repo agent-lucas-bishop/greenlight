@@ -3604,6 +3604,119 @@ export const sfx = {
     }, 'achievementUnlockScaled');
   },
 
+  // ── R249: Sound Design Expansion ──
+
+  /** Card play whoosh — cinematic sweep */
+  cardPlayWhoosh() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(200, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1400, c.currentTime + 0.08);
+      o.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.22);
+      g.gain.setValueAtTime(0.12, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.3);
+      noise(c, 0, 0.18, 0.1);
+    }, 'cardPlayWhoosh');
+  },
+
+  /** Card draw shuffle — riffle sound */
+  cardDrawShuffle() {
+    play(c => {
+      for (let i = 0; i < 5; i++) {
+        const t = i * 0.04;
+        noise(c, t, 0.035, 0.08 + i * 0.01);
+        note(c, 900 + i * 150, t, 0.03, 0.04, 'square');
+      }
+      note(c, 500, 0.2, 0.08, 0.06, 'triangle');
+    }, 'cardDrawShuffle');
+  },
+
+  /** Currency gain — coin clink */
+  currencyGainClink() {
+    play(c => {
+      note(c, 2200, 0, 0.15, 0.12, 'sine');
+      note(c, 4400, 0.005, 0.1, 0.06, 'sine');
+      note(c, 6600, 0.01, 0.08, 0.03, 'sine');
+      note(c, 1900, 0.06, 0.12, 0.09, 'sine');
+      note(c, 3800, 0.065, 0.08, 0.04, 'sine');
+      noise(c, 0, 0.02, 0.06);
+    }, 'currencyGainClink');
+  },
+
+  /** Level up fanfare — triumphant ascending brass */
+  levelUpFanfare() {
+    play(c => {
+      note(c, 523, 0, 0.2, 0.14, 'sawtooth');
+      note(c, 659, 0.12, 0.2, 0.14, 'sawtooth');
+      note(c, 784, 0.24, 0.2, 0.16, 'sawtooth');
+      note(c, 1047, 0.36, 0.4, 0.18, 'triangle');
+      note(c, 523, 0.4, 0.5, 0.08, 'triangle');
+      note(c, 659, 0.4, 0.5, 0.08, 'triangle');
+      note(c, 784, 0.4, 0.5, 0.08, 'triangle');
+      note(c, 1568, 0.45, 0.4, 0.05, 'sine');
+      note(c, 2093, 0.5, 0.35, 0.04, 'sine');
+      note(c, 2637, 0.55, 0.3, 0.03, 'sine');
+      note(c, 262, 0.36, 0.5, 0.1, 'sine');
+      noise(c, 0.4, 0.15, 0.05);
+    }, 'levelUpFanfare');
+  },
+
+  /** Achievement chime — crystalline ascending */
+  achievementChime() {
+    play(c => {
+      note(c, 1319, 0, 0.15, 0.12, 'sine');
+      note(c, 1661, 0.08, 0.15, 0.11, 'sine');
+      note(c, 1976, 0.16, 0.15, 0.1, 'sine');
+      note(c, 2637, 0.24, 0.25, 0.12, 'sine');
+      note(c, 3520, 0.28, 0.2, 0.05, 'sine');
+      note(c, 4186, 0.32, 0.18, 0.04, 'sine');
+      note(c, 659, 0.16, 0.3, 0.06, 'triangle');
+      noise(c, 0.2, 0.1, 0.03);
+    }, 'achievementChime');
+  },
+
+  /** Negative event buzzer — dissonant low buzz */
+  negativeEventBuzzer() {
+    play(c => {
+      note(c, 95, 0, 0.35, 0.18, 'sawtooth');
+      note(c, 100, 0, 0.35, 0.18, 'sawtooth');
+      note(c, 190, 0.02, 0.25, 0.08, 'square');
+      noise(c, 0, 0.08, 0.12);
+      note(c, 50, 0, 0.4, 0.12, 'sine');
+    }, 'negativeEventBuzzer');
+  },
+
+  /** Turn end swoosh — sweeping transition */
+  turnEndSwoosh() {
+    play(c => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(180, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1000, c.currentTime + 0.1);
+      o.frequency.exponentialRampToValueAtTime(300, c.currentTime + 0.25);
+      g.gain.setValueAtTime(0.1, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.3);
+      o.connect(g).connect(getMaster());
+      o.start(); o.stop(c.currentTime + 0.35);
+      noise(c, 0, 0.2, 0.07);
+      note(c, 400, 0.15, 0.15, 0.04, 'triangle');
+    }, 'turnEndSwoosh');
+  },
+
+  /** Menu navigation click — crisp UI tick */
+  menuClick() {
+    play(c => {
+      note(c, 1400, 0, 0.03, 0.08, 'square');
+      note(c, 1000, 0.015, 0.04, 0.05, 'sine');
+      noise(c, 0, 0.015, 0.04);
+    }, 'menuClick');
+  },
+
   achievementSecretReveal() {
     play(c => {
       // Mysterious reveal — eerie rising tones
@@ -3620,3 +3733,83 @@ export const sfx = {
     }, 'achievementSecretReveal');
   },
 };
+
+// ──── Ambient Drone (R249) ────────────────────────────────────
+// Low synth pad that plays during gameplay and fades during menus.
+// Routes through the music gain so it respects musicVolume + masterVolume.
+
+let _droneOsc1: OscillatorNode | null = null;
+let _droneOsc2: OscillatorNode | null = null;
+let _droneGainNode: GainNode | null = null;
+let _droneActive = false;
+
+function getMusicGain(): GainNode {
+  getCtx();
+  return _musicGain!;
+}
+
+/** Start the ambient gameplay drone — a low synth pad. */
+export function startAmbientDrone(): void {
+  if (_droneActive || _muted) return;
+  try {
+    const c = getCtx();
+    const dest = getMusicGain();
+
+    _droneGainNode = c.createGain();
+    _droneGainNode.gain.setValueAtTime(0.001, c.currentTime);
+    _droneGainNode.gain.linearRampToValueAtTime(0.06, c.currentTime + 2.0);
+    _droneGainNode.connect(dest);
+
+    // Fundamental: C2 ≈ 65 Hz sine
+    _droneOsc1 = c.createOscillator();
+    _droneOsc1.type = 'sine';
+    _droneOsc1.frequency.value = 65;
+    _droneOsc1.connect(_droneGainNode);
+    _droneOsc1.start();
+
+    // Fifth: G2 ≈ 98 Hz triangle (quieter)
+    _droneOsc2 = c.createOscillator();
+    _droneOsc2.type = 'triangle';
+    _droneOsc2.frequency.value = 98;
+    const g2 = c.createGain();
+    g2.gain.value = 0.4;
+    _droneOsc2.connect(g2).connect(_droneGainNode);
+    _droneOsc2.start();
+
+    _droneActive = true;
+  } catch { /* silent */ }
+}
+
+/** Stop the ambient drone with a smooth 1.5s fade-out. */
+export function stopAmbientDrone(): void {
+  if (!_droneActive || !_droneGainNode || !ctx) return;
+  try {
+    const now = ctx.currentTime;
+    _droneGainNode.gain.setValueAtTime(_droneGainNode.gain.value, now);
+    _droneGainNode.gain.linearRampToValueAtTime(0.001, now + 1.5);
+
+    const o1 = _droneOsc1;
+    const o2 = _droneOsc2;
+    setTimeout(() => {
+      try { o1?.stop(); } catch {}
+      try { o2?.stop(); } catch {}
+    }, 2000);
+
+    _droneOsc1 = null;
+    _droneOsc2 = null;
+    _droneGainNode = null;
+    _droneActive = false;
+  } catch { _droneActive = false; }
+}
+
+/** Fade drone for menus or restore for gameplay. */
+export function fadeDrone(target: 'menu' | 'gameplay'): void {
+  if (!_droneGainNode || !ctx) return;
+  const now = ctx.currentTime;
+  const vol = target === 'menu' ? 0.008 : 0.06;
+  _droneGainNode.gain.setValueAtTime(_droneGainNode.gain.value, now);
+  _droneGainNode.gain.linearRampToValueAtTime(vol, now + 0.8);
+}
+
+/** Check if drone is active. */
+export function isDronePlaying(): boolean { return _droneActive; }

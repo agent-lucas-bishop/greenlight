@@ -6,12 +6,13 @@ import {
   type CareerAnalyticsData,
 } from '../careerAnalytics';
 import { getLeaderboard, type LeaderboardEntry } from '../leaderboard';
+import { getLifetimeStats } from '../statistics';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getRunStats } from '../unlocks';
 import { STUDIO_ARCHETYPES } from '../data';
 import { sfx } from '../sound';
 
-type StatsSubTab = 'overview' | 'genres' | 'runs';
+type StatsSubTab = 'overview' | 'genres' | 'runs' | 'records';
 
 export default function StatsPanel() {
   const [subTab, setSubTab] = useState<StatsSubTab>('overview');
@@ -35,11 +36,12 @@ export default function StatsPanel() {
   return (
     <div style={{ maxWidth: 620, margin: '0 auto' }}>
       {/* Sub-tab nav */}
-      <div className="stats-tab-nav" style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 20 }}>
+      <div className="stats-tab-nav" style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
         {([
           { key: 'overview' as const, label: '📊 Overview' },
           { key: 'genres' as const, label: '🎭 Genres' },
           { key: 'runs' as const, label: '📜 Runs' },
+          { key: 'records' as const, label: '🏅 Records' },
         ]).map(t => (
           <button key={t.key} onClick={() => { sfx.tabSwitch(); setSubTab(t.key); }} style={{
             background: subTab === t.key ? 'rgba(212,168,67,0.15)' : 'transparent',

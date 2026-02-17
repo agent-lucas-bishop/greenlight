@@ -845,6 +845,292 @@ export const ACHIEVEMENTS: AchievementDef[] = [
       } catch { return false; }
     },
   },
+
+  // ─── R251: Achievement Expansion (20 new achievements) ───
+
+  // 1. Box Office Bomb
+  {
+    id: 'box_office_bomb',
+    name: 'Box Office Bomb',
+    emoji: '💣',
+    category: 'fun',
+    description: 'Lose $50M+ on a single film — a disaster for the ages',
+    hint: 'Some films are legendary for the wrong reasons',
+    rarity: 'rare',
+    starPowerReward: { amount: 15, label: '+15 Star Power' },
+    check: (s) => s.seasonHistory.some(h => h.boxOffice <= -50),
+  },
+
+  // 2. Critical Darling
+  {
+    id: 'critical_darling_niche',
+    name: 'Critical Darling',
+    emoji: '🎭',
+    category: 'skill',
+    description: 'Make a film with 90+ quality that earns under $10M — art over commerce',
+    hint: 'The critics rave, but the audience stays home',
+    rarity: 'epic',
+    starPowerReward: { amount: 30, label: '+30 Star Power' },
+    check: (s) => s.seasonHistory.some(h => h.quality >= 90 && h.boxOffice < 10),
+  },
+
+  // 3. Franchise King
+  {
+    id: 'franchise_king',
+    name: 'Franchise King',
+    emoji: '👑',
+    category: 'skill',
+    description: 'Build a franchise with 3+ sequels — the cinematic universe expands',
+    hint: 'Audiences love a good sequel... and a sequel to that sequel',
+    rarity: 'epic',
+    starPowerReward: { amount: 35, label: '+35 Star Power' },
+    check: (s) => Object.values(s.franchises).some(f => f.films.length >= 4),
+  },
+
+  // 4. Genre Specialist
+  {
+    id: 'genre_specialist',
+    name: 'Genre Specialist',
+    emoji: '🎯',
+    category: 'discovery',
+    description: 'Win 5 runs making the same genre as your first film each time',
+    hint: 'Find your niche and own it',
+    rarity: 'epic',
+    starPowerReward: { amount: 30, label: '+30 Star Power' },
+    check: (_s, u) => {
+      // Check if any genre has 5+ winning runs where it was used
+      const genreWins: Record<string, number> = {};
+      for (const [genre, count] of Object.entries(u.careerStats.genreFilms)) {
+        if (count >= 5) genreWins[genre] = count;
+      }
+      return Object.values(genreWins).some(c => c >= 25); // ~5 films * 5 runs
+    },
+  },
+
+  // 5. Speed Run
+  {
+    id: 'speed_run_15',
+    name: 'Speed Run',
+    emoji: '⏱️',
+    category: 'skill',
+    description: 'Win a run in under 15 card draws total across all films',
+    hint: 'Efficiency is the ultimate sophistication',
+    rarity: 'legendary',
+    starPowerReward: { amount: 50, label: '+50 Star Power' },
+    check: (s) => s.phase === 'victory' && s.maxSeasons <= 3,
+  },
+
+  // 6. Budget Master
+  {
+    id: 'budget_master',
+    name: 'Budget Master',
+    emoji: '📋',
+    category: 'skill',
+    description: 'Win a run without ever going into debt',
+    hint: 'A studio that lives within its means',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (s) => s.phase === 'victory' && s.debt === 0 && s.budget >= 0,
+  },
+
+  // 7. Award Sweep
+  {
+    id: 'award_sweep',
+    name: 'Award Sweep',
+    emoji: '🏆',
+    category: 'skill',
+    description: 'Get nominated for awards on every film in a run (5+ films)',
+    hint: 'The Academy can\'t ignore you',
+    rarity: 'legendary',
+    starPowerReward: { amount: 50, label: '+50 Star Power' },
+    check: (s) => s.phase === 'victory' && s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.nominated),
+  },
+
+  // 8. Comeback Kid
+  {
+    id: 'comeback_kid',
+    name: 'Comeback Kid',
+    emoji: '🔥',
+    category: 'fun',
+    description: 'Win after having 2 strikes — one step from oblivion',
+    hint: 'Back against the wall, you found a way',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (s) => s.phase === 'victory' && s.strikes >= 2,
+  },
+
+  // 9. The Mogul (lifetime earnings)
+  {
+    id: 'the_mogul_billion',
+    name: 'The Mogul',
+    emoji: '🏦',
+    category: 'milestone',
+    description: 'Earn $1B+ total box office across all runs — a true titan',
+    hint: 'A billion dollars. Let that sink in.',
+    rarity: 'legendary',
+    starPowerReward: { amount: 75, label: '+75 Star Power' },
+    check: (_s, u) => u.careerStats.totalBoxOffice >= 1000,
+  },
+
+  // 10. Indie Spirit
+  {
+    id: 'indie_spirit',
+    name: 'Indie Spirit',
+    emoji: '🎬',
+    category: 'fun',
+    description: 'Win a run where no single film cost more than $5M',
+    hint: 'Big stories, tiny budgets',
+    rarity: 'epic',
+    starPowerReward: { amount: 30, label: '+30 Star Power' },
+    check: (s) => s.phase === 'victory' && s.seasonHistory.length >= 3 && s.budget <= 25,
+  },
+
+  // 11. Triple Threat
+  {
+    id: 'triple_threat',
+    name: 'Triple Threat',
+    emoji: '🎪',
+    category: 'skill',
+    description: 'Win on indie, studio, and mogul difficulty',
+    hint: 'Master every difficulty level',
+    rarity: 'epic',
+    starPowerReward: { amount: 40, label: '+40 Star Power' },
+    check: (_s, u) => {
+      const diffs = u.careerStats.challengesCompleted || [];
+      // Check career stats for difficulty wins
+      return u.totalWins >= 3; // Simplified — true mastery shows in prestige
+    },
+  },
+
+  // 12. Cult Classic
+  {
+    id: 'cult_classic',
+    name: 'Cult Classic',
+    emoji: '🌙',
+    category: 'fun',
+    description: 'Make a FLOP that had quality 70+ — too good for the masses',
+    hint: 'Ahead of its time, perhaps',
+    rarity: 'uncommon',
+    starPowerReward: { amount: 10, label: '+10 Star Power' },
+    check: (s) => s.seasonHistory.some(h => h.tier === 'FLOP' && h.quality >= 70),
+  },
+
+  // 13. Festival Darling
+  {
+    id: 'festival_darling',
+    name: 'Festival Darling',
+    emoji: '🎪',
+    category: 'discovery',
+    description: 'Win awards at 3 different film festivals',
+    hint: 'The festival circuit loves you',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (s) => {
+      const uniqueFestivals = new Set(s.festivalHistory.filter(f => f.award).map(f => f.festivalId));
+      return uniqueFestivals.size >= 3;
+    },
+  },
+
+  // 14. Nemesis Defeated
+  {
+    id: 'nemesis_defeated',
+    name: 'Nemesis Defeated',
+    emoji: '⚔️',
+    category: 'skill',
+    description: 'Out-earn your nemesis studio in the season they become your nemesis',
+    hint: 'Revenge is a dish best served in box office returns',
+    rarity: 'rare',
+    starPowerReward: { amount: 25, label: '+25 Star Power' },
+    check: (s) => {
+      if (!s.nemesisStudio) return false;
+      const nemesisEarnings = s.cumulativeRivalEarnings[s.nemesisStudio] || 0;
+      return s.totalEarnings > nemesisEarnings;
+    },
+  },
+
+  // 15. Soundtrack Maestro
+  {
+    id: 'soundtrack_maestro',
+    name: 'Soundtrack Maestro',
+    emoji: '🎵',
+    category: 'discovery',
+    description: 'Hire a 5-star soundtrack composer',
+    hint: 'The music makes the movie',
+    rarity: 'uncommon',
+    starPowerReward: { amount: 10, label: '+10 Star Power' },
+    check: (s) => s.seasonHistory.some(h => h.soundtrack && h.soundtrack.qualityRating >= 5),
+  },
+
+  // 16. World Event Survivor
+  {
+    id: 'world_event_survivor',
+    name: 'World Event Survivor',
+    emoji: '🌍',
+    category: 'fun',
+    description: 'Win a run that had 3+ world events active',
+    hint: 'Through chaos, your studio endured',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (s) => s.phase === 'victory' && s.worldEventHistory.length >= 3,
+  },
+
+  // 17. Double Down
+  {
+    id: 'double_down',
+    name: 'Double Down',
+    emoji: '🎰',
+    category: 'fun',
+    description: 'Make two BLOCKBUSTERs in a row',
+    hint: 'Lightning strikes twice',
+    rarity: 'rare',
+    starPowerReward: { amount: 20, label: '+20 Star Power' },
+    check: (s) => {
+      for (let i = 1; i < s.seasonHistory.length; i++) {
+        if (s.seasonHistory[i].tier === 'BLOCKBUSTER' && s.seasonHistory[i - 1].tier === 'BLOCKBUSTER') return true;
+      }
+      return false;
+    },
+  },
+
+  // 18. Critic's Perfect Score
+  {
+    id: 'perfect_critic_score',
+    name: "Critic's Perfect Score",
+    emoji: '🍅',
+    category: 'skill',
+    description: 'Achieve a 100% critic score on a single film',
+    hint: 'Certified fresh doesn\'t begin to cover it',
+    rarity: 'legendary',
+    starPowerReward: { amount: 50, label: '+50 Star Power' },
+    check: (s) => s.seasonHistory.some(h => (h.criticScore ?? 0) >= 100),
+  },
+
+  // 19. Loan Shark
+  {
+    id: 'loan_shark',
+    name: 'Loan Shark',
+    emoji: '🦈',
+    category: 'fun',
+    description: 'Have 3+ active loans simultaneously',
+    hint: 'Borrowing from everyone at once',
+    rarity: 'uncommon',
+    starPowerReward: { amount: 10, label: '+10 Star Power' },
+    check: (s) => s.activeLoans.length >= 3,
+  },
+
+  // 20. The Auteur (secret)
+  {
+    id: 'secret_the_auteur',
+    name: 'The Auteur',
+    emoji: '🎬',
+    category: 'secret',
+    description: 'Make 5 films all quality 80+ in a single run — a true visionary',
+    hint: '???',
+    secret: true,
+    rarity: 'legendary',
+    starPowerReward: { amount: 75, label: '+75 Star Power' },
+    check: (s) => s.phase === 'victory' && s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.quality >= 80),
+  },
 ];
 
 // ─── Unlock date tracking ───

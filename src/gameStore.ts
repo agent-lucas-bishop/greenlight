@@ -110,6 +110,7 @@ import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
+import { generateWorldEvents, tickWorldEvents, getWorldEventBOMultiplier, getWorldEventTalentCostMultiplier, getWorldEventBudgetMultiplier, getWorldEventQualityBonus, getWorldEventStreamingBonus, type ActiveWorldEvent } from './worldEvents';
 
 // R179: Composer cost lookup
 const COMPOSERS_COST: Record<string, number> = Object.fromEntries(
@@ -191,6 +192,9 @@ function createInitialState(): GameState {
     postProdTestScreeningTier: null,
     postProdComposer: null,
     postProdSoundtrack: null,
+    activeWorldEvents: [],
+    worldEventHistory: [],
+    worldEventEndedThisSeason: [],
   };
 }
 
@@ -707,6 +711,9 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     rivalStats,
     nemesisStudio: null,
     lastAudienceReaction: null,
+    activeWorldEvents: [],
+    worldEventHistory: [],
+    worldEventEndedThisSeason: [],
   });
 }
 
@@ -846,6 +853,12 @@ function beginSeason() {
   if (state.activeSeasonEvent?.effect === 'indieDarlingWave') {
     scripts = scripts.map(s => s.cost <= 3 ? { ...s, baseScore: s.baseScore + 5 } : s);
   }
+  // R197: World event budget multiplier on script costs
+  const worldBudgetMult = getWorldEventBudgetMultiplier(state.activeWorldEvents);
+  if (worldBudgetMult !== 1.0) {
+    scripts = scripts.map(s => ({ ...s, cost: Math.max(1, Math.round(s.cost * worldBudgetMult)) }));
+  }
+
   // Pass script genres so market generation guarantees at least one matching market
   const scriptGenres = scripts.map(s => s.genre);
   const markets = generateMarketConditions(3, scriptGenres);
@@ -910,6 +923,12 @@ export function pickScript(script: Script) {
       cards: t.cards.map(c => c.cardType === 'action' ? { ...c, baseQuality: c.baseQuality + 1 } : c),
     } : t);
   }
+  // R197: World event talent cost multiplier
+  const worldTalentMult = getWorldEventTalentCostMultiplier(state.activeWorldEvents);
+  if (worldTalentMult !== 1.0) {
+    market = market.map(t => ({ ...t, cost: Math.max(1, Math.round(t.cost * worldTalentMult)) }));
+  }
+
   // R150: Apply snipeTalent rival actions — remove talent from market
   for (const action of (state.rivalActions || [])) {
     if (action.actionType === 'snipeTalent' && action.removedTalentIndex !== undefined && market.length > 1) {
@@ -2237,6 +2256,10 @@ export function resolveRelease() {
   );
   rawQuality += soundtrack.qualityBonus;
 
+  // R197: World event quality bonus
+  const isSequel = !!(state.sequelOrigins[script.title]);
+  rawQuality += getWorldEventQualityBonus(state.activeWorldEvents, script.genre as Genre, script.cost);
+
   // Challenge: Budget Hell — box office ×1.5
   if (state.challengeId === 'budget_hell') multiplier *= 1.5;
 
@@ -2249,6 +2272,14 @@ export function resolveRelease() {
   } else {
     boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
   }
+
+  // R197: World event BO multiplier
+  const worldEventBOMult = getWorldEventBOMultiplier(state.activeWorldEvents, script.genre as Genre, isSequel);
+  boxOffice = Math.round(boxOffice * worldEventBOMult * 10) / 10;
+
+  // R197: World event streaming bonus (e.g. pandemic)
+  const streamingWorldBonus = getWorldEventStreamingBonus(state.activeWorldEvents);
+  if (streamingWorldBonus > 0) boxOffice += streamingWorldBonus;
 
   // R153: Apply marketing multiplier from post-production phase
   const marketingMult = state.postProdMarketingMultiplier || 1.0;
@@ -2926,8 +2957,28 @@ export function nextSeason() {
     rarity: e.rarity,
   }));
   
+  // R197: Tick world events — remove expired, generate new
+  const nextSeasonNum = state.season + 1;
+  const { active: survivingEvents, ended: endedEvents } = tickWorldEvents(state.activeWorldEvents, nextSeasonNum);
+  const worldEventCtx = {
+    season: nextSeasonNum,
+    difficulty: state.difficulty,
+    reputation: state.reputation,
+    budget: state.budget,
+    seasonHistory: state.seasonHistory,
+    activeWorldEvents: survivingEvents,
+  };
+  const newWorldEvents = generateWorldEvents(worldEventCtx, rng);
+  const allActiveWorld = [...survivingEvents, ...newWorldEvents];
+  
+  // Apply one-time reputation changes from new events
+  let repChange = 0;
+  for (const we of newWorldEvents) {
+    if (we.effects.reputationChange) repChange += we.effects.reputationChange;
+  }
+
   setState({
-    season: state.season + 1,
+    season: nextSeasonNum,
     currentScript: null,
     castSlots: [],
     production: null,
@@ -2936,6 +2987,10 @@ export function nextSeason() {
     phase: 'event',
     seasonEventChoices: eventChoices,
     activeSeasonEvent: null,
+    activeWorldEvents: allActiveWorld,
+    worldEventHistory: [...state.worldEventHistory, ...endedEvents],
+    worldEventEndedThisSeason: endedEvents,
+    reputation: Math.max(0, Math.min(5, state.reputation + repChange)),
   });
 }
 

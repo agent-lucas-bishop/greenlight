@@ -18,6 +18,7 @@ import UnlockToast from './components/UnlockToast';
 import { checkUnlockConditions, UNLOCKABLE_DEFS } from './unlockableContent';
 import type { UnlockableDef } from './unlockableContent';
 import DevStats from './components/DevStats';
+import WorldEventBanner from './components/WorldEventBanner';
 import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 import { sfx } from './sound';
@@ -222,6 +223,9 @@ function App() {
         </div>
       )}
       {state.phase !== 'start' && <Header state={state} />}
+      {state.phase !== 'start' && state.activeWorldEvents && state.activeWorldEvents.length > 0 && (
+        <WorldEventBanner events={state.activeWorldEvents} currentSeason={state.season} />
+      )}
       <div className="film-strip" aria-hidden="true" />
       <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite" tabIndex={-1} style={{ outline: 'none' }}>
         <Suspense fallback={<LoadingScreen />}>

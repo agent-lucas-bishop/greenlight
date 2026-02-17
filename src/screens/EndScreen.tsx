@@ -1637,6 +1637,30 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         );
       })()}
 
+      {/* ─── WORLD EVENTS HISTORY ─── */}
+      {phase >= 6 && (state.worldEventHistory.length > 0 || state.activeWorldEvents.length > 0) && (
+        <div className="animate-slide-down" style={{ marginTop: 20 }}>
+          <h3 style={{ color: '#a855f7', marginBottom: 10, letterSpacing: 1 }}>📰 WORLD EVENTS</h3>
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 520, margin: '0 auto',
+          }}>
+            {[...state.worldEventHistory, ...state.activeWorldEvents].map((e, i) => (
+              <div key={`${e.id}-${i}`} style={{
+                background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.2)',
+                borderRadius: 8, padding: '8px 12px', fontSize: '0.75rem', maxWidth: 240,
+              }}>
+                <div style={{ fontWeight: 600, color: '#e2e8f0', marginBottom: 2 }}>
+                  {e.emoji} {e.name}
+                </div>
+                <div style={{ color: '#94a3b8', fontSize: '0.65rem' }}>
+                  S{e.startSeason}–S{e.endSeason} · {e.category}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─── CAREER NARRATIVE ─── */}
       {phase >= 6 && (
         <div className="animate-slide-down" style={{

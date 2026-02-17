@@ -125,6 +125,7 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
       const scores = await fetchGlobalLeaderboard(diff);
       setGlobalScores(scores);
       setLastRefresh(Date.now());
+      if (scores.length > 0) sfx.globalLeaderboardLoad();
     } catch {
       setGlobalError('Failed to load global scores');
     } finally {

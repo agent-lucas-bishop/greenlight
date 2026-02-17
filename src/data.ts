@@ -4823,6 +4823,7 @@ function modTalentToPool(mt: CustomTalent): Omit<Talent, 'id'> {
     type: mt.talentType,
     skill: mt.skill,
     cost: mt.cost,
+    heat: 0,
     cards,
   };
 }

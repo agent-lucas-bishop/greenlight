@@ -135,6 +135,12 @@ export async function submitScore(params: {
     const data = await res.json();
     // Flush any pending submissions
     flushPendingSubmissions();
+    // R208: Audio confirmation on successful submission
+    import('./sound').then(m => {
+      m.sfx.scoreSubmitConfirm();
+      // Grand fanfare if they placed #1 globally
+      if (data.position === 1) setTimeout(() => m.sfx.newGlobalHighScore(), 300);
+    }).catch(() => {});
     return { ok: true, position: data.position };
   } catch {
     // Save for later retry

@@ -1,5 +1,5 @@
 # GREENLIGHT — State of the Game
-*After 53 rounds of iteration (Feb 15-16, 2026)*
+*After 55 rounds of iteration (Feb 15-16, 2026)*
 
 **Live:** https://greenlight-plum.vercel.app
 **Repo:** ~/.openclaw/workspace/greenlight
@@ -89,6 +89,54 @@ src/
 - Custom SVG favicon with 🎬 emoji on dark background already in place
 - Apple touch icon configured
 - PWA manifest present
+
+## Round 55 Changes — Content Expansion & Replayability
+
+### New Talent (10 cards)
+- **3 Leads**: Benny Romano (Comedy King — turns incidents into comedy gold, Heart+Chaos), Cassandra Voss (The Strategist — Precision+Spectacle hybrid, calculated brilliance), Wade Harmon (The Showman — Spectacle+Momentum, big entrances/finales)
+- **3 Supports**: Luna Price (Social Media Star — Heart+Spectacle bridge, BTS content), Jack Navarro (Stunt Coordinator — Momentum+Spectacle, safety-focused), Grace Okonkwo (Dramatic Anchor — Heart+Precision, emotional core)
+- **2 Directors**: Petra Williams (Comedy Auteur — Heart specialist, warm ensembles), Marcus A. Jones (Action Maestro — Momentum+Spectacle, expensive but explosive)
+- **2 Crew**: Heartstrings Music (Heart specialist composers — emotional scores), Darkroom Collective (Chaos specialist — practical horror effects)
+- **8 new chemistry pairs** connecting new talent to existing roster
+
+### New Scripts (6)
+- **Midnight Mansion** (Horror, $2M) — Haunted house. Chaos-driven with momentum escape sequences.
+- **Wedding Season** (Comedy, $1M) — 🍿 Guilty pleasure. Low cost, Heart Engine, incidents become funny.
+- **Dynasty** (Drama, $7M) — 🏆 Prestige script. High cost ($7M), base score 10, Precision Craft. High ceiling for skilled players.
+- **Speed Demon** (Action, $2M) — Racing blockbuster. Momentum+Spectacle. Affordable action.
+- **Double Cross** (Thriller, $4M) — Heist film. Precision+Chaos hybrid. Slow Burn ability.
+- **Cosmic Harvest** (Sci-Fi, $5M) — Spectacle meets Heart. Wonder and emotion in space.
+
+### Season Event System (NEW MECHANIC)
+Between each season, 3-4 random events are offered. Player picks one (or skips). Adds strategic unpredictability — no two runs feel the same.
+
+**12 unique events:**
+| Event | Effect |
+|-------|--------|
+| 🏆 Award Season Buzz | Best film gets +$5M retroactive |
+| 📰 Industry Scandal | Lose 1 reputation |
+| 📺 Streaming Deal | +$10M now, -×0.3 mult next film |
+| 🌟 Talent Showcase | All talent costs $3 less |
+| 🎬 Genre Revival | Most-made genre gets +×0.4 mult |
+| 💰 Budget Windfall | +$8M from investor |
+| 🏔️ Creative Retreat | Next film +3 base quality |
+| 🌍 Foreign Distribution | Next film +×0.3 mult |
+| ✊ Union Dispute | Crew costs +$2 but cards +1 quality |
+| 📱 Viral Marketing | If quality >25, earn +$5M bonus |
+| 🎭 Legacy Actor Returns | +5 quality to next production |
+| 📝 Critics' Darling | Clean Wrap bonus doubled |
+
+### Content Totals After R55
+| Content | Count |
+|---------|-------|
+| Lead Actors | 16 |
+| Support Actors | 13 |
+| Directors | 11 |
+| Crew | 11 |
+| Scripts | 18 |
+| Chemistry Pairs | 29 |
+| Season Events | 12 |
+| Genre Coverage | All 7 genres have 2+ scripts |
 
 ## Round 53 Changes
 

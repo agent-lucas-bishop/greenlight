@@ -27,6 +27,8 @@ import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessL
 import { buildDirectorProfile, recordDirectorRun, getDirectorCareer, type DirectorProfile } from '../directorProfile';
 import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionProgress } from '../tradingCards';
 import TradingCardToast from '../components/TradingCardToast';
+import ShareCard from '../components/ShareCard';
+import { extractShareData, type RunShareData } from '../sharing';
 
 // ─── Helpers ───
 
@@ -412,6 +414,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [newCardIds, setNewCardIds] = useState<string[]>([]);
   const [highScoreRank, setHighScoreRank] = useState<number | null>(null);
   const [leaderboardEntry, setLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
+  const [showShareCard, setShowShareCard] = useState(false);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
     history,
@@ -422,6 +425,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const studioLegacy = useMemo(() => isVictory ? getStudioLegacy(state) : null, []);
   const directorProfile = useMemo(() => buildDirectorProfile(history), []);
   const awardsResult = useMemo(() => calculateAwards(state.seasonHistory), []);
+  const shareData = useMemo<RunShareData>(() => extractShareData(state, score, rank, legacy.rating, isVictory, directorProfile.styleTitle), []);
 
   const totalBO = state.totalEarnings;
   const bestFilm = history.length > 0 ? history.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
@@ -1656,17 +1660,31 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           }}>
             {shareText}
           </div>
-          <button className="btn" onClick={handleCopy} style={{
-            marginTop: 10,
-            background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
-            border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
-            color: copied ? '#2ecc71' : '#d4a843',
-            padding: '8px 24px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.3s',
-          }}>
-            {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12, flexWrap: 'wrap' }}>
+            <button className="btn" onClick={handleCopy} style={{
+              background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
+              border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
+              color: copied ? '#2ecc71' : '#d4a843',
+              padding: '8px 24px', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.3s',
+            }}>
+              {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
+            </button>
+            <button className="btn" onClick={() => { sfx.shareSnap(); setShowShareCard(true); }} style={{
+              background: 'linear-gradient(135deg, rgba(212,168,67,0.2), rgba(155,89,182,0.15))',
+              border: '2px solid rgba(212,168,67,0.5)',
+              color: '#d4a843',
+              padding: '8px 24px', fontSize: '0.85rem', cursor: 'pointer',
+              fontFamily: 'Bebas Neue', letterSpacing: 1,
+              animation: 'comboAppear 0.5s ease',
+            }}>
+              📸 Share Card
+            </button>
+          </div>
         </div>
       )}
+
+      {/* ─── SHARE CARD MODAL ─── */}
+      {showShareCard && <ShareCard data={shareData} onClose={() => setShowShareCard(false)} />}
 
       {/* ─── TRADING CARDS ─── */}
       {phase >= 7 && newCardIds.length > 0 && (

@@ -115,6 +115,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showShake, setShowShake] = useState(false);
   const [showGoldenBurst, setShowGoldenBurst] = useState(false);
+  const [tierRevealed, setTierRevealed] = useState(false);
 
   // Calculate streak: consecutive non-flop films ending with this one
   const streak = (() => {
@@ -173,15 +174,19 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
     sfx.boxOfficeReveal();
     const t1 = setTimeout(() => {
       setPhase(1);
-      if (streak >= 2) setTimeout(() => sfx.streakBonus(), 200);
-      if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); setShowGoldenBurst(true); }
-      else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); setShowGoldenBurst(true); }
-      else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); setTimeout(() => sfx.strikeAdded(), 400); setShowShake(true); setTimeout(() => setShowShake(false), 250); }
-      else { sfx.hit(); }
-      setTimeout(() => setScreenFlash(''), 800);
+      // Brief suspense before tier visual reveal
+      setTimeout(() => {
+        setTierRevealed(true);
+        if (streak >= 2) setTimeout(() => sfx.streakBonus(), 200);
+        if (tier === 'BLOCKBUSTER') { setScreenFlash('screen-flash-gold'); sfx.blockbuster(); setShowConfetti(true); setShowGoldenBurst(true); }
+        else if (tier === 'SMASH') { setScreenFlash(''); sfx.smash(); setShowConfetti(true); setShowGoldenBurst(true); }
+        else if (tier === 'FLOP') { setScreenFlash('screen-flash-red'); sfx.flop(); setTimeout(() => sfx.strikeAdded(), 400); setShowShake(true); setTimeout(() => setShowShake(false), 250); }
+        else { sfx.hit(); }
+        setTimeout(() => setScreenFlash(''), 800);
+      }, 500);
     }, 1600);
-    const t2 = setTimeout(() => setPhase(2), 2800);
-    const t3 = setTimeout(() => { setPhase(3); sfx.marketForecast(); }, 3600);
+    const t2 = setTimeout(() => setPhase(2), 3300);
+    const t3 = setTimeout(() => { setPhase(3); sfx.marketForecast(); }, 4100);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
@@ -217,9 +222,9 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       </div>
 
       {/* TIER BANNER */}
-      {phase >= 1 && (
+      {phase >= 1 && tierRevealed && (
         <div
-          className={`tier-banner tier-${tier.toLowerCase()} animate-slide-down`}
+          className={`tier-banner tier-${tier.toLowerCase()} tier-reveal-suspense`}
           style={{ background: config.bg, borderColor: config.color }}
           aria-live="assertive"
           role="status"

@@ -3194,6 +3194,109 @@ body {
   text-transform: uppercase;
 }
 
+/* ===== R116: VISUAL POLISH — ANIMATIONS & TRANSITIONS ===== */
+
+/* --- 1. Talent card hover glow + select snap --- */
+.talent-card {
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .talent-card:hover {
+    border-color: rgba(212,168,67,0.6) !important;
+    box-shadow:
+      0 0 18px rgba(212,168,67,0.2),
+      0 0 36px rgba(212,168,67,0.08),
+      0 8px 32px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.06) !important;
+  }
+  .talent-card.talent-role-lead:hover {
+    box-shadow:
+      0 0 20px rgba(255,215,0,0.25),
+      0 0 40px rgba(255,215,0,0.08),
+      0 8px 32px rgba(0,0,0,0.5) !important;
+  }
+  .talent-card.talent-role-director:hover {
+    box-shadow:
+      0 0 20px rgba(155,89,182,0.25),
+      0 0 40px rgba(155,89,182,0.08),
+      0 8px 32px rgba(0,0,0,0.5) !important;
+  }
+}
+.talent-card.selected {
+  animation: talentSnap 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  border-color: var(--gold-bright) !important;
+  box-shadow: 0 0 24px rgba(212,168,67,0.3), 0 4px 20px rgba(0,0,0,0.4) !important;
+}
+@keyframes talentSnap {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* --- 2. Quality/Budget number change flash --- */
+.number-flash-green {
+  animation: numberFlashGreen 0.6s ease;
+}
+.number-flash-red {
+  animation: numberFlashRed 0.6s ease;
+}
+@keyframes numberFlashGreen {
+  0% { color: inherit; }
+  25% { color: var(--green-bright); text-shadow: 0 0 12px rgba(46,204,113,0.5); transform: scale(1.15); }
+  100% { color: inherit; text-shadow: none; transform: scale(1); }
+}
+@keyframes numberFlashRed {
+  0% { color: inherit; }
+  25% { color: var(--red-bright); text-shadow: 0 0 12px rgba(231,76,60,0.5); transform: scale(1.15); }
+  100% { color: inherit; text-shadow: none; transform: scale(1); }
+}
+
+/* --- 3. Tier reveal dramatic staging --- */
+.tier-banner.tier-reveal-suspense {
+  animation: tierSuspense 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes tierSuspense {
+  0% { opacity: 0; transform: scale(0.3); filter: blur(12px); }
+  60% { opacity: 1; transform: scale(1.08); filter: blur(0); }
+  80% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+.tier-banner.tier-blockbuster.tier-reveal-suspense {
+  animation: tierSuspense 0.6s cubic-bezier(0.22, 1, 0.36, 1), blockbusterGlow 2s ease 0.6s infinite;
+}
+.tier-banner.tier-flop.tier-reveal-suspense {
+  animation: tierSuspense 0.6s cubic-bezier(0.22, 1, 0.36, 1), flopShake 0.6s ease 0.6s;
+}
+
+/* --- 4. Script card hover refinement --- */
+@media (hover: hover) {
+  .card.genre-action:hover,
+  .card.genre-comedy:hover,
+  .card.genre-horror:hover,
+  .card.genre-scifi:hover,
+  .card.genre-drama:hover,
+  .card.genre-thriller:hover,
+  .card.genre-romance:hover {
+    transform: translateY(-6px);
+    box-shadow:
+      0 14px 40px rgba(0,0,0,0.65),
+      0 0 20px rgba(212,168,67,0.12),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+}
+
+/* --- R116 reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .talent-card.selected { animation: none !important; }
+  .number-flash-green, .number-flash-red { animation: none !important; }
+  .tier-banner.tier-reveal-suspense { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+}
+.force-reduce-motion .talent-card.selected { animation: none !important; }
+.force-reduce-motion .number-flash-green,
+.force-reduce-motion .number-flash-red { animation: none !important; }
+.force-reduce-motion .tier-banner.tier-reveal-suspense { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+
 /* ===== R108: UI/UX CONSISTENCY PASS ===== */
 
 /* --- Button Hierarchy --- */

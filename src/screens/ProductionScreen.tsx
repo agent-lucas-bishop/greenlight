@@ -162,6 +162,8 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const [combo, setCombo] = useState(0);
   const [comboVisible, setComboVisible] = useState(false);
   const [qualityPunch, setQualityPunch] = useState(false);
+  const [qualityFlashDir, setQualityFlashDir] = useState<'green' | 'red' | ''>('');
+  const prevQuality = useRef(0);
   const [disasterShake, setDisasterShake] = useState(false);
   const [pickedCardId, setPickedCardId] = useState<string | null>(null);
   const [rejectedCardId, setRejectedCardId] = useState<string | null>(null);
@@ -176,6 +178,21 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const canWrap = prod.drawCount > 0 && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && !prod.pendingBlock && !(prod.forceExtraDraw && prod.drawCount < maxDraws);
   const mustDraw = prod.forceExtraDraw && prod.drawCount < maxDraws && !prod.isDisaster;
   const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus, directorVisionBonus } = calculateQuality(state);
+
+  // Track quality direction for color flash
+  useEffect(() => {
+    if (prevQuality.current !== 0 || rawQuality !== 0) {
+      if (rawQuality > prevQuality.current) {
+        setQualityFlashDir('green');
+      } else if (rawQuality < prevQuality.current) {
+        setQualityFlashDir('red');
+      }
+      const t = setTimeout(() => setQualityFlashDir(''), 600);
+      prevQuality.current = rawQuality;
+      return () => clearTimeout(t);
+    }
+    prevQuality.current = rawQuality;
+  }, [rawQuality]);
 
   // Chemistry display
   const castNames = state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[];
@@ -317,7 +334,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         return (
           <div style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 4 }}>
-              <span style={{ color: '#999' }}>Quality: <strong className={qualityPunch ? 'quality-punch' : ''} style={{ color: '#d4a843', display: 'inline-block' }} aria-live="polite">{rawQuality}</strong> / ~{neededQuality} needed</span>
+              <span style={{ color: '#999' }}>Quality: <strong className={`${qualityPunch ? 'quality-punch' : ''} ${qualityFlashDir === 'green' ? 'number-flash-green' : qualityFlashDir === 'red' ? 'number-flash-red' : ''}`} style={{ color: '#d4a843', display: 'inline-block' }} aria-live="polite">{rawQuality}</strong> / ~{neededQuality} needed</span>
               <span style={{ color: progressColor, fontWeight: 600 }}>{meterLabel}</span>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 8, overflow: 'hidden' }}>

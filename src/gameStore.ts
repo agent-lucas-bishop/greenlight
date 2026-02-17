@@ -682,6 +682,14 @@ function beginSeason() {
     scripts = scripts.map(s => ({ ...s, genre: lockedGenre as Genre, cost: Math.round(s.cost * 0.7) }));
   }
   
+  // R115: Market Crash — all script costs -$2 (min $1)
+  if (state.activeSeasonEvent?.effect === 'marketCrash') {
+    scripts = scripts.map(s => ({ ...s, cost: Math.max(1, s.cost - 2) }));
+  }
+  // R115: Indie Darling Wave — scripts costing $3 or less get +5 base quality
+  if (state.activeSeasonEvent?.effect === 'indieDarlingWave') {
+    scripts = scripts.map(s => s.cost <= 3 ? { ...s, baseScore: s.baseScore + 5 } : s);
+  }
   // Pass script genres so market generation guarantees at least one matching market
   const scriptGenres = scripts.map(s => s.genre);
   const markets = generateMarketConditions(3, scriptGenres);
@@ -2331,6 +2339,12 @@ export function pickSeasonEvent(eventId: string) {
     }
     // biddingWar effect applied during next season in beginSeason
     // Other effects applied during next season in beginSeason/resolveRelease
+    // R115 events
+    case 'awardsCampaign': {
+      budget -= 5;
+      break;
+    }
+    // marketCrash, talentStrike, genreRenaissance, indieDarlingWave applied during beginSeason/pickScript/release
   }
   
   // Genre Masterclass: +1 mastery for most-made genre (immutable update)

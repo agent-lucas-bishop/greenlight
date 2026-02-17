@@ -16,6 +16,7 @@ import { checkURLForMod, importModPack } from './modding';
 import CutsceneOverlay from './components/CutsceneOverlay';
 import { getRandomTip } from './loadingTips';
 import LoadingScreen from './components/LoadingScreen';
+import TipsCarousel from './components/TipsCarousel';
 import { checkAchievements, persistAchievements } from './achievements';
 import type { AchievementDef } from './achievements';
 import AchievementToast from './components/AchievementToast';
@@ -408,11 +409,7 @@ function App() {
             )}
             <div className="season-theme-icon">{getSeasonTheme(seasonOverlay).icon}</div>
             <div className="season-number">SEASON {seasonOverlay}: {getSeasonTheme(seasonOverlay).name}</div>
-            {seasonTip && (
-              <div className="season-tip-text">
-                {seasonTip}
-              </div>
-            )}
+            <TipsCarousel compact />
             <div className="season-click-hint">CLICK TO CONTINUE</div>
           </div>
         </div>

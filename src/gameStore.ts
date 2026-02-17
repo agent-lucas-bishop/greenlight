@@ -953,6 +953,7 @@ export function activateDirectorsCut() {
   const prod = { ...state.production };
   const peek = prod.deck.slice(0, Math.min(3, prod.deck.length));
   prod.directorsCutActive = true;
+  prod.directorsCutUsed = true; // Consumed immediately — no take-backs after seeing cards
   prod.directorsCutCards = [...peek];
   setState({ production: prod });
 }
@@ -1742,11 +1743,7 @@ export function pickSeasonEvent(eventId: string) {
     case 'genreMasterclass': {
       // +1 genre mastery for most-made genre, costs $4M
       budget -= 4;
-      const entries = Object.entries(state.genreMastery);
-      if (entries.length > 0) {
-        const best = entries.sort((a, b) => b[1] - a[1])[0][0];
-        state.genreMastery[best] = (state.genreMastery[best] || 0) + 1;
-      }
+      // genreMastery update is deferred to setState below
       break;
     }
     case 'insuranceFraud': {
@@ -1771,11 +1768,22 @@ export function pickSeasonEvent(eventId: string) {
     // Other effects applied during next season in beginSeason/resolveRelease
   }
   
+  // Genre Masterclass: +1 mastery for most-made genre (immutable update)
+  let genreMastery = state.genreMastery;
+  if (event.effect === 'genreMasterclass') {
+    const entries = Object.entries(genreMastery);
+    if (entries.length > 0) {
+      const best = entries.sort((a, b) => b[1] - a[1])[0][0];
+      genreMastery = { ...genreMastery, [best]: (genreMastery[best] || 0) + 1 };
+    }
+  }
+
   setState({
     budget,
     reputation,
     roster,
     streamingDealActive,
+    genreMastery,
     activeSeasonEvent: event,
     seasonEventChoices: null,
     phase: 'greenlight',

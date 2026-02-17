@@ -41,6 +41,8 @@ export function getPrestige(): PrestigeState {
 
 function savePrestige(state: PrestigeState) {
   try { localStorage.setItem(PRESTIGE_KEY, JSON.stringify(state)); } catch {}
+  // Update in-memory cache so getSeasonTarget doesn't re-read localStorage
+  try { const { refreshPrestigeLevelCache } = require('./data'); refreshPrestigeLevelCache(); } catch {}
 }
 
 export function getPrestigeLevel(xp: number): PrestigeLevel {

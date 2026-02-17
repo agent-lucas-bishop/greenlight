@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, cancelDirectorsCut, attemptEncore, declineEncore, getState } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { getCardBackColor } from '../achievements';
@@ -563,53 +563,6 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       )}
 
-      {/* Played cards */}
-      <div className="production-deck" ref={scrollRef}>
-        {prod.played.map((card) => (
-          <ProductionCardDisplay
-            key={card.id}
-            card={card}
-            isNew={card.id === lastDrawn}
-          />
-        ))}
-      </div>
-
-      {/* Discard pile */}
-      {prod.discarded.length > 0 && (
-        <div style={{ textAlign: 'center', marginBottom: 12 }}>
-          <button className="btn-tiny" onClick={() => setShowDiscard(!showDiscard)}>
-            🗑️ Discarded ({prod.discarded.length}) {showDiscard ? '▲' : '▼'}
-          </button>
-          {showDiscard && (
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8, opacity: 0.6 }}>
-              {prod.discarded.map(card => (
-                <div key={card.id} style={{
-                  background: 'var(--dark2)',
-                  border: '1px solid var(--dark3)',
-                  borderRadius: 6,
-                  padding: '4px 8px',
-                  fontSize: '0.7rem',
-                }}>
-                  <span style={{ color: '#888' }}>{card.name}</span>
-                  <span style={{ marginLeft: 4, color: card.baseQuality >= 0 ? '#2ecc71' : '#e74c3c' }}>
-                    {card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Disaster banner */}
-      {prod.isDisaster && (
-        <div className="disaster-banner">
-          <h3 style={{ fontSize: '2.5rem', marginBottom: 8 }}>💥 DISASTER! 💥</h3>
-          <p style={{ fontSize: '1rem' }}>3 Incidents! ALL production quality lost!</p>
-          <p style={{ color: '#e74c3c', fontSize: '0.85rem', marginTop: 8, opacity: 0.8 }}>The studio insurance department is on the phone...</p>
-        </div>
-      )}
-
       {/* Chemistry banner */}
       {activeChemistry.length > 0 && prod.drawCount === 0 && (
         <div style={{ background: 'rgba(233,30,99,0.1)', border: '1px solid #e91e63', borderRadius: 8, padding: '8px 16px', marginBottom: 12, textAlign: 'center' }}>
@@ -631,7 +584,6 @@ export default function ProductionScreen({ state }: { state: GameState }) {
               const card = prod.directorsCutCards[cardIdx];
               return (
                 <div key={pos} onClick={() => {
-                  // Rotate: move clicked card to front, shift others
                   const newOrder = [...dcOrder];
                   const clicked = newOrder.splice(pos, 1)[0];
                   newOrder.unshift(clicked);
@@ -647,7 +599,6 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             <button className="btn btn-primary" onClick={() => {
               confirmDirectorsCut(dcOrder.slice(0, prod.directorsCutCards.length));
             }}>✅ CONFIRM ORDER</button>
-            <button className="btn" onClick={() => cancelDirectorsCut()}>❌ CANCEL</button>
           </div>
         </div>
       )}
@@ -658,7 +609,133 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       )}
 
-      {/* Actions */}
+      {/* Disaster banner */}
+      {prod.isDisaster && (
+        <div className="disaster-banner">
+          <h3 style={{ fontSize: '2.5rem', marginBottom: 8 }}>💥 DISASTER! 💥</h3>
+          <p style={{ fontSize: '1rem' }}>3 Incidents! ALL production quality lost!</p>
+          <p style={{ color: '#e74c3c', fontSize: '0.85rem', marginTop: 8, opacity: 0.8 }}>The studio insurance department is on the phone...</p>
+        </div>
+      )}
+
+      {/* Drawing animation */}
+      {isDrawing && (
+        <div className="draw-animation">
+          <div className="card-back" style={getCardBackColor() ? { filter: `drop-shadow(0 0 15px ${getCardBackColor()})` } : {}}>🎬</div>
+          <div className="card-back" style={getCardBackColor() ? { filter: `drop-shadow(0 0 15px ${getCardBackColor()})` } : {}}>🎬</div>
+        </div>
+      )}
+
+      {/* Draw-2-Pick-1 Choice UI */}
+      {prod.currentDraw && prod.currentDraw.choosable.length >= 2 && !prod.pendingChallenge && (
+        <div className="choice-area" style={{ textAlign: 'center' }}>
+          <h3 style={{ color: 'var(--gold)', marginBottom: 16, fontSize: '1.4rem', fontFamily: 'Bebas Neue', letterSpacing: '0.12em', position: 'relative', zIndex: 2 }}>🎬 CHOOSE YOUR CARD</h3>
+          <div className="choice-vs">VS</div>
+          <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
+            {prod.currentDraw.choosable.map((card, i) => {
+              const wouldFire = card.synergyCondition ? (() => {
+                const ctx = {
+                  playedCards: prod.played,
+                  totalQuality: prod.qualityTotal,
+                  drawNumber: prod.drawCount,
+                  leadSkill: state.castSlots.find(s => s.slotType === 'Lead')?.talent?.skill || 0,
+                  redCount: prod.incidentCount,
+                  incidentCount: prod.incidentCount,
+                  previousCard: prod.played.length > 0 ? prod.played[prod.played.length - 1] : null,
+                  greenStreak: 0,
+                  remainingDeck: prod.deck,
+                  actionCardsPlayed: prod.played.filter(c => c.cardType === 'action').length,
+                  challengeCardsPlayed: prod.played.filter(c => c.cardType === 'challenge').length,
+                  tagsPlayed: prod.tagsPlayed || {},
+                  discardedCount: prod.discarded.length,
+                  consecutiveSources: 0,
+                };
+                const result = card.synergyCondition!(ctx);
+                return result.bonus !== 0 ? `Will fire: +${result.bonus}` : null;
+              })() : null;
+              
+              return (
+                <div key={card.id} style={{ flex: '1 1 200px', maxWidth: 280 }}>
+                  <ProductionCardDisplay
+                    card={card}
+                    isNew={true}
+                    selectable={true}
+                    className={card.id === pickedCardId ? 'card-slam' : card.id === rejectedCardId ? 'card-shatter' : ''}
+                    onClick={() => handlePick(i as 0 | 1)}
+                  />
+                  {wouldFire && (
+                    <div style={{ color: '#2ecc71', fontSize: '0.75rem', fontWeight: 600, marginTop: 4 }}>
+                      ✨ {wouldFire}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ color: '#888', fontSize: '0.75rem', marginTop: 8 }}>Tap a card to keep it. The other is discarded.</p>
+        </div>
+      )}
+
+      {/* Challenge Bet Prompt */}
+      {prod.pendingChallenge && prod.challengeBetActive && (
+        <div style={{ background: 'rgba(241,196,15,0.15)', border: '2px solid #f1c40f', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'center' }}>
+          <h3 style={{ color: '#f1c40f', marginBottom: 8, fontSize: '1rem' }}>⚡ CHALLENGE BET</h3>
+          <p style={{ color: '#ccc', marginBottom: 8, fontSize: '0.9rem' }}>
+            {prod.pendingChallenge.bet.description}
+          </p>
+          {prod.pendingChallenge.bet.oddsHint && (
+            <p style={{ color: '#888', fontSize: '0.75rem', marginBottom: 12, fontStyle: 'italic' }}>
+              💡 {prod.pendingChallenge.bet.oddsHint(
+                { playedCards: prod.played, totalQuality: prod.qualityTotal, drawNumber: prod.drawCount, leadSkill: 0, redCount: prod.incidentCount, incidentCount: prod.incidentCount, previousCard: null, greenStreak: 0, remainingDeck: prod.deck, actionCardsPlayed: 0, challengeCardsPlayed: 0, tagsPlayed: prod.tagsPlayed || {}, discardedCount: prod.discarded.length, consecutiveSources: 0 }
+              )}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 8 }}>
+            <span style={{ color: '#2ecc71', fontWeight: 600 }}>Win: +{prod.pendingChallenge.bet.successBonus}</span>
+            <span style={{ color: '#888' }}>|</span>
+            <span style={{ color: '#e74c3c', fontWeight: 600 }}>Lose: {prod.pendingChallenge.bet.failPenalty}</span>
+          </div>
+          <div className="btn-group" style={{ justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => handleBet(true)}>
+              🎲 TAKE THE BET
+            </button>
+            <button className="btn" onClick={() => handleBet(false)}>
+              🚫 DECLINE (keep base value)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Block Choice UI */}
+      {prod.pendingBlock && (
+        <div style={{ background: 'rgba(231,76,60,0.1)', border: '2px solid #e74c3c', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'center' }}>
+          <h3 style={{ color: '#e74c3c', marginBottom: 8, fontSize: '1rem' }}>🛡️ INCIDENT INCOMING!</h3>
+          <p style={{ color: '#ccc', marginBottom: 12, fontSize: '0.9rem' }}>
+            <strong style={{ color: '#e74c3c' }}>{prod.pendingBlock.incident.name}</strong> ({prod.pendingBlock.incident.baseQuality}) was drawn alongside <strong style={{ color: '#2ecc71' }}>{prod.pendingBlock.actionCard.name}</strong>.
+          </p>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: 12 }}>
+            Sacrifice your Action card to block the Incident? Both cards are discarded. <strong style={{ color: '#e74c3c' }}>Costs 3 quality.</strong>
+          </p>
+          <div className="btn-group" style={{ justifyContent: 'center' }}>
+            <button className="btn btn-primary" onClick={() => handleBlock(false)} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
+              🎬 KEEP BOTH (Incident fires, keep Action)
+            </button>
+            <button className="btn" onClick={() => handleBlock(true)} style={{ background: 'rgba(231,76,60,0.2)', borderColor: '#e74c3c', color: '#e74c3c' }}>
+              🛡️ BLOCK (Sacrifice Action, discard Incident)
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 180px', maxWidth: 250 }}>
+              <ProductionCardDisplay card={prod.pendingBlock.incident} isNew={true} />
+            </div>
+            <div style={{ flex: '1 1 180px', maxWidth: 250 }}>
+              <ProductionCardDisplay card={prod.pendingBlock.actionCard} isNew={true} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Actions — at top, before played cards */}
       <div className="btn-group">
         {canDraw && !isDrawing && (
           <button className={`btn btn-primary btn-glow ${prod.incidentCount >= 2 ? 'btn-draw-dramatic' : ''}`} onClick={handleDraw}
@@ -734,6 +811,52 @@ export default function ProductionScreen({ state }: { state: GameState }) {
           <AutoAdvance onAdvance={resolveRelease} delayMs={2500} label="📊 SEE BOX OFFICE →" />
         )}
       </div>
+
+      {/* Played cards — horizontal carousel */}
+      {prod.played.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: 6, textAlign: 'center' }}>
+            🎞️ Production Timeline ({prod.played.length} card{prod.played.length !== 1 ? 's' : ''})
+          </div>
+          <div className="production-carousel" ref={scrollRef}>
+            {prod.played.map((card) => (
+              <div className="carousel-card" key={card.id}>
+                <ProductionCardDisplay
+                  card={card}
+                  isNew={card.id === lastDrawn}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Discard pile */}
+      {prod.discarded.length > 0 && (
+        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+          <button className="btn-tiny" onClick={() => setShowDiscard(!showDiscard)}>
+            🗑️ Discarded ({prod.discarded.length}) {showDiscard ? '▲' : '▼'}
+          </button>
+          {showDiscard && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8, opacity: 0.6 }}>
+              {prod.discarded.map(card => (
+                <div key={card.id} style={{
+                  background: 'var(--dark2)',
+                  border: '1px solid var(--dark3)',
+                  borderRadius: 6,
+                  padding: '4px 8px',
+                  fontSize: '0.7rem',
+                }}>
+                  <span style={{ color: '#888' }}>{card.name}</span>
+                  <span style={{ marginLeft: 4, color: card.baseQuality >= 0 ? '#2ecc71' : '#e74c3c' }}>
+                    {card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

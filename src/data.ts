@@ -1,6 +1,20 @@
 import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag } from './types';
 import { rng } from './seededRng';
 
+// Cache prestige level in memory to avoid localStorage reads on every render
+let _cachedPrestigeLevel = 0;
+try {
+  const _pd = JSON.parse(localStorage.getItem('greenlight_prestige') || '{}');
+  _cachedPrestigeLevel = _pd.level || 0;
+} catch {}
+/** Call after prestige level changes to update the in-memory cache */
+export function refreshPrestigeLevelCache() {
+  try {
+    const _pd = JSON.parse(localStorage.getItem('greenlight_prestige') || '{}');
+    _cachedPrestigeLevel = _pd.level || 0;
+  } catch {}
+}
+
 let _id = 0;
 const uid = () => `id_${_id++}`;
 
@@ -4834,14 +4848,12 @@ export function getSeasonTarget(season: number, gameMode: string = 'normal', cha
   if (dailyModifierId === 'award_season' || dailyModifierId2 === 'award_season') target += 5;
   // Veteran scaling: prestige level 5+ increases targets by 5% per level above 4
   // This keeps veteran players challenged as their legacy perks accumulate
-  try {
-    const prestigeData = JSON.parse(localStorage.getItem('greenlight_prestige') || '{}');
-    const prestigeLevel = prestigeData.level || 0;
-    if (prestigeLevel >= 5) {
-      const veteranScaling = 1 + (prestigeLevel - 4) * 0.05;
-      target = Math.round(target * veteranScaling);
-    }
-  } catch {}
+  // Use cached prestige level instead of reading localStorage every call
+  const prestigeLevel = _cachedPrestigeLevel;
+  if (prestigeLevel >= 5) {
+    const veteranScaling = 1 + (prestigeLevel - 4) * 0.05;
+    target = Math.round(target * veteranScaling);
+  }
   return target;
 }
 

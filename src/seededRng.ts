@@ -65,3 +65,19 @@ export function deactivateSeed() {
 export function rng(): number {
   return _seededRng ? _seededRng() : Math.random();
 }
+
+/** Get the daily number (days since epoch date 2025-01-01) for display like "Daily #42" */
+export function getDailyNumber(): number {
+  const epoch = new Date('2025-01-01').getTime();
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.floor((now.getTime() - epoch) / 86400000) + 1;
+}
+
+/** Get the weekly number (weeks since epoch date 2025-01-01) for display like "Weekly #7" */
+export function getWeeklyNumber(): number {
+  const epoch = new Date('2025-01-01').getTime();
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.floor((now.getTime() - epoch) / (86400000 * 7)) + 1;
+}

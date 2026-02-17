@@ -102,6 +102,7 @@ import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
+import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;

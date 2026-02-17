@@ -303,6 +303,8 @@ export interface GameState {
   extendedCutAvailable: boolean; // after HIT+, can do extended cut
   extendedCutUsed: boolean; // used this season (skips next film slot)
   reshootsBudgetUsed: boolean; // $5M reshoots — re-roll incidents after wrap, once per film
+  activeModifiers?: string[]; // IDs of toggled challenge modifiers
+  weeklySeed?: string; // weekly seed display string
 }
 
 export interface SeasonEventChoice {

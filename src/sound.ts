@@ -554,6 +554,26 @@ export const sfx = {
 
   // ── New sounds for R121 ──
 
+  // Content unlock — magical discovery fanfare
+  contentUnlock() {
+    play(c => {
+      // Lock opening click
+      noise(c, 0, 0.06, 0.12);
+      note(c, 400, 0, 0.05, 0.1, 'square');
+      // Ascending discovery arpeggio: E5 → G#5 → B5 → E6
+      note(c, 659, 0.1, 0.2, 0.12, 'sine');
+      note(c, 831, 0.2, 0.2, 0.12, 'sine');
+      note(c, 988, 0.3, 0.2, 0.12, 'sine');
+      note(c, 1319, 0.4, 0.4, 0.15, 'sine');
+      // High shimmer
+      note(c, 2637, 0.45, 0.35, 0.06, 'sine');
+      note(c, 3520, 0.5, 0.3, 0.04, 'sine');
+      // Warm resolve chord
+      note(c, 330, 0.5, 0.5, 0.08, 'triangle');
+      note(c, 494, 0.5, 0.5, 0.06, 'triangle');
+    }, 'unlock');
+  },
+
   // Challenge modifier toggle — satisfying click/switch
   modifierToggle() {
     play(c => {

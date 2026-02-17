@@ -35,6 +35,7 @@ A movie studio roguelite — you're a film producer making 5 movies across 5 sea
 | End-of-run recap + shareable results | R23 | ✅ |
 | Integration audit (-100 lines) | R24 | ✅ |
 | Dev analytics + daily/share verification | R25 | ✅ |
+| Visual regression audit + CSS fixes | R54 | ✅ |
 
 ## Architecture
 ```
@@ -90,7 +91,8 @@ src/
 - Integrated DevStats panel, achievements, tutorial overlay, lazy loading, and studio founding narrative
 
 ## What Needs Attention
-1. **No browser playtesting done** — all iteration was code-review based. Visual regressions are possible, especially R18+R19 CSS layering.
+1. ~~**No browser playtesting done**~~ — ✅ R54: Code-level visual audit completed. Fixed 5 CSS bugs (EndScreen grid layout, header button overlap on mobile, production card overflow, DevStats mobile overflow, button positioning). No browser tab was available for live testing, so a thorough code review was done instead. Real-device testing still recommended.
+1. **Real browser/device testing still needed** — all iteration was code-review based. Visual regressions are possible, especially R18+R19 CSS layering.
 2. ~~**Sound might be overwhelming**~~ — ✅ Fixed R53: master volume control + debounce
 3. ~~**Challenge mode balance untested**~~ — ✅ Fixed R53: Speed Run rebalanced from 4% → 40% win rate
 4. ~~**Daily mode needs verification**~~ — ✅ Code-audited: seeded RNG (`mulberry32`) is activated at `startGame('daily')` and all random calls use `rng()` (data.ts, narrative.ts, gameStore.ts, rivals.ts). Same date → same seed → deterministic talent pool, scripts, markets. Verified no `Math.random()` leaks in game logic.

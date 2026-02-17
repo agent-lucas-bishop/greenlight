@@ -10,7 +10,7 @@ import {
 import { getActiveSeasonalEvents, type SeasonalEvent } from '../seasonalEvents';
 import { sfx } from '../sound';
 
-type SubTab = 'overview' | 'records' | 'genres' | 'difficulty' | 'history' | 'seasonal';
+type SubTab = 'overview' | 'records' | 'genres' | 'difficulty' | 'history' | 'seasonal' | 'franchises';
 
 const TREND_ICONS: Record<string, { icon: string; color: string; label: string }> = {
   up: { icon: '📈', color: '#2ecc71', label: 'Improving' },
@@ -55,6 +55,7 @@ export default function StatsDashboard() {
     { key: 'difficulty', label: '⚡ Difficulty' },
     { key: 'history', label: '📜 History' },
     { key: 'seasonal', label: '📅 Seasonal' },
+    { key: 'franchises', label: '🎬 Franchises' },
   ];
 
   return (
@@ -80,6 +81,7 @@ export default function StatsDashboard() {
       {subTab === 'difficulty' && <DifficultySection />}
       {subTab === 'history' && <HistorySection expandedRun={expandedRun} setExpandedRun={setExpandedRun} />}
       {subTab === 'seasonal' && <SeasonalSection />}
+      {subTab === 'franchises' && <FranchiseSection />}
     </div>
   );
 }
@@ -638,6 +640,76 @@ function SeasonalSection() {
               </div>
             );
           })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── R220: Franchise Statistics Section ───
+function FranchiseSection() {
+  const stats = getLifetimeStats();
+  const runs = getRecentRuns(100);
+  
+  // Aggregate franchise data across all runs
+  let totalFranchises = 0;
+  let totalSequels = 0;
+  let longestChain = 0;
+  let longestName = '';
+  let highestGross = 0;
+  let highestGrossName = '';
+  
+  for (const run of runs) {
+    if ((run as any).franchises) {
+      const franchises = Object.values((run as any).franchises) as any[];
+      totalFranchises += franchises.length;
+      for (const f of franchises) {
+        const filmCount = f.films?.length || 0;
+        totalSequels += Math.max(0, filmCount - 1);
+        if (filmCount > longestChain) { longestChain = filmCount; longestName = f.rootTitle; }
+        if ((f.totalBoxOffice || 0) > highestGross) { highestGross = f.totalBoxOffice; highestGrossName = f.rootTitle; }
+      }
+    }
+  }
+
+  if (totalFranchises === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: 24, color: '#666' }}>
+        <div style={{ fontSize: '2rem', marginBottom: 8 }}>🎬</div>
+        <div>No franchise data yet. Earn HIT or higher to start a franchise!</div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 16 }}>
+        <div className="stat-card">
+          <div className="stat-label">Total Franchises</div>
+          <div className="stat-value">{totalFranchises}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Total Sequels Made</div>
+          <div className="stat-value">{totalSequels}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Longest Chain</div>
+          <div className="stat-value" style={{ fontSize: '0.85rem' }}>
+            {longestName ? `${longestName} (${longestChain})` : '—'}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Top Gross Franchise</div>
+          <div className="stat-value" style={{ fontSize: '0.85rem', color: '#2ecc71' }}>
+            {highestGrossName ? `${highestGrossName} ($${highestGross.toFixed(0)}M)` : '—'}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Avg Sequels/Franchise</div>
+          <div className="stat-value">
+            {totalFranchises > 0 ? (totalSequels / totalFranchises).toFixed(1) : '0'}
+          </div>
         </div>
       </div>
     </div>

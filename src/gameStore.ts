@@ -114,6 +114,13 @@ import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
 import { generateWorldEvents, tickWorldEvents, getWorldEventBOMultiplier, getWorldEventTalentCostMultiplier, getWorldEventBudgetMultiplier, getWorldEventQualityBonus, getWorldEventStreamingBonus, type ActiveWorldEvent } from './worldEvents';
 import { checkStoryEvents } from './storyEvents';
 import type { StoryEventOutcome } from './storyEvents';
+import {
+  generateLoanOffers, accrueInterest, checkDefaults, repayLoan,
+  generateInvestmentOffers, collectInvestmentIncome,
+  calculateMerchRevenue, collectMerchIncome,
+  generateStreamingDeal, generateInsuranceOffer,
+  type Loan, type Investment, type MerchStream, type StreamingDeal, type InsurancePolicy,
+} from './economy';
 
 // R179: Composer cost lookup
 const COMPOSERS_COST: Record<string, number> = Object.fromEntries(
@@ -203,6 +210,19 @@ function createInitialState(): GameState {
     pendingStoryEvent: null,
     firedStoryEventIds: [],
     storyMoraleBonus: 0,
+    // R221: Economy
+    activeLoans: [],
+    loanOffers: [],
+    activeInvestments: [],
+    investmentOffers: [],
+    merchStreams: [],
+    activeStreamingDeal: null,
+    streamingDealOffer: null,
+    insurancePolicy: null,
+    insuranceOffer: null,
+    lastMerchIncome: 0,
+    lastInvestmentIncome: 0,
+    showFinancePanel: false,
   };
 }
 
@@ -907,7 +927,45 @@ function beginSeason() {
     }
   }
 
-  setState({ scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold, pendingSequelScript: null, rivalActions, prCampaignActive: false });
+  // R221: Generate economy offers for this season
+  const loanOffers = state.budget < 15 ? generateLoanOffers(state.budget, state.season) : [];
+  const investmentOffers = generateInvestmentOffers(state.season);
+  const streamingDealOffer = generateStreamingDeal(state.season);
+  const insuranceOffer = !state.insurancePolicy ? generateInsuranceOffer(state.season) : null;
+
+  // R221: Collect investment income & merch income at season start
+  const { income: investIncome, updated: updatedInvestments } = collectInvestmentIncome(state.activeInvestments);
+  const { income: merchIncome, updated: updatedMerch } = collectMerchIncome(state.merchStreams);
+
+  // R221: Accrue loan interest
+  let activeLoans = accrueInterest(state.activeLoans);
+  const { defaultedLoans, penalty, survivingLoans } = checkDefaults(activeLoans);
+  activeLoans = survivingLoans;
+  let budgetWithEconomy = state.budget + investIncome + merchIncome - penalty;
+
+  // R221: Insurance premium auto-deduction
+  if (state.insurancePolicy?.active) {
+    budgetWithEconomy -= state.insurancePolicy.premium;
+  }
+
+  budgetWithEconomy = Math.round(budgetWithEconomy * 10) / 10;
+
+  setState({
+    scriptChoices: scripts, marketConditions: markets, hotGenres: trends.hot, coldGenres: trends.cold,
+    pendingSequelScript: null, rivalActions, prCampaignActive: false,
+    // R221: Economy state
+    budget: budgetWithEconomy,
+    loanOffers,
+    investmentOffers,
+    streamingDealOffer,
+    insuranceOffer,
+    activeLoans,
+    activeInvestments: updatedInvestments,
+    merchStreams: updatedMerch,
+    lastMerchIncome: merchIncome,
+    lastInvestmentIncome: investIncome,
+    showFinancePanel: false,
+  });
 }
 
 export function pickScript(script: Script) {
@@ -2268,17 +2326,17 @@ export function resolveRelease() {
   const currentRep = state.reputation;
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
-  // R136: Franchise sequel multiplier bonus & fatigue
+  // R220: Franchise sequel multiplier bonus (diminishing) & critic fatigue
   const franchiseRootForMult = state.sequelOrigins[script.title];
   if (franchiseRootForMult && state.franchises[franchiseRootForMult]) {
     const f = state.franchises[franchiseRootForMult];
-    // Inherit 30% of original's market multiplier as a bonus
-    multiplier += f.lastMarketMultiplier * 0.3;
-    // Franchise Fatigue: 3rd sequel (4th+ film) gets -0.2 multiplier
     const filmNum = f.sequelNumber + 1; // this is the next film in the franchise
-    if (filmNum >= 3) {
-      multiplier -= 0.2 * (filmNum - 2);
-    }
+    // Brand recognition BO bonus: +40% sequel, +25% threequel, +10% for 4th+
+    const boBonus = filmNum === 2 ? 0.40 : filmNum === 3 ? 0.25 : 0.10;
+    multiplier += boBonus;
+    // Critic fatigue: harsher scores for later entries (applied as quality penalty)
+    const fatiguePenalty = filmNum === 2 ? -5 : filmNum === 3 ? -10 : filmNum === 4 ? -18 : -25;
+    rawQuality += fatiguePenalty;
   }
 
   // R179: Generate soundtrack profile and apply quality bonus
@@ -2479,8 +2537,8 @@ export function resolveRelease() {
     franchises[franchiseRoot] = f;
   }
 
-  // Generate sequel if SMASH HIT or BLOCKBUSTER
-  if (tier === 'SMASH' || tier === 'BLOCKBUSTER') {
+  // R220: Generate sequel if HIT, SMASH, or BLOCKBUSTER
+  if (tier === 'HIT' || tier === 'SMASH' || tier === 'BLOCKBUSTER') {
     const rootTitle = franchiseRoot || script.title;
 
     // Create franchise entry if this is the first film
@@ -2764,6 +2822,83 @@ export function resolveStoryEvent(outcome: StoryEventOutcome) {
   } else {
     proceedToShop();
   }
+}
+
+// ─── R221: ECONOMY ACTIONS ───
+
+export function toggleFinancePanel() {
+  setState({ showFinancePanel: !state.showFinancePanel });
+}
+
+export function takeLoan(loanId: string) {
+  const loan = state.loanOffers.find(l => l.id === loanId);
+  if (!loan) return;
+  // Max 2 active loans
+  if (state.activeLoans.length >= 2) return;
+  setState({
+    budget: Math.round((state.budget + loan.amount) * 10) / 10,
+    activeLoans: [...state.activeLoans, { ...loan }],
+    loanOffers: state.loanOffers.filter(l => l.id !== loanId),
+  });
+  recordEvent('loan_taken', state.season, state.phase, { amount: loan.amount, rate: loan.interestRate });
+}
+
+export function makeRepayment(loanId: string, amount: number) {
+  if (state.budget < amount) return;
+  const loan = state.activeLoans.find(l => l.id === loanId);
+  if (!loan) return;
+  const result = repayLoan(loan, amount);
+  const newLoans = result
+    ? state.activeLoans.map(l => l.id === loanId ? result : l)
+    : state.activeLoans.filter(l => l.id !== loanId);
+  setState({
+    budget: Math.round((state.budget - amount) * 10) / 10,
+    activeLoans: newLoans,
+  });
+  recordEvent('loan_repaid', state.season, state.phase, { loanId, amount });
+}
+
+export function buyInvestment(investmentId: string) {
+  const inv = state.investmentOffers.find(i => i.id === investmentId);
+  if (!inv || state.budget < inv.cost) return;
+  // Max 3 active investments
+  if (state.activeInvestments.length >= 3) return;
+  setState({
+    budget: Math.round((state.budget - inv.cost) * 10) / 10,
+    activeInvestments: [...state.activeInvestments, { ...inv }],
+    investmentOffers: state.investmentOffers.filter(i => i.id !== investmentId),
+  });
+  recordEvent('investment_bought', state.season, state.phase, { name: inv.name, cost: inv.cost });
+}
+
+export function acceptStreamingDeal() {
+  const deal = state.streamingDealOffer;
+  if (!deal) return;
+  setState({
+    activeStreamingDeal: deal,
+    streamingDealOffer: null,
+    streamingDealActive: true,
+  });
+  recordEvent('streaming_deal_accepted', state.season, state.phase, { platform: deal.platformName, guarantee: deal.guaranteedIncome });
+}
+
+export function declineStreamingDeal() {
+  setState({ streamingDealOffer: null });
+}
+
+export function buyInsurance() {
+  const offer = state.insuranceOffer;
+  if (!offer || state.budget < offer.premium) return;
+  setState({
+    budget: Math.round((state.budget - offer.premium) * 10) / 10,
+    insurancePolicy: { ...offer, active: true },
+    insuranceOffer: null,
+  });
+  recordEvent('insurance_bought', state.season, state.phase, { premium: offer.premium });
+}
+
+export function cancelInsurance() {
+  setState({ insurancePolicy: null });
 }
 
 export function proceedToShop() {

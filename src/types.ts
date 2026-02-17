@@ -368,6 +368,19 @@ export interface GameState {
   pendingStoryEvent: import('./storyEvents').StoryEvent | null;
   firedStoryEventIds: string[];
   storyMoraleBonus: number; // quality bonus from morale, applied next film then cleared
+  // R221: Advanced Economy & Financial System
+  activeLoans: import('./economy').Loan[];
+  loanOffers: import('./economy').Loan[];
+  activeInvestments: import('./economy').Investment[];
+  investmentOffers: import('./economy').Investment[];
+  merchStreams: import('./economy').MerchStream[];
+  activeStreamingDeal: import('./economy').StreamingDeal | null;
+  streamingDealOffer: import('./economy').StreamingDeal | null;
+  insurancePolicy: import('./economy').InsurancePolicy | null;
+  insuranceOffer: import('./economy').InsurancePolicy | null;
+  lastMerchIncome: number;
+  lastInvestmentIncome: number;
+  showFinancePanel: boolean;
 }
 
 // ─── RIVAL ACTIONS (R150) ───

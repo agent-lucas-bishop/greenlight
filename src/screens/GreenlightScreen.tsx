@@ -10,6 +10,8 @@ import { sfx } from '../sound';
 import { useSwipe } from '../hooks/useSwipe';
 import StatTooltip from '../components/StatTooltip';
 import { announce } from '../accessibility';
+import FranchiseTracker from '../components/FranchiseTracker';
+import { getEligibleFranchises, generateSequelScript } from '../franchises';
 
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
@@ -126,6 +128,25 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
                 background: i === mobileIdx ? 'var(--gold)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s' }} />
           ))}
           <span style={{ fontSize: '0.7rem', color: '#999', marginLeft: 4 }}>← swipe →</span>
+        </div>
+      )}
+      {/* R220: Franchise options */}
+      {getEligibleFranchises(state).length > 0 && (
+        <div style={{ maxWidth: 700, margin: '0 auto 16px' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--gold)', fontFamily: 'Bebas Neue', letterSpacing: 1, marginBottom: 6 }}>
+            🎬 Franchise Options
+          </div>
+          <FranchiseTracker
+            state={state}
+            showSequelButton={!picked}
+            onMakeSequel={(franchise) => {
+              if (picked) return;
+              const sequel = generateSequelScript(franchise, state.currentScript);
+              sfx.greenlightStamp();
+              setPicked(sequel.id);
+              setTimeout(() => pickScript(sequel), 800);
+            }}
+          />
         </div>
       )}
       {state.scriptChoices.some((s: any) => s.legendary) && <MechanicTip id="legendaryScript" />}

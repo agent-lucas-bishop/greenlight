@@ -46,9 +46,9 @@ function save(data: AnalyticsData) {
 }
 
 // Generic track function for arbitrary events
-export function track(event: string) {
+export function track(event: string, _data?: Record<string, unknown>) {
   // Lightweight — just log to console in dev, no persistence needed for ad-hoc events
-  if (typeof console !== 'undefined') console.debug('[analytics]', event);
+  if (typeof console !== 'undefined') console.debug('[analytics]', event, _data || '');
 }
 
 export function trackRunStart(mode: string, challengeId?: string, archetypeId?: string) {

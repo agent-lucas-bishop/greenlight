@@ -172,6 +172,19 @@ export interface PendingBlock {
   actionCard: ProductionCard;
 }
 
+export interface DirectorVision {
+  description: string; // e.g. "Wants a Heart-tagged lead"
+  condition: (ctx: DirectorVisionContext) => boolean;
+  met?: boolean; // resolved after wrap
+}
+
+export interface DirectorVisionContext {
+  castSlots: CastSlot[];
+  tagsPlayed: Record<string, number>;
+  played: ProductionCard[];
+  incidentCount: number;
+}
+
 export interface ProductionState {
   deck: ProductionCard[];
   played: ProductionCard[];
@@ -201,6 +214,10 @@ export interface ProductionState {
   tagsPlayed: Record<string, number>;
   // Encore push-your-luck
   encoreState: EncoreState | null;
+  // Script Rewrite: re-roll 1-2 script keyword tags, costs $3M, once per film
+  scriptRewriteUsed: boolean;
+  // Director's Vision: bonus condition from hired director
+  directorVision: DirectorVision | null;
 }
 
 export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';

@@ -1,4 +1,4 @@
-import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre } from './types';
+import { GameState, GamePhase, GameMode, Talent, Script, CastSlot, ProductionState, ProductionCard, StudioPerk, MarketCondition, SynergyContext, SynergyResult, RewardTier, CardTemplate, ArchetypeFocus, Genre, DirectorVision, DirectorVisionContext, CardTag } from './types';
 import type { StudioArchetypeId } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
@@ -362,6 +362,8 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     pendingBlock: null,
     tagsPlayed,
     encoreState: p.encoreState,
+    scriptRewriteUsed: p.scriptRewriteUsed,
+    directorVision: p.directorVision,
   };
 }
 
@@ -735,6 +737,96 @@ export function fireTalent(talentId: string) {
   setState({ roster: state.roster.filter(t => t.id !== talentId) });
 }
 
+// ─── DIRECTOR'S VISION ───
+// Generate a vision condition for the director based on RNG
+function generateDirectorVision(castSlots: CastSlot[]): DirectorVision | null {
+  const director = castSlots.find(s => s.talent?.type === 'Director')?.talent;
+  if (!director) return null;
+
+  const visions: { description: string; condition: (ctx: DirectorVisionContext) => boolean }[] = [
+    {
+      description: `${director.name} wants a Heart-tagged lead`,
+      condition: (ctx) => {
+        const lead = ctx.castSlots.find(s => s.slotType === 'Lead' && s.talent);
+        if (!lead?.talent) return false;
+        return lead.talent.cards.some(c => c.tags?.includes('heart'));
+      },
+    },
+    {
+      description: `${director.name} prefers a small cast (≤3 talent)`,
+      condition: (ctx) => {
+        const filled = ctx.castSlots.filter(s => s.talent).length;
+        return filled <= 3;
+      },
+    },
+    {
+      description: `${director.name} wants zero incidents`,
+      condition: (ctx) => ctx.incidentCount === 0,
+    },
+    {
+      description: `${director.name} wants 3+ unique tag types`,
+      condition: (ctx) => Object.keys(ctx.tagsPlayed).length >= 3,
+    },
+    {
+      description: `${director.name} wants a Momentum-tagged lead`,
+      condition: (ctx) => {
+        const lead = ctx.castSlots.find(s => s.slotType === 'Lead' && s.talent);
+        if (!lead?.talent) return false;
+        return lead.talent.cards.some(c => c.tags?.includes('momentum'));
+      },
+    },
+    {
+      description: `${director.name} wants 4+ Spectacle tags`,
+      condition: (ctx) => (ctx.tagsPlayed['spectacle'] || 0) >= 4,
+    },
+    {
+      description: `${director.name} wants a full cast (all slots filled)`,
+      condition: (ctx) => ctx.castSlots.every(s => s.talent !== null),
+    },
+    {
+      description: `${director.name} wants ≤1 incident`,
+      condition: (ctx) => ctx.incidentCount <= 1,
+    },
+  ];
+
+  const pick = visions[Math.floor(rng() * visions.length)];
+  return { description: pick.description, condition: pick.condition };
+}
+
+// ─── SCRIPT REWRITE ───
+// Re-roll 1-2 keyword tags on script cards. Costs $3M. Once per film.
+export function rewriteScript() {
+  if (!state.production || !state.currentScript) return;
+  if (state.production.scriptRewriteUsed) return;
+  if (state.production.isWrapped) return;
+  if (state.budget < 3) return;
+
+  const allTags: CardTag[] = ['momentum', 'precision', 'chaos', 'heart', 'spectacle'];
+  const deck = [...state.production.deck];
+
+  // Find script cards with tags in the remaining deck
+  const scriptCardsWithTags = deck.filter(c => c.sourceType === 'script' && c.tags && c.tags.length > 0);
+  if (scriptCardsWithTags.length === 0) return;
+
+  // Re-roll 1-2 random script cards' tags
+  const rerollCount = Math.min(1 + (rng() < 0.5 ? 1 : 0), scriptCardsWithTags.length);
+  const shuffled = [...scriptCardsWithTags].sort(() => rng() - 0.5);
+  for (let i = 0; i < rerollCount; i++) {
+    const card = shuffled[i];
+    const newTags = card.tags!.map(() => allTags[Math.floor(rng() * allTags.length)]);
+    card.tags = newTags;
+  }
+
+  setState({
+    budget: state.budget - 3,
+    production: {
+      ...state.production,
+      deck,
+      scriptRewriteUsed: true,
+    },
+  });
+}
+
 export function startProduction() {
   if (!state.currentScript) return;
   const deck = buildProductionDeck(state.castSlots, state.currentScript);
@@ -768,6 +860,8 @@ export function startProduction() {
       pendingBlock: null,
       tagsPlayed: {},
       encoreState: null,
+      scriptRewriteUsed: false,
+      directorVision: generateDirectorVision(state.castSlots),
     },
   });
 }
@@ -1224,6 +1318,7 @@ export function calculateQuality(s: GameState): {
   chemistryBonus: number;
   archetypeFocusBonus: number;
   archetypeFocus: ArchetypeFocus | null;
+  directorVisionBonus: number;
 } {
   const script = s.currentScript!;
   const prod = s.production!;
@@ -1284,6 +1379,18 @@ export function calculateQuality(s: GameState): {
   const archetypeFocus = calculateArchetypeFocus(prod.tagsPlayed || {});
   const archetypeFocusBonus = archetypeFocus?.bonus || 0;
 
+  // Director's Vision bonus
+  let directorVisionBonus = 0;
+  if (prod.directorVision && prod.isWrapped) {
+    const visionCtx: DirectorVisionContext = {
+      castSlots: s.castSlots,
+      tagsPlayed: prod.tagsPlayed || {},
+      played: prod.played,
+      incidentCount: prod.incidentCount,
+    };
+    directorVisionBonus = prod.directorVision.condition(visionCtx) ? 5 : -2;
+  }
+
   // Challenge: Auteur Mode — +3 quality per consecutive film with same director
   let auteurBonus = 0;
   if (s.challengeId === 'auteur') {
@@ -1304,7 +1411,7 @@ export function calculateQuality(s: GameState): {
   // Chaos Dividend perk: +3 per incident (max +9)
   const chaosDividendBonus = s.perks.some(p => p.effect === 'chaosDividend') ? Math.min(prod.incidentCount * 3, 9) : 0;
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus;
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + directorVisionBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;
@@ -1329,7 +1436,7 @@ export function calculateQuality(s: GameState): {
     rawQuality = Math.floor(rawQuality * insuranceKeep);
   }
 
-  return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus, archetypeFocus };
+  return { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus, archetypeFocus, directorVisionBonus };
 }
 
 function getMarketMultiplier(market: MarketCondition, genre: string, quality: number): number {

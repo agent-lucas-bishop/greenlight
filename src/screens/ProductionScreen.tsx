@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState, ProductionCard } from '../types';
-import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState } from '../gameStore';
+import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapProduction, resolveRelease, useReshoots, calculateQuality, calculateArchetypeFocus, getMaxDraws, activateDirectorsCut, confirmDirectorsCut, attemptEncore, declineEncore, getState, rewriteScript } from '../gameStore';
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { getCardBackColor } from '../achievements';
@@ -174,7 +174,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const canDraw = !prod.isWrapped && prod.drawCount < maxDraws && deckSize > 0 && !prod.currentDraw && !prod.pendingChallenge && !prod.pendingBlock;
   const canWrap = prod.drawCount > 0 && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && !prod.pendingBlock && !(prod.forceExtraDraw && prod.drawCount < maxDraws);
   const mustDraw = prod.forceExtraDraw && prod.drawCount < maxDraws && !prod.isDisaster;
-  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus } = calculateQuality(state);
+  const { rawQuality, scriptBase, talentSkill, productionBonus, cleanWrapBonus, scriptAbilityBonus, genreMasteryBonus, chemistryBonus, archetypeFocusBonus, directorVisionBonus } = calculateQuality(state);
 
   // Chemistry display
   const castNames = state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[];
@@ -433,6 +433,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         {genreMasteryBonus > 0 && <span className="qb-item" style={{ color: '#2ecc71' }}>🎓 Genre Mastery: +{genreMasteryBonus}</span>}
         {chemistryBonus > 0 && <span className="qb-item" style={{ color: '#e91e63' }}>💕 Chemistry: +{chemistryBonus}</span>}
         {archetypeFocusBonus > 0 && <span className="qb-item" style={{ color: '#d4a843' }}>⚡ Focus: +{archetypeFocusBonus}</span>}
+        {directorVisionBonus !== 0 && <span className="qb-item" style={{ color: directorVisionBonus > 0 ? '#9b59b6' : '#e74c3c' }}>🎬 Vision: {directorVisionBonus > 0 ? '+' : ''}{directorVisionBonus}</span>}
       </div>
 
       {prod.budgetChange !== 0 && (
@@ -445,6 +446,35 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       <div className="prod-narrative" key={prod.drawCount}>
         {getProductionNarrative(prod.drawCount, prod.incidentCount, prod.qualityTotal, prod.cleanWrap, prod.isDisaster, prod.played.length > 0 ? prod.played[prod.played.length - 1] : null)}
       </div>
+
+      {/* Director's Vision banner */}
+      {prod.directorVision && (
+        <div style={{
+          background: prod.isWrapped
+            ? (directorVisionBonus > 0 ? 'rgba(46,204,113,0.12)' : 'rgba(231,76,60,0.12)')
+            : 'rgba(155,89,182,0.1)',
+          border: `1px solid ${prod.isWrapped ? (directorVisionBonus > 0 ? '#2ecc71' : '#e74c3c') : '#9b59b6'}`,
+          borderRadius: 8,
+          padding: '8px 16px',
+          marginBottom: 12,
+          textAlign: 'center',
+        }}>
+          <div style={{ color: '#9b59b6', fontSize: '0.75rem', fontWeight: 600, marginBottom: 2 }}>🎬 DIRECTOR'S VISION</div>
+          <div style={{ color: '#ccc', fontSize: '0.85rem' }}>
+            {prod.directorVision.description}
+          </div>
+          {prod.isWrapped && (
+            <div style={{ color: directorVisionBonus > 0 ? '#2ecc71' : '#e74c3c', fontSize: '0.8rem', fontWeight: 600, marginTop: 4 }}>
+              {directorVisionBonus > 0 ? `✅ Vision fulfilled! +${directorVisionBonus} quality` : `❌ Vision unfulfilled: ${directorVisionBonus} quality`}
+            </div>
+          )}
+          {!prod.isWrapped && (
+            <div style={{ color: '#888', fontSize: '0.7rem', marginTop: 2 }}>
+              Meet this condition for +5 quality. Fail it for -2.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Chemistry banner */}
       {activeChemistry.length > 0 && prod.drawCount === 0 && (
@@ -634,6 +664,11 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         {!prod.directorsCutUsed && !prod.directorsCutActive && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && prod.deck.length >= 2 && prod.drawCount > 0 && (
           <button className="btn btn-small" onClick={() => { setDcOrder([0, 1, 2]); activateDirectorsCut(); }} style={{ background: 'rgba(155,89,182,0.2)', borderColor: '#9b59b6', color: '#9b59b6' }}>
             🎬 DIRECTOR'S CUT
+          </button>
+        )}
+        {!prod.scriptRewriteUsed && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && prod.drawCount > 0 && state.budget >= 3 && (
+          <button className="btn btn-small" onClick={() => { sfx.click(); rewriteScript(); }} style={{ background: 'rgba(46,204,113,0.2)', borderColor: '#2ecc71', color: '#2ecc71' }}>
+            ✏️ REWRITE ($3M)
           </button>
         )}
         {state.hasReshoots && !state.reshootsUsed && prod.played.length > 0 && !prod.isWrapped && !isDrawing && !prod.currentDraw && !prod.pendingChallenge && (

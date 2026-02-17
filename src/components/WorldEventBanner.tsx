@@ -81,7 +81,7 @@ export default function WorldEventBanner({ events, currentSeason }: Props) {
   }
 
   return (
-    <div style={{
+    <div role="region" aria-label="World Events" aria-live="polite" style={{
       position: 'relative',
       zIndex: 100,
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',

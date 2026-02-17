@@ -9,6 +9,7 @@ import PhaseTip from '../components/PhaseTip';
 import MechanicTip from '../components/MechanicTip';
 import StatTooltip from '../components/StatTooltip';
 import DeckTracker from '../components/DeckTracker';
+import { announce } from '../accessibility';
 
 // Auto-advance component: shows a button with a filling progress bar, auto-clicks after delay
 function AutoAdvance({ onAdvance, delayMs, label }: { onAdvance: () => void; delayMs: number; label: string }) {
@@ -302,6 +303,9 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         setCombo(0);
       }
       
+      // Announce card to screen readers
+      announce(`Card played: ${newCard.name}, ${newCard.cardType}, quality ${(newCard.totalValue || 0) >= 0 ? '+' : ''}${newCard.totalValue || newCard.baseQuality}`);
+      
       // R182: Card ability activation sounds
       if (newCard.abilityActivated && newCard.ability) {
         setTimeout(() => {
@@ -372,7 +376,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
               <span style={{ color: '#999' }}>Quality: <strong className={`${qualityPunch ? 'quality-punch' : ''} ${qualityFlashDir === 'green' ? 'number-flash-green' : qualityFlashDir === 'red' ? 'number-flash-red' : ''}`} style={{ color: '#d4a843', display: 'inline-block' }} aria-live="polite">{rawQuality}</strong> / ~{neededQuality} needed</span>
               <span style={{ color: progressColor, fontWeight: 600 }}>{meterLabel}</span>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+            <div role="progressbar" aria-valuenow={rawQuality} aria-valuemin={0} aria-valuemax={neededQuality} aria-label={`Film quality: ${rawQuality} out of ${neededQuality} needed. ${meterLabel}`} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 8, overflow: 'hidden' }}>
               <div style={{ 
                 width: `${Math.min(progress * 100, 100)}%`, 
                 height: '100%', 
@@ -610,7 +614,12 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         <div className="choice-area" style={{ textAlign: 'center' }}>
           <h3 style={{ color: 'var(--gold)', marginBottom: 16, fontSize: '1.4rem', fontFamily: 'Bebas Neue', letterSpacing: '0.12em', position: 'relative', zIndex: 2 }}>🎬 CHOOSE YOUR CARD</h3>
           <div className="choice-vs">VS</div>
-          <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
+          <div role="group" aria-label="Choose a card — use arrow keys to navigate" onKeyDown={e => {
+            const cards = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('.selectable-card'));
+            const idx = cards.indexOf(document.activeElement as HTMLElement);
+            if (idx === -1) return;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); cards[idx === 0 ? 1 : 0]?.focus(); }
+          }} style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
             {prod.currentDraw.choosable.map((card, i) => {
               const wouldFire = card.synergyCondition ? (() => {
                 const ctx = {

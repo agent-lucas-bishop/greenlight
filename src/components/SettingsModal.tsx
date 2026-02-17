@@ -1,9 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { trapFocus } from '../accessibility';
 import { isMuted, setMuted, getVolume, setVolume, getSfxVolume, setSfxVolume } from '../sound';
 import { getStudioIdentity, setStudioIdentity, getRandomDefaultName, STUDIO_LOGOS, DEFAULT_STUDIO_NAMES, type StudioLogo } from '../studioIdentity';
 import { isStoryMomentsEnabled, setStoryMomentsEnabled } from '../cutscenes';
 import { resetTutorial, isTutorialComplete } from '../tutorial';
 import { getPlayerName, setPlayerName as savePlayerName } from '../leaderboard';
+import { auditStorage, clearNonEssentialStorage } from '../storageManager';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -454,9 +456,14 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (modalRef.current) return trapFocus(modalRef.current);
+  }, []);
+
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Settings" onKeyDown={handleKeyDown}>
-      <div className="modal settings-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 540, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+      <div ref={modalRef} className="modal settings-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 540, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
         <button className="modal-close" onClick={onClose} aria-label="Close settings">✕</button>
         <h2 style={{ color: 'var(--gold)', marginBottom: 12, flexShrink: 0 }}>⚙️ Settings</h2>
 
@@ -476,7 +483,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Content */}
-        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+        <div role="tabpanel" aria-label={`${tab} settings`} style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {renderTab()}
         </div>
       </div>

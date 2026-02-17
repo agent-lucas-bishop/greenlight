@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { AchievementDef } from '../achievements';
 import { sfx } from '../sound';
+import { announce } from '../accessibility';
 
 interface AchievementToastProps {
   achievement: AchievementDef;
@@ -13,6 +14,7 @@ export default function AchievementToast({ achievement, onDone }: AchievementToa
 
   useEffect(() => {
     sfx.achievementUnlock();
+    announce(`Achievement unlocked: ${achievement.name}. ${achievement.description}`);
     const exitTimer = setTimeout(() => setExiting(true), 2500);
     const doneTimer = setTimeout(onDone, 3000);
     return () => { clearTimeout(exitTimer); clearTimeout(doneTimer); };
@@ -20,6 +22,8 @@ export default function AchievementToast({ achievement, onDone }: AchievementToa
 
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       onClick={() => { setExiting(true); setTimeout(onDone, 300); }}
       style={{
         position: 'fixed',

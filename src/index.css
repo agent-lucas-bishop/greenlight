@@ -84,7 +84,26 @@ button:focus-visible, .card:focus-visible, .cast-slot:focus-visible, .selectable
   .confetti-burst { display: none !important; }
   .victory-starburst { display: none !important; }
   .end-screen-defeat::before, .end-screen-defeat::after { animation: none !important; }
+  .cutscene-cursor { display: none !important; }
+  .cutscene-line-active { opacity: 1 !important; }
+  .card-enter { animation: none !important; opacity: 1 !important; }
+  .card-stagger { animation: none !important; opacity: 1 !important; }
+  .weather-particles { display: none !important; }
+  .achievement-confetti { display: none !important; }
+  .stamp-badge { animation: none !important; opacity: 1 !important; }
+  .season-overlay { animation: none !important; }
+  .combo-counter { animation: none !important; opacity: 1 !important; }
 }
+
+/* Same for force-reduce-motion class (manual toggle) */
+.force-reduce-motion .cutscene-cursor { display: none !important; }
+.force-reduce-motion .cutscene-line-active { opacity: 1 !important; }
+.force-reduce-motion .card-enter { animation: none !important; opacity: 1 !important; }
+.force-reduce-motion .card-stagger { animation: none !important; opacity: 1 !important; }
+.force-reduce-motion .weather-particles { display: none !important; }
+.force-reduce-motion .achievement-confetti { display: none !important; }
+.force-reduce-motion .stamp-badge { animation: none !important; opacity: 1 !important; }
+.force-reduce-motion .combo-counter { animation: none !important; opacity: 1 !important; }
 
 /* Skip to content link for screen readers */
 .skip-link {
@@ -265,6 +284,7 @@ h1, h2, h3, h4 {
   padding: 24px;
   position: relative;
   z-index: 1;
+  contain: layout style;
 }
 
 .phase-title {
@@ -345,6 +365,7 @@ h1, h2, h3, h4 {
 .card-grid {
   display: grid;
   gap: 16px;
+  contain: layout style;
 }
 .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
 .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
@@ -1547,12 +1568,14 @@ h1, h2, h3, h4 {
   transform: translateY(8px) scale(0.97);
   filter: blur(3px);
   transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+  will-change: opacity, transform, filter;
 }
 .phase-enter {
   opacity: 1;
   transform: translateY(0) scale(1);
   filter: blur(0);
   transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s, filter 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
+  will-change: opacity, transform, filter;
 }
 
 /* Disaster shake — applied to production area */
@@ -3193,6 +3216,22 @@ body {
   padding: 0 20px;
 }
 
+/* R203: Extracted from inline styles */
+.season-tip-text {
+  margin: 16px auto 0;
+  color: rgba(212,168,67,0.8);
+  font-size: 0.8rem;
+  max-width: 400px;
+  line-height: 1.5;
+  font-style: italic;
+}
+.season-click-hint {
+  margin-top: 24px;
+  color: rgba(255,255,255,0.25);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
 .season-headline {
   margin-bottom: 24px;
   animation: headlineReveal 0.8s ease forwards;
@@ -3907,16 +3946,35 @@ button, a, .btn, .card, .cast-slot, .selectable-card, .prod-card-new,
 [data-text-size="medium"] { font-size: 16px; }
 [data-text-size="large"] { font-size: 19px; }
 
-/* High contrast mode */
+/* High contrast mode — WCAG AA compliant */
 .high-contrast {
   --gold: #ffd700;
+  --gold-bright: #ffea00;
   --gold-dim: #cca800;
+  --white: #ffffff;
+  --gray: #b0b0b0;
+  --gray-light: #d0d0d0;
 }
-.high-contrast .card { border-color: #aaa !important; }
-.high-contrast .btn { border-width: 2px !important; }
-.high-contrast .modal { border: 2px solid #888 !important; }
-.high-contrast p, .high-contrast span, .high-contrast label { color: #ddd !important; }
-.high-contrast .settings-row label { color: #eee !important; }
+.high-contrast .card { border-color: #bbb !important; border-width: 2px !important; }
+.high-contrast .btn { border-width: 2px !important; color: #fff !important; }
+.high-contrast .btn-primary { border-color: #ffd700 !important; }
+.high-contrast .modal { border: 2px solid #999 !important; }
+.high-contrast p, .high-contrast span, .high-contrast label, .high-contrast .subtitle { color: #e0e0e0 !important; }
+.high-contrast .settings-row label { color: #f0f0f0 !important; }
+.high-contrast h1, .high-contrast h2, .high-contrast h3, .high-contrast h4 { color: #fff !important; }
+.high-contrast .card-body, .high-contrast .card-subtitle { color: #ccc !important; }
+.high-contrast .phase-title .subtitle { color: #ddd !important; }
+.high-contrast .prod-card-synergy { color: #ccc !important; }
+.high-contrast .prod-card-source { color: #bbb !important; }
+.high-contrast .quality-breakdown .qb-item { color: #ddd !important; }
+.high-contrast .event-banner { border-width: 2px !important; }
+.high-contrast :focus-visible {
+  outline: 3px solid #ffea00 !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(255, 234, 0, 0.35) !important;
+}
+.high-contrast .genre-label { font-weight: 700 !important; border-width: 2px !important; }
+.high-contrast .card-stat { border-width: 2px !important; font-weight: 700 !important; }
 
 /* Colorblind-friendly mode — add patterns/icons to color-only indicators */
 .colorblind-mode .stat-positive::before { content: "▲ "; }

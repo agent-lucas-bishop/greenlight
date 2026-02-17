@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getTutorialStepForPhase, completeTutorialStep, dismissTutorial } from '../tutorial';
 import { track } from '../analytics';
 import { sfx } from '../sound';
 import type { GamePhase } from '../types';
+import { announce, trapFocus } from '../accessibility';
 
 export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
   const [step, setStep] = useState(getTutorialStepForPhase(phase));
@@ -33,6 +34,14 @@ export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
       setVisible(false);
     }
   }, [phase, updateSpotlight]);
+
+  const tutorialRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (visible && step && tutorialRef.current) {
+      announce(`Tutorial: ${step.title}. ${step.text}`);
+      return trapFocus(tutorialRef.current);
+    }
+  }, [visible, step]);
 
   if (!visible || !step) return null;
 
@@ -94,6 +103,11 @@ export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
       )}
       {/* Tutorial card */}
       <div
+        ref={tutorialRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Tutorial: ${step.title}`}
+        onKeyDown={e => { if (e.key === 'Escape') handleSkipAll(); }}
         className="animate-slide-down"
         style={{
           position: 'fixed',

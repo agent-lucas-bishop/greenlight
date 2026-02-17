@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
 import { getLeaderboard, getLeaderboardByDifficulty, getPersonalBestByDifficulty, generateRunCard, type LeaderboardEntry } from '../leaderboard';
 import { sfx } from '../sound';
 import { DIFFICULTIES } from '../difficulty';
@@ -13,6 +13,55 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 interface Props {
   currentRunId?: string; // highlight current run if on board
 }
+
+// R203: Memoized leaderboard row to prevent re-renders of entire list
+const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, copiedId, onShare }: {
+  entry: LeaderboardEntry; index: number; isCurrent: boolean; copiedId: string | null; onShare: (e: LeaderboardEntry) => void;
+}) {
+  return (
+    <div style={{
+      display: 'flex', gap: 4, padding: '8px 12px', alignItems: 'center',
+      background: isCurrent ? 'rgba(212,168,67,0.12)' : index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+      border: isCurrent ? '1px solid var(--gold-dim)' : '1px solid transparent',
+      borderRadius: isCurrent ? 6 : 0,
+      transition: 'background 0.2s',
+      contain: 'content',
+    }}>
+      <span style={{ width: 30, fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: index < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][index] : '#555' }}>
+        {index < 3 ? MEDAL[index] : `#${index + 1}`}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: RANK_COLORS[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>{entry.rank}</span>
+          <span style={{
+            color: isCurrent ? 'var(--gold)' : '#ccc', fontSize: '0.8rem', fontWeight: isCurrent ? 700 : 400,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {entry.playerName || entry.studioName || 'Anonymous'}
+          </span>
+          <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.6rem' }}>{entry.won ? '✓' : '✗'}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
+          {entry.films.map((f, j) => <span key={j} style={{ fontSize: '0.6rem' }}>{TIER_EMOJI[f.tier] || '⬜'}</span>)}
+        </div>
+      </div>
+      <span style={{ width: 70, textAlign: 'right', color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{entry.score}</span>
+      <span style={{ width: 60, textAlign: 'right', color: '#aaa', fontSize: '0.75rem' }}>${entry.earnings.toFixed(0)}M</span>
+      <span style={{ width: 40, textAlign: 'right', color: '#888', fontSize: '0.75rem' }}>{entry.films.length}</span>
+      <span style={{ width: 70, textAlign: 'right', color: '#666', fontSize: '0.65rem' }}>{entry.date}</span>
+      <button onClick={(e) => { e.stopPropagation(); onShare(entry); }}
+        title="Copy run card to clipboard"
+        style={{
+          width: 32, height: 32, border: 'none', borderRadius: 6, cursor: 'pointer',
+          background: copiedId === entry.id ? 'rgba(46,204,113,0.2)' : 'rgba(255,255,255,0.05)',
+          color: copiedId === entry.id ? '#2ecc71' : '#888', fontSize: '0.8rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+        {copiedId === entry.id ? '✓' : '📋'}
+      </button>
+    </div>
+  );
+});
 
 export default function LeaderboardScreen({ currentRunId }: Props) {
   const [difficulty, setDifficulty] = useState<string>('studio');
@@ -50,14 +99,14 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
     else { setSortKey(key); setSortDir('desc'); }
   };
 
-  const handleShare = (entry: LeaderboardEntry) => {
+  const handleShare = useCallback((entry: LeaderboardEntry) => {
     const text = generateRunCard(entry);
     navigator.clipboard.writeText(text).then(() => {
       sfx.shareSnap();
       setCopiedId(entry.id);
       setTimeout(() => setCopiedId(null), 2000);
     });
-  };
+  }, []);
 
   const sortArrow = (key: SortKey) => sortKey === key ? (sortDir === 'desc' ? ' ▾' : ' ▴') : '';
 
@@ -164,56 +213,18 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
             <span style={{ width: 32 }}></span>
           </div>
 
-          {/* Entries */}
+          {/* Entries — R203: memoized rows */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {board.map((entry, i) => {
-              const isCurrent = currentRunId === entry.id;
-              const bestFilm = entry.films.length > 0
-                ? entry.films.reduce((a, b) => (b.boxOffice || 0) > (a.boxOffice || 0) ? b : a)
-                : null;
-              return (
-                <div key={entry.id} style={{
-                  display: 'flex', gap: 4, padding: '8px 12px', alignItems: 'center',
-                  background: isCurrent ? 'rgba(212,168,67,0.12)' : i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
-                  border: isCurrent ? '1px solid var(--gold-dim)' : '1px solid transparent',
-                  borderRadius: isCurrent ? 6 : 0,
-                  transition: 'background 0.2s',
-                }}>
-                  <span style={{ width: 30, fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#555' }}>
-                    {i < 3 ? MEDAL[i] : `#${i + 1}`}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ color: RANK_COLORS[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>{entry.rank}</span>
-                      <span style={{
-                        color: isCurrent ? 'var(--gold)' : '#ccc', fontSize: '0.8rem', fontWeight: isCurrent ? 700 : 400,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>
-                        {entry.playerName || entry.studioName || 'Anonymous'}
-                      </span>
-                      <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.6rem' }}>{entry.won ? '✓' : '✗'}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
-                      {entry.films.map((f, j) => <span key={j} style={{ fontSize: '0.6rem' }}>{TIER_EMOJI[f.tier] || '⬜'}</span>)}
-                    </div>
-                  </div>
-                  <span style={{ width: 70, textAlign: 'right', color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{entry.score}</span>
-                  <span style={{ width: 60, textAlign: 'right', color: '#aaa', fontSize: '0.75rem' }}>${entry.earnings.toFixed(0)}M</span>
-                  <span style={{ width: 40, textAlign: 'right', color: '#888', fontSize: '0.75rem' }}>{entry.films.length}</span>
-                  <span style={{ width: 70, textAlign: 'right', color: '#666', fontSize: '0.65rem' }}>{entry.date}</span>
-                  <button onClick={(e) => { e.stopPropagation(); handleShare(entry); }}
-                    title="Copy run card to clipboard"
-                    style={{
-                      width: 32, height: 32, border: 'none', borderRadius: 6, cursor: 'pointer',
-                      background: copiedId === entry.id ? 'rgba(46,204,113,0.2)' : 'rgba(255,255,255,0.05)',
-                      color: copiedId === entry.id ? '#2ecc71' : '#888', fontSize: '0.8rem',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                    {copiedId === entry.id ? '✓' : '📋'}
-                  </button>
-                </div>
-              );
-            })}
+            {board.map((entry, i) => (
+              <LeaderboardRow
+                key={entry.id}
+                entry={entry}
+                index={i}
+                isCurrent={currentRunId === entry.id}
+                copiedId={copiedId}
+                onShare={handleShare}
+              />
+            ))}
           </div>
         </>
       )}

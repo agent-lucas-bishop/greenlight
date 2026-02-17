@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { sfx } from '../sound';
 import type { UnlockableDef } from '../unlockableContent';
+import { announce } from '../accessibility';
 
 interface UnlockToastProps {
   unlock: UnlockableDef;
@@ -13,6 +14,7 @@ export default function UnlockToast({ unlock, onDone }: UnlockToastProps) {
 
   useEffect(() => {
     sfx.contentUnlock();
+    announce(`New content unlocked: ${unlock.name}. ${unlock.conditionText}`);
     const exitTimer = setTimeout(() => setExiting(true), 3500);
     const doneTimer = setTimeout(onDone, 4000);
     return () => { clearTimeout(exitTimer); clearTimeout(doneTimer); };

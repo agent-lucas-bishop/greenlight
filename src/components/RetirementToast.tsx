@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getRetirementRepBonus } from '../talentHistory';
+import { announce } from '../accessibility';
 
 interface RetirementToastProps {
   talentName: string;
@@ -11,6 +12,7 @@ export default function RetirementToast({ talentName, onDone }: RetirementToastP
   const repBonus = getRetirementRepBonus();
 
   useEffect(() => {
+    announce(`${talentName} has retired from the industry.${repBonus > 0 ? ` Reputation bonus: +${repBonus}.` : ''}`);
     const exitTimer = setTimeout(() => setExiting(true), 3500);
     const doneTimer = setTimeout(onDone, 4000);
     return () => { clearTimeout(exitTimer); clearTimeout(doneTimer); };

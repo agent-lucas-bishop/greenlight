@@ -5,11 +5,16 @@ import { SpeedInsights } from '@vercel/speed-insights/react'
 import ErrorBoundary from './components/ErrorBoundary'
 import { setPrestigeChangeCallback } from './prestige'
 import { refreshPrestigeLevelCache } from './data'
+import { runMigrations, trimLargeData } from './storageManager'
 import './index.css'
 import App from './App.tsx'
 
 // Wire prestige → data cache sync (avoids circular import)
 setPrestigeChangeCallback(refreshPrestigeLevelCache)
+
+// R203: Run storage migrations and trim oversized data on startup
+runMigrations();
+trimLargeData();
 
 // Restore persisted settings
 if (localStorage.getItem('greenlight-reduce-motion') === 'true') {

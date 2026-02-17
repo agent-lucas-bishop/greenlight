@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { getState, subscribe, clearRetirementNotification } from './gameStore';
 import { GameState } from './types';
 import StartScreen from './screens/StartScreen';
@@ -22,6 +22,7 @@ import WorldEventBanner from './components/WorldEventBanner';
 import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 import { sfx } from './sound';
+import { announcePhase } from './accessibility';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -170,7 +171,7 @@ function App() {
     }
   }, [state.phase, state.season]);
 
-  // Phase transition effect + focus management
+  // Phase transition effect + focus management + screen reader announcement
   useEffect(() => {
     if (state.phase !== prevPhase) {
       setTransitioning(true);
@@ -183,6 +184,8 @@ function App() {
         if (main) {
           main.focus({ preventScroll: true });
         }
+        // Announce phase change to screen readers
+        announcePhase(state.phase);
       }, 300);
       return () => clearTimeout(t);
     }
@@ -282,19 +285,11 @@ function App() {
             <div className="season-theme-icon">{getSeasonTheme(seasonOverlay).icon}</div>
             <div className="season-number">SEASON {seasonOverlay}: {getSeasonTheme(seasonOverlay).name}</div>
             {seasonTip && (
-              <div style={{
-                marginTop: 16,
-                color: 'rgba(212,168,67,0.8)',
-                fontSize: '0.8rem',
-                maxWidth: 400,
-                margin: '16px auto 0',
-                lineHeight: 1.5,
-                fontStyle: 'italic',
-              }}>
+              <div className="season-tip-text">
                 {seasonTip}
               </div>
             )}
-            <div style={{ marginTop: 24, color: 'rgba(255,255,255,0.25)', fontSize: '0.65rem', letterSpacing: '0.1em' }}>CLICK TO CONTINUE</div>
+            <div className="season-click-hint">CLICK TO CONTINUE</div>
           </div>
         </div>
       )}

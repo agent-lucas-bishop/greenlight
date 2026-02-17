@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GameState } from '../types';
 import { pickScript } from '../gameStore';
 import { getSeasonTarget } from '../data';
@@ -9,6 +9,7 @@ import { isSimplifiedRun } from '../onboarding';
 import { sfx } from '../sound';
 import { useSwipe } from '../hooks/useSwipe';
 import StatTooltip from '../components/StatTooltip';
+import { announce } from '../accessibility';
 
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
@@ -128,7 +129,13 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
         </div>
       )}
       {state.scriptChoices.some((s: any) => s.legendary) && <MechanicTip id="legendaryScript" />}
-      <div className="card-grid card-grid-3" {...swipeHandlers}>
+      <div className="card-grid card-grid-3" role="group" aria-label="Script choices — use arrow keys to navigate, Enter to select" {...swipeHandlers} onKeyDown={(e) => {
+        const cards = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="button"]'));
+        const idx = cards.indexOf(document.activeElement as HTMLElement);
+        if (idx === -1) return;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); cards[(idx + 1) % cards.length]?.focus(); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); cards[(idx - 1 + cards.length) % cards.length]?.focus(); }
+      }}>
         {state.scriptChoices.map((script, i) => {
           const canAfford = state.budget >= script.cost;
           const isPicked = picked === script.id;

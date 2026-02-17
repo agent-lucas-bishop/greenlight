@@ -17,10 +17,16 @@ export default function CutsceneOverlay({ cutscene, vars = {}, onComplete }: Cut
   const lines = resolveLines(cutscene, vars);
   const speed = cutscene.typingSpeed ?? 35;
 
-  const [lineIndex, setLineIndex] = useState(0);
+  // Check for reduced motion preference
+  const prefersReducedMotion = typeof window !== 'undefined' && (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    document.documentElement.classList.contains('force-reduce-motion')
+  );
+
+  const [lineIndex, setLineIndex] = useState(prefersReducedMotion ? lines.length : 0);
   const [charIndex, setCharIndex] = useState(0);
-  const [completedLines, setCompletedLines] = useState<string[]>([]);
-  const [showContinue, setShowContinue] = useState(false);
+  const [completedLines, setCompletedLines] = useState<string[]>(prefersReducedMotion ? lines : []);
+  const [showContinue, setShowContinue] = useState(prefersReducedMotion);
   const [exiting, setExiting] = useState(false);
   const startSounded = useRef(false);
 

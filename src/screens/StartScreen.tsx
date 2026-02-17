@@ -39,6 +39,7 @@ const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
 const SynergyCodex = lazy(() => import('../components/SynergyDisplay').then(m => ({ default: m.SynergyCodex })));
 const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
+const TrophyRoom = lazy(() => import('../components/TrophyRoom'));
 const CampaignSelect = lazy(() => import('../components/CampaignSelect'));
 const PlayerProfileModal = lazy(() => import('../components/PlayerProfile'));
 const CardCreator = lazy(() => import('../components/CardCreator'));

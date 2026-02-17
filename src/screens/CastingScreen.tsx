@@ -3,6 +3,7 @@ import { GameState, Talent, CardTemplate } from '../types';
 import { assignTalent, unassignTalent, hireTalent, fireTalent, startProduction, isSlotBlocked } from '../gameStore';
 import { getActiveChemistry, ALL_CHEMISTRY } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
+import SoundtrackPicker from '../components/SoundtrackPicker';
 import PhaseTip from '../components/PhaseTip';
 import MechanicTip from '../components/MechanicTip';
 import StatTooltip from '../components/StatTooltip';
@@ -104,6 +105,7 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
 }
 
 export default function CastingScreen({ state }: { state: GameState }) {
+  const [showSoundtrackPicker, setShowSoundtrackPicker] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number>(0);
   const allTalent = state.roster;
   const filledCount = state.castSlots.filter(s => s.talent).length;
@@ -173,6 +175,21 @@ export default function CastingScreen({ state }: { state: GameState }) {
     const nextEmpty = state.castSlots.findIndex((s, i) => i > activeSlot && !s.talent);
     if (nextEmpty >= 0) setActiveSlot(nextEmpty);
   };
+
+  if (showSoundtrackPicker) {
+    return (
+      <div className="fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <SoundtrackPicker
+          state={state}
+          genre={state.currentScript?.genre || 'Drama'}
+          onConfirm={() => {
+            sfx.seasonTransition();
+            startProduction();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="fade-in">
@@ -294,8 +311,8 @@ export default function CastingScreen({ state }: { state: GameState }) {
           )}
 
           <div className="btn-group" style={{ flexDirection: 'column', marginTop: 16 }}>
-            <button className="btn btn-primary" disabled={filledCount < 2} onClick={() => { sfx.seasonTransition(); startProduction(); }}>
-              ROLL CAMERA →
+            <button className="btn btn-primary" disabled={filledCount < 2} onClick={() => { sfx.click(); setShowSoundtrackPicker(true); }}>
+              CHOOSE SOUNDTRACK →
             </button>
             {filledCount < state.castSlots.length && (
               <span style={{ fontSize: '0.75rem', color: '#666' }}>

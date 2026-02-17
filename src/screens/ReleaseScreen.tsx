@@ -4,7 +4,7 @@ import { getSeasonTarget } from '../data';
 import { proceedFromRecap, calculateQuality, doExtendedCut, declineExtendedCut } from '../gameStore';
 import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary, calculateRubberBand } from '../rivals';
 import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
-import { formatSoundtrackRating } from '../soundtrack';
+import { formatSoundtrackRating, getThemeById } from '../soundtrack';
 import { sfx } from '../sound';
 import MechanicTip from '../components/MechanicTip';
 import PostFilmSummary from '../components/PostFilmSummary';
@@ -295,6 +295,19 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
               +{state.postProdSoundtrack.qualityBonus} quality from soundtrack
             </div>
           )}
+          {state.postProdSoundtrack.themeId && (() => {
+            const theme = getThemeById(state.postProdSoundtrack!.themeId!);
+            return theme ? (
+              <div style={{ marginTop: 4, fontSize: '0.75rem', color: theme.color }}>
+                {theme.emoji} {theme.name}
+                {(state.postProdSoundtrack!.themeBonusPercent || 0) > 0 && (
+                  <span style={{ color: '#2ecc71', marginLeft: 4 }}>
+                    +{state.postProdSoundtrack!.themeBonusPercent}% theme bonus
+                  </span>
+                )}
+              </div>
+            ) : null;
+          })()}
         </div>
       )}
 

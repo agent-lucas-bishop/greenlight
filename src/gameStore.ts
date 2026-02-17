@@ -103,6 +103,7 @@ import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { careerSessionStart, careerTrackTalentHire, careerTrackFilmComplete } from './careerAnalytics';
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
+import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 
@@ -611,6 +612,11 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   if (legacyPerks.some(p => p.effect === 'startBudget3')) budget += 3;
   // Legacy perk: Daily Devotee — daily runs get +$3M
   if (state.gameMode === 'daily' && legacyPerks.some(p => p.effect === 'dailyBudget3')) budget += 3;
+  // R128: Prestige milestone P8 — +$2M bonus budget
+  if (hasMilestone('budget_bonus')) budget += 2;
+  // R128: Legacy run bonuses — $1M per 2 prestige levels
+  const legacyBonuses = getLegacyRunBonuses();
+  budget += legacyBonuses.budgetBonus;
   // Challenge: Shoestring Budget
   if (state.challengeId === 'shoestring') budget = 8;
   // Challenge: Budget Hell — start with $5M
@@ -653,7 +659,10 @@ export function pickNeow(choice: number) {
       genreMastery[g] = 1;
     }
   }
-  setState({ neowChoice: choice, roster, budget, perks, genreMastery, phase: 'greenlight' as GamePhase });
+  // R128: Legacy run bonuses — +1 starting reputation per prestige level (cap +5)
+  const legacyRunBonuses = getLegacyRunBonuses();
+  const startReputation = Math.min(3 + legacyRunBonuses.reputationBonus, 5);
+  setState({ neowChoice: choice, roster, budget, perks, genreMastery, reputation: startReputation, phase: 'greenlight' as GamePhase });
   beginSeason();
 }
 

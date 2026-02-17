@@ -470,6 +470,53 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     },
   },
 
+  // ─── Prestige Milestones (R128) ───
+  {
+    id: 'prestige_studio_lot',
+    name: 'Studio Lot',
+    emoji: '🏛️',
+    category: 'milestone',
+    description: 'Reach Prestige Level 3 and unlock the Studio Lot cosmetic',
+    hint: 'Keep climbing the prestige ladder',
+    check: () => {
+      try {
+        const saved = localStorage.getItem('greenlight_prestige');
+        if (saved) { const p = JSON.parse(saved); return p.level >= 3; }
+      } catch {}
+      return false;
+    },
+  },
+  {
+    id: 'prestige_oscar_bait',
+    name: 'Oscar Campaigner',
+    emoji: '🏆',
+    category: 'milestone',
+    description: 'Reach Prestige Level 5 and unlock the exclusive "Oscar Bait" script',
+    hint: 'The Academy awaits the truly dedicated',
+    check: () => {
+      try {
+        const saved = localStorage.getItem('greenlight_prestige');
+        if (saved) { const p = JSON.parse(saved); return p.level >= 5; }
+      } catch {}
+      return false;
+    },
+  },
+  {
+    id: 'prestige_mogul',
+    name: 'The Mogul',
+    emoji: '👑',
+    category: 'milestone',
+    description: 'Reach Prestige Level 10 and earn the "Mogul" title',
+    hint: 'Only the most dedicated studio heads reach the summit',
+    check: () => {
+      try {
+        const saved = localStorage.getItem('greenlight_prestige');
+        if (saved) { const p = JSON.parse(saved); return p.level >= 10; }
+      } catch {}
+      return false;
+    },
+  },
+
   // ─── Secret ───
   {
     id: 'secret_all_flops',

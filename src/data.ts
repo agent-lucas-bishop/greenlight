@@ -1,5 +1,6 @@
 import { Script, Talent, CardTemplate, StudioPerk, MarketCondition, Genre, ChallengeBet, Chemistry, StudioArchetype, CardTag } from './types';
 import { rng } from './seededRng';
+import { getUnlockedScriptDefs, getUnlockedTalentDefs } from './unlockableContent';
 
 // Cache prestige level in memory to avoid localStorage reads on every render
 let _cachedPrestigeLevel = 0;
@@ -4769,11 +4770,42 @@ export function generateSeasonEvents(count: number, extraEvents?: SeasonEvent[])
 
 // ─── GENERATION FUNCTIONS ───
 
+// ─── R128: PRESTIGE MILESTONE SCRIPT — Oscar Bait (Prestige 5+) ───
+const OSCAR_BAIT_CARDS: CardTemplate[] = [
+  { name: 'Awards Season Performance', cardType: 'action', baseQuality: 2, synergyText: '🎯💕 PRECISION + HEART dual: +2 per Precision tag + +2 per Heart tag (max +8). Oscar-caliber craft.', synergyCondition: (ctx) => { const b = Math.min((ctx.tagsPlayed['precision'] || 0) * 2 + (ctx.tagsPlayed['heart'] || 0) * 2, 8); return b > 0 ? { bonus: b, description: 'Oscar-worthy performance!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['precision', 'heart'] as CardTag[] },
+  { name: 'Tearjerker Monologue', cardType: 'action', baseQuality: 2, synergyText: '💕 +3 if Actor card played. +3 if 3+ Heart tags. The audience weeps.', synergyCondition: (ctx) => { let b = ctx.playedCards.some(c => c.sourceType === 'actor') ? 3 : 0; if ((ctx.tagsPlayed['heart'] || 0) >= 3) b += 3; return b > 0 ? { bonus: b, description: 'Not a dry eye in the house!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['heart'] as CardTag[] },
+  { name: 'Meticulous Direction', cardType: 'action', baseQuality: 2, synergyText: '🎯 +3 if Director card played. +2 if 0 Incidents. Precision filmmaking.', synergyCondition: (ctx) => { let b = ctx.playedCards.some(c => c.sourceType === 'director') ? 3 : 0; if (ctx.incidentCount === 0) b += 2; return b > 0 ? { bonus: b, description: 'Flawless direction!' } : { bonus: 0 }; }, riskTag: '🟢', tags: ['precision'] as CardTag[] },
+  { name: 'For Your Consideration', cardType: 'challenge', baseQuality: 0, synergyText: 'Challenge: Bet next card has high value. Win +6, Lose -3. Campaign for gold.', synergyCondition: noSynergy, riskTag: '🟡', challengeBet: { ...betNextIsHighValue(), successBonus: 6, failPenalty: -3 }, tags: ['precision', 'heart'] as CardTag[] },
+  { name: 'Awards Fatigue', cardType: 'incident', baseQuality: -4, synergyText: 'Voters are tired. -2 if no Precision tags. But adds Heart tag.', synergyCondition: (ctx) => (ctx.tagsPlayed['precision'] || 0) === 0 ? { bonus: -2, description: 'No craft to fall back on!' } : { bonus: 0 }, riskTag: '🔴', tags: ['heart'] as CardTag[] },
+  { name: 'Harvey Weinstein Moment', cardType: 'incident', baseQuality: -5, synergyText: 'Scandal threatens the campaign. Lose $1M.', synergyCondition: () => ({ bonus: 0, budgetMod: -1, description: 'Campaign derailed!' }), riskTag: '🔴' },
+];
+
+const OSCAR_BAIT_SCRIPT: Omit<Script, 'id'> = {
+  title: 'Oscar Bait',
+  genre: 'Drama',
+  baseScore: 10,
+  slots: ['Lead', 'Support', 'Director', 'Crew'],
+  cost: 7,
+  cards: OSCAR_BAIT_CARDS,
+  ability: 'oscarBait',
+  abilityDesc: 'Oscar Bait: Precision Craft + Heart Engine dual — Precision AND Heart tags both contribute. Clean productions with emotional depth are rewarded.',
+  keywordTags: ['precision', 'heart'],
+};
+
 export function generateScripts(count: number, _season: number): Script[] {
   const pool = [...ALL_SCRIPTS];
   // Prestige 4+: add legendary scripts to pool
   if (_cachedPrestigeLevel >= 4) {
     pool.push(...LEGENDARY_SCRIPTS);
+  }
+  // Prestige 5+: add Oscar Bait milestone script
+  if (_cachedPrestigeLevel >= 5) {
+    pool.push(OSCAR_BAIT_SCRIPT);
+  }
+  // Add unlocked meta-progression scripts to pool
+  const unlockedScripts = getUnlockedScriptDefs();
+  for (const us of unlockedScripts) {
+    pool.push(us as Omit<Script, 'id'>);
   }
   const result: Script[] = [];
   for (let i = 0; i < count && pool.length > 0; i++) {
@@ -4818,7 +4850,9 @@ export function generateTalentMarket(count: number, _season: number, currentRost
 
   // Prestige 4+: include elite talent in the pool
   const elitePool = _cachedPrestigeLevel >= 4 ? [...ELITE_LEADS, ...ELITE_SUPPORTS, ...ELITE_DIRECTORS, ...ELITE_CREW] : [];
-  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW, ...elitePool].filter(t => !rosterNames.has(t.name));
+  // Add unlocked meta-progression talent to pool
+  const unlockedTalent = getUnlockedTalentDefs() as Omit<Talent, 'id'>[];
+  const allTalent = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW, ...elitePool, ...unlockedTalent].filter(t => !rosterNames.has(t.name));
   while (result.length < count) {
     const available = allTalent.filter(t => !usedNames.has(t.name));
     if (available.length === 0) break;

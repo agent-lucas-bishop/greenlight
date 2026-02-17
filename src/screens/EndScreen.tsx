@@ -8,8 +8,9 @@ import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
 import { careerTrackRunEnd } from '../careerAnalytics';
-import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, type RunXPData } from '../prestige';
+import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, hasMilestone, type RunXPData } from '../prestige';
 import { recordGenreMasteryFilms } from '../genreMastery';
+import { recordZeroFlopsRun, recordAllModifiersWin } from '../unlockableContent';
 import { getStudioLegacy, type StudioLegacy } from '../studioLegacy';
 import { recordPersonalBests, getDailyStats, getPersonalBests } from '../personalBests';
 import { getWeeklyModifiers, getModifierById } from '../dailyModifiers';
@@ -205,6 +206,9 @@ function generateShareText(state: GameState, score: number, rank: string, isVict
     if (prestigeTitle) {
       lines.push(`⭐ ${prestigeTitle}`);
     }
+    if (hasMilestone('mogul_title')) {
+      lines.push(`👑 MOGUL`);
+    }
   }
 
   lines.push('');
@@ -392,6 +396,15 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         filmCount: history.length,
       });
       recordEndingDiscovered(ending.id);
+      // Track special unlock conditions
+      if (isVictory) {
+        const hasFlops = history.some(s => s.tier === 'FLOP');
+        if (!hasFlops && history.length > 0) recordZeroFlopsRun();
+        // Check if all 4 challenge modifiers were active
+        if (state.activeModifiers && state.activeModifiers.length >= CHALLENGE_MODIFIERS.length) {
+          recordAllModifiersWin();
+        }
+      }
       const afterPerks = getActiveLegacyPerks();
       const newlyUnlocked = afterPerks.filter(p => !beforePerks.includes(p.id));
       if (newlyUnlocked.length > 0) setNewPerks(newlyUnlocked);

@@ -12,6 +12,9 @@ import LoadingScreen from './components/LoadingScreen';
 import { checkAchievements, persistAchievements } from './achievements';
 import type { AchievementDef } from './achievements';
 import AchievementToast from './components/AchievementToast';
+import UnlockToast from './components/UnlockToast';
+import { checkUnlockConditions, UNLOCKABLE_DEFS } from './unlockableContent';
+import type { UnlockableDef } from './unlockableContent';
 import DevStats from './components/DevStats';
 
 // Lazy-load screens that aren't needed at startup
@@ -30,6 +33,7 @@ function App() {
   const [prevPhase, setPrevPhase] = useState<string>(state.phase);
   const [showNarrative, setShowNarrative] = useState(false);
   const [toastQueue, setToastQueue] = useState<AchievementDef[]>([]);
+  const [unlockToastQueue, setUnlockToastQueue] = useState<UnlockableDef[]>([]);
   const [checkedPhases, setCheckedPhases] = useState<string>('');
   const [seasonOverlay, setSeasonOverlay] = useState<number | null>(null);
   const [seasonOverlayExit, setSeasonOverlayExit] = useState(false);
@@ -48,6 +52,12 @@ function App() {
     if (newAchs.length > 0) {
       persistAchievements(newAchs.map(a => a.id));
       setToastQueue(prev => [...prev, ...newAchs]);
+    }
+    // Check for unlockable content
+    const newUnlockIds = checkUnlockConditions();
+    if (newUnlockIds.length > 0) {
+      const newUnlocks = newUnlockIds.map(id => UNLOCKABLE_DEFS.find(d => d.id === id)!).filter(Boolean);
+      setUnlockToastQueue(prev => [...prev, ...newUnlocks]);
     }
   }, [state.phase, state.season, state.seasonHistory.length, checkedPhases]);
 
@@ -156,6 +166,12 @@ function App() {
         <AchievementToast
           achievement={toastQueue[0]}
           onDone={() => setToastQueue(prev => prev.slice(1))}
+        />
+      )}
+      {unlockToastQueue.length > 0 && toastQueue.length === 0 && (
+        <UnlockToast
+          unlock={unlockToastQueue[0]}
+          onDone={() => setUnlockToastQueue(prev => prev.slice(1))}
         />
       )}
       <DevStats />

@@ -24,7 +24,7 @@ const SettingsModal = lazy(() => import('../components/SettingsModal'));
 const Glossary = lazy(() => import('../components/Glossary'));
 const StatsPanel = lazy(() => import('../components/StatsPanel'));
 const FilmArchive = lazy(() => import('../components/FilmArchive'));
-import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling } from '../prestige';
+import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
 
@@ -473,7 +473,7 @@ export default function StartScreen() {
   }
 
   return (
-    <div className="start-screen" style={{ position: 'relative' }}>
+    <div className="start-screen" style={{ position: 'relative', ...(hasMilestone('studio_lot') ? { border: '2px solid #ffd700', boxShadow: '0 0 20px rgba(255,215,0,0.15)' } : {}) }}>
       <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8, zIndex: 10 }}>
         <button
           onClick={() => setShowKeyboardHints(true)}
@@ -544,6 +544,15 @@ export default function StartScreen() {
           </div>
         );
       })()}
+
+      {/* Mogul Title (P10) */}
+      {hasMilestone('mogul_title') && (
+        <div style={{ marginTop: 4, textAlign: 'center' }}>
+          <span style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.1em', background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.25)', borderRadius: 6, padding: '2px 12px' }}>
+            👑 MOGUL
+          </span>
+        </div>
+      )}
 
       {/* Studio Difficulty Indicator */}
       {stats.runs > 0 && (() => {

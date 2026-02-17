@@ -199,7 +199,7 @@ export default function ShopScreen({ state }: { state: GameState }) {
                   <span style={{ color: 'var(--gold)' }}>{t.name}</span>
                   <span style={{ color: '#666', marginLeft: 4 }}>S{t.skill}/H{t.heat}</span>
                   {t.trait && <span style={{ color: '#888', marginLeft: 4, fontSize: '0.7rem', fontStyle: 'italic' }}>"{t.trait}"</span>}
-                  <button className="fire-btn" onClick={() => fireTalent(t.id)} title="Fire talent">✕</button>
+                  <button className="fire-btn" onClick={() => fireTalent(t.id)} title="Fire talent" aria-label={`Fire ${t.name}`}>✕</button>
                 </div>
                 <div style={{ display: 'flex', gap: 4, marginTop: 4, fontSize: '0.65rem' }}>
                   <span style={{ color: '#2ecc71' }}>{t.cards.filter(c => c.cardType === 'action').length}A</span>

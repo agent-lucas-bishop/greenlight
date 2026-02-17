@@ -91,7 +91,7 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="Your money to hire talent and buy perks. Overspending creates debt." inline>
             <span className="label">Budget</span>
           </StatTooltip>
-          <span className={`value ${budgetFlash}`}>${state.budget.toFixed(1)}M</span>
+          <span className={`value ${budgetFlash}`} aria-live="polite">${state.budget.toFixed(1)}M</span>
         </div>
         {state.debt > 0 && (
           <div className="header-stat">
@@ -119,7 +119,7 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="Miss a box office target = 1 strike. 3 strikes and you're fired!" inline>
             <span className="label">Strikes</span>
           </StatTooltip>
-          <span className={`value ${strikeFlash ? 'strike-new' : ''}`} style={{ color: state.strikes > 0 ? '#e74c3c' : undefined }}>
+          <span className={`value ${strikeFlash ? 'strike-new' : ''}`} style={{ color: state.strikes > 0 ? '#e74c3c' : undefined }} aria-live="polite">
             {state.strikes}/{state.maxStrikes}
           </span>
         </div>
@@ -147,6 +147,7 @@ export default function Header({ state }: { state: GameState }) {
         className="header-help-btn" 
         onClick={() => setShowHelp(true)}
         title="How to Play"
+        aria-label="How to Play"
       >
         ?
       </button>
@@ -155,6 +156,7 @@ export default function Header({ state }: { state: GameState }) {
         onClick={handleToggleMute}
         onContextMenu={e => { e.preventDefault(); setShowVolume(!showVolume); }}
         title={muted ? 'Unmute (right-click for volume)' : 'Mute (right-click for volume)'}
+        aria-label={muted ? 'Unmute sound' : 'Mute sound'}
         style={{ right: 50 }}
       >
         {muted ? '🔇' : volume > 0.5 ? '🔊' : volume > 0 ? '🔉' : '🔈'}
@@ -167,6 +169,7 @@ export default function Header({ state }: { state: GameState }) {
           <span style={{ fontSize: '0.7rem', color: '#888' }}>🔈</span>
           <input type="range" min="0" max="100" value={Math.round(volume * 100)}
             onChange={e => handleVolume(parseInt(e.target.value) / 100)}
+            aria-label="Volume"
             style={{ width: 80, accentColor: 'var(--gold)' }} />
           <span style={{ fontSize: '0.7rem', color: '#888' }}>🔊</span>
           <span style={{ fontSize: '0.65rem', color: 'var(--gold)', width: 28 }}>{Math.round(volume * 100)}%</span>

@@ -220,7 +220,12 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
           <option value="earnings">Sort: Earnings</option>
         </select>
       </div>
-      {filtered.length === 0 && <p style={{ color: '#666', fontSize: '0.8rem' }}>No runs match filters.</p>}
+      {filtered.length === 0 && (
+        <div className="empty-state" style={{ padding: '20px' }}>
+          <div className="empty-state-icon">🔍</div>
+          <div className="empty-state-desc">No runs match these filters. Try adjusting your criteria.</div>
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.map((entry) => {
           const legacy = getLegacyRating(entry.earnings, entry.reputation, entry.won);
@@ -578,7 +583,7 @@ export default function StartScreen() {
             {hasSave() && (() => {
               const saved = loadGameState();
               return saved ? (
-                <button className="btn btn-primary btn-glow" onClick={() => { resumeGame(saved); }} style={{ background: 'rgba(46,204,113,0.15)', borderColor: '#2ecc71' }}>
+                <button className="btn btn-success btn-glow" onClick={() => { resumeGame(saved); }}>
                   ▶ CONTINUE RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(Season {saved.season}, {saved.phase})</span>
                 </button>
               ) : null;
@@ -587,7 +592,7 @@ export default function StartScreen() {
               NEW RUN
             </button>
             {/* Daily Run */}
-            <button className="btn btn-small" style={{ color: '#3498db', borderColor: '#3498db', opacity: dailyDone ? 0.5 : 1 }}
+            <button className="btn btn-small" style={{ color: 'var(--blue)', borderColor: 'var(--blue)', opacity: dailyDone ? 0.5 : 1 }}
               onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
               📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
               {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
@@ -630,7 +635,7 @@ export default function StartScreen() {
               </button>
             )}
             {stats.directorUnlocked && (
-              <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
+              <button className="btn btn-danger btn-small" onClick={() => { setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
                 🔥 DIRECTOR MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.8 targets)</span>
               </button>
             )}
@@ -737,7 +742,11 @@ export default function StartScreen() {
       {tab === 'leaderboard' && (
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           {leaderboard.length === 0 ? (
-            <p style={{ color: '#666', fontSize: '0.9rem' }}>No runs recorded yet. Complete a run to see your scores here!</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">🏆</div>
+              <div className="empty-state-title">Leaderboard Empty</div>
+              <div className="empty-state-desc">Complete a run to see your scores here. Aim for that S-rank!</div>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div className="leaderboard-header" style={{ display: 'none' }} />
@@ -1040,7 +1049,11 @@ export default function StartScreen() {
       {tab === 'history' && (
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           {leaderboard.length === 0 ? (
-            <p style={{ color: '#666', fontSize: '0.9rem' }}>No runs completed yet. Finish a run to see your history!</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">📜</div>
+              <div className="empty-state-title">No History Yet</div>
+              <div className="empty-state-desc">Your filmography will appear here after your first completed run.</div>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {leaderboard.slice(0, 10).map((entry, i) => {

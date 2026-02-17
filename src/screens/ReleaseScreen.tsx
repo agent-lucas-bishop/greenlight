@@ -202,7 +202,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
         <span className="card-stat gold">Quality: {state.lastQuality}</span>
       </div>
 
-      <div className="box-office-number score-reveal" style={{ color: config.color }}>
+      <div className="box-office-number score-reveal" style={{ color: config.color }} aria-live="polite" aria-label={`Box office: $${state.lastBoxOffice}M`}>
         <CountUp target={state.lastBoxOffice} />
       </div>
 

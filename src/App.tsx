@@ -7,6 +7,7 @@ import TutorialOverlay from './components/TutorialOverlay';
 import StudioFoundingNarrative from './components/StudioFoundingNarrative';
 import { shouldShowNarrative, markNarrativeShown } from './onboarding';
 import { isTutorialActive } from './tutorial';
+import { getRandomTip } from './loadingTips';
 import { checkAchievements, persistAchievements } from './achievements';
 import type { AchievementDef } from './achievements';
 import AchievementToast from './components/AchievementToast';
@@ -31,6 +32,7 @@ function App() {
   const [checkedPhases, setCheckedPhases] = useState<string>('');
   const [seasonOverlay, setSeasonOverlay] = useState<number | null>(null);
   const [seasonOverlayExit, setSeasonOverlayExit] = useState(false);
+  const [seasonTip, setSeasonTip] = useState('');
   const prevSeason = useState(state.season)[0];
   
   useEffect(() => subscribe(() => setState(getState())), []);
@@ -61,6 +63,7 @@ function App() {
     if (state.phase === 'greenlight' && state.season > 1 && (prevPhase === 'shop' || prevPhase === 'event')) {
       setSeasonOverlay(state.season);
       setSeasonOverlayExit(false);
+      setSeasonTip(getRandomTip());
       const t1 = setTimeout(() => setSeasonOverlayExit(true), 1200);
       const t2 = setTimeout(() => setSeasonOverlay(null), 1700);
       return () => { clearTimeout(t1); clearTimeout(t2); };
@@ -115,6 +118,9 @@ function App() {
               <div className="shimmer-skeleton" style={{ height: 160, flex: 1 }} />
             </div>
             <div className="shimmer-skeleton" style={{ height: 44, width: '50%', margin: '20px auto 0', borderRadius: 6 }} />
+            <div style={{ textAlign: 'center', marginTop: 20, color: 'rgba(212,168,67,0.6)', fontSize: '0.75rem', fontStyle: 'italic', maxWidth: 350, margin: '20px auto 0' }}>
+              {getRandomTip()}
+            </div>
           </div>
         }>
           {renderPhase()}
@@ -141,6 +147,19 @@ function App() {
         <div className={`season-overlay ${seasonOverlayExit ? 'season-overlay-exit' : ''}`}>
           <div style={{ textAlign: 'center' }}>
             <div className="season-number">SEASON {seasonOverlay}</div>
+            {seasonTip && (
+              <div style={{
+                marginTop: 16,
+                color: 'rgba(212,168,67,0.8)',
+                fontSize: '0.8rem',
+                maxWidth: 400,
+                margin: '16px auto 0',
+                lineHeight: 1.5,
+                fontStyle: 'italic',
+              }}>
+                {seasonTip}
+              </div>
+            )}
           </div>
         </div>
       )}

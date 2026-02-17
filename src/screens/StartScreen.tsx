@@ -16,6 +16,7 @@ import { KeywordGlossary } from '../components/KeywordTooltip';
 import AchievementGallery from '../components/AchievementGallery';
 import SettingsModal from '../components/SettingsModal';
 import KeyboardHints from '../components/KeyboardHints';
+import Glossary from '../components/Glossary';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
@@ -329,6 +330,7 @@ export default function StartScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showGlossary, setShowGlossary] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
@@ -423,6 +425,14 @@ export default function StartScreen() {
           className="start-icon-btn"
         >
           ?
+        </button>
+        <button
+          onClick={() => setShowGlossary(true)}
+          title="Encyclopedia"
+          aria-label="Encyclopedia"
+          className="start-icon-btn"
+        >
+          📖
         </button>
         <button
           onClick={() => setShowSettings(true)}
@@ -1036,6 +1046,7 @@ export default function StartScreen() {
       )}
       {showHelp && <HowToPlay onClose={() => { setShowHelp(false); if (firstRun) markRunStarted(); }} isFirstTime={firstRun} />}
       {showAchievements && <AchievementGallery onClose={() => setShowAchievements(false)} />}
+      {showGlossary && <Glossary onClose={() => setShowGlossary(false)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
     </div>

@@ -116,7 +116,7 @@ function UpgradePanel({ card, budget, onDone }: { card: ProductionCard; budget: 
               key={i}
               className="btn"
               disabled={budget < a.cost}
-              onClick={() => { sfx.coin(); a.action!(); }}
+              onClick={() => { sfx.purchase(); a.action!(); }}
               style={{ textAlign: 'left', fontSize: '0.8rem', opacity: budget < a.cost ? 0.4 : 1 }}
             >
               {a.label} <span style={{ color: '#e74c3c', float: 'right' }}>${a.cost}M</span>
@@ -139,7 +139,7 @@ function TransmuteButtons({ card, budget, cost }: { card: ProductionCard; budget
             key={t}
             className="btn"
             disabled={budget < cost}
-            onClick={() => { sfx.coin(); workshopTransmute(card.id, t); }}
+            onClick={() => { sfx.purchase(); workshopTransmute(card.id, t); }}
             style={{ fontSize: '0.7rem', flex: 1, opacity: budget < cost ? 0.4 : 1 }}
           >
             {t.toUpperCase()}

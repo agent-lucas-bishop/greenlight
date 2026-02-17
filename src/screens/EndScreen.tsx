@@ -52,6 +52,9 @@ import { checkCommunityChallenges, type RunSummary, type CommunityChallenge } fr
 import ReplayViewer from '../components/ReplayViewer';
 import { detectAllSynergies } from '../synergies';
 import { getReviewArchive, starsToDisplay } from '../criticReviews';
+import { calculateFilmAwards, saveRunAwards, type FilmAward } from '../filmAwards';
+import { checkRivalBeaten, type Rival } from '../rivalries';
+import AwardsCeremony from '../components/AwardsCeremony';
 
 // ─── Helpers ───
 
@@ -470,6 +473,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [completedCommunity, setCompletedCommunity] = useState<CommunityChallenge[]>([]);
   const [showReplayViewer, setShowReplayViewer] = useState(false);
   const [showStrategyTips, setShowStrategyTips] = useState(!isVictory && shouldShowStrategyTips());
+  const [showAwardsCeremony, setShowAwardsCeremony] = useState(true);
+  const [beatenRivals, setBeatenRivals] = useState<Rival[]>([]);
   const [hofResult, setHofResult] = useState<SubmitResult | null>(null);
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
@@ -482,6 +487,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const directorProfile = useMemo(() => buildDirectorProfile(history), []);
   const awardsResult = useMemo(() => calculateAwards(state.seasonHistory), []);
   const shareData = useMemo<RunShareData>(() => extractShareData(state, score, rank, legacy.rating, isVictory, directorProfile.styleTitle), []);
+  const filmAwards = useMemo(() => calculateFilmAwards(state.seasonHistory, state.studioName || 'Your Studio'), []);
 
   const totalBO = state.totalEarnings;
   const bestFilm = history.length > 0 ? history.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
@@ -901,6 +907,19 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         });
         setHofResult(hofSubmit);
       }
+      // R307: Save film awards
+      if (filmAwards.length > 0) {
+        saveRunAwards({
+          runId: `run_${Date.now()}`,
+          date: new Date().toISOString().slice(0, 10),
+          studioName: state.studioName || 'Your Studio',
+          awards: filmAwards,
+        });
+      }
+      // R307: Check beaten rivals
+      const beaten = checkRivalBeaten(score);
+      if (beaten.length > 0) setBeatenRivals(beaten);
+
       setRecorded(true);
       setShowReplayToast(true);
       setTimeout(() => setShowReplayToast(false), 3000);
@@ -932,6 +951,36 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
       {showStrategyTips && <StrategyTipsModal onClose={() => setShowStrategyTips(false)} />}
+
+      {/* R307: Awards Ceremony */}
+      {showAwardsCeremony && filmAwards.length > 0 && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+        }}>
+          <AwardsCeremony
+            awards={filmAwards}
+            studioName={state.studioName || 'Your Studio'}
+            onContinue={() => setShowAwardsCeremony(false)}
+          />
+        </div>
+      )}
+
+      {/* R307: Beaten Rivals Notification */}
+      {beatenRivals.length > 0 && !showAwardsCeremony && (
+        <div className="animate-slide-down" style={{
+          position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+          background: 'rgba(231,76,60,0.15)', border: '2px solid rgba(231,76,60,0.5)', borderRadius: 10,
+          padding: '12px 24px', color: '#e74c3c', fontFamily: 'Bebas Neue', fontSize: '1rem',
+          letterSpacing: '0.05em', backdropFilter: 'blur(8px)', textAlign: 'center',
+        }}>
+          ⚔️ BEAT YOUR RIVAL{beatenRivals.length > 1 ? 'S' : ''}! ⚔️
+          <div style={{ fontSize: '0.75rem', color: '#ccc', marginTop: 4, fontFamily: 'inherit' }}>
+            {beatenRivals.map(r => r.playerName).join(', ')}
+          </div>
+        </div>
+      )}
 
       {/* ─── TITLE ─── */}
       <div style={{ marginBottom: 8 }}>

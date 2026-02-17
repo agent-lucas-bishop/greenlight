@@ -4,6 +4,7 @@ import { fetchGlobalLeaderboard, getCacheAge, type GlobalScore } from '../leader
 import { getLeaderboardStats, getTop50, getAllRunHistory, getBestRunId, type RunHistoryEntry } from '../runHistory';
 import { sfx } from '../sound';
 import { DIFFICULTIES, isNGPlusRun } from '../difficulty';
+import { getRivals, addRival, removeRival, isRival, getRivalCount, type Rival } from '../rivalries';
 
 type SortKey = 'score' | 'earnings' | 'films' | 'date' | 'bestFilm';
 type SortDir = 'asc' | 'desc';
@@ -171,8 +172,8 @@ function RunHistorySection() {
 }
 
 // ─── Memoized local leaderboard row ───
-const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, isBestRun, copiedId, onShare }: {
-  entry: LeaderboardEntry; index: number; isCurrent: boolean; isBestRun: boolean; copiedId: string | null; onShare: (e: LeaderboardEntry) => void;
+const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, isBestRun, copiedId, onShare, isEntryRival, onToggleRival }: {
+  entry: LeaderboardEntry; index: number; isCurrent: boolean; isBestRun: boolean; copiedId: string | null; onShare: (e: LeaderboardEntry) => void; isEntryRival: boolean; onToggleRival: (e: LeaderboardEntry) => void;
 }) {
   const bestFilm = entry.films.length > 0
     ? entry.films.reduce((a, b) => (b.quality || 0) > (a.quality || 0) ? b : a)
@@ -181,9 +182,9 @@ const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, i
   return (
     <div style={{
       display: 'flex', gap: 4, padding: '8px 12px', alignItems: 'center',
-      background: isBestRun ? 'rgba(255,215,0,0.1)' : isCurrent ? 'rgba(212,168,67,0.12)' : index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
-      border: isBestRun ? '1px solid rgba(255,215,0,0.4)' : isCurrent ? '1px solid var(--gold-dim)' : '1px solid transparent',
-      borderRadius: (isBestRun || isCurrent) ? 6 : 0, transition: 'background 0.2s', contain: 'content',
+      background: isEntryRival ? 'rgba(231,76,60,0.08)' : isBestRun ? 'rgba(255,215,0,0.1)' : isCurrent ? 'rgba(212,168,67,0.12)' : index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+      border: isEntryRival ? '2px solid rgba(231,76,60,0.5)' : isBestRun ? '1px solid rgba(255,215,0,0.4)' : isCurrent ? '1px solid var(--gold-dim)' : '1px solid transparent',
+      borderRadius: (isBestRun || isCurrent || isEntryRival) ? 6 : 0, transition: 'background 0.2s', contain: 'content',
     }}>
       <span style={{ width: 30, fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: index < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][index] : '#555' }}>
         {index < 3 ? MEDAL[index] : `#${index + 1}`}
@@ -191,8 +192,9 @@ const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, i
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ color: RANK_COLORS[entry.rank] || '#999', fontFamily: 'Bebas Neue', fontSize: '0.9rem' }}>{entry.rank}</span>
+          {isEntryRival && <span style={{ fontSize: '0.7rem', color: '#e74c3c' }} title="Rival">⚔️</span>}
           <span style={{
-            color: isBestRun ? '#ffd700' : isCurrent ? 'var(--gold)' : '#ccc', fontSize: '0.8rem', fontWeight: (isCurrent || isBestRun) ? 700 : 400,
+            color: isEntryRival ? '#e74c3c' : isBestRun ? '#ffd700' : isCurrent ? 'var(--gold)' : '#ccc', fontSize: '0.8rem', fontWeight: (isCurrent || isBestRun || isEntryRival) ? 700 : 400,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {entry.playerName || entry.studioName || 'Anonymous'}
@@ -216,6 +218,16 @@ const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, i
         {bestFilm ? `"${bestFilm.title}"` : '—'}
       </span>
       <span style={{ width: 70, textAlign: 'right', color: '#666', fontSize: '0.65rem' }}>{entry.date}</span>
+      <button onClick={(e) => { e.stopPropagation(); onToggleRival(entry); }}
+        title={isEntryRival ? 'Remove rival' : 'Mark as rival'}
+        style={{
+          width: 32, height: 32, border: 'none', borderRadius: 6, cursor: 'pointer',
+          background: isEntryRival ? 'rgba(231,76,60,0.2)' : 'rgba(255,255,255,0.05)',
+          color: isEntryRival ? '#e74c3c' : '#888', fontSize: '0.8rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+        {isEntryRival ? '⚔️' : '🎯'}
+      </button>
       <button onClick={(e) => { e.stopPropagation(); onShare(entry); }}
         title="Copy run card to clipboard"
         style={{
@@ -270,6 +282,8 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [rivalVersion, setRivalVersion] = useState(0); // force re-render on rival change
+  const rivalIds = useMemo(() => new Set(getRivals().map(r => r.entryId)), [rivalVersion]);
 
   // Global leaderboard state
   const [globalScores, setGlobalScores] = useState<GlobalScore[]>([]);
@@ -365,6 +379,19 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
     if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
     else { setSortKey(key); setSortDir('desc'); }
   };
+
+  const handleToggleRival = useCallback((entry: LeaderboardEntry) => {
+    if (isRival(entry.id)) {
+      removeRival(entry.id);
+    } else {
+      if (getRivalCount() >= 3) {
+        // Max rivals reached
+        return;
+      }
+      addRival({ entryId: entry.id, playerName: entry.playerName || entry.studioName || 'Anonymous', studioName: entry.studioName || '', score: entry.score });
+    }
+    setRivalVersion(v => v + 1);
+  }, []);
 
   const handleShare = useCallback((entry: LeaderboardEntry) => {
     const text = generateRunCard(entry);
@@ -605,6 +632,8 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
                     isBestRun={i === 0 && sortKey === 'score' && sortDir === 'desc'}
                     copiedId={copiedId}
                     onShare={handleShare}
+                    isEntryRival={rivalIds.has(entry.id)}
+                    onToggleRival={handleToggleRival}
                   />
                 ))}
               </div>

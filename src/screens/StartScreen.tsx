@@ -34,6 +34,7 @@ const Glossary = lazy(() => import('../components/Glossary'));
 const StatsPanel = lazy(() => import('../components/StatsPanel'));
 const FilmArchive = lazy(() => import('../components/FilmArchive'));
 const CareerStatsDashboard = lazy(() => import('../components/CareerStatsDashboard'));
+const CareerStats307 = lazy(() => import('../components/CareerStats307'));
 const StatsDashboard = lazy(() => import('../components/StatsDashboard'));
 const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
@@ -1610,6 +1611,11 @@ export default function StartScreen() {
               ))}
             </div>
           </div>
+
+          {/* R307: Enhanced Career Stats */}
+          <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 20 }}>Loading...</div>}>
+            <CareerStats307 />
+          </Suspense>
 
           {/* Unlockable Content */}
           <div style={{ marginBottom: 24 }}>

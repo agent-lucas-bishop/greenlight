@@ -505,4 +505,6 @@ export interface SeasonResult {
   themeId?: import('./soundtrack').MusicalThemeId; // R266: musical theme used
   themeBonusPercent?: number; // R266: quality bonus from theme
   audienceScore?: number; // R185: audience score (0-100)
+  directorCommentary?: string; // R309: procedural director's commentary
+  posterSeed?: number; // R309: seed for procedural poster generation
 }

@@ -14,7 +14,7 @@ import { EndScreenStatsSummary } from '../components/StatsDashboard';
 import { calculateStandings, getSeasonLeaderboard } from '../aiDirectors';
 import { RivalDashboard } from '../components/RivalDashboard';
 import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, hasMilestone, type RunXPData } from '../prestige';
-import { calculateStarPowerFromRun, awardStarPower, canPrestigeReset, performPrestigeReset, getPrestigeShop, getPrestigeStarsDisplay, type StarPowerEarning } from '../prestigeShop';
+import { calculateStarPowerFromRun, awardStarPower, canPrestigeReset, performPrestigeReset, getPrestigeShop, getPrestigeStarsDisplay, getAvailableNGPPerks, getActiveNGPPerks, type StarPowerEarning, type NewGamePlusPerk } from '../prestigeShop';
 import { awardMetaXP, getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, canPrestige, performPrestige, getPrestigeBadgeEmoji, type MetaRunXPInput, type MetaXPResult } from '../metaProgression';
 import { recordGenreMasteryFilms } from '../genreMastery';
 import { recordZeroFlopsRun, recordAllModifiersWin } from '../unlockableContent';
@@ -448,6 +448,9 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [starPowerEarnings, setStarPowerEarnings] = useState<StarPowerEarning[]>([]);
   const [showPrestigeResetConfirm, setShowPrestigeResetConfirm] = useState(false);
   const [prestigeResetDone, setPrestigeResetDone] = useState(false);
+  const [showPerkSelection, setShowPerkSelection] = useState(false);
+  const [selectedPerkId, setSelectedPerkId] = useState<string | null>(null);
+  const [chosenPerk, setChosenPerk] = useState<NewGamePlusPerk | null>(null);
   const [newCardIds, setNewCardIds] = useState<string[]>([]);
   const [highScoreRank, setHighScoreRank] = useState<number | null>(null);
   const [leaderboardEntry, setLeaderboardEntry] = useState<LeaderboardEntry | null>(null);
@@ -1695,7 +1698,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             </div>
           )}
 
-          {showPrestigeResetConfirm && !prestigeResetDone && (
+          {showPrestigeResetConfirm && !prestigeResetDone && !showPerkSelection && (
             <div style={{
               background: 'rgba(255,215,0,0.08)', border: '2px solid #ffd700',
               borderRadius: 12, padding: '16px', marginTop: 12, maxWidth: 400, margin: '12px auto 0',
@@ -1706,7 +1709,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 <ul style={{ margin: 0, paddingLeft: 16, color: '#aaa', fontSize: '0.75rem' }}>
                   <li>All purchased upgrades (budget, cards, shields, etc.)</li>
                   <li>All Star Power currency</li>
-                  <li>Unlocked cosmetics</li>
+                  <li>Unlocked cosmetics & all chosen perks</li>
                   <li>Achievements and statistics</li>
                 </ul>
                 <div style={{ marginTop: 8, marginBottom: 8 }}><strong style={{ color: '#e74c3c' }}>What RESETS:</strong></div>
@@ -1717,28 +1720,81 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 <ul style={{ margin: 0, paddingLeft: 16, color: '#ffd700', fontSize: '0.75rem' }}>
                   <li>+1 Prestige Level (new cosmetics unlock!)</li>
                   <li>Bonus Star Power reward</li>
+                  <li>Choose a permanent New Game+ perk!</li>
                 </ul>
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                <button className="btn" onClick={() => {
-                  const result = performPrestigeReset();
-                  if (result.success) {
-                    sfx.prestigeReset();
-                    setTimeout(() => sfx.prestigeLevelUp(result.newLevel), 2200);
-                    setPrestigeResetDone(true);
-                    setShowPrestigeResetConfirm(false);
-                  }
-                }} style={{
+                <button className="btn" onClick={() => setShowPerkSelection(true)} style={{
                   background: 'rgba(255,215,0,0.2)', border: '1px solid #ffd700',
                   color: '#ffd700', padding: '8px 20px', cursor: 'pointer', fontFamily: 'Bebas Neue',
                 }}>
-                  ⭐ Prestige!
+                  Choose Perk →
                 </button>
                 <button className="btn" onClick={() => setShowPrestigeResetConfirm(false)} style={{
                   background: 'rgba(255,255,255,0.05)', border: '1px solid #666',
                   color: '#999', padding: '8px 20px', cursor: 'pointer',
                 }}>
                   Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* R259: Perk Selection Screen */}
+          {showPerkSelection && !prestigeResetDone && (
+            <div style={{
+              background: 'rgba(255,215,0,0.08)', border: '2px solid #ffd700',
+              borderRadius: 12, padding: '16px', marginTop: 12, maxWidth: 500, margin: '12px auto 0',
+            }}>
+              <h4 style={{ color: '#ffd700', textAlign: 'center', marginBottom: 12, fontFamily: 'Bebas Neue', letterSpacing: 1 }}>
+                🎮 CHOOSE YOUR NEW GAME+ PERK
+              </h4>
+              <div style={{ color: '#888', fontSize: '0.7rem', textAlign: 'center', marginBottom: 12 }}>
+                This perk is permanent and applies to all future runs.
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflow: 'auto' }}>
+                {getAvailableNGPPerks().map(perk => (
+                  <div key={perk.id} onClick={() => setSelectedPerkId(perk.id)} style={{
+                    background: selectedPerkId === perk.id ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.03)',
+                    border: `2px solid ${selectedPerkId === perk.id ? '#ffd700' : '#333'}`,
+                    borderRadius: 8, padding: '10px 14px', cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: '1.3rem' }}>{perk.emoji}</span>
+                      <div>
+                        <div style={{ color: selectedPerkId === perk.id ? '#ffd700' : '#eee', fontSize: '0.85rem', fontWeight: 600 }}>{perk.name}</div>
+                        <div style={{ color: '#999', fontSize: '0.7rem' }}>{perk.description}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+                <button className="btn" disabled={!selectedPerkId} onClick={() => {
+                  if (!selectedPerkId) return;
+                  const result = performPrestigeReset(selectedPerkId);
+                  if (result.success) {
+                    sfx.prestigeReset();
+                    setTimeout(() => sfx.prestigeLevelUp(result.newLevel), 2200);
+                    setChosenPerk(result.perkChosen);
+                    setPrestigeResetDone(true);
+                    setShowPerkSelection(false);
+                    setShowPrestigeResetConfirm(false);
+                  }
+                }} style={{
+                  background: selectedPerkId ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${selectedPerkId ? '#ffd700' : '#444'}`,
+                  color: selectedPerkId ? '#ffd700' : '#666',
+                  padding: '8px 20px', cursor: selectedPerkId ? 'pointer' : 'default', fontFamily: 'Bebas Neue',
+                }}>
+                  ⭐ Prestige!
+                </button>
+                <button className="btn" onClick={() => { setShowPerkSelection(false); setSelectedPerkId(null); }} style={{
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid #666',
+                  color: '#999', padding: '8px 20px', cursor: 'pointer',
+                }}>
+                  Back
                 </button>
               </div>
             </div>
@@ -1754,6 +1810,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
               <div style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>
                 PRESTIGE {getPrestigeShop().prestigeLevel}!
               </div>
+              {chosenPerk && (
+                <div style={{ color: '#2ecc71', fontSize: '0.8rem', marginTop: 8, background: 'rgba(46,204,113,0.1)', borderRadius: 8, padding: '8px 12px' }}>
+                  {chosenPerk.emoji} <strong>{chosenPerk.name}</strong> — {chosenPerk.description}
+                </div>
+              )}
               <div style={{ color: '#888', fontSize: '0.75rem', marginTop: 4 }}>
                 New cosmetics and bonuses await in the Prestige Shop.
               </div>

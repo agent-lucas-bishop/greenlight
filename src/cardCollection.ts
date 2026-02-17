@@ -3,6 +3,7 @@
 
 import { ALL_LEADS, ALL_SUPPORTS, ALL_DIRECTORS, ALL_CREW } from './data';
 import type { Talent, TalentType, Genre } from './types';
+import { addStarDust, getStarDustForDuplicate } from './cardCrafting';
 
 // ─── Types ───
 
@@ -122,6 +123,10 @@ export function addCardToCollection(
     if (isFoil) existing.isFoil = true;
     existing.acquisitionHistory.push({ date: now, runSeason, wasFoil: isFoil });
     saveCollection(state);
+    // R260: Grant Star Dust for duplicate
+    const catalog = getCardCatalog();
+    const def = catalog.find(c => c.id === talentName);
+    if (def) addStarDust(getStarDustForDuplicate(def.rarity));
     return { isNew: false, isFoil };
   }
 

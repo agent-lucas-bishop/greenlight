@@ -76,6 +76,42 @@ export default function PrestigePanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {/* R259: Active New Game+ Perks */}
+        {(() => {
+          const activePerks = getActiveNGPPerks();
+          const nextReward = getNextPrestigeReward();
+          if (activePerks.length === 0 && !nextReward) return null;
+          return (
+            <div style={{
+              background: 'rgba(46,204,113,0.06)', border: '1px solid rgba(46,204,113,0.25)',
+              borderRadius: 12, padding: '12px 16px', marginBottom: 16,
+            }}>
+              {activePerks.length > 0 && (
+                <>
+                  <div style={{ color: '#2ecc71', fontSize: '0.8rem', fontFamily: 'Bebas Neue', letterSpacing: 1, marginBottom: 6 }}>
+                    🎮 ACTIVE NEW GAME+ PERKS
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: nextReward ? 8 : 0 }}>
+                    {activePerks.map(p => (
+                      <span key={p.id} style={{
+                        fontSize: '0.7rem', color: '#ccc', background: 'rgba(255,255,255,0.06)',
+                        padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(46,204,113,0.2)',
+                      }}>
+                        {p.emoji} {p.effectLabel}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+              {nextReward && state.prestigeLevel < 10 && (
+                <div style={{ color: '#888', fontSize: '0.7rem', marginTop: activePerks.length > 0 ? 6 : 0 }}>
+                  <span style={{ color: '#ffd700' }}>Next prestige reward:</span> {nextReward.emoji} {nextReward.name} — {nextReward.description}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Tab Switcher */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'center' }}>
           {(['upgrades', 'cosmetics'] as const).map(t => (

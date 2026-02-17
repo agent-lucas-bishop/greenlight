@@ -42,11 +42,12 @@ const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
 const CampaignSelect = lazy(() => import('../components/CampaignSelect'));
 const PlayerProfileModal = lazy(() => import('../components/PlayerProfile'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
+const CraftingWorkshop = lazy(() => import('../components/CraftingWorkshop'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
 const CollectionPanel = lazy(() => import('../components/CollectionPanel'));
 const PrestigePanel = lazy(() => import('../components/PrestigePanel'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
-import { getPrestigeShop, getPrestigeStarsDisplay } from '../prestigeShop';
+import { getPrestigeShop, getPrestigeStarsDisplay, getActiveNGPPerks } from '../prestigeShop';
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
@@ -808,6 +809,7 @@ export default function StartScreen() {
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
           { id: 'collection' as const, emoji: '📚', label: `COLLECTION (${getCollectionStats().discovered}/${getCollectionStats().total})`, shortLabel: 'COLLECT' },
           { id: 'create', emoji: '🃏', label: 'WORKSHOP' },
+          { id: 'craft' as const, emoji: '⚒️', label: 'CRAFT' },
           { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
           { id: 'events' as const, emoji: '📅', label: 'EVENTS' },
           { id: 'career', emoji: '🏛️', label: 'CAREER' },
@@ -1602,6 +1604,12 @@ export default function StartScreen() {
       {tab === 'create' && (
         <Suspense fallback={<SkeletonLoader />}>
           <CardCreator onClose={() => setTab('play')} />
+        </Suspense>
+      )}
+
+      {tab === 'craft' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <CraftingWorkshop onClose={() => setTab('play')} inline />
         </Suspense>
       )}
 

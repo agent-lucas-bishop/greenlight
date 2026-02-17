@@ -3,6 +3,7 @@ import { getUnlocks, saveUnlocks, type UnlockState, ENDINGS } from './unlocks';
 import type { GameState } from './types';
 import { getEnabledWorkshopCards } from './cardCreator';
 import { getCollectionStats } from './cardCollection';
+import { addAwardTokens, getAwardTokensForAchievement } from './cardCrafting';
 
 export type AchievementCategory = 'milestone' | 'skill' | 'discovery' | 'fun' | 'secret';
 export type AchievementRarityLevel = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -1183,6 +1184,10 @@ export function persistAchievements(ids: string[]) {
       const ach = ACHIEVEMENTS.find(a => a.id === id);
       if (ach?.starPowerReward) {
         starPowerEarned += ach.starPowerReward.amount;
+      }
+      // R260: Grant Award Tokens for achievement
+      if (ach) {
+        addAwardTokens(getAwardTokensForAchievement(ach.rarity ?? 'common'));
       }
     }
   }

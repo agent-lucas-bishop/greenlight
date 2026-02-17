@@ -746,7 +746,6 @@ export function applyEventTheme(now: Date = new Date()): void {
 export function getEventTimeRemaining(event: SeasonalEvent, now: Date = new Date()): { days: number; hours: number; minutes: number } {
   const year = now.getFullYear();
   let endDate = new Date(year, event.endDate.month - 1, event.endDate.day, 23, 59, 59);
-  // If end date is before now (year crossing), use next year
   if (endDate < now) {
     endDate = new Date(year + 1, event.endDate.month - 1, event.endDate.day, 23, 59, 59);
   }

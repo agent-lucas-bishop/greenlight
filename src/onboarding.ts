@@ -172,3 +172,15 @@ export const PHASE_TIPS: Record<string, { icon: string; title: string; text: str
   },
 };
 
+// Inline contextual tips for specific mechanics (shown once ever, dismissed permanently)
+export const MECHANIC_TIPS: Record<string, string> = {
+  directorVision: 'Director\'s Vision gives +5 quality if fulfilled or −2 if not — read the condition before you wrap.',
+  reshoots: 'Reshoots re-roll all incident cards after wrap. Could fix a bad shoot — or make it worse.',
+  extendedCut: 'Extended Cut adds bonus draws after release. Only available on HIT or better — skip if quality is already high.',
+  completionBond: 'Completion Bond upgrades your next FLOP to a MISS (no strike). One-use insurance — save it for risky films.',
+  scriptRewrite: 'Script Rewrite swaps one card in your deck mid-production. Use it to ditch a bad draw.',
+  rivals: 'Rival studios compete for the same audience. Their earnings affect market conditions and end-of-run rankings.',
+  legendaryScript: 'Legendary scripts have unique abilities and higher base scores — but they cost more and set expectations high.',
+  eliteTalent: 'Elite talent have powerful unique cards but high Heat. Worth it if you can manage the incident risk.',
+};
+

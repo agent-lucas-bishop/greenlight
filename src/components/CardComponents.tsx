@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { CardTemplate } from '../types';
 
 const TAG_CONFIG: Record<string, { emoji: string; color: string; icon: string }> = {
@@ -8,7 +9,7 @@ const TAG_CONFIG: Record<string, { emoji: string; color: string; icon: string }>
   spectacle: { emoji: '✨', color: 'var(--tag-spectacle, #f1c40f)', icon: '✦' },
 };
 
-export function CardTypeBadge({ type }: { type: string }) {
+export const CardTypeBadge = memo(function CardTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; color: string; bg: string }> = {
     action: { label: 'ACTION', color: '#fff', bg: '#2ecc71' },
     challenge: { label: 'CHALLENGE', color: '#000', bg: '#f1c40f' },
@@ -20,9 +21,9 @@ export function CardTypeBadge({ type }: { type: string }) {
       {c.label}
     </span>
   );
-}
+});
 
-export function CardPreview({ card }: { card: CardTemplate }) {
+export const CardPreview = memo(function CardPreview({ card }: { card: CardTemplate }) {
   return (
     <div style={{ padding: '4px 8px', display: 'flex', flexDirection: 'column', gap: 2, background: 'rgba(255,255,255,0.02)', borderRadius: 4, marginBottom: 2 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', flexWrap: 'wrap' }}>
@@ -39,6 +40,6 @@ export function CardPreview({ card }: { card: CardTemplate }) {
       )}
     </div>
   );
-}
+});
 
 export { TAG_CONFIG };

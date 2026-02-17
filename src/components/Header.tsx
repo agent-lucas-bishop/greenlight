@@ -91,7 +91,7 @@ export default function Header({ state }: { state: GameState }) {
           <StatTooltip tip="Your money to hire talent and buy perks. Overspending creates debt." inline>
             <span className="label">Budget</span>
           </StatTooltip>
-          <span className={`value ${budgetFlash}`} aria-live="polite">${state.budget.toFixed(1)}M</span>
+          <span className={`value ${budgetFlash}`} aria-label={`Budget: $${state.budget.toFixed(1)}M`}>${state.budget.toFixed(1)}M</span>
         </div>
         {state.debt > 0 && (
           <div className="header-stat">

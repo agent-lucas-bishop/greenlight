@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { isMuted, toggleMute, sfx } from '../sound';
 import { startGame, pickArchetype, resumeGame } from '../gameStore';
 import { hasSave, loadGameState, clearSave } from '../saveGame';
@@ -13,11 +13,13 @@ import { getTodayModifier, getWeeklyModifiers } from '../dailyModifiers';
 import { getPersonalBests, getDailyStats } from '../personalBests';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
-import AchievementGallery from '../components/AchievementGallery';
-import SettingsModal from '../components/SettingsModal';
 import KeyboardHints from '../components/KeyboardHints';
-import Glossary from '../components/Glossary';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
+
+// Lazy-load heavy modals (only opened on demand)
+const AchievementGallery = lazy(() => import('../components/AchievementGallery'));
+const SettingsModal = lazy(() => import('../components/SettingsModal'));
+const Glossary = lazy(() => import('../components/Glossary'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling } from '../prestige';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
@@ -1136,9 +1138,9 @@ export default function StartScreen() {
         </div>
       )}
       {showHelp && <HowToPlay onClose={() => { setShowHelp(false); if (firstRun) markRunStarted(); }} isFirstTime={firstRun} />}
-      {showAchievements && <AchievementGallery onClose={() => setShowAchievements(false)} />}
-      {showGlossary && <Glossary onClose={() => setShowGlossary(false)} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showAchievements && <Suspense fallback={null}><AchievementGallery onClose={() => setShowAchievements(false)} /></Suspense>}
+      {showGlossary && <Suspense fallback={null}><Glossary onClose={() => setShowGlossary(false)} /></Suspense>}
+      {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
       {showKeyboardHints && <KeyboardHints onClose={() => setShowKeyboardHints(false)} />}
     </div>
   );

@@ -8,6 +8,8 @@ import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
 import { careerTrackRunEnd } from '../careerAnalytics';
+import { recordRunStats } from '../statistics';
+import { EndScreenStatsSummary } from '../components/StatsDashboard';
 import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, hasMilestone, type RunXPData } from '../prestige';
 import { awardMetaXP, getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, canPrestige, performPrestige, getPrestigeBadgeEmoji, type MetaRunXPInput, type MetaXPResult } from '../metaProgression';
 import { recordGenreMasteryFilms } from '../genreMastery';
@@ -653,6 +655,17 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         won: isVictory,
         archetype: state.studioArchetype || 'unknown',
         prestigeLevel: currentPrestigeLevel.level,
+      });
+      // R193: Record detailed statistics
+      recordRunStats({
+        seasonHistory: history,
+        totalEarnings: state.totalEarnings,
+        won: isVictory,
+        difficulty: state.difficulty,
+        score,
+        studioName: state.studioName,
+        budget: state.budget,
+        startBudget: 15, // default start budget
       });
       setRecorded(true);
     }
@@ -1687,6 +1700,9 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         </div>
       )}
+
+      {/* ─── LIFETIME STATS SUMMARY ─── */}
+      {phase >= 7 && <EndScreenStatsSummary />}
 
       {/* ─── PLAY AGAIN ─── */}
       {phase >= 7 && (

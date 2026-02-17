@@ -30,6 +30,7 @@ const Glossary = lazy(() => import('../components/Glossary'));
 const StatsPanel = lazy(() => import('../components/StatsPanel'));
 const FilmArchive = lazy(() => import('../components/FilmArchive'));
 const CareerStatsDashboard = lazy(() => import('../components/CareerStatsDashboard'));
+const StatsDashboard = lazy(() => import('../components/StatsDashboard'));
 const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
 const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
@@ -1020,7 +1021,7 @@ export default function StartScreen() {
       {/* ─── CAREER STATS DASHBOARD TAB ─── */}
       {tab === 'dashboard' && (
         <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading dashboard...</div>}>
-          <CareerStatsDashboard />
+          <StatsDashboard />
         </Suspense>
       )}
 

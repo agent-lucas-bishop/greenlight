@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getStudioIdentity } from '../studioIdentity';
+import { getDifficultyBadge } from '../difficulty';
 // Reputation tier helper (duplicated from EndScreen to avoid circular import)
 function getRepTier(rep: number): { name: string; color: string } {
   if (rep >= 12) return { name: 'Legendary', color: '#ff6b6b' };
@@ -117,6 +118,10 @@ export default function Header({ state }: { state: GameState }) {
           {archetype && <span>{archetype.emoji} {archetype.name}</span>}
           {state.studioTagline && archetype && <span> · </span>}
           {state.studioTagline && <span>{state.studioTagline}</span>}
+          {state.difficulty && state.difficulty !== 'studio' && (() => {
+            const badge = getDifficultyBadge(state.difficulty);
+            return <span style={{ marginLeft: 8, color: badge.color, fontStyle: 'normal', fontWeight: 700, fontSize: '0.6rem', background: `${badge.color}15`, padding: '1px 6px', borderRadius: 4, border: `1px solid ${badge.color}30` }}>{badge.emoji} {badge.name}</span>;
+          })()}
         </div>
       )}
       <div className="header-stats">

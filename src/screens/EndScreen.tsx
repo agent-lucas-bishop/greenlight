@@ -18,6 +18,7 @@ import { getRunStats } from '../unlocks';
 import { getDailyNumber, getWeeklyNumber } from '../seededRng';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from '../challengeModifiers';
 import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
+import { getDifficultyBadge } from '../difficulty';
 
 // ─── Helpers ───
 
@@ -498,6 +499,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         mode: state.gameMode,
         challenge: state.challengeId,
         archetype: state.studioArchetype || 'unknown',
+        difficulty: state.difficulty || 'studio',
         films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier, quality: s.quality, boxOffice: s.boxOffice, season: s.season, nominated: s.nominated })),
         won: isVictory,
         dailySeed: state.dailySeed || state.weeklySeed ? `weekly:${state.weeklySeed}` : undefined,
@@ -609,6 +611,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           {challenge.emoji} {challenge.name} Challenge (×{challenge.scoreMultiplier} score)
         </div>
       )}
+      {state.difficulty && (() => {
+        const badge = getDifficultyBadge(state.difficulty);
+        return (
+          <div style={{ marginBottom: 8, display: 'inline-block', padding: '4px 12px', background: `${badge.color}15`, border: `1px solid ${badge.color}30`, borderRadius: 6 }}>
+            <span style={{ color: badge.color, fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.05em' }}>{badge.emoji} {badge.name} Difficulty</span>
+          </div>
+        );
+      })()}
 
       {/* ─── LEGACY RATING + RANK ─── */}
       <div style={{ display: 'flex', gap: 32, justifyContent: 'center', alignItems: 'center', margin: '16px 0' }}>

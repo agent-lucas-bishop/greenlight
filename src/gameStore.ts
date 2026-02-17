@@ -108,6 +108,8 @@ import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
+import { getDifficultyConfig } from './difficulty';
+import type { Difficulty } from './types';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -146,6 +148,7 @@ function createInitialState(): GameState {
     rivalHistory: [],
     cumulativeRivalEarnings: {},
     gameMode: 'normal' as GameMode,
+    difficulty: 'studio' as Difficulty,
     maxSeasons: 5,
     maxStrikes: 3,
     hotGenres: [],
@@ -270,6 +273,17 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
         synergyCondition: null,
         riskTag: '🔴',
       });
+    }
+  }
+
+  // Difficulty: Mogul adds 20% more incidents (duplicate random existing incidents)
+  const diffConfigDeck = getDifficultyConfig(state.difficulty);
+  if (diffConfigDeck.incidentFrequencyMod > 1.0) {
+    const existingIncidents = deck.filter(c => c.cardType === 'incident');
+    const extraCount = Math.round(existingIncidents.length * (diffConfigDeck.incidentFrequencyMod - 1.0));
+    for (let i = 0; i < extraCount && existingIncidents.length > 0; i++) {
+      const template = existingIncidents[Math.floor(rng() * existingIncidents.length)];
+      deck.push({ ...template, id: cardUid() });
     }
   }
 
@@ -582,7 +596,7 @@ export function resumeGame(saved: Partial<GameState>) {
   if (state.phase !== 'start') saveGameState(state);
 }
 
-export function startGame(mode: GameMode = 'normal', challengeId?: string, activeModifiers?: string[]) {
+export function startGame(mode: GameMode = 'normal', challengeId?: string, activeModifiers?: string[], difficulty: Difficulty = 'studio') {
   clearSave();
   resetAgingState();
   resetRisingStarNames();
@@ -596,7 +610,8 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
   }
 
   const challenge = challengeId ? getChallengeById(challengeId) : undefined;
-  let maxSeasons = 5;
+  const diffConfig = getDifficultyConfig(difficulty);
+  let maxSeasons = diffConfig.maxSeasons;
   let maxStrikes = 3;
 
   if (challenge?.id === 'speed_run') {
@@ -624,6 +639,7 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     ...createInitialState(),
     phase: 'start',
     gameMode: mode,
+    difficulty,
     challengeId,
     dailySeed: mode === 'daily' ? getDailyDateString() : mode === 'weekly' ? `weekly:${getWeeklyDateString()}` : undefined,
     weeklySeed: mode === 'weekly' ? getWeeklyDateString() : undefined,
@@ -636,7 +652,8 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
 }
 
 export function pickArchetype(archetypeId: StudioArchetypeId) {
-  let budget = 15;
+  const diffConfig = getDifficultyConfig(state.difficulty);
+  let budget = diffConfig.startBudget;
   if (archetypeId === 'blockbuster') budget += 5;
   // NG+ bonuses: start with more budget to offset harder targets
   if (state.gameMode === 'newGamePlus') budget += 5;
@@ -697,7 +714,8 @@ export function pickNeow(choice: number) {
   }
   // R128: Legacy run bonuses — +1 starting reputation per prestige level (cap +5)
   const legacyRunBonuses = getLegacyRunBonuses();
-  const startReputation = Math.min(3 + legacyRunBonuses.reputationBonus + getRetirementRepBonus(), 5);
+  const diffConfigNeow = getDifficultyConfig(state.difficulty);
+  const startReputation = Math.min(diffConfigNeow.startReputation + legacyRunBonuses.reputationBonus + getRetirementRepBonus(), 5);
   setState({ neowChoice: choice, roster, budget, perks, genreMastery, reputation: startReputation, phase: 'greenlight' as GamePhase });
   beginSeason();
 }
@@ -1990,6 +2008,10 @@ export function resolveRelease() {
   let multiplier = getMarketMultiplier(market, script.genre, rawQuality);
   let filmFestivalSubmitBonus = false;
 
+  // Difficulty: market multiplier bonus (Indie = +0.1)
+  const diffConfigRelease = getDifficultyConfig(state.difficulty);
+  multiplier += diffConfigRelease.marketMultiplierBonus;
+
   // Legacy perk: Blockbuster Factory — all market multipliers +0.1
   const legacyPerksRelease = getActiveLegacyPerks();
   if (legacyPerksRelease.some(p => p.effect === 'marketBoost01')) multiplier += 0.1;
@@ -2335,6 +2357,12 @@ export function resolveRelease() {
 
   // Generate rival films for this season (rivals chase hot genres, with rubber-banding)
   let rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres, state.totalEarnings + earnings, state.cumulativeRivalEarnings);
+  // Difficulty: Mogul rivals are more aggressive (higher box office)
+  if (diffConfigRelease.rivalAggressiveness > 1.0) {
+    rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * diffConfigRelease.rivalAggressiveness * 10) / 10 }));
+  } else if (diffConfigRelease.rivalAggressiveness < 1.0) {
+    rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * diffConfigRelease.rivalAggressiveness * 10) / 10 }));
+  }
   // Legacy perk: Rival Nemesis — rivals get -10% box office
   if (legacyPerksRelease.some(p => p.effect === 'rivalHandicap')) {
     rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * 0.9 * 10) / 10 }));

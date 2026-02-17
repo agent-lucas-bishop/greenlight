@@ -27,6 +27,7 @@ export interface LeaderboardEntry {
   films: FilmDetail[];
   won: boolean;
   dailySeed?: string; // date string if daily run
+  difficulty?: string;
   studioName?: string;
   runTitle?: string;
   prestigeLevel?: number;

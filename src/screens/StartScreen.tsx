@@ -18,6 +18,8 @@ import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 import { CHALLENGE_MODIFIERS, getCombinedModifierMultiplier } from '../challengeModifiers';
 import { hasWeeklyRun, getWeeklyBest } from '../leaderboard';
 import { getStudioIdentity, hasStudioIdentity } from '../studioIdentity';
+import { DIFFICULTIES, getDifficultyConfig } from '../difficulty';
+import type { Difficulty } from '../types';
 
 // Lazy-load heavy modals (only opened on demand)
 const AchievementGallery = lazy(() => import('../components/AchievementGallery'));
@@ -181,6 +183,7 @@ function getLegacyRating(earnings: number, reputation: number, won: boolean): { 
 function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLeaderboard> }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterMode, setFilterMode] = useState<string>('all');
+  const [filterDifficulty, setFilterDifficulty] = useState<string>('all');
   const [filterResult, setFilterResult] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date');
   const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999', F: '#e74c3c' };
@@ -199,6 +202,7 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
   // Filter
   let filtered = leaderboard;
   if (filterMode !== 'all') filtered = filtered.filter(e => e.mode === filterMode);
+  if (filterDifficulty !== 'all') filtered = filtered.filter(e => (e as any).difficulty === filterDifficulty);
   if (filterResult === 'won') filtered = filtered.filter(e => e.won);
   else if (filterResult === 'lost') filtered = filtered.filter(e => !e.won);
 
@@ -216,6 +220,12 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
         <select value={filterMode} onChange={e => setFilterMode(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
           <option value="all">All Modes</option>
           {modes.map(m => <option key={m} value={m}>{m === 'normal' ? 'Standard' : m === 'newGamePlus' ? 'NG+' : m === 'directorMode' ? 'Director' : m === 'daily' ? 'Daily' : m === 'challenge' ? 'Challenge' : m}</option>)}
+        </select>
+        <select value={filterDifficulty} onChange={e => setFilterDifficulty(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
+          <option value="all">All Difficulties</option>
+          <option value="indie">🎥 Indie</option>
+          <option value="studio">🎬 Studio</option>
+          <option value="mogul">💀 Mogul</option>
         </select>
         <select value={filterResult} onChange={e => setFilterResult(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
           <option value="all">Win & Loss</option>
@@ -303,6 +313,14 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
                     {entry.mode === 'newGamePlus' ? '⭐ NG+' : entry.mode === 'directorMode' ? '🔥 Dir' : entry.mode === 'daily' ? '📅 Daily' : entry.mode === 'challenge' ? '⚡ Ch' : ''}
                   </span>
                 )}
+                {(entry as any).difficulty && (entry as any).difficulty !== 'studio' && (() => {
+                  const d = DIFFICULTIES.find(dd => dd.id === (entry as any).difficulty);
+                  return d ? (
+                    <span style={{ fontSize: '0.7rem', color: d.color, background: `${d.color}15`, padding: '2px 8px', borderRadius: 4 }}>
+                      {d.emoji} {d.name}
+                    </span>
+                  ) : null;
+                })()}
               </div>
 
               {/* Film tier emoji strip */}
@@ -390,6 +408,8 @@ export default function StartScreen() {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
+  const [showDifficulty, setShowDifficulty] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('studio');
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
@@ -432,20 +452,70 @@ export default function StartScreen() {
     }
   }, [firstRun]);
 
+  if (showDifficulty) {
+    return (
+      <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
+        <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>Choose Difficulty</h2>
+        <p style={{ color: '#888', marginBottom: 24, fontSize: '0.9rem' }}>How tough do you want Hollywood to be?</p>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 800, margin: '0 auto' }}>
+          {DIFFICULTIES.map(d => (
+            <div
+              key={d.id}
+              className="card"
+              onClick={() => { sfx.click(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sfx.click(); setSelectedDifficulty(d.id); setShowDifficulty(false); setShowArchetypes(true); } }}
+              tabIndex={0}
+              role="button"
+              aria-label={`${d.name} (${d.label}): ${d.description}`}
+              style={{ cursor: 'pointer', padding: 20, flex: '1 1 200px', maxWidth: 240, textAlign: 'center', transition: 'transform 0.2s, border-color 0.2s', borderColor: d.id === 'studio' ? 'rgba(212,168,67,0.3)' : undefined }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = d.color; (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = d.id === 'studio' ? 'rgba(212,168,67,0.3)' : ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
+            >
+              {d.id === 'studio' && (
+                <div style={{ fontSize: '0.65rem', color: 'var(--gold)', background: 'rgba(212,168,67,0.15)', border: '1px solid rgba(212,168,67,0.3)', borderRadius: 4, padding: '2px 8px', marginBottom: 8, display: 'inline-block' }}>
+                  DEFAULT
+                </div>
+              )}
+              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{d.emoji}</div>
+              <div style={{ color: d.color, fontWeight: 700, fontSize: '1.1rem', marginBottom: 4 }}>{d.name}</div>
+              <div style={{ color: '#999', fontSize: '0.7rem', fontFamily: 'Bebas Neue', letterSpacing: '0.05em', marginBottom: 8 }}>{d.label.toUpperCase()}</div>
+              <div style={{ color: '#aaa', fontSize: '0.8rem', lineHeight: 1.5, marginBottom: 12 }}>{d.description}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.7rem', color: '#888', textAlign: 'left' }}>
+                <span>💰 ${d.startBudget}M budget</span>
+                <span>{'⭐'.repeat(d.startReputation)} reputation</span>
+                <span>📅 {d.maxSeasons} seasons</span>
+                {d.marketMultiplierBonus > 0 && <span style={{ color: '#2ecc71' }}>📈 +{d.marketMultiplierBonus} market bonus</span>}
+                {d.incidentFrequencyMod > 1 && <span style={{ color: '#e74c3c' }}>⚠️ +{Math.round((d.incidentFrequencyMod - 1) * 100)}% incidents</span>}
+                {d.rivalAggressiveness > 1 && <span style={{ color: '#e74c3c' }}>🏢 Aggressive rivals</span>}
+                {d.rivalAggressiveness < 1 && <span style={{ color: '#2ecc71' }}>🏢 Passive rivals</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (showArchetypes) {
     const modeLabel = selectedMode === 'newGamePlus' ? '⭐ NEW GAME+ — Targets ×1.4' :
       selectedMode === 'directorMode' ? '🔥 DIRECTOR MODE — Targets ×1.8' :
       selectedMode === 'daily' ? '📅 DAILY RUN — ' + dailyDate :
       selectedMode === 'weekly' ? `🗓️ WEEKLY CHALLENGE — Week of ${weeklyDate}` :
       selectedChallenge ? `${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.emoji} ${CHALLENGE_MODES.find(c => c.id === selectedChallenge)?.name}` : '';
+    const diffConfig = getDifficultyConfig(selectedDifficulty);
     return (
       <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
         <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>Choose Your Studio</h2>
-        {modeLabel && (
-          <div style={{ marginBottom: 16, padding: '8px 16px', background: 'rgba(212,168,67,0.1)', border: '1px solid var(--gold-dim)', borderRadius: 8, display: 'inline-block' }}>
-            <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{modeLabel}</span>
+        <div style={{ marginBottom: 16, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ padding: '8px 16px', background: `${diffConfig.color}10`, border: `1px solid ${diffConfig.color}40`, borderRadius: 8, display: 'inline-block' }}>
+            <span style={{ color: diffConfig.color, fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{diffConfig.emoji} {diffConfig.name} ({diffConfig.label})</span>
           </div>
-        )}
+          {modeLabel && (
+            <div style={{ padding: '8px 16px', background: 'rgba(212,168,67,0.1)', border: '1px solid var(--gold-dim)', borderRadius: 8, display: 'inline-block' }}>
+              <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>{modeLabel}</span>
+            </div>
+          )}
+        </div>
         <p style={{ color: '#888', marginBottom: 24, fontSize: '0.9rem' }}>Your studio identity shapes your strategy for the entire run.</p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 800, margin: '0 auto' }}>
           {STUDIO_ARCHETYPES.map(a => {
@@ -454,8 +524,8 @@ export default function StartScreen() {
             <div
               key={a.id}
               className="card"
-              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); }}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); } }}
+              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers, selectedDifficulty); pickArchetype(a.id as StudioArchetypeId); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers, selectedDifficulty); pickArchetype(a.id as StudioArchetypeId); } }}
               tabIndex={0}
               role="button"
               aria-label={`${a.name}: ${a.description}${isRecommended ? ' (Recommended for beginners)' : ''}`}
@@ -627,12 +697,12 @@ export default function StartScreen() {
                 </button>
               ) : null;
             })()}
-            <button className={`btn ${hasSave() ? 'btn-small' : 'btn-primary btn-glow'}`} onClick={() => { clearSave(); markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
+            <button className={`btn ${hasSave() ? 'btn-small' : 'btn-primary btn-glow'}`} onClick={() => { clearSave(); markRunStarted(); setSelectedMode('normal'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
               NEW RUN
             </button>
             {/* Daily Run */}
             <button className="btn btn-small" style={{ color: 'var(--blue)', borderColor: 'var(--blue)', opacity: dailyDone ? 0.5 : 1 }}
-              onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
+              onClick={() => { if (!dailyDone) { setSelectedMode('daily'); setSelectedChallenge(undefined); setShowDifficulty(true); } }}>
               📅 DAILY RUN <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({dailyDate})</span>
               {dailyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {dailyBest?.score || 0}pts</span>}
               {stats.dailyStreak.current > 0 && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#f39c12' }}>🔥{stats.dailyStreak.current}</span>}
@@ -640,7 +710,7 @@ export default function StartScreen() {
             {/* Weekly Challenge */}
             {stats.runs > 0 && (
               <button className="btn btn-small" style={{ color: '#9b59b6', borderColor: '#9b59b6', opacity: weeklyDone ? 0.5 : 1 }}
-                onClick={() => { if (!weeklyDone) { setSelectedMode('weekly'); setSelectedChallenge(undefined); setShowArchetypes(true); } }}>
+                onClick={() => { if (!weeklyDone) { setSelectedMode('weekly'); setSelectedChallenge(undefined); setShowDifficulty(true); } }}>
                 🗓️ WEEKLY CHALLENGE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(Week of {weeklyDate})</span>
                 {weeklyDone && <span style={{ fontSize: '0.65rem', marginLeft: 6, color: '#2ecc71' }}>✓ {weeklyBest?.score || 0}pts</span>}
               </button>
@@ -723,12 +793,12 @@ export default function StartScreen() {
               </div>
             )}
             {stats.ngPlusUnlocked && (
-              <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
+              <button className="btn btn-small" style={{ color: 'var(--gold)', borderColor: 'var(--gold-dim)' }} onClick={() => { setSelectedMode('newGamePlus'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
                 ⭐ NEW GAME+ <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.4 targets)</span>
               </button>
             )}
             {stats.directorUnlocked && (
-              <button className="btn btn-danger btn-small" onClick={() => { setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowArchetypes(true); }}>
+              <button className="btn btn-danger btn-small" onClick={() => { setSelectedMode('directorMode'); setSelectedChallenge(undefined); setShowDifficulty(true); }}>
                 🔥 DIRECTOR MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(×1.8 targets)</span>
               </button>
             )}
@@ -788,7 +858,7 @@ export default function StartScreen() {
                     opacity: unlocked ? 1 : 0.5,
                     borderColor: completed ? 'rgba(46,204,113,0.3)' : undefined,
                   }}
-                    onClick={() => { if (!unlocked) return; setSelectedMode('challenge'); setSelectedChallenge(c.id); markRunStarted(); setShowArchetypes(true); }}
+                    onClick={() => { if (!unlocked) return; setSelectedMode('challenge'); setSelectedChallenge(c.id); markRunStarted(); setShowDifficulty(true); }}
                     onMouseEnter={e => { if (unlocked) { (e.currentTarget as HTMLElement).style.borderColor = completed ? '#2ecc71' : '#e67e22'; (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; } }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = completed ? 'rgba(46,204,113,0.3)' : ''; (e.currentTarget as HTMLElement).style.transform = ''; }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>

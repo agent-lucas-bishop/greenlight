@@ -558,6 +558,20 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     secret: true,
     check: (s) => s.phase === 'victory' && s.debt > 0 && s.budget <= 0,
   },
+  {
+    id: 'moguls_gambit',
+    name: "Mogul's Gambit",
+    emoji: '💀',
+    category: 'skill',
+    description: 'Complete a run on Mogul difficulty with a positive score',
+    hint: 'Survive the hardest difficulty and come out ahead',
+    check: (s) => {
+      if (s.phase !== 'victory') return false;
+      if (s.difficulty !== 'mogul') return false;
+      const baseScore = Math.round(s.totalEarnings * s.reputation * (1 + s.seasonHistory.filter(h => h.nominated).length * 0.2));
+      return baseScore > 0;
+    },
+  },
 ];
 
 // ─── Unlock date tracking ───

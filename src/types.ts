@@ -235,6 +235,8 @@ export type StudioArchetypeId = 'prestige' | 'blockbuster' | 'indie' | 'chaos';
 
 export type GameMode = 'normal' | 'newGamePlus' | 'directorMode' | 'daily' | 'weekly' | 'challenge' | 'seeded';
 
+export type Difficulty = 'indie' | 'studio' | 'mogul';
+
 // Archetype Focus — rewarded when deck is dominated by one tag
 export interface ArchetypeFocus {
   tag: string;
@@ -284,6 +286,7 @@ export interface GameState {
   studioTagline: string;
   lastFilmTitle: string; // procedurally generated film title for release
   gameMode: GameMode;
+  difficulty: Difficulty;
   challengeId?: string;
   dailySeed?: string;
   dailyModifierId?: string; // daily modifier active for this run

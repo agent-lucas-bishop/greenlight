@@ -1,5 +1,5 @@
 # GREENLIGHT — State of the Game
-*After 58 rounds of iteration (Feb 15-16, 2026)*
+*After 59 rounds of iteration (Feb 15-16, 2026)*
 
 **Live:** https://greenlight-plum.vercel.app
 **Repo:** ~/.openclaw/workspace/greenlight
@@ -38,6 +38,7 @@ A movie studio roguelite — you're a film producer making 5 movies across 5 sea
 | Visual regression audit + CSS fixes | R54 | ✅ |
 | Accessibility audit + final polish | R56 | ✅ |
 | Tutorial & new player experience refresh | R58 | ✅ |
+| Achievement system (20 achievements, gallery, toasts) | R59 | ✅ |
 
 ## Architecture
 ```
@@ -64,6 +65,36 @@ src/
 - **Shareable results** (Wordle-style emoji grid) make it viral-ready.
 - **Mobile works.** Fluid typography, touch targets, responsive grids.
 - **Clean codebase.** R24 audit found no contradictions, no state bugs, -100 lines.
+
+## Round 59 Changes — Achievement System
+
+### 20 Achievements Across 5 Categories
+- **Run Milestones (6)**: First Blockbuster, 5-Star Studio (all films HIT+), Perfect Run (all targets hit), Underdog (win with $0 budget), Half Billion Club ($500M single run), Box Office King ($100M single film)
+- **Content Discovery (6)**: Full Cast (15+ unique talent hired), Genre Master (all 7 genres), Chemistry Lab (10 chemistry bonuses), Ending Collector (all 6 endings), Prolific Producer (10 films), Veteran Studio Head (5 wins)
+- **Challenge & Skill (6)**: Speed Demon (complete Speed Run), Daily Driver (7-day streak), Rival Crusher (out-earn all 3 rivals), Critics' Darling (quality 80+), A-List Studio (max rep), Hollywood Legend (S rank)
+- **Fun & Chaos (4)**: Flop Comeback, Blockbuster Trilogy, Debt Lord ($20M+ debt), One Take Wonder (≤5 draws)
+- **Secret (3)**: Hidden until unlocked — The Disaster Artist, Scream Laughing, Broke But Not Broken
+
+### Achievement Gallery UI
+- 🏆 Trophy button on start screen (hidden until first run complete)
+- Modal gallery with category sections and overall progress bar
+- Locked/unlocked state with hints for locked achievements
+- Progress bars for incremental achievements (talent hired, chemistry triggered, films made, streaks)
+- Unlock dates tracked per achievement
+- Secret achievements show as "???" until discovered
+- Cosmetic rewards displayed for qualifying achievements
+
+### Persistence & Tracking
+- New career stats: `uniqueTalentHired` (names array), `chemistryTriggered` (counter)
+- Talent tracking on every hire, chemistry tracking at release calculation
+- Unlock dates stored separately in `greenlight_achievement_dates` localStorage key
+- All follows existing localStorage pattern from leaderboard/unlocks
+
+### Toast Notifications
+- Gold slide-in toast when achievement unlocks during gameplay (already wired in App.tsx)
+- Shows achievement emoji, name, description, and cosmetic reward if applicable
+- Queued system — multiple achievements show sequentially
+- Click to dismiss early
 
 ## Round 58 Changes — Tutorial & New Player Experience Refresh
 

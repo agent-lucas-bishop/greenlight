@@ -27,6 +27,7 @@ export interface RunShareData {
   flops: number;
   nominations: number;
   favoriteGenre: string;
+  genreBreakdown: { genre: string; count: number; pct: number }[];
 }
 
 // ─── Extract share data from game state ───
@@ -77,6 +78,9 @@ export function extractShareData(
     flops: h.filter(s => s.tier === 'FLOP').length,
     nominations: h.filter(s => s.nominated).length,
     favoriteGenre,
+    genreBreakdown: Object.entries(genreCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([genre, count]) => ({ genre, count, pct: h.length > 0 ? Math.round((count / h.length) * 100) : 0 })),
   };
 }
 

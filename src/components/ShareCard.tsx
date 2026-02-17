@@ -205,6 +205,44 @@ export default function ShareCard({ data, onClose }: ShareCardProps) {
             ))}
           </div>
 
+          {/* Genre breakdown pie chart */}
+          {data.genreBreakdown && data.genreBreakdown.length > 0 && (() => {
+            const GENRE_COLORS: Record<string, string> = {
+              Action: '#e74c3c', Comedy: '#f39c12', Drama: '#3498db',
+              Horror: '#8e44ad', 'Sci-Fi': '#1abc9c', Romance: '#e91e63', Thriller: '#2c3e50',
+            };
+            let cumPct = 0;
+            const stops = data.genreBreakdown.map(g => {
+              const color = GENRE_COLORS[g.genre] || '#666';
+              const start = cumPct;
+              cumPct += g.pct;
+              return `${color} ${start}% ${cumPct}%`;
+            }).join(', ');
+
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 16 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: '50%',
+                  background: `conic-gradient(${stops})`,
+                  border: '2px solid rgba(212,168,67,0.2)',
+                  flexShrink: 0,
+                }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {data.genreBreakdown.map(g => (
+                    <div key={g.genre} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.6rem' }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: 2, flexShrink: 0,
+                        background: GENRE_COLORS[g.genre] || '#666',
+                      }} />
+                      <span style={{ color: '#bbb' }}>{g.genre}</span>
+                      <span style={{ color: '#666' }}>{g.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Bottom stats */}
           <div style={{
             display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap',

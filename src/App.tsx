@@ -32,8 +32,9 @@ import { applyEventTheme } from './seasonalEvents';
 import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 import { sfx } from './sound';
-import { announcePhase } from './accessibility';
+import { announcePhase, setupGlobalKeyboardListeners } from './accessibility';
 import { showTenseVignette, hideTenseVignette } from './visualEffects';
+import KeyboardHelp from './components/KeyboardHelp';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -62,8 +63,17 @@ function App() {
   const [seasonTip, setSeasonTip] = useState('');
   const [seasonHeadline, setSeasonHeadline] = useState('');
   const [activeCutscene, setActiveCutscene] = useState<{ data: CutsceneData; vars?: Record<string, string> } | null>(null);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // R279: Global keyboard shortcuts (? for help, M for mute)
+  useEffect(() => {
+    return setupGlobalKeyboardListeners({
+      onOpenKeyboardHelp: () => setShowKeyboardHelp(true),
+      onToggleMute: () => { import('./sound').then(m => { m.toggleMute(); }); },
+    });
+  }, []);
 
   // R250: Tense vignette for low budget or reputation
   useEffect(() => {
@@ -375,6 +385,7 @@ function App() {
       )}
       <BottomNav state={state} />
       <DevStats />
+      {showKeyboardHelp && <KeyboardHelp onClose={() => setShowKeyboardHelp(false)} />}
       {seasonOverlay !== null && (
         <div className={`season-overlay ${seasonOverlayExit ? 'season-overlay-exit' : ''}`} onClick={() => { setSeasonOverlayExit(true); setTimeout(() => setSeasonOverlay(null), 500); }} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setSeasonOverlayExit(true); setTimeout(() => setSeasonOverlay(null), 500); } }} style={{ cursor: 'pointer' }}>
           <div className="season-overlay-inner">

@@ -1,92 +1,123 @@
 /**
- * R210 — Seasonal Event Banner
- *
- * Subtle top banner showing current real-world seasonal events.
- * Dismissible with a close button.
+ * R278: Seasonal Banner — shown on StartScreen during active events.
  */
-import { useState, useMemo, useEffect } from 'react';
-import { getActiveSeasonalEvents, type SeasonalEvent } from '../seasonalEvents';
-import { sfx } from '../sound';
+
+import { useState, useEffect } from 'react';
+import { getActiveEvent, getEventTimeRemaining } from '../seasonalEvents';
+import type { SeasonalEvent } from '../seasonalEvents';
+
+function TimeRemaining({ event }: { event: SeasonalEvent }) {
+  const [remaining, setRemaining] = useState(getEventTimeRemaining(event));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRemaining(getEventTimeRemaining(event));
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [event]);
+
+  const parts: string[] = [];
+  if (remaining.days > 0) parts.push(`${remaining.days}d`);
+  if (remaining.hours > 0) parts.push(`${remaining.hours}h`);
+  parts.push(`${remaining.minutes}m`);
+
+  return <span style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{parts.join(' ')} left</span>;
+}
 
 export default function SeasonalBanner() {
-  const [dismissed, setDismissed] = useState(false);
+  const event = getActiveEvent();
+  if (!event) return null;
 
-  const activeEvents = useMemo(() => getActiveSeasonalEvents(), []);
-
-  // Play banner chime + season-specific ambient on mount
-  useEffect(() => {
-    if (activeEvents.length === 0 || dismissed) return;
-    sfx.seasonalBannerChime();
-    // Play season-specific ambient after a short delay
-    const timer = setTimeout(() => {
-      const id = activeEvents[0]?.id;
-      if (id === 'awards_season') sfx.seasonAmbientAwards();
-      else if (id === 'holiday_season') sfx.seasonAmbientHoliday();
-      else {
-        // Determine by month
-        const m = new Date().getMonth();
-        if (m >= 2 && m <= 4) sfx.seasonAmbientSpring();
-        else if (m >= 5 && m <= 7) sfx.seasonAmbientSummer();
-        else if (m >= 8 && m <= 10) sfx.seasonAmbientAutumn();
-        else sfx.seasonAmbientWinter();
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [activeEvents.length > 0 && !dismissed]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (activeEvents.length === 0 || dismissed) return null;
-
-  // Use the first event's color as the primary theme; blend if multiple
-  const primaryEvent = activeEvents[0];
+  const { themeColors } = event;
 
   return (
     <div
-      role="banner"
-      aria-label="Seasonal event"
       style={{
-        background: `linear-gradient(90deg, ${primaryEvent.themeColor}18 0%, ${primaryEvent.themeColor}08 100%)`,
-        borderBottom: `1px solid ${primaryEvent.themeColor}40`,
-        padding: '6px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-        fontSize: '0.75rem',
-        fontFamily: 'Bebas Neue, sans-serif',
-        letterSpacing: '0.08em',
-        color: primaryEvent.themeColor,
+        background: `linear-gradient(135deg, ${themeColors.primary}22, ${themeColors.secondary}22)`,
+        border: `1px solid ${themeColors.primary}44`,
+        borderRadius: 12,
+        padding: '12px 20px',
+        marginBottom: 16,
         position: 'relative',
-        zIndex: 50,
+        overflow: 'hidden',
       }}
     >
-      {activeEvents.map((event: SeasonalEvent) => (
-        <span key={event.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: '1rem' }}>{event.emoji}</span>
-          <span>{event.name}</span>
-          <span style={{ color: '#888', fontSize: '0.65rem', fontFamily: 'inherit' }}>
-            {event.affectedGenres.join(', ')} — {event.description}
-          </span>
-        </span>
-      ))}
-      <button
-        onClick={() => setDismissed(true)}
-        aria-label="Dismiss seasonal banner"
+      {/* Animated decorations */}
+      <div
         style={{
           position: 'absolute',
-          right: 8,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'none',
-          border: 'none',
-          color: '#666',
-          cursor: 'pointer',
-          fontSize: '0.9rem',
-          padding: '2px 6px',
-          lineHeight: 1,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+          background: `radial-gradient(circle at 10% 50%, ${themeColors.primary}15 0%, transparent 50%), radial-gradient(circle at 90% 50%, ${themeColors.secondary}15 0%, transparent 50%)`,
         }}
-      >
-        ✕
-      </button>
+      />
+      <div style={{
+        position: 'absolute',
+        top: -20,
+        right: -20,
+        fontSize: '4rem',
+        opacity: 0.1,
+        transform: 'rotate(15deg)',
+        pointerEvents: 'none',
+      }}>
+        {event.emoji}
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: themeColors.primary }}>
+              {event.emoji} {event.name}
+            </span>
+            <span style={{
+              marginLeft: 10,
+              fontSize: '0.75rem',
+              background: `${themeColors.primary}33`,
+              color: themeColors.primary,
+              padding: '2px 8px',
+              borderRadius: 8,
+              fontWeight: 600,
+            }}>
+              LIVE
+            </span>
+          </div>
+          <div style={{ color: themeColors.secondary, fontSize: '0.8rem' }}>
+            <TimeRemaining event={event} />
+          </div>
+        </div>
+        <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: '#bbb', lineHeight: 1.4 }}>
+          {event.description}
+        </p>
+
+        {/* Modifiers preview */}
+        <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {event.modifiers.map(mod => (
+            <span
+              key={mod.id}
+              style={{
+                fontSize: '0.72rem',
+                background: `${themeColors.primary}20`,
+                color: themeColors.accent,
+                padding: '2px 8px',
+                borderRadius: 6,
+                border: `1px solid ${themeColors.primary}30`,
+              }}
+            >
+              {mod.description}
+            </span>
+          ))}
+        </div>
+
+        {/* Rewards preview */}
+        {event.exclusiveRewards.length > 0 && (
+          <div style={{ marginTop: 6, fontSize: '0.72rem', color: '#888' }}>
+            🎁 Exclusive rewards: {event.exclusiveRewards.map(r => r.emoji).join(' ')}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

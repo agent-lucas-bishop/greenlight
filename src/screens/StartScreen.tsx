@@ -55,6 +55,8 @@ import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, 
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones, updateLegacyAfterRun } from '../studioLegacy';
 import { getStudioCustomization, getSelectedNameplate, getSelectedBanner, saveStudioCustomization } from '../studioCustomization';
+import SeasonalBanner from '../components/SeasonalBanner';
+const EventRewardsPanel = lazy(() => import('../components/EventRewards'));
 const LegacyPanel = lazy(() => import('../components/LegacyPanel'));
 const StudioOffice = lazy(() => import('../components/StudioOffice'));
 const CardBackPicker = lazy(() => import('../components/CardBackPicker'));
@@ -677,6 +679,7 @@ export default function StartScreen() {
           {muted ? '🔇' : '🔊'}
         </button>
       </div>
+      <SeasonalBanner />
       <div className="start-title animate-title">GREENLIGHT</div>
       <div className="start-subtitle">A Movie Studio Roguelite</div>
       {(() => {
@@ -1713,9 +1716,14 @@ export default function StartScreen() {
       )}
 
       {tab === 'events' && (
-        <Suspense fallback={<SkeletonLoader />}>
-          <EventCalendar onClose={() => setTab('play')} />
-        </Suspense>
+        <>
+          <Suspense fallback={<SkeletonLoader />}>
+            <EventCalendar onClose={() => setTab('play')} />
+          </Suspense>
+          <Suspense fallback={<SkeletonLoader />}>
+            <EventRewardsPanel />
+          </Suspense>
+        </>
       )}
 
       {/* ─── STUDIO TAB ─── */}

@@ -5307,3 +5307,36 @@ body {
 .force-reduce-motion .vfx-legendary-sparkle::before { display: none !important; }
 .force-reduce-motion .vfx-number-pop { animation: none !important; }
 .force-reduce-motion .phase-enter-right { animation: none !important; }
+
+/* ── R279: Accessibility enhancements ── */
+
+/* XL text size */
+[data-text-size="xl"] { font-size: 22px; }
+
+/* Large text mode override */
+.a11y-large-text { font-size: calc(1rem * var(--font-scale, 1.25)); }
+
+/* Focus indicators */
+.a11y-focus-indicators :focus-visible {
+  outline: 3px solid var(--gold, #d4a843) !important;
+  outline-offset: 2px !important;
+}
+
+/* No screen shake */
+.no-screen-shake .screen-shake { animation: none !important; }
+.no-screen-shake .vfx-shake-light,
+.no-screen-shake .vfx-shake-medium,
+.no-screen-shake .vfx-shake-heavy { animation: none !important; }
+
+/* Screen reader mode — show extra sr-only context */
+.sr-mode .sr-only-hint { position: static !important; width: auto !important; height: auto !important; clip: auto !important; overflow: visible !important; margin: 0 !important; }
+
+/* Card play speed custom property */
+:root { --card-play-speed: 1; }
+
+/* Color blind SVG filter application */
+.colorblind-protanopia .main,
+.colorblind-deuteranopia .main,
+.colorblind-tritanopia .main {
+  filter: var(--colorblind-filter, none);
+}

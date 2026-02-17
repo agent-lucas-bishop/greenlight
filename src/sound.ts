@@ -3021,4 +3021,196 @@ export const sfx = {
       }
     }, 'lbShift');
   },
+
+  // ── R231: Prestige System (R227) sounds ──
+
+  /** Dramatic whoosh-down into silence, then triumphant rising fanfare */
+  prestigeReset() {
+    play(c => {
+      // Whoosh down — dramatic descending sweep
+      const sweep = c.createOscillator();
+      const sweepG = c.createGain();
+      sweep.type = 'sawtooth';
+      sweep.frequency.setValueAtTime(1200, c.currentTime);
+      sweep.frequency.exponentialRampToValueAtTime(30, c.currentTime + 0.8);
+      sweepG.gain.setValueAtTime(0.15, c.currentTime);
+      sweepG.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.9);
+      sweep.connect(sweepG).connect(getMaster());
+      sweep.start(); sweep.stop(c.currentTime + 1.0);
+      // Noise whoosh alongside
+      noise(c, 0, 0.7, 0.12);
+      // Sub-bass thud at bottom
+      note(c, 40, 0.6, 0.4, 0.2, 'sine');
+      // === Silence gap (0.9–1.3s) ===
+      // === Triumphant rising fanfare ===
+      // Ascending brass: C4 → E4 → G4 → C5
+      note(c, 262, 1.3, 0.25, 0.14, 'sawtooth');
+      note(c, 330, 1.4, 0.25, 0.14, 'sawtooth');
+      note(c, 392, 1.5, 0.25, 0.16, 'sawtooth');
+      note(c, 523, 1.6, 0.5, 0.18, 'triangle');
+      // Resolve chord
+      note(c, 659, 1.65, 0.45, 0.1, 'triangle');
+      note(c, 784, 1.7, 0.4, 0.1, 'triangle');
+      // High shimmer cascade
+      note(c, 1568, 1.75, 0.4, 0.06, 'sine');
+      note(c, 2093, 1.8, 0.35, 0.05, 'sine');
+      note(c, 2637, 1.85, 0.3, 0.04, 'sine');
+      noise(c, 1.6, 0.2, 0.06);
+    }, 'prestigeReset');
+  },
+
+  /** Shimmering star twinkle with ascending pitch */
+  starPowerEarned() {
+    play(c => {
+      // Ascending twinkle: high sine pings
+      note(c, 1568, 0, 0.12, 0.1, 'sine');
+      note(c, 1976, 0.07, 0.12, 0.1, 'sine');
+      note(c, 2349, 0.14, 0.12, 0.1, 'sine');
+      note(c, 2793, 0.21, 0.15, 0.12, 'sine');
+      note(c, 3520, 0.28, 0.2, 0.08, 'sine');
+      // Shimmer dust
+      noise(c, 0.1, 0.15, 0.03);
+      note(c, 4186, 0.33, 0.15, 0.04, 'sine');
+    }, 'starPowerEarned');
+  },
+
+  /** Satisfying descending shimmer with weight */
+  starPowerSpend() {
+    play(c => {
+      // Descending shimmer
+      note(c, 2637, 0, 0.12, 0.1, 'sine');
+      note(c, 2093, 0.06, 0.12, 0.1, 'sine');
+      note(c, 1568, 0.12, 0.12, 0.1, 'sine');
+      note(c, 1175, 0.18, 0.15, 0.08, 'sine');
+      // Weight/thud at bottom
+      note(c, 200, 0.22, 0.2, 0.12, 'sine');
+      note(c, 120, 0.24, 0.15, 0.08, 'triangle');
+      noise(c, 0.2, 0.06, 0.08);
+    }, 'starPowerSpend');
+  },
+
+  /** Level-up chime that increases in grandeur with upgrade level (1-5) */
+  upgradeUnlock(level: number = 1) {
+    play(c => {
+      const l = Math.max(1, Math.min(5, level));
+      const baseVol = 0.06 + l * 0.02;
+      // Base ascending notes — more for higher levels
+      const notes = [523, 659, 784, 1047, 1319];
+      for (let i = 0; i < Math.min(l + 1, 5); i++) {
+        note(c, notes[i], i * 0.1, 0.2, baseVol, 'triangle');
+      }
+      // Shimmer layer for level 3+
+      if (l >= 3) {
+        note(c, 2093, l * 0.1, 0.25, 0.05, 'sine');
+        note(c, 2637, l * 0.1 + 0.05, 0.2, 0.04, 'sine');
+      }
+      // Sparkle burst for level 4+
+      if (l >= 4) {
+        note(c, 3520, l * 0.1 + 0.1, 0.2, 0.03, 'sine');
+        noise(c, l * 0.1, 0.1, 0.04);
+      }
+      // Epic resolve chord for level 5
+      if (l >= 5) {
+        note(c, 523, 0.6, 0.5, 0.12, 'sine');
+        note(c, 659, 0.6, 0.5, 0.1, 'sine');
+        note(c, 784, 0.6, 0.5, 0.1, 'sine');
+        note(c, 1047, 0.65, 0.45, 0.08, 'sine');
+      }
+    }, 'upgradeUnlock');
+  },
+
+  /** Quick fashionable click + sparkle */
+  cosmeticEquip() {
+    play(c => {
+      // Click
+      note(c, 1400, 0, 0.03, 0.1, 'square');
+      noise(c, 0, 0.02, 0.08);
+      // Sparkle
+      note(c, 2093, 0.04, 0.1, 0.08, 'sine');
+      note(c, 2637, 0.08, 0.08, 0.06, 'sine');
+      note(c, 3136, 0.11, 0.08, 0.04, 'sine');
+    }, 'cosmeticEquip');
+  },
+
+  /** Treasure chest open sound (creak + sparkle burst) */
+  cosmeticUnlock() {
+    play(c => {
+      // Creak: rising filtered noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.3, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(400, c.currentTime);
+      bp.frequency.linearRampToValueAtTime(1200, c.currentTime + 0.25);
+      bp.Q.value = 3;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.12, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.28);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime); src.stop(c.currentTime + 0.3);
+      // Hinge creak tone
+      note(c, 180, 0, 0.15, 0.08, 'sawtooth');
+      note(c, 250, 0.08, 0.12, 0.06, 'sawtooth');
+      // Sparkle burst after lid opens
+      note(c, 1568, 0.2, 0.12, 0.1, 'sine');
+      note(c, 2093, 0.25, 0.12, 0.1, 'sine');
+      note(c, 2637, 0.3, 0.12, 0.08, 'sine');
+      note(c, 3136, 0.35, 0.15, 0.06, 'sine');
+      note(c, 3520, 0.4, 0.15, 0.05, 'sine');
+      noise(c, 0.25, 0.12, 0.04);
+    }, 'cosmeticUnlock');
+  },
+
+  /** Epic ascending scale with harmony layers, more notes per prestige level (1-10) */
+  prestigeLevelUp(level: number = 1) {
+    play(c => {
+      const l = Math.max(1, Math.min(10, level));
+      // Major scale frequencies (C major ascending)
+      const scale = [262, 294, 330, 349, 392, 440, 494, 523, 587, 659];
+      const noteCount = Math.min(l + 2, 10);
+      // Ascending scale notes
+      for (let i = 0; i < noteCount; i++) {
+        note(c, scale[i], i * 0.1, 0.25, 0.1 + (l * 0.008), 'triangle');
+        // Harmony layer (third above) for level 3+
+        if (l >= 3 && i < noteCount - 1) {
+          note(c, scale[Math.min(i + 2, 9)], i * 0.1 + 0.02, 0.2, 0.05 + (l * 0.004), 'sine');
+        }
+        // Octave doubling for level 6+
+        if (l >= 6) {
+          note(c, scale[i] * 2, i * 0.1 + 0.01, 0.15, 0.03, 'sine');
+        }
+      }
+      // Resolve chord at the end
+      const t = noteCount * 0.1;
+      note(c, 523, t, 0.5, 0.12 + l * 0.005, 'sine');
+      note(c, 659, t, 0.5, 0.1, 'sine');
+      note(c, 784, t + 0.05, 0.45, 0.1, 'sine');
+      if (l >= 4) note(c, 1047, t + 0.1, 0.4, 0.08, 'sine');
+      // Shimmer for level 5+
+      if (l >= 5) {
+        note(c, 2093, t + 0.15, 0.35, 0.05, 'sine');
+        note(c, 2637, t + 0.2, 0.3, 0.04, 'sine');
+      }
+      // Cymbal wash for level 8+
+      if (l >= 8) {
+        noise(c, t, 0.3, 0.08);
+        note(c, 3520, t + 0.25, 0.25, 0.03, 'sine');
+      }
+    }, 'prestigeLevelUp');
+  },
+
+  /** Subtle ambient shimmer for star rating visual on StartScreen */
+  prestigeStarDisplay() {
+    play(c => {
+      // Very soft high shimmer tones
+      note(c, 2093, 0, 0.3, 0.03, 'sine');
+      note(c, 2637, 0.08, 0.25, 0.025, 'sine');
+      note(c, 3136, 0.16, 0.2, 0.02, 'sine');
+      // Gentle warm undertone
+      note(c, 523, 0, 0.35, 0.02, 'triangle');
+    }, 'prestigeStarDisplay');
+  },
 };

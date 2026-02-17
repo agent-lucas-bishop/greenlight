@@ -674,6 +674,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       if (spEarnings.length > 0) {
         awardStarPower(spEarnings);
         setStarPowerEarnings(spEarnings);
+        sfx.starPowerEarned();
       }
       // Record personal bests
       const modifierNames: string[] = [];
@@ -1626,6 +1627,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 <button className="btn" onClick={() => {
                   const result = performPrestigeReset();
                   if (result.success) {
+                    sfx.prestigeReset();
+                    setTimeout(() => sfx.prestigeLevelUp(result.newLevel), 2200);
                     setPrestigeResetDone(true);
                     setShowPrestigeResetConfirm(false);
                   }

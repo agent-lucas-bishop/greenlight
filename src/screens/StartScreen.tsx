@@ -739,7 +739,7 @@ export default function StartScreen() {
         return (
           <div style={{ textAlign: 'center', marginTop: 6 }}>
             {pStars && <span style={{ fontSize: '0.85rem', marginRight: 6 }}>{pStars}</span>}
-            <button className="btn" onClick={() => setShowPrestigePanel(true)} style={{
+            <button className="btn" onClick={() => { sfx.prestigeStarDisplay(); setShowPrestigePanel(true); }} style={{
               background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)',
               color: '#ffd700', padding: '3px 12px', cursor: 'pointer', fontSize: '0.7rem',
               fontFamily: 'Bebas Neue', letterSpacing: 1, borderRadius: 6,

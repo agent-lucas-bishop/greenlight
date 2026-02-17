@@ -8,6 +8,7 @@ import {
   isCosmeticUnlocked, getPrestigeStarsDisplay,
   type PrestigeUpgrade, type PrestigeCosmetic,
 } from '../prestigeShop';
+import { sfx } from '../sound';
 
 export default function PrestigePanel({ onClose }: { onClose: () => void }) {
   const [state, setState] = useState(getPrestigeShop);
@@ -17,7 +18,10 @@ export default function PrestigePanel({ onClose }: { onClose: () => void }) {
   const refresh = () => setState(getPrestigeShop());
 
   const handlePurchase = (upgradeId: string) => {
+    const currentLevel = (state.upgrades[upgradeId] || 0) + 1;
     if (purchaseUpgrade(upgradeId)) {
+      sfx.starPowerSpend();
+      sfx.upgradeUnlock(Math.min(currentLevel, 5));
       refresh();
       setConfirmPurchase(null);
     }
@@ -25,11 +29,13 @@ export default function PrestigePanel({ onClose }: { onClose: () => void }) {
 
   const handleEquip = (cosmeticId: string) => {
     equipCosmetic(cosmeticId);
+    sfx.cosmeticEquip();
     refresh();
   };
 
   const handleUnequip = (type: 'logoFrame' | 'cardBack' | 'uiTheme') => {
     unequipCosmetic(type);
+    sfx.click();
     refresh();
   };
 
@@ -72,7 +78,7 @@ export default function PrestigePanel({ onClose }: { onClose: () => void }) {
         {/* Tab Switcher */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'center' }}>
           {(['upgrades', 'cosmetics'] as const).map(t => (
-            <button key={t} className="btn" onClick={() => setTab(t)} style={{
+            <button key={t} className="btn" onClick={() => { setTab(t); sfx.tabSwitch(); }} style={{
               background: tab === t ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.05)',
               border: `1px solid ${tab === t ? 'var(--gold)' : '#444'}`,
               color: tab === t ? 'var(--gold)' : '#888',

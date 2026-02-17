@@ -94,6 +94,7 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable, className }: 
       className={`prod-card-new ${isNew ? 'card-enter' : ''} ${isIncident ? 'red-card' : ''} ${selectable ? 'selectable-card' : ''} ${card.synergyFired && showSynergy ? 'synergy-active' : ''} ${className || ''}`}
       onClick={onClick}
       onKeyDown={e => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
+      onMouseEnter={selectable ? () => sfx.cardHover() : undefined}
       tabIndex={selectable ? 0 : undefined}
       role={selectable ? 'button' : undefined}
       aria-label={`${card.name}, ${card.cardType}, quality ${card.baseQuality >= 0 ? '+' : ''}${card.baseQuality}${card.synergyText ? ', ' + card.synergyText : ''}`}

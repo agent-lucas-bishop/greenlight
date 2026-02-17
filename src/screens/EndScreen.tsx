@@ -372,6 +372,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       };
       const pResult = awardRunXP(xpData);
       setPrestigeResult(pResult);
+      if (pResult.leveledUp) setTimeout(() => sfx.prestigeUp(), 3600);
       // Record personal bests
       const modifierNames: string[] = [];
       if (state.dailyModifierId) { const m = getModifierById(state.dailyModifierId); if (m) modifierNames.push(m.name); }

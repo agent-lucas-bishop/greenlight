@@ -362,4 +362,98 @@ export const sfx = {
       note(c, 1760, 0.3, 0.3, 0.06, 'sine');
     });
   },
+
+  // ── New sounds for Round 90 ──
+
+  // Card hover — very subtle tick/tap
+  cardHover() {
+    play(c => {
+      note(c, 2400, 0, 0.025, 0.03, 'square');
+    }, 'hover');
+  },
+
+  // Chemistry pair found — magical sparkle (ascending chime notes)
+  chemistryPair() {
+    play(c => {
+      // Ascending sparkle: E6 → G#6 → B6 → E7
+      note(c, 1319, 0, 0.12, 0.1, 'sine');
+      note(c, 1661, 0.06, 0.12, 0.1, 'sine');
+      note(c, 1976, 0.12, 0.12, 0.1, 'sine');
+      note(c, 2637, 0.18, 0.25, 0.12, 'sine');
+      // High shimmer overtones
+      note(c, 3520, 0.2, 0.3, 0.04, 'sine');
+      note(c, 4186, 0.25, 0.25, 0.03, 'sine');
+    }, 'chemistry');
+  },
+
+  // Daily mode start — newspaper printing (filtered noise burst + mechanical clicks)
+  dailyStart() {
+    play(c => {
+      // Mechanical clatter — filtered noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1200;
+      bp.Q.value = 3;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.12, c.currentTime);
+      g.gain.setValueAtTime(0.08, c.currentTime + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.5);
+      // Rhythmic clicks (like rollers)
+      note(c, 400, 0, 0.02, 0.08, 'square');
+      note(c, 400, 0.08, 0.02, 0.06, 'square');
+      note(c, 400, 0.16, 0.02, 0.06, 'square');
+      note(c, 600, 0.24, 0.03, 0.05, 'square');
+    }, 'daily');
+  },
+
+  // Legendary event — dramatic orchestral hit (low bass + high shimmer)
+  legendaryEvent() {
+    play(c => {
+      // Deep bass impact
+      note(c, 55, 0, 0.8, 0.3, 'sine');
+      note(c, 82, 0, 0.6, 0.2, 'triangle');
+      // Mid brass stab
+      note(c, 220, 0, 0.4, 0.15, 'sawtooth');
+      note(c, 330, 0.02, 0.35, 0.1, 'sawtooth');
+      // High shimmer / cymbal
+      noise(c, 0, 0.3, 0.15);
+      note(c, 2093, 0.05, 0.5, 0.06, 'sine');
+      note(c, 3136, 0.08, 0.5, 0.04, 'sine');
+      note(c, 4186, 0.1, 0.4, 0.03, 'sine');
+    }, 'legendary');
+  },
+
+  // Prestige level up — epic ascending chord progression
+  prestigeUp() {
+    play(c => {
+      // Chord 1: C major (C4-E4-G4)
+      note(c, 262, 0, 0.4, 0.12, 'triangle');
+      note(c, 330, 0, 0.4, 0.1, 'triangle');
+      note(c, 392, 0, 0.4, 0.1, 'triangle');
+      // Chord 2: F major (F4-A4-C5)
+      note(c, 349, 0.3, 0.4, 0.12, 'triangle');
+      note(c, 440, 0.3, 0.4, 0.1, 'triangle');
+      note(c, 523, 0.3, 0.4, 0.1, 'triangle');
+      // Chord 3: G major (G4-B4-D5)
+      note(c, 392, 0.6, 0.4, 0.12, 'triangle');
+      note(c, 494, 0.6, 0.4, 0.1, 'triangle');
+      note(c, 587, 0.6, 0.4, 0.1, 'triangle');
+      // Resolve: C major octave up (C5-E5-G5-C6)
+      note(c, 523, 0.9, 0.6, 0.15, 'sine');
+      note(c, 659, 0.9, 0.6, 0.12, 'sine');
+      note(c, 784, 0.9, 0.6, 0.12, 'sine');
+      note(c, 1047, 0.95, 0.55, 0.1, 'sine');
+      // Final shimmer
+      note(c, 2093, 1.0, 0.5, 0.05, 'sine');
+      note(c, 2637, 1.05, 0.45, 0.04, 'sine');
+    }, 'prestige');
+  },
 };

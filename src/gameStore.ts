@@ -13,6 +13,7 @@ import { getChallengeById } from './challenges';
 import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
+import { sfx } from './sound';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { saveGameState, clearSave } from './saveGame';
 import { getGenreMasteryBonus } from './genreMastery';
@@ -1345,6 +1346,7 @@ export function resolveRelease() {
       u.careerStats.chemistryTriggered += activeChemistryForTracking.length;
       saveUnlocks(u);
     } catch {}
+    sfx.chemistryPair();
   }
 
   const chooseMarket = state.perks.some(p => p.effect === 'chooseMarket');

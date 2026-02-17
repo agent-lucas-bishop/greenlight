@@ -44,7 +44,7 @@ export default function EventScreen({ state }: { state: GameState }) {
           return (
             <div
               key={event.id}
-              onClick={() => { if (!confirmed) { sfx.click(); setSelectedId(event.id); } }}
+              onClick={() => { if (!confirmed) { event.rarity === 'legendary' ? sfx.legendaryEvent() : sfx.click(); setSelectedId(event.id); } }}
               onKeyDown={e => { if (!confirmed && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedId(event.id); } }}
               tabIndex={confirmed ? -1 : 0}
               role="button"

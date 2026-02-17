@@ -119,7 +119,12 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
       t.type === 'Director' ? 'director' : 'crew';
 
     for (const template of t.cards) {
-      deck.push(templateToCard(template, t.name, sourceType));
+      const card = templateToCard(template, t.name, sourceType);
+      // Daily modifier: Union Strike — crew cards get +2 base quality
+      if ((state.dailyModifierId === 'union_strike' || state.dailyModifierId2 === 'union_strike') && t.type === 'Crew' && card.cardType === 'action') {
+        card.baseQuality += 2;
+      }
+      deck.push(card);
     }
 
     if (t.heat >= 4 && t.heatCards) {
@@ -521,8 +526,17 @@ export function pickScript(script: Script) {
       cards: t.cards.map(c => c.cardType === 'action' ? { ...c, baseQuality: c.baseQuality + 1 } : c),
     } : t);
   }
+  // Daily modifier: Summer Blockbuster — Action/Sci-Fi -20% cost, others +$2
+  let scriptCost = script.cost;
+  if (state.dailyModifierId === 'summer_blockbuster' || state.dailyModifierId2 === 'summer_blockbuster') {
+    if (script.genre === 'Action' || script.genre === 'Sci-Fi') {
+      scriptCost = Math.round(scriptCost * 0.8);
+    } else {
+      scriptCost += 2;
+    }
+  }
   // Allow overspending — excess goes to debt (disabled on first-ever run)
-  let newBudget = state.budget - script.cost;
+  let newBudget = state.budget - scriptCost;
   let newDebt = state.debt;
   if (newBudget < 0 && !isSimplifiedRun()) {
     newDebt += Math.abs(newBudget);
@@ -566,7 +580,11 @@ export function hireTalent(talent: Talent) {
   // Legacy perk: Talent Whisperer — all hiring costs $1 less (min $1)
   const legacyPerks = getActiveLegacyPerks();
   const discount = legacyPerks.some(p => p.effect === 'cheaperTalent') ? 1 : 0;
-  const actualCost = Math.max(1, talent.cost - discount);
+  let actualCost = Math.max(1, talent.cost - discount);
+  // Daily modifier: Union Strike — crew costs +$2
+  if ((state.dailyModifierId === 'union_strike' || state.dailyModifierId2 === 'union_strike') && talent.type === 'Crew') {
+    actualCost += 2;
+  }
   if (state.roster.length >= 8) return;
   // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - actualCost;
@@ -1130,7 +1148,10 @@ export function calculateQuality(s: GameState): {
 
   // Genre mastery bonus: +2 per previous film in the same genre (+3 for Prestige, +3 for Typecast)
   const masteryPerFilm = (s.studioArchetype === 'prestige' || s.challengeId === 'typecast') ? 3 : 2;
-  const genreMasteryBonus = (s.genreMastery[script.genre] || 0) * masteryPerFilm;
+  const inRunMastery = (s.genreMastery[script.genre] || 0) * masteryPerFilm;
+  // Cross-run genre mastery: Gold+ tier gives +1 quality
+  const crossRunMasteryBonus = getGenreMasteryBonus(script.genre);
+  const genreMasteryBonus = inRunMastery + crossRunMasteryBonus;
 
   // Chemistry bonus
   const castNames = s.castSlots.map(slot => slot.talent?.name).filter(Boolean) as string[];
@@ -1142,6 +1163,14 @@ export function calculateQuality(s: GameState): {
   const archetypeFocusBonus = archetypeFocus?.bonus || 0;
 
   let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus;
+
+  // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
+  const mod1 = s.dailyModifierId;
+  const mod2 = s.dailyModifierId2;
+  if (mod1 === 'oscar_bait' || mod2 === 'oscar_bait') {
+    if (script.genre === 'Drama' || script.genre === 'Thriller') rawQuality += 3;
+    if (script.genre === 'Action' || script.genre === 'Comedy') rawQuality -= 2;
+  }
 
   // Industry event quality bonuses
   const ie = s.industryEvent;
@@ -1314,6 +1343,16 @@ export function resolveRelease() {
       repChange = 1;
       bonusMoney = state.challengeId === 'critics_choice' ? 32 : 22;
       break;
+  }
+
+  // Daily modifier: Festival Circuit — quality>30 doubles rep gains, <20 doubles rep loss
+  if (state.dailyModifierId === 'festival_circuit' || state.dailyModifierId2 === 'festival_circuit') {
+    if (rawQuality > 30 && repChange > 0) repChange *= 2;
+    if (rawQuality < 20 && repChange < 0) repChange *= 2;
+  }
+  // Daily modifier: Award Season — rep gains doubled
+  if (state.dailyModifierId === 'award_season' || state.dailyModifierId2 === 'award_season') {
+    if (repChange > 0) repChange *= 2;
   }
 
   const newRep = Math.max(0, Math.min(5, currentRep + repChange));

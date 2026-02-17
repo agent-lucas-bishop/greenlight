@@ -51,7 +51,7 @@ export default function ShareCard({ data, onClose }: ShareCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = useCallback(async () => {
-    sfx.shareSnap();
+    sfx.shareCopy();
     const text = generateTextSummary(data);
     const ok = await copyToClipboard(text);
     if (ok) {

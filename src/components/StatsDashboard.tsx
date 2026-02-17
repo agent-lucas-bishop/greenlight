@@ -2,11 +2,12 @@
  * R193: Rich Statistics & Analytics Dashboard
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   getLifetimeStats, getRecentRuns, getDifficultyWinRates, getTrend,
   backfillFromLeaderboard, type RunStats, type LifetimeStats,
 } from '../statistics';
+import { sfx } from '../sound';
 
 type SubTab = 'overview' | 'records' | 'genres' | 'difficulty' | 'history';
 
@@ -59,7 +60,7 @@ export default function StatsDashboard() {
       {/* Sub-tabs */}
       <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setSubTab(t.key)} style={{
+          <button key={t.key} onClick={() => { setSubTab(t.key); sfx.statReveal(); }} style={{
             background: subTab === t.key ? 'rgba(212,168,67,0.15)' : 'transparent',
             border: `1px solid ${subTab === t.key ? 'var(--gold-dim)' : '#333'}`,
             borderRadius: 6, padding: '8px 12px', color: subTab === t.key ? 'var(--gold)' : '#666',

@@ -2017,6 +2017,163 @@ export const sfx = {
     }, 'tutorialComplete');
   },
 
+  // ── R199: Sounds for R192-R197 ──
+
+  // Leaderboard (R192): triumphant fanfare with ascending notes
+  newHighScore() {
+    play(c => {
+      // Triumphant brass fanfare: C5 → E5 → G5 → C6 with shimmer
+      note(c, 523, 0, 0.2, 0.14, 'sawtooth');
+      note(c, 659, 0.12, 0.2, 0.14, 'sawtooth');
+      note(c, 784, 0.24, 0.2, 0.14, 'triangle');
+      note(c, 1047, 0.36, 0.4, 0.18, 'sine');
+      // Victory shimmer cascade
+      note(c, 1568, 0.4, 0.35, 0.07, 'sine');
+      note(c, 2093, 0.45, 0.3, 0.05, 'sine');
+      note(c, 2637, 0.5, 0.25, 0.04, 'sine');
+      // Warm bass resolve
+      note(c, 262, 0.36, 0.5, 0.1, 'triangle');
+      noise(c, 0.35, 0.15, 0.06);
+    }, 'newHighScore');
+  },
+
+  // Leaderboard (R192): dramatic scroll/reveal sound
+  leaderboardReveal() {
+    play(c => {
+      // Drum roll buildup
+      for (let i = 0; i < 8; i++) {
+        noise(c, i * 0.05, 0.03, 0.03 + i * 0.004);
+        note(c, 200 + i * 50, i * 0.05, 0.03, 0.05, 'square');
+      }
+      // Swoosh reveal
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(200, c.currentTime + 0.4);
+      o.frequency.exponentialRampToValueAtTime(1000, c.currentTime + 0.55);
+      o.frequency.exponentialRampToValueAtTime(400, c.currentTime + 0.65);
+      g.gain.setValueAtTime(0.1, c.currentTime + 0.4);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.7);
+      o.connect(g).connect(getMaster());
+      o.start(c.currentTime + 0.4); o.stop(c.currentTime + 0.75);
+      // Resolve chord
+      note(c, 523, 0.55, 0.3, 0.1, 'triangle');
+      note(c, 659, 0.55, 0.3, 0.08, 'triangle');
+      note(c, 784, 0.6, 0.25, 0.06, 'sine');
+    }, 'lbReveal');
+  },
+
+  // Statistics (R193): quick data pop
+  statReveal() {
+    play(c => {
+      note(c, 1400, 0, 0.05, 0.1, 'square');
+      note(c, 1800, 0.03, 0.06, 0.08, 'sine');
+      noise(c, 0, 0.03, 0.06);
+    }, 'statReveal');
+  },
+
+  // Statistics (R193): positive ascending chime
+  trendUp() {
+    play(c => {
+      note(c, 659, 0, 0.12, 0.1, 'sine');
+      note(c, 784, 0.06, 0.12, 0.1, 'sine');
+      note(c, 988, 0.12, 0.12, 0.1, 'sine');
+      note(c, 1319, 0.18, 0.2, 0.12, 'sine');
+    }, 'trendUp');
+  },
+
+  // Statistics (R193): negative descending tone
+  trendDown() {
+    play(c => {
+      note(c, 659, 0, 0.12, 0.08, 'triangle');
+      note(c, 554, 0.08, 0.12, 0.07, 'triangle');
+      note(c, 440, 0.16, 0.15, 0.06, 'triangle');
+      note(c, 370, 0.24, 0.2, 0.05, 'sine');
+    }, 'trendDown');
+  },
+
+  // Custom Cards (R194): stamp/emboss sound
+  cardCreate() {
+    play(c => {
+      // Heavy stamp thud
+      note(c, 80, 0, 0.3, 0.22, 'sine');
+      note(c, 160, 0, 0.15, 0.12, 'triangle');
+      noise(c, 0, 0.06, 0.18);
+      // Emboss ring
+      note(c, 1000, 0.04, 0.2, 0.06, 'sine');
+      note(c, 1500, 0.06, 0.15, 0.04, 'sine');
+      // Confirmation chime
+      note(c, 784, 0.15, 0.2, 0.08, 'sine');
+      note(c, 1047, 0.2, 0.25, 0.06, 'sine');
+    }, 'cardCreate');
+  },
+
+  // Custom Cards (R194): paper shuffle sound
+  cardImport() {
+    play(c => {
+      // Multiple paper rustles
+      const buf = c.createBuffer(1, c.sampleRate * 0.4, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 2800;
+      bp.Q.value = 1.5;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.1, c.currentTime);
+      g.gain.setValueAtTime(0.04, c.currentTime + 0.06);
+      g.gain.setValueAtTime(0.09, c.currentTime + 0.12);
+      g.gain.setValueAtTime(0.03, c.currentTime + 0.18);
+      g.gain.setValueAtTime(0.08, c.currentTime + 0.24);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime); src.stop(c.currentTime + 0.4);
+      // Card slap
+      note(c, 400, 0.28, 0.04, 0.08, 'square');
+      // Confirmation blip
+      note(c, 1200, 0.32, 0.08, 0.06, 'sine');
+    }, 'cardImport');
+  },
+
+  // Sharing (R196): quick confirmation blip for copy action
+  shareCopy() {
+    play(c => {
+      note(c, 1400, 0, 0.05, 0.08, 'sine');
+      note(c, 1800, 0.04, 0.08, 0.06, 'sine');
+    }, 'shareCopy');
+  },
+
+  // World Events (R197): urgent news jingle
+  breakingNews() {
+    play(c => {
+      // Urgent staccato: da-da-da-DAH
+      note(c, 784, 0, 0.08, 0.12, 'square');
+      note(c, 784, 0.1, 0.08, 0.12, 'square');
+      note(c, 784, 0.2, 0.08, 0.12, 'square');
+      note(c, 1047, 0.3, 0.3, 0.16, 'sawtooth');
+      // Tension chord underneath
+      note(c, 262, 0.3, 0.35, 0.1, 'triangle');
+      note(c, 330, 0.3, 0.35, 0.08, 'triangle');
+      // Alert shimmer
+      noise(c, 0.28, 0.1, 0.08);
+      note(c, 2093, 0.35, 0.2, 0.04, 'sine');
+    }, 'breakingNews');
+  },
+
+  // World Events (R197): resolution chime when event ends
+  eventEnd() {
+    play(c => {
+      // Gentle descending resolution: G5 → E5 → C5
+      note(c, 784, 0, 0.2, 0.1, 'sine');
+      note(c, 659, 0.1, 0.2, 0.1, 'sine');
+      note(c, 523, 0.2, 0.3, 0.12, 'sine');
+      // Warm resolve pad
+      note(c, 262, 0.2, 0.4, 0.06, 'triangle');
+    }, 'eventEnd');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

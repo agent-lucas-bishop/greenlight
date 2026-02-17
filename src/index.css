@@ -4228,3 +4228,154 @@ body::after {
   0%, 100% { background-position: 200% 200%; }
   50% { background-position: 0% 0%; }
 }
+
+/* ===== R200: TAB BAR POLISH ===== */
+
+.start-tab-bar {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 24px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  max-width: 700px;
+}
+
+.start-tab-btn {
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: #666;
+  cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.start-tab-btn.active {
+  background: rgba(212,168,67,0.15);
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.start-tab-btn:hover {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+@media (max-width: 480px) {
+  .start-tab-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 12px 8px;
+    margin-left: -12px;
+    margin-right: -12px;
+    mask-image: linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%);
+  }
+  .start-tab-bar::-webkit-scrollbar { display: none; }
+  .start-tab-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+}
+
+/* ===== R200: SKELETON LOADING ===== */
+
+.skeleton-block {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeletonPulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 40px 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.skeleton-loader .skeleton-title {
+  width: 60%;
+  height: 24px;
+  margin: 0 auto 8px;
+}
+
+.skeleton-loader .skeleton-line {
+  width: 100%;
+  height: 16px;
+}
+
+.skeleton-loader .skeleton-line:nth-child(3) { width: 80%; }
+.skeleton-loader .skeleton-line:nth-child(4) { width: 70%; }
+
+.skeleton-loader .skeleton-card {
+  width: 100%;
+  height: 80px;
+}
+
+/* ===== R200: END SCREEN COLLAPSIBLE SECTIONS ===== */
+
+.end-section {
+  margin-top: 20px;
+}
+
+.end-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 0;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+
+.end-section-header:hover {
+  opacity: 0.8;
+}
+
+.end-section-header h3 {
+  margin: 0;
+}
+
+.end-section-toggle {
+  color: #666;
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.end-section-toggle.open {
+  transform: rotate(180deg);
+}
+
+.end-section-body {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.3s ease;
+}
+
+.end-section-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.end-section-body.expanded {
+  max-height: 2000px;
+  opacity: 1;
+}

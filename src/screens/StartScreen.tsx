@@ -410,6 +410,19 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
   );
 }
 
+function SkeletonLoader() {
+  return (
+    <div className="skeleton-loader">
+      <div className="skeleton-block skeleton-title" />
+      <div className="skeleton-block skeleton-line" />
+      <div className="skeleton-block skeleton-line" />
+      <div className="skeleton-block skeleton-line" />
+      <div className="skeleton-block skeleton-card" />
+      <div className="skeleton-block skeleton-card" />
+    </div>
+  );
+}
+
 export default function StartScreen() {
   const firstRun = isFirstRun();
   const simplified = isSimplifiedRun(); // true until first run complete
@@ -743,21 +756,37 @@ export default function StartScreen() {
       )}
 
       {/* Tab navigation */}
-      {stats.runs > 0 && (
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
-          {(['play', 'stats', 'dashboard', 'achievements', 'cards', 'create', 'career', 'history', 'archive', 'hallOfFame', ...(!simplified ? ['challenges', 'leaderboard'] as const : [])] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              background: tab === t ? 'rgba(212,168,67,0.15)' : 'transparent',
-              border: `1px solid ${tab === t ? 'var(--gold-dim)' : '#333'}`,
-              borderRadius: 6, padding: '8px 14px', color: tab === t ? 'var(--gold)' : '#666',
-              cursor: 'pointer', fontFamily: 'Bebas Neue', fontSize: '0.85rem', letterSpacing: '0.05em',
-              transition: 'all 0.2s', minHeight: 44,
-            }}>
-              {t === 'play' ? '🎬 PLAY' : t === 'stats' ? '📊 STATS' : t === 'dashboard' ? '📈 DASHBOARD' : t === 'achievements' ? '🏆 ACHIEVEMENTS' : t === 'cards' ? `🃏 CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})` : t === 'create' ? '🎨 CREATE' : t === 'career' ? '🏛️ CAREER' : t === 'history' ? '📜 RUNS' : t === 'archive' ? '🎞️ ARCHIVE' : t === 'hallOfFame' ? '🏛️ HALL OF FAME' : t === 'challenges' ? '⚡ CHALLENGES' : '🏆 LEADERBOARD'}
-            </button>
-          ))}
-        </div>
-      )}
+      {stats.runs > 0 && (() => {
+        const tabDefs: { id: typeof tab; emoji: string; label: string; shortLabel?: string }[] = [
+          { id: 'play', emoji: '🎬', label: 'PLAY' },
+          { id: 'stats', emoji: '📊', label: 'STATS' },
+          { id: 'dashboard', emoji: '📈', label: 'DASHBOARD', shortLabel: 'DASH' },
+          { id: 'achievements', emoji: '🏆', label: 'ACHIEVEMENTS', shortLabel: 'ACHV' },
+          { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
+          { id: 'create', emoji: '🎨', label: 'CREATE' },
+          { id: 'career', emoji: '🏛️', label: 'CAREER' },
+          { id: 'history', emoji: '📜', label: 'RUNS' },
+          { id: 'archive', emoji: '🎞️', label: 'ARCHIVE' },
+          { id: 'hallOfFame', emoji: '🏛️', label: 'HALL OF FAME', shortLabel: 'HOF' },
+          ...(!simplified ? [
+            { id: 'challenges' as const, emoji: '⚡', label: 'CHALLENGES', shortLabel: 'CHAL' },
+            { id: 'leaderboard' as const, emoji: '🏆', label: 'LEADERBOARD', shortLabel: 'LB' },
+          ] : []),
+        ];
+        return (
+          <div className="start-tab-bar">
+            {tabDefs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`start-tab-btn${tab === t.id ? ' active' : ''}`}
+              >
+                {t.emoji} <span className="tab-label-full">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       {tab === 'play' && (
         <>
@@ -992,35 +1021,35 @@ export default function StartScreen() {
       })()}
 
       {tab === 'leaderboard' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading leaderboard...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <LeaderboardScreen />
         </Suspense>
       )}
 
       {/* ─── STATS & ANALYTICS TAB ─── */}
       {tab === 'stats' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading stats...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <StatsPanel />
         </Suspense>
       )}
 
       {/* ─── FILM ARCHIVE TAB ─── */}
       {tab === 'archive' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading archive...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <FilmArchive />
         </Suspense>
       )}
 
       {/* ─── ACHIEVEMENTS TAB ─── */}
       {tab === 'achievements' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading achievements...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <AchievementGallery onClose={() => setTab('play')} inline />
         </Suspense>
       )}
 
       {/* ─── CAREER STATS DASHBOARD TAB ─── */}
       {tab === 'dashboard' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading dashboard...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <StatsDashboard />
         </Suspense>
       )}
@@ -1402,21 +1431,21 @@ export default function StartScreen() {
 
       {/* ─── HALL OF FAME TAB ─── */}
       {tab === 'hallOfFame' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <HallOfFameTab />
         </Suspense>
       )}
 
       {/* ─── TRADING CARDS TAB ─── */}
       {tab === 'cards' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading cards...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <TradingCardGallery onClose={() => setTab('play')} inline />
         </Suspense>
       )}
 
       {/* ─── CUSTOM CARD CREATOR TAB ─── */}
       {tab === 'create' && (
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Loading creator...</div>}>
+        <Suspense fallback={<SkeletonLoader />}>
           <CardCreator onClose={() => setTab('play')} />
         </Suspense>
       )}

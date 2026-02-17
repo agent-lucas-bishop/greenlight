@@ -386,6 +386,25 @@ function getAchievements(state: GameState): { icon: string; name: string; desc: 
   return a;
 }
 
+// ─── Collapsible Section ───
+
+function CollapsibleSection({ title, emoji, children, defaultOpen = true, className = '' }: {
+  title: string; emoji: string; children: React.ReactNode; defaultOpen?: boolean; className?: string;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`end-section ${className}`}>
+      <div className="end-section-header" onClick={() => setOpen(!open)}>
+        <h3 style={{ color: '#d4a843', letterSpacing: 1 }}>{emoji} {title}</h3>
+        <span className={`end-section-toggle ${open ? 'open' : ''}`}>▾</span>
+      </div>
+      <div className={`end-section-body ${open ? 'expanded' : 'collapsed'}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───
 
 export default function EndScreen({ state, type }: { state: GameState; type: 'gameover' | 'victory' }) {
@@ -405,6 +424,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const ending = getEndingForRank(rank, isVictory);
 
   const [phase, setPhase] = useState(0);
+  const [endTab, setEndTab] = useState<'overview' | 'details' | 'progression'>('overview');
   const [copied, setCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
@@ -945,8 +965,27 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
+      {/* ─── END SCREEN TABS ─── */}
+      {phase >= 4 && (
+        <div className="start-tab-bar" style={{ marginTop: 24 }}>
+          {([
+            { id: 'overview' as const, label: '📜 Overview' },
+            { id: 'details' as const, label: '📊 Details' },
+            { id: 'progression' as const, label: '⭐ Progression' },
+          ]).map(t => (
+            <button
+              key={t.id}
+              onClick={() => setEndTab(t.id)}
+              className={`start-tab-btn${endTab === t.id ? ' active' : ''}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ─── DIRECTOR'S CHAIR (R186) ─── */}
-      {phase >= 4 && history.length > 0 && (
+      {phase >= 4 && history.length > 0 && endTab === 'overview' && (
         <div className="animate-slide-down" style={{
           background: 'linear-gradient(135deg, rgba(155,89,182,0.12) 0%, rgba(212,168,67,0.08) 100%)',
           border: '2px solid rgba(155,89,182,0.4)',
@@ -1033,7 +1072,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── FILMOGRAPHY ─── */}
-      {phase >= 4 && (
+      {phase >= 4 && endTab === 'overview' && (
         <div style={{ marginTop: 28 }} className="animate-slide-down">
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>📜 FILMOGRAPHY</h3>
           <div style={{ maxWidth: 540, margin: '0 auto' }}>
@@ -1071,7 +1110,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── RIVAL LEADERBOARD (R180) ─── */}
-      {phase >= 4 && rivalStandings.length > 0 && (
+      {phase >= 4 && rivalStandings.length > 0 && endTab === 'overview' && (
         <div style={{ marginTop: 24 }} className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.rivalLeaderboardReveal(); } }}>
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏢 INDUSTRY LEADERBOARD</h3>
           {state.nemesisStudio && (
@@ -1154,7 +1193,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── FRANCHISES ─── */}
-      {phase >= 4 && state.franchises && Object.keys(state.franchises).length > 0 && (
+      {phase >= 4 && state.franchises && Object.keys(state.franchises).length > 0 && endTab === 'overview' && (
         <div style={{ marginTop: 24 }} className="animate-slide-down">
           <h3 style={{ color: '#e67e22', marginBottom: 12, letterSpacing: 1 }}>🎬 FRANCHISES</h3>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -1179,7 +1218,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── ACHIEVEMENTS ─── */}
-      {phase >= 5 && achievements.length > 0 && (
+      {phase >= 5 && achievements.length > 0 && endTab === 'overview' && (
         <div style={{ marginTop: 24 }} className="animate-slide-down">
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏅 ACHIEVEMENTS ({achievements.length})</h3>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>

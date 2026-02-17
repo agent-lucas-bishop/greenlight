@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getAllCustomCards, toggleCardActive, deleteCustomCard, exportCustomCards, importCustomCards, getBalanceRating, getBalanceLabel, type CustomCard, type CustomCardType } from '../customCards';
+import { sfx } from '../sound';
 
 export default function CustomCardLibrary({ onEdit }: { onEdit: (card: CustomCard) => void }) {
   const [cards, setCards] = useState(getAllCustomCards);
@@ -25,6 +26,7 @@ export default function CustomCardLibrary({ onEdit }: { onEdit: (card: CustomCar
   const handleImport = () => {
     const result = importCustomCards(importText);
     setImportMsg(`Imported ${result.imported} card(s)${result.errors.length ? `. Errors: ${result.errors.join('; ')}` : ''}`);
+    if (result.imported > 0) sfx.cardImport();
     setImportText('');
     setShowImport(false);
     refresh();

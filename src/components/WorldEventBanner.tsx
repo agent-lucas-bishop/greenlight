@@ -1,8 +1,9 @@
 /**
  * R197 — World Event Banner (Breaking News Ticker)
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ActiveWorldEvent } from '../worldEvents';
+import { sfx } from '../sound';
 
 interface Props {
   events: ActiveWorldEvent[];
@@ -25,6 +26,30 @@ const SENTIMENT_BG: Record<string, string> = {
 export default function WorldEventBanner({ events, currentSeason }: Props) {
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const prevEventIds = useRef<string[]>([]);
+
+  // Play breakingNews when new events appear
+  useEffect(() => {
+    const currentIds = events.map(e => e.id);
+    const newEvents = currentIds.filter(id => !prevEventIds.current.includes(id));
+    if (newEvents.length > 0 && prevEventIds.current.length > 0) {
+      sfx.breakingNews();
+    } else if (prevEventIds.current.length > 0) {
+      // Events removed = ended
+      const ended = prevEventIds.current.filter(id => !currentIds.includes(id));
+      if (ended.length > 0) sfx.eventEnd();
+    }
+    prevEventIds.current = currentIds;
+  }, [events.map(e => e.id).join(',')]);
+
+  // Play breakingNews on first render with events
+  const initialRef = useRef(true);
+  useEffect(() => {
+    if (initialRef.current && events.length > 0) {
+      initialRef.current = false;
+      sfx.breakingNews();
+    }
+  }, [events.length]);
 
   if (events.length === 0) return null;
 
@@ -138,7 +163,13 @@ export default function WorldEventBanner({ events, currentSeason }: Props) {
           return (
             <div
               key={event.id}
-              onClick={() => setExpanded(isExpanded ? null : event.id)}
+              onClick={() => {
+                setExpanded(isExpanded ? null : event.id);
+                if (!isExpanded) {
+                  if (event.sentiment === 'positive') sfx.eventPositive();
+                  else if (event.sentiment === 'negative') sfx.eventNegative();
+                }
+              }}
               style={{
                 flex: '0 0 auto',
                 minWidth: 200,

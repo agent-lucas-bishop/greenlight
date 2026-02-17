@@ -8,6 +8,7 @@ import {
 } from '../customCards';
 import type { Genre, CardTag, SlotType, TalentType } from '../types';
 import CustomCardLibrary from './CustomCardLibrary';
+import { sfx } from '../sound';
 
 const GENRES: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'];
 const TAGS: CardTag[] = ['momentum', 'precision', 'chaos', 'heart', 'spectacle'];
@@ -46,8 +47,8 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
     const valErrors = validateCard(card);
     if (valErrors.length) { setErrors(valErrors.map(e => e.message)); return; }
     setErrors([]);
-    if (editing) { updateCustomCard(card); setSaved('Updated!'); }
-    else { addCustomCard(card); setSaved('Saved!'); setCard(cardType === 'script' ? createBlankScript() : cardType === 'talent' ? createBlankTalent() : createBlankEvent()); }
+    if (editing) { updateCustomCard(card); setSaved('Updated!'); sfx.cardCreate(); }
+    else { addCustomCard(card); setSaved('Saved!'); sfx.cardCreate(); setCard(cardType === 'script' ? createBlankScript() : cardType === 'talent' ? createBlankTalent() : createBlankEvent()); }
     setEditing(null);
     setTimeout(() => setSaved(''), 2000);
   };

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { getLeaderboard, getLeaderboardByDifficulty, getPersonalBestByDifficulty, generateRunCard, type LeaderboardEntry } from '../leaderboard';
 import { sfx } from '../sound';
 import { DIFFICULTIES } from '../difficulty';
@@ -60,6 +60,20 @@ export default function LeaderboardScreen({ currentRunId }: Props) {
   };
 
   const sortArrow = (key: SortKey) => sortKey === key ? (sortDir === 'desc' ? ' ▾' : ' ▴') : '';
+
+  // Play leaderboard reveal on mount; newHighScore if current run is #1
+  const revealedRef = useRef(false);
+  useEffect(() => {
+    if (revealedRef.current || allEntries.length === 0) return;
+    revealedRef.current = true;
+    sfx.leaderboardReveal();
+    if (currentRunId) {
+      const topEntry = board[0];
+      if (topEntry && topEntry.id === currentRunId) {
+        setTimeout(() => sfx.newHighScore(), 700);
+      }
+    }
+  }, [allEntries.length]);
 
   if (allEntries.length === 0) {
     return (

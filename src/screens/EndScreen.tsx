@@ -27,6 +27,8 @@ import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
 import { getDifficultyBadge } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
+import { updateEndlessPersonalBest } from '../endlessMode';
+import { addDailyLeaderboardEntry, addWeeklyLeaderboardEntry, calculateDailyScore } from '../dailyChallenge';
 import { buildDirectorProfile, recordDirectorRun, getDirectorCareer, type DirectorProfile } from '../directorProfile';
 import { updateProfileAfterRun } from '../playerProfile';
 import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionProgress } from '../tradingCards';
@@ -720,6 +722,27 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           archetype: state.studioArchetype || 'unknown',
           finalBudget: state.budget,
         });
+        // R233: Update endless personal bests
+        // Approximate streak from consecutive hits
+        let longestStreak = 0, curStreak = 0;
+        for (const s of history) { if (s.hitTarget) { curStreak++; longestStreak = Math.max(longestStreak, curStreak); } else { curStreak = 0; } }
+        updateEndlessPersonalBest(history.length, score, longestStreak);
+      }
+      // R233: Daily/Weekly leaderboard entries
+      if (state.gameMode === 'daily' || state.gameMode === 'weekly') {
+        const qualityAvg = history.length > 0 ? history.reduce((s, h) => s + (h.quality || 0), 0) / history.length : 0;
+        const dailyScore = calculateDailyScore(0, state.totalEarnings, qualityAvg);
+        const lbEntry = {
+          date: new Date().toISOString().slice(0, 10),
+          score: dailyScore,
+          timeSeconds: 0,
+          totalBO: state.totalEarnings,
+          qualityAvg,
+          films: history.length,
+          won: isVictory,
+        };
+        if (state.gameMode === 'daily') addDailyLeaderboardEntry(lbEntry);
+        else addWeeklyLeaderboardEntry(lbEntry);
       }
       // R186: Record director profile for career tracking
       recordDirectorRun(directorProfile);

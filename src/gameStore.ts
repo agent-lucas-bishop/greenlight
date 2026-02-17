@@ -135,6 +135,7 @@ import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeM
 import { isLoyalTalent, getLoyaltyDiscount, getLoyaltyQualityBonus, getAgentFee, checkRetirement, getRetirementRepBonus, isTalentRetired } from './talentHistory';
 import { getDifficultyConfig } from './difficulty';
 import type { Difficulty } from './types';
+import { getEndlessEscalation, calculateEndlessSeasonScore, updateEndlessPersonalBest } from './endlessMode';
 import { getEligibleFestivals, canSubmitToFestival, judgeFestival, getFestivalRepBoost, getFestivalBudgetBonus, getAwardLabel, getFestival, type FestivalResult } from './filmFestivals';
 import { startReplayRecording, recordEvent, finalizeReplay, snapshotState } from './replay';
 
@@ -367,9 +368,15 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
 
   // Difficulty: Mogul adds 20% more incidents (duplicate random existing incidents)
   const diffConfigDeck = getDifficultyConfig(state.difficulty);
-  if (diffConfigDeck.incidentFrequencyMod > 1.0) {
+  // R233: Endless mode escalation adds extra incident frequency
+  let effectiveIncidentMod = diffConfigDeck.incidentFrequencyMod;
+  if (state.gameMode === 'endless') {
+    const esc = getEndlessEscalation(state.season);
+    effectiveIncidentMod += esc.incidentRateBonus;
+  }
+  if (effectiveIncidentMod > 1.0) {
     const existingIncidents = deck.filter(c => c.cardType === 'incident');
-    const extraCount = Math.round(existingIncidents.length * (diffConfigDeck.incidentFrequencyMod - 1.0));
+    const extraCount = Math.round(existingIncidents.length * (effectiveIncidentMod - 1.0));
     for (let i = 0; i < extraCount && existingIncidents.length > 0; i++) {
       const template = existingIncidents[Math.floor(rng() * existingIncidents.length)];
       deck.push({ ...template, id: cardUid() });
@@ -724,10 +731,10 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     maxSeasons = 3;
   }
 
-  // Endless mode: no season limit
+  // Endless mode: no season limit, 3 strikes and out
   if (mode === 'endless') {
     maxSeasons = 999;
-    maxStrikes = 999; // strikes don't end the game in endless
+    maxStrikes = 3;
   }
 
   // Weekly mode has harder defaults
@@ -2233,6 +2240,16 @@ export function resolveRelease() {
   const diffConfigRelease = getDifficultyConfig(state.difficulty);
   multiplier += diffConfigRelease.marketMultiplierBonus;
 
+  // R233: Endless mode — market volatility escalation (amplifies swings)
+  if (state.gameMode === 'endless') {
+    const esc = getEndlessEscalation(state.season);
+    if (esc.marketVolatilityMult > 1.0) {
+      // Push multiplier further from 1.0 in both directions
+      const deviation = multiplier - 1.0;
+      multiplier = 1.0 + deviation * esc.marketVolatilityMult;
+    }
+  }
+
   // Legacy perk: Blockbuster Factory — all market multipliers +0.1
   const legacyPerksRelease = getActiveLegacyPerks();
   if (legacyPerksRelease.some(p => p.effect === 'marketBoost01')) multiplier += 0.1;
@@ -2650,10 +2667,14 @@ export function resolveRelease() {
   // Generate rival films for this season (rivals chase hot genres, with rubber-banding)
   let rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres, state.totalEarnings + earnings, state.cumulativeRivalEarnings, state.activeRivalIds, state.nemesisStudio);
   // Difficulty: Mogul rivals are more aggressive (higher box office)
-  if (diffConfigRelease.rivalAggressiveness > 1.0) {
-    rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * diffConfigRelease.rivalAggressiveness * 10) / 10 }));
-  } else if (diffConfigRelease.rivalAggressiveness < 1.0) {
-    rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * diffConfigRelease.rivalAggressiveness * 10) / 10 }));
+  // R233: Endless mode escalation increases rival aggressiveness
+  let effectiveRivalAgg = diffConfigRelease.rivalAggressiveness;
+  if (state.gameMode === 'endless') {
+    const esc = getEndlessEscalation(state.season);
+    effectiveRivalAgg += esc.rivalAggressionBonus;
+  }
+  if (effectiveRivalAgg !== 1.0) {
+    rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * effectiveRivalAgg * 10) / 10 }));
   }
   // Legacy perk: Rival Nemesis — rivals get -10% box office
   if (legacyPerksRelease.some(p => p.effect === 'rivalHandicap')) {

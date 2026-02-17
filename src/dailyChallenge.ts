@@ -6,7 +6,7 @@
  * One attempt per day, streak tracking, shareable results.
  */
 
-import { mulberry32, getDailySeed, getDailyDateString, getDailyNumber, hashString } from './seededRng';
+import { mulberry32, getDailySeed, getDailyDateString, getDailyNumber, getWeeklySeed, getWeeklyDateString, hashString } from './seededRng';
 import { STUDIO_ARCHETYPES } from './data';
 import type { StudioArchetypeId } from './types';
 

@@ -48,6 +48,8 @@ import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
 import { getCareerMilestones } from '../studioLegacy';
 import { getAllUnlockableStatus } from '../unlockableContent';
 import { isEndlessUnlocked } from '../endgame';
+import { EndlessRecords, EndlessLauncherInfo } from '../components/EndlessPanel';
+import { DailyChallengeCard } from '../components/DailyChallenge';
 import { getCollectionProgress } from '../tradingCards';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
@@ -1007,9 +1009,12 @@ export default function StartScreen() {
               </button>
             )}
             {isEndlessUnlocked() && (
-              <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { sfx.endlessModeStartDrone(); clearSave(); markRunStarted(); setSelectedMode('endless' as any); setSelectedChallenge(undefined); setSelectedDifficulty('mogul'); setShowArchetypes(true); }}>
-                ♾️ ENDLESS MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(No season limit)</span>
-              </button>
+              <div>
+                <button className="btn btn-small" style={{ color: '#e74c3c', borderColor: '#e74c3c' }} onClick={() => { sfx.endlessModeStartDrone(); clearSave(); markRunStarted(); setSelectedMode('endless' as any); setSelectedChallenge(undefined); setSelectedDifficulty('mogul'); setShowArchetypes(true); }}>
+                  ♾️ ENDLESS MODE <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>(No season limit)</span>
+                </button>
+                <EndlessRecords />
+              </div>
             )}
             <button className="btn btn-small" onClick={() => setShowHelp(true)}>HOW TO PLAY</button>
           </div>

@@ -238,7 +238,8 @@ export default function TrophyRoom({ onClose }: { onClose: () => void }) {
   const allAchievements = useMemo(() => getGalleryAchievements(), []);
   const completionStats = useMemo(() => getCompletionStats(), []);
   const scoreStats = useMemo(() => getAchievementScore(), []);
-  const nearUnlock = useMemo(() => getNearestToUnlock(), []);
+  const [nearUnlock, setNearUnlock] = useState<import('../achievements-gallery').GalleryAchievement[]>([]);
+  useEffect(() => { getNearestToUnlock().then(setNearUnlock); }, []);
 
   // Filter
   const filtered = useMemo(() => {

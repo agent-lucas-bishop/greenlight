@@ -4,7 +4,7 @@ import type { GameState } from './types';
 import { getEnabledWorkshopCards } from './cardCreator';
 
 export type AchievementCategory = 'milestone' | 'skill' | 'discovery' | 'fun' | 'secret';
-export type AchievementRarityLevel = 'common' | 'rare' | 'epic' | 'legendary';
+export type AchievementRarityLevel = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 export interface StarPowerReward {
   amount: number;
@@ -793,7 +793,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'common' as AchievementRarityLevel,
     check: () => {
       try {
-        const { getCollectionStats } = require('./cardCollection');
+        const { getCollectionStats } = require('./cardCollection') as any;
         return getCollectionStats().discovered >= 10;
       } catch { return false; }
     },
@@ -808,7 +808,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'rare' as AchievementRarityLevel,
     check: () => {
       try {
-        const { getCollectionStats } = require('./cardCollection');
+        const { getCollectionStats } = require('./cardCollection') as any;
         return getCollectionStats().discovered >= 25;
       } catch { return false; }
     },
@@ -824,7 +824,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     starPowerReward: { amount: 100, label: '+100 Star Power' },
     check: () => {
       try {
-        const { getCollectionStats } = require('./cardCollection');
+        const { getCollectionStats } = require('./cardCollection') as any;
         const stats = getCollectionStats();
         return stats.percentage >= 100;
       } catch { return false; }
@@ -840,7 +840,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     rarity: 'epic' as AchievementRarityLevel,
     check: () => {
       try {
-        const { getCollectionStats } = require('./cardCollection');
+        const { getCollectionStats } = require('./cardCollection') as any;
         return getCollectionStats().foilCount >= 5;
       } catch { return false; }
     },

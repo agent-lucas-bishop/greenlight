@@ -31,6 +31,7 @@ import RetirementToast from './components/RetirementToast';
 import { getSeasonTheme, applySeasonTheme } from './seasonThemes';
 import { sfx } from './sound';
 import { announcePhase } from './accessibility';
+import { showTenseVignette, hideTenseVignette } from './visualEffects';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -61,6 +62,20 @@ function App() {
   const [activeCutscene, setActiveCutscene] = useState<{ data: CutsceneData; vars?: Record<string, string> } | null>(null);
   
   useEffect(() => subscribe(() => setState(getState())), []);
+
+  // R250: Tense vignette for low budget or reputation
+  useEffect(() => {
+    if (state.phase === 'start') { hideTenseVignette(); return; }
+    // Don't override production screen's own vignette logic
+    if (state.phase === 'production') return;
+    if (state.reputation <= 1 || state.strikes >= 2) {
+      showTenseVignette('intense');
+    } else if (state.budget < 5 && state.budget > 0 && state.phase !== 'release') {
+      showTenseVignette('mild');
+    } else {
+      hideTenseVignette();
+    }
+  }, [state.phase, state.reputation, state.strikes, state.budget]);
 
   // R205: Check URL for shared mod pack
   useEffect(() => {

@@ -98,6 +98,7 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable, className }: 
 
   return (
     <div
+      data-card-id={card.id}
       className={`prod-card-new ${isNew ? 'card-enter' : ''} ${isIncident ? 'red-card' : ''} ${selectable ? 'selectable-card' : ''} ${card.synergyFired && showSynergy ? 'synergy-active' : ''} ${card.abilityActivated ? 'ability-glow' : ''} ${className || ''}`}
       onClick={onClick}
       onKeyDown={e => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
@@ -263,6 +264,9 @@ export default function ProductionScreen({ state }: { state: GameState }) {
     setPickedCardId(chosen.id);
     setRejectedCardId(rejected?.id || null);
     sfx.cardPick();
+    // R250: Card play flip animation
+    const cardEl = document.querySelector(`[data-card-id="${chosen.id}"]`) as HTMLElement;
+    if (cardEl) playCardAnimation(cardEl);
     if (rejected) setTimeout(() => sfx.cardDiscard(), 150);
     // Delay actual pick to let animation play
     setTimeout(() => {
@@ -345,11 +349,26 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       if (prod.isDisaster) {
         setTimeout(() => sfx.disaster(), 200);
         setDisasterShake(true);
+        screenShake('heavy');
         setTimeout(() => setDisasterShake(false), 700);
       }
     }
     prevPlayedCount.current = count;
   }, [prod?.played.length]);
+
+  // R250: Tense vignette when near disaster
+  useEffect(() => {
+    if (!prod) return;
+    const threshold = state.studioArchetype === 'chaos' ? 4 : 3;
+    if (prod.isDisaster) {
+      showTenseVignette('intense');
+    } else if (prod.incidentCount >= threshold - 1) {
+      showTenseVignette('mild');
+    } else {
+      hideTenseVignette();
+    }
+    return () => hideTenseVignette();
+  }, [prod?.incidentCount, prod?.isDisaster, state.studioArchetype]);
 
   // Director's Vision reveal sound on first render
   const visionRevealed = useRef(false);

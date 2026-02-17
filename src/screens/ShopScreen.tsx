@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GameState, Talent } from '../types';
 import { buyPerk, hireTalent, fireTalent, trainTalent, nextSeason, payDebt } from '../gameStore';
+import { isPerkLocked } from '../data';
 import { CardTypeBadge, CardPreview } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 import { sfx } from '../sound';
@@ -105,7 +106,8 @@ export default function ShopScreen({ state }: { state: GameState }) {
         {state.perks.length >= 5 && <p style={{ color: '#666', fontSize: '0.85rem' }}>Max perks reached!</p>}
         <div className="card-grid card-grid-4">
           {state.perkMarket.map(perk => {
-            const canBuy = state.budget >= perk.cost && state.perks.length < 5;
+            const locked = isPerkLocked(perk as any);
+            const canBuy = !locked && state.budget >= perk.cost && state.perks.length < 5;
             return (
               <div
                 key={perk.id}
@@ -114,12 +116,17 @@ export default function ShopScreen({ state }: { state: GameState }) {
                 onKeyDown={e => { if (canBuy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); sfx.purchase(); buyPerk(perk); } }}
                 tabIndex={canBuy ? 0 : -1}
                 role="button"
-                aria-label={`${perk.name}, $${perk.cost}M: ${perk.description}${canBuy ? '' : ', cannot afford'}`}
-                style={{ opacity: canBuy ? 1 : 0.4, cursor: canBuy ? 'pointer' : 'not-allowed' }}
+                aria-label={`${perk.name}, $${perk.cost}M: ${perk.description}${locked ? ', locked' : canBuy ? '' : ', cannot afford'}`}
+                style={{ opacity: locked ? 0.35 : canBuy ? 1 : 0.4, cursor: locked ? 'not-allowed' : canBuy ? 'pointer' : 'not-allowed', position: 'relative' }}
               >
                 <div className="card-title">{perk.name}</div>
                 <div className="card-stat gold">${perk.cost}M</div>
                 <div className="card-body" style={{ marginTop: 8 }}>{perk.description}</div>
+                {locked && (perk as any).prestigeRequired && (
+                  <div style={{ marginTop: 6, fontSize: '0.7rem', color: '#f39c12', fontWeight: 600 }}>
+                    🔒 Unlocks at Prestige {(perk as any).prestigeRequired}
+                  </div>
+                )}
               </div>
             );
           })}

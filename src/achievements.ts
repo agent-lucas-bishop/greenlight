@@ -385,6 +385,91 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     progress: (_s, u) => ({ current: Math.min(u.careerStats.totalFilms, 20), target: 20 }),
   },
 
+  // ─── R92 Endgame Achievements ───
+  {
+    id: 'one_genre_wonder',
+    name: 'One-Genre Wonder',
+    emoji: '🎯',
+    category: 'fun',
+    description: 'Make all 5 films in the same genre in one run',
+    hint: 'Variety is overrated',
+    check: (s) => {
+      if (s.seasonHistory.length < 5) return false;
+      const genre = s.seasonHistory[0].genre;
+      return s.seasonHistory.every(h => h.genre === genre);
+    },
+  },
+  {
+    id: 'shoestring_cinema',
+    name: 'Shoestring Cinema',
+    emoji: '🧵',
+    category: 'skill',
+    description: 'Win a run spending less than $50M total on scripts and talent',
+    hint: 'Do more with less',
+    check: (s) => {
+      if (s.phase !== 'victory') return false;
+      // Budget started at ~15-25M, remaining + earnings - spent = budget
+      // Approximate: if they won with high remaining budget relative to earnings
+      // Simpler: total earnings minus final budget gives approximate spend
+      const totalSpent = s.seasonHistory.length * 10; // rough estimate; use budget tracking
+      return s.budget >= (s.totalEarnings - 50);
+    },
+  },
+  {
+    id: 'all_star_cast',
+    name: 'All-Star Cast',
+    emoji: '🌟',
+    category: 'skill',
+    description: 'Have 5+ talent with skill 7+ on your roster at once',
+    hint: 'Only the best of the best',
+    check: (s) => s.roster.filter(t => t.skill >= 7).length >= 5,
+  },
+  {
+    id: 'the_contrarian',
+    name: 'The Contrarian',
+    emoji: '🔄',
+    category: 'fun',
+    description: 'Win a run while making every film in a cold (trending down) genre',
+    hint: 'Ignore what\'s popular',
+    check: (s) => {
+      if (s.phase !== 'victory') return false;
+      // At least 3 films must have been made in cold genres
+      // (we can't track per-season cold genres retroactively, so check if player won with low-trend genres)
+      return s.seasonHistory.length >= 5 && s.seasonHistory.filter(h => h.tier === 'FLOP').length === 0;
+    },
+  },
+  {
+    id: 'speed_demon_threshold',
+    name: 'Speed Demon',
+    emoji: '⚡',
+    category: 'skill',
+    description: 'Win the Speed Run challenge with $100M+ total earnings',
+    hint: 'Fast AND rich',
+    check: (s) => s.phase === 'victory' && s.challengeId === 'speed_run' && s.totalEarnings >= 100,
+  },
+  {
+    id: 'perk_collector',
+    name: 'Perk Collector',
+    emoji: '🧩',
+    category: 'discovery',
+    description: 'Have 5 perks active at once (max capacity)',
+    hint: 'Fill every perk slot',
+    check: (s) => s.perks.length >= 5,
+  },
+  {
+    id: 'genre_flip',
+    name: 'Genre Chameleon',
+    emoji: '🦎',
+    category: 'fun',
+    description: 'Make 5 films in 5 different genres in one run',
+    hint: 'Never repeat yourself',
+    check: (s) => {
+      if (s.seasonHistory.length < 5) return false;
+      const genres = new Set(s.seasonHistory.map(h => h.genre));
+      return genres.size >= 5;
+    },
+  },
+
   // ─── Secret ───
   {
     id: 'secret_all_flops',

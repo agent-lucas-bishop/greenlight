@@ -4,7 +4,7 @@ import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
   INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES, generateSeasonEvents,
-  ALL_LEADS, ALL_SUPPORTS, ALL_DIRECTORS, ALL_CREW, ALL_SCRIPTS,
+  ALL_LEADS, ALL_SUPPORTS, ALL_DIRECTORS, ALL_CREW, ALL_SCRIPTS, isPerkLocked,
 } from './data';
 import type { SeasonEventChoice } from './types';
 import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
@@ -552,15 +552,17 @@ function beginSeason() {
     setState({ budget: state.budget + identity.budgetBonus });
   }
   const devSlate = state.perks.some(p => p.effect === 'devSlate');
-  let scripts = generateScripts(devSlate ? 4 : 3, state.season);
+  const secondUnit = state.perks.some(p => p.effect === 'secondUnit');
+  const baseScriptCount = 3 + (devSlate ? 1 : 0) + (secondUnit ? 1 : 0);
+  let scripts = generateScripts(baseScriptCount, state.season);
   // Typecast challenge: only show scripts matching locked genre
   if (state.challengeId === 'typecast' && state.lockedGenre) {
     const locked = state.lockedGenre;
     // Regenerate until we have enough matching scripts
     for (let attempt = 0; attempt < 10; attempt++) {
       const filtered = scripts.filter(s => s.genre === locked);
-      if (filtered.length >= 2) { scripts = filtered.slice(0, devSlate ? 4 : 3); break; }
-      scripts = generateScripts(devSlate ? 8 : 6, state.season);
+      if (filtered.length >= 2) { scripts = filtered.slice(0, baseScriptCount); break; }
+      scripts = generateScripts(baseScriptCount * 2, state.season);
     }
   }
   
@@ -695,8 +697,13 @@ export function hireTalent(talent: Talent) {
     newDebt += Math.abs(newBudget);
     newBudget = 0;
   }
+  // Talent Agency perk: hired talent gets +1 skill
+  let hiredTalent = talent;
+  if (state.perks.some(p => p.effect === 'talentAgency')) {
+    hiredTalent = { ...talent, skill: talent.skill + 1 };
+  }
   setState({
-    roster: [...state.roster, talent],
+    roster: [...state.roster, hiredTalent],
     budget: newBudget,
     debt: newDebt,
     talentMarket: state.talentMarket.filter(t => t.id !== talent.id),
@@ -1287,7 +1294,17 @@ export function calculateQuality(s: GameState): {
     }
   }
 
-  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + auteurBonus;
+  // Method Acting perk: +5 quality if lead skill >= 7
+  const methodActingBonus = s.perks.some(p => p.effect === 'methodActing') && s.castSlots.some(sl => sl.slotType === 'Lead' && sl.talent && sl.talent.skill >= 7) ? 5 : 0;
+
+  // Genre Pivot perk: +3 quality if genre differs from last film
+  const lastGenre = s.seasonHistory.length > 0 ? s.seasonHistory[s.seasonHistory.length - 1].genre : null;
+  const genrePivotBonus = s.perks.some(p => p.effect === 'genrePivot') && lastGenre && lastGenre !== script.genre ? 3 : 0;
+
+  // Chaos Dividend perk: +3 per incident (max +9)
+  const chaosDividendBonus = s.perks.some(p => p.effect === 'chaosDividend') ? Math.min(prod.incidentCount * 3, 9) : 0;
+
+  let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus + auteurBonus + methodActingBonus + genrePivotBonus + chaosDividendBonus;
 
   // Daily modifier: Oscar Bait — Drama/Thriller +3, Action/Comedy -2
   const mod1 = s.dailyModifierId;
@@ -1443,6 +1460,11 @@ export function resolveRelease() {
   
   if (state.perks.some(p => p.effect === 'indieSpirit') && totalHeat <= 4) multiplier += 0.5;
   if (state.perks.some(p => p.effect === 'buzz') && rawQuality > 35) multiplier += 0.5;
+  // Viral Marketing: ×1.2 if script cost < $15M
+  if (state.perks.some(p => p.effect === 'viralMarketing') && script.cost < 15) multiplier *= 1.2;
+  // Sequel Rights: same genre as last film gives +$10M BO (applied as quality boost ≈ +10 quality)
+  const lastSeasonResult = state.seasonHistory.length > 0 ? state.seasonHistory[state.seasonHistory.length - 1] : null;
+  if (state.perks.some(p => p.effect === 'sequelRights') && lastSeasonResult && lastSeasonResult.genre === script.genre) rawQuality += 10;
 
   const currentRep = state.reputation;
   const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
@@ -1687,6 +1709,7 @@ export function proceedToShop() {
 }
 
 export function buyPerk(perk: StudioPerk) {
+  if (isPerkLocked(perk as any)) return; // prestige-gated
   let actualCost = state.challengeId === 'shoestring' ? perk.cost + 1 : perk.cost;
   if (state.challengeId === 'budget_hell') actualCost += 2;
   if (state.budget < actualCost || state.perks.length >= 5) return;

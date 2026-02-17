@@ -58,6 +58,7 @@ export default function StatsPanel() {
       {subTab === 'overview' && <OverviewTab ca={ca} leaderboard={leaderboard} />}
       {subTab === 'genres' && <GenresTab ca={ca} />}
       {subTab === 'runs' && <RunsTab leaderboard={leaderboard} ca={ca} />}
+      {subTab === 'records' && <RecordsTab ca={ca} leaderboard={leaderboard} />}
     </div>
   );
 }

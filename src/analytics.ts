@@ -85,12 +85,6 @@ export function trackRunEnd(score: number, won: boolean) {
   save(d);
 }
 
-// Generic event tracker (for lightweight one-off events)
-export function track(event: string) {
-  // Currently a no-op stub — extend if needed
-  void event;
-}
-
 export function getAnalytics(): AnalyticsData {
   return load();
 }

@@ -11,6 +11,8 @@ import { CHALLENGE_MODES } from '../challenges';
 import { getDailyDateString } from '../seededRng';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
 import { KeywordGlossary } from '../components/KeywordTooltip';
+import AchievementGallery from '../components/AchievementGallery';
+import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
@@ -153,6 +155,7 @@ export default function StartScreen() {
   const firstRun = isFirstRun();
   const simplified = isSimplifiedRun(); // true until first run complete
   const [showHelp, setShowHelp] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
@@ -220,18 +223,34 @@ export default function StartScreen() {
 
   return (
     <div className="start-screen" style={{ position: 'relative' }}>
-      <button
-        onClick={handleToggleMute}
-        title={muted ? 'Unmute' : 'Mute'}
-        style={{
-          position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%',
-          border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
-          color: 'var(--gold)', fontSize: '1rem', cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 10,
-        }}
-      >
-        {muted ? '🔇' : '🔊'}
-      </button>
+      <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8, zIndex: 10 }}>
+        {!simplified && (
+          <button
+            onClick={() => setShowAchievements(true)}
+            title={`Achievements (${getUnlockedAchievements().length}/${ACHIEVEMENTS.length})`}
+            style={{
+              width: 32, height: 32, borderRadius: '50%',
+              border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
+              color: 'var(--gold)', fontSize: '1rem', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            🏆
+          </button>
+        )}
+        <button
+          onClick={handleToggleMute}
+          title={muted ? 'Unmute' : 'Mute'}
+          style={{
+            width: 32, height: 32, borderRadius: '50%',
+            border: '1px solid rgba(212,168,67,0.3)', background: 'rgba(212,168,67,0.08)',
+            color: 'var(--gold)', fontSize: '1rem', cursor: 'pointer', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
+      </div>
       <div className="start-title animate-title">GREENLIGHT</div>
       <div className="start-subtitle">A Movie Studio Roguelite</div>
 
@@ -571,6 +590,7 @@ export default function StartScreen() {
         </div>
       )}
       {showHelp && <HowToPlay onClose={() => { setShowHelp(false); if (firstRun) markRunStarted(); }} isFirstTime={firstRun} />}
+      {showAchievements && <AchievementGallery onClose={() => setShowAchievements(false)} />}
     </div>
   );
 }

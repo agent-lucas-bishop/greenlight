@@ -27,6 +27,8 @@ export interface UnlockState {
     ranksAchieved: Record<string, number>; // rank -> count (S, A, B, C, D)
     archetypesUsed: Record<string, number>; // archetype -> count
     challengesCompleted: string[]; // challenge IDs won
+    uniqueTalentHired: string[]; // talent names hired across all runs
+    chemistryTriggered: number; // count of chemistry bonuses triggered across all runs
   };
   // Daily challenge streak
   dailyStreak: {
@@ -58,6 +60,8 @@ function defaultCareerStats() {
     ranksAchieved: {} as Record<string, number>,
     archetypesUsed: {} as Record<string, number>,
     challengesCompleted: [] as string[],
+    uniqueTalentHired: [] as string[],
+    chemistryTriggered: 0,
   };
 }
 

@@ -4658,8 +4658,8 @@ export const ALL_SEASON_EVENTS: SeasonEvent[] = [
   },
 ];
 
-export function generateSeasonEvents(count: number): SeasonEvent[] {
-  const pool = [...ALL_SEASON_EVENTS];
+export function generateSeasonEvents(count: number, extraEvents?: SeasonEvent[]): SeasonEvent[] {
+  const pool: SeasonEvent[] = [...ALL_SEASON_EVENTS, ...(extraEvents || [])];
   const result: SeasonEvent[] = [];
   for (let i = 0; i < count && pool.length > 0; i++) {
     const idx = Math.floor(rng() * pool.length);

@@ -2,7 +2,7 @@
 import { getUnlocks, saveUnlocks, type UnlockState, ENDINGS } from './unlocks';
 import type { GameState } from './types';
 
-export type AchievementCategory = 'milestone' | 'skill' | 'discovery' | 'fun';
+export type AchievementCategory = 'milestone' | 'skill' | 'discovery' | 'fun' | 'secret';
 
 export interface AchievementDef {
   id: string;
@@ -11,15 +11,17 @@ export interface AchievementDef {
   category: AchievementCategory;
   description: string;
   hint: string; // shown when locked
+  secret?: boolean; // hidden until unlocked
   cosmeticReward?: CosmeticReward;
   check: (state: GameState, unlocks: UnlockState) => boolean;
+  progress?: (state: GameState, unlocks: UnlockState) => { current: number; target: number } | null;
 }
 
 export interface CosmeticReward {
   id: string;
   type: 'cardBack' | 'studioPrefix' | 'goldBorder';
   label: string;
-  value: string; // color hex, prefix string, or 'true'
+  value: string;
 }
 
 export const COSMETIC_REWARDS: CosmeticReward[] = [
@@ -30,33 +32,24 @@ export const COSMETIC_REWARDS: CosmeticReward[] = [
 ];
 
 export const ACHIEVEMENTS: AchievementDef[] = [
-  // ─── Milestone ───
+  // ─── Run Milestones ───
   {
-    id: 'first_hit',
-    name: 'First Hit',
-    emoji: '🎯',
+    id: 'first_blockbuster',
+    name: 'First Blockbuster',
+    emoji: '🎬',
     category: 'milestone',
-    description: 'Get a HIT tier or better on any film',
-    hint: 'Make a film that connects with audiences',
-    check: (s) => s.seasonHistory.some(h => h.tier === 'HIT' || h.tier === 'SMASH' || h.tier === 'BLOCKBUSTER'),
-  },
-  {
-    id: 'box_office_king',
-    name: 'Box Office King',
-    emoji: '👑',
-    category: 'milestone',
-    description: 'Earn $100M+ box office on a single film',
-    hint: 'One massive opening weekend...',
-    check: (s) => s.seasonHistory.some(h => h.boxOffice >= 100),
+    description: 'Get a BLOCKBUSTER tier on any film',
+    hint: 'Make a film that takes the world by storm',
+    check: (s) => s.seasonHistory.some(h => h.tier === 'BLOCKBUSTER'),
   },
   {
     id: 'five_star_studio',
-    name: 'Five Star Studio',
+    name: '5-Star Studio',
     emoji: '⭐',
     category: 'milestone',
-    description: 'Survive all 5 seasons',
-    hint: 'Go the distance',
-    check: (s) => s.seasonHistory.length >= 5 && (s.phase === 'victory' || s.phase === 'gameOver'),
+    description: 'All films HIT or better in a single run',
+    hint: 'Every film a winner',
+    check: (s) => s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.tier !== 'FLOP') && (s.phase === 'victory'),
   },
   {
     id: 'perfect_run',
@@ -65,7 +58,16 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'milestone',
     description: 'Hit every box office target in a run',
     hint: 'Never miss a single target',
-    check: (s) => s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.hitTarget),
+    check: (s) => s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.hitTarget) && (s.phase === 'victory'),
+  },
+  {
+    id: 'underdog',
+    name: 'Underdog',
+    emoji: '🐕',
+    category: 'milestone',
+    description: 'Win a run with $0 budget remaining (or in debt)',
+    hint: 'Victory from the brink of financial ruin',
+    check: (s) => s.phase === 'victory' && s.budget <= 0,
   },
   {
     id: 'half_billion',
@@ -76,37 +78,113 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hint: 'Stack that box office cash',
     check: (s) => s.totalEarnings >= 500,
   },
-
-  // ─── Skill ───
   {
-    id: 'clean_streak',
-    name: 'Clean Streak',
-    emoji: '✨',
-    category: 'skill',
-    description: '3 clean wraps in a row (no incidents)',
-    hint: 'Keep productions incident-free',
-    check: (s) => {
-      if (s.seasonHistory.length < 3) return false;
-      // Check last 3 consecutive seasons for clean wrap — we use quality as proxy
-      // Actually we need to check production state. Use a heuristic: check the season history
-      // Since we don't store cleanWrap per season, check if any 3 consecutive had hitTarget with high quality
-      // Better: we'll track this in the gameStore when wrapping. For now, approximate.
-      let consecutive = 0;
-      for (const h of s.seasonHistory) {
-        if (h.quality >= 25 && h.hitTarget) { consecutive++; if (consecutive >= 3) return true; }
-        else consecutive = 0;
-      }
-      return false;
-    },
+    id: 'box_office_king',
+    name: 'Box Office King',
+    emoji: '👑',
+    category: 'milestone',
+    description: 'Earn $100M+ box office on a single film',
+    hint: 'One massive opening weekend...',
+    check: (s) => s.seasonHistory.some(h => h.boxOffice >= 100),
+  },
+
+  // ─── Content Discovery ───
+  {
+    id: 'full_cast',
+    name: 'Full Cast',
+    emoji: '🎭',
+    category: 'discovery',
+    description: 'Hire 15+ unique talent across all runs',
+    hint: 'Explore the full talent pool',
+    check: (_s, u) => (u.careerStats.uniqueTalentHired?.length || 0) >= 15,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.uniqueTalentHired?.length || 0, 15), target: 15 }),
   },
   {
-    id: 'budget_hawk',
-    name: 'Budget Hawk',
-    emoji: '🦅',
+    id: 'genre_master',
+    name: 'Genre Master',
+    emoji: '🌈',
+    category: 'discovery',
+    description: 'Make a film in every genre (across all runs)',
+    hint: 'Explore every corner of cinema',
+    check: (_s, u) => Object.keys(u.careerStats.genreFilms).length >= 7,
+    progress: (_s, u) => ({ current: Object.keys(u.careerStats.genreFilms).length, target: 7 }),
+    cosmeticReward: COSMETIC_REWARDS[0],
+  },
+  {
+    id: 'chemistry_lab',
+    name: 'Chemistry Lab',
+    emoji: '⚗️',
+    category: 'discovery',
+    description: 'Trigger 10 chemistry bonuses across all runs',
+    hint: 'Pair the right talent together',
+    check: (_s, u) => (u.careerStats.chemistryTriggered || 0) >= 10,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.chemistryTriggered || 0, 10), target: 10 }),
+  },
+  {
+    id: 'ending_collector',
+    name: 'Ending Collector',
+    emoji: '📖',
+    category: 'discovery',
+    description: 'Discover all 6 endings',
+    hint: 'Every story has many possible conclusions',
+    check: (_s, u) => u.endingsDiscovered.length >= ENDINGS.length,
+    progress: (_s, u) => ({ current: u.endingsDiscovered.length, target: ENDINGS.length }),
+    cosmeticReward: COSMETIC_REWARDS[1],
+  },
+  {
+    id: 'ten_films',
+    name: 'Prolific Producer',
+    emoji: '🎥',
+    category: 'discovery',
+    description: 'Make 10 films across all runs',
+    hint: 'Keep making movies',
+    check: (_s, u) => u.careerStats.totalFilms >= 10,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.totalFilms, 10), target: 10 }),
+  },
+  {
+    id: 'five_wins',
+    name: 'Veteran Studio Head',
+    emoji: '🏛️',
+    category: 'discovery',
+    description: 'Win 5 runs',
+    hint: 'Prove this wasn\'t a fluke',
+    check: (_s, u) => u.totalWins >= 5,
+    progress: (_s, u) => ({ current: Math.min(u.totalWins, 5), target: 5 }),
+  },
+
+  // ─── Challenge ───
+  {
+    id: 'speed_demon',
+    name: 'Speed Demon',
+    emoji: '⚡',
     category: 'skill',
-    description: 'Finish a film spending less than half your starting budget',
-    hint: 'Frugality is an art form',
-    check: (s) => s.budget >= 8 && s.seasonHistory.length > 0, // simplified: still have most budget after a film
+    description: 'Complete the Speed Run challenge',
+    hint: 'Three seasons. No margin for error.',
+    check: (_s, u) => u.careerStats.challengesCompleted.includes('speed_run'),
+  },
+  {
+    id: 'daily_driver',
+    name: 'Daily Driver',
+    emoji: '📅',
+    category: 'skill',
+    description: 'Achieve a 7-day daily challenge streak',
+    hint: 'Play the daily challenge every day for a week',
+    check: (_s, u) => u.dailyStreak.best >= 7,
+    progress: (_s, u) => ({ current: Math.min(u.dailyStreak.best, 7), target: 7 }),
+  },
+  {
+    id: 'rival_crusher',
+    name: 'Rival Crusher',
+    emoji: '💪',
+    category: 'skill',
+    description: 'Out-earn all 3 rival studios in a single run',
+    hint: 'Dominate every rival at once',
+    check: (s) => {
+      if (s.phase !== 'victory') return false;
+      const rivalNames = Object.keys(s.cumulativeRivalEarnings);
+      if (rivalNames.length < 3) return false;
+      return rivalNames.every(name => s.totalEarnings > (s.cumulativeRivalEarnings[name] || 0));
+    },
   },
   {
     id: 'critics_darling',
@@ -116,7 +194,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: 'Achieve quality 80+ on a single film',
     hint: 'A true masterpiece awaits',
     check: (s) => s.seasonHistory.some(h => h.quality >= 80),
-    cosmeticReward: COSMETIC_REWARDS[2], // "Legendary" prefix
+    cosmeticReward: COSMETIC_REWARDS[2],
   },
   {
     id: 'max_reputation',
@@ -130,7 +208,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'rank_s',
     name: 'Hollywood Legend',
-    emoji: '🎬',
+    emoji: '👑',
     category: 'skill',
     description: 'Achieve S rank on a run',
     hint: 'The highest honor in the business',
@@ -138,67 +216,34 @@ export const ACHIEVEMENTS: AchievementDef[] = [
       const score = Math.round(s.totalEarnings * s.reputation * (1 + s.seasonHistory.filter(h => h.nominated).length * 0.2));
       return score > 800 && s.phase === 'victory';
     },
-    cosmeticReward: COSMETIC_REWARDS[3], // Gold border
-  },
-
-  // ─── Discovery ───
-  {
-    id: 'genre_master',
-    name: 'Genre Master',
-    emoji: '🌈',
-    category: 'discovery',
-    description: 'Make a film in every genre (across all runs)',
-    hint: 'Explore every corner of cinema',
-    check: (_s, u) => Object.keys(u.careerStats.genreFilms).length >= 7,
-    cosmeticReward: COSMETIC_REWARDS[0], // Crimson card back
-  },
-  {
-    id: 'ending_collector',
-    name: 'Ending Collector',
-    emoji: '📖',
-    category: 'discovery',
-    description: 'Discover all 6 endings',
-    hint: 'Every story has many possible conclusions',
-    check: (_s, u) => u.endingsDiscovered.length >= ENDINGS.length,
-    cosmeticReward: COSMETIC_REWARDS[1], // Royal purple card back
-  },
-  {
-    id: 'ten_films',
-    name: 'Prolific Producer',
-    emoji: '🎥',
-    category: 'discovery',
-    description: 'Make 10 films across all runs',
-    hint: 'Keep making movies',
-    check: (_s, u) => u.careerStats.totalFilms >= 10,
-  },
-  {
-    id: 'five_wins',
-    name: 'Veteran Studio Head',
-    emoji: '🏛️',
-    category: 'discovery',
-    description: 'Win 5 runs',
-    hint: 'Prove this wasn\'t a fluke',
-    check: (_s, u) => u.totalWins >= 5,
+    cosmeticReward: COSMETIC_REWARDS[3],
   },
 
   // ─── Fun ───
   {
-    id: 'streak_7',
-    name: 'Dedicated Player',
-    emoji: '🔥',
-    category: 'milestone',
-    description: 'Achieve a 7-day daily challenge streak',
-    hint: 'Play the daily challenge every day for a week',
-    check: (_s, u) => u.dailyStreak.best >= 7,
+    id: 'flop_comeback',
+    name: 'Flop Comeback',
+    emoji: '🔄',
+    category: 'fun',
+    description: 'Get a FLOP then a SMASH or BLOCKBUSTER in the same run',
+    hint: 'Fall down, get back up swinging',
+    check: (s) => {
+      let hadFlop = false;
+      for (const h of s.seasonHistory) {
+        if (h.tier === 'FLOP') hadFlop = true;
+        if (hadFlop && (h.tier === 'SMASH' || h.tier === 'BLOCKBUSTER')) return true;
+      }
+      return false;
+    },
   },
   {
-    id: 'weekly_warrior',
-    name: 'Weekly Warrior',
-    emoji: '📆',
-    category: 'milestone',
-    description: 'Complete 4 weekly challenges',
-    hint: 'The weekly challenge is tougher — two modifiers at once',
-    check: (_s, u) => u.weeklyStreak.best >= 4,
+    id: 'blockbuster_trio',
+    name: 'Blockbuster Trilogy',
+    emoji: '🎆',
+    category: 'fun',
+    description: 'Get 3 Blockbusters in a single run',
+    hint: 'A franchise-worthy achievement',
+    check: (s) => s.seasonHistory.filter(h => h.tier === 'BLOCKBUSTER').length >= 3,
   },
   {
     id: 'debt_lord',
@@ -218,46 +263,68 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     hint: 'Sometimes less is more',
     check: (s) => s.production?.isWrapped === true && s.production?.drawCount <= 5 && s.production?.drawCount > 0,
   },
+
+  // ─── Secret ───
   {
-    id: 'flop_comeback',
-    name: 'Flop Comeback',
-    emoji: '🔄',
-    category: 'fun',
-    description: 'Get a FLOP then a SMASH or BLOCKBUSTER in the same run',
-    hint: 'Fall down, get back up swinging',
-    check: (s) => {
-      let hadFlop = false;
-      for (const h of s.seasonHistory) {
-        if (h.tier === 'FLOP') hadFlop = true;
-        if (hadFlop && (h.tier === 'SMASH' || h.tier === 'BLOCKBUSTER')) return true;
-      }
-      return false;
-    },
+    id: 'secret_all_flops',
+    name: 'The Disaster Artist',
+    emoji: '🎪',
+    category: 'secret',
+    description: 'Every film in a run is a FLOP (all 5 seasons)',
+    hint: '???',
+    secret: true,
+    check: (s) => s.seasonHistory.length >= 5 && s.seasonHistory.every(h => h.tier === 'FLOP') && (s.phase === 'gameOver' || s.phase === 'victory'),
   },
   {
-    id: 'death_spiral',
-    name: 'Death Spiral',
-    emoji: '💀',
-    category: 'fun',
-    description: 'Get 2 flops in a row',
-    hint: 'Things can always get worse',
+    id: 'secret_horror_comedy',
+    name: 'Scream Laughing',
+    emoji: '🤡',
+    category: 'secret',
+    description: 'Make a Horror film and a Comedy film back-to-back, both BLOCKBUSTER',
+    hint: '???',
+    secret: true,
     check: (s) => {
       for (let i = 1; i < s.seasonHistory.length; i++) {
-        if (s.seasonHistory[i].tier === 'FLOP' && s.seasonHistory[i - 1].tier === 'FLOP') return true;
+        const prev = s.seasonHistory[i - 1];
+        const curr = s.seasonHistory[i];
+        if (prev.tier === 'BLOCKBUSTER' && curr.tier === 'BLOCKBUSTER') {
+          const genres = [prev.genre, curr.genre];
+          if (genres.includes('Horror') && genres.includes('Comedy')) return true;
+        }
       }
       return false;
     },
   },
   {
-    id: 'blockbuster_trio',
-    name: 'Blockbuster Trilogy',
-    emoji: '🎆',
-    category: 'fun',
-    description: 'Get 3 Blockbusters in a single run',
-    hint: 'A franchise-worthy achievement',
-    check: (s) => s.seasonHistory.filter(h => h.tier === 'BLOCKBUSTER').length >= 3,
+    id: 'secret_budget_zero',
+    name: 'Broke But Not Broken',
+    emoji: '🪙',
+    category: 'secret',
+    description: 'Win a run while in debt the entire final season',
+    hint: '???',
+    secret: true,
+    check: (s) => s.phase === 'victory' && s.debt > 0 && s.budget <= 0,
   },
 ];
+
+// ─── Unlock date tracking ───
+const DATES_KEY = 'greenlight_achievement_dates';
+
+export function getAchievementDates(): Record<string, string> {
+  try {
+    const saved = localStorage.getItem(DATES_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return {};
+}
+
+function saveAchievementDate(id: string) {
+  const dates = getAchievementDates();
+  if (!dates[id]) {
+    dates[id] = new Date().toISOString().split('T')[0];
+    try { localStorage.setItem(DATES_KEY, JSON.stringify(dates)); } catch {}
+  }
+}
 
 // Check which achievements are newly earned this run
 export function checkAchievements(state: GameState): AchievementDef[] {
@@ -282,7 +349,10 @@ export function checkAchievements(state: GameState): AchievementDef[] {
 export function persistAchievements(ids: string[]) {
   const u = getUnlocks();
   for (const id of ids) {
-    if (!u.achievements.includes(id)) u.achievements.push(id);
+    if (!u.achievements.includes(id)) {
+      u.achievements.push(id);
+      saveAchievementDate(id);
+    }
   }
   saveUnlocks(u);
 }
@@ -300,34 +370,31 @@ export function getEarnedCosmetics(): CosmeticReward[] {
     .map(a => a.cosmeticReward!);
 }
 
-// Check if a specific cosmetic is unlocked
 export function hasCosmetic(cosmeticId: string): boolean {
   return getEarnedCosmetics().some(c => c.id === cosmeticId);
 }
 
-// Get active studio prefix (if any)
 export function getStudioPrefix(): string | null {
   const cosmetics = getEarnedCosmetics();
   const prefix = cosmetics.find(c => c.type === 'studioPrefix');
   return prefix ? prefix.value : null;
 }
 
-// Get active card back color (returns last earned)
 export function getCardBackColor(): string | null {
   const cosmetics = getEarnedCosmetics();
   const cardBacks = cosmetics.filter(c => c.type === 'cardBack');
   return cardBacks.length > 0 ? cardBacks[cardBacks.length - 1].value : null;
 }
 
-// Check if gold border is unlocked
 export function hasGoldBorder(): boolean {
   return getEarnedCosmetics().some(c => c.type === 'goldBorder');
 }
 
 // Category labels
 export const CATEGORY_LABELS: Record<AchievementCategory, { label: string; emoji: string }> = {
-  milestone: { label: 'Milestones', emoji: '🏁' },
-  skill: { label: 'Skill', emoji: '💪' },
-  discovery: { label: 'Discovery', emoji: '🔍' },
-  fun: { label: 'Fun', emoji: '🎉' },
+  milestone: { label: 'Run Milestones', emoji: '🏁' },
+  skill: { label: 'Challenge & Skill', emoji: '💪' },
+  discovery: { label: 'Content Discovery', emoji: '🔍' },
+  fun: { label: 'Fun & Chaos', emoji: '🎉' },
+  secret: { label: 'Secret', emoji: '🔮' },
 };

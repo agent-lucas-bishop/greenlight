@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
 import { proceedFromRecap, calculateQuality } from '../gameStore';
-import { RivalFilm, getSeasonIdentity, getSeasonNarrative } from '../rivals';
+import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary } from '../rivals';
 import { generateCriticQuote, generateDetailedHeadline } from '../narrative';
 import { sfx } from '../sound';
 
@@ -317,6 +317,57 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
               <div style={{ fontFamily: 'Bebas Neue', fontSize: '1rem', color: TIER_COLORS[film.tier] }}>
                 ${film.boxOffice.toFixed(1)}M
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Cumulative Leaderboard */}
+      {phase >= 3 && state.seasonHistory.length > 0 && (
+        <div className="animate-slide-down" style={{ marginTop: 20 }}>
+          <div style={{ fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: '#888', marginBottom: 8, letterSpacing: 1 }}>
+            🏆 STUDIO STANDINGS
+          </div>
+          {getRivalryLeaderboard(state).map((entry, i) => (
+            <div key={entry.name} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 10px', marginBottom: 3, borderRadius: 6,
+              background: entry.isPlayer ? 'rgba(212,168,67,0.12)' : 'rgba(255,255,255,0.03)',
+              border: entry.isPlayer ? '1px solid rgba(212,168,67,0.3)' : '1px solid rgba(255,255,255,0.06)',
+            }}>
+              <span style={{ fontFamily: 'Bebas Neue', fontSize: '1rem', color: i === 0 ? '#ffd700' : '#666', width: 22 }}>#{i + 1}</span>
+              <span style={{ fontSize: '1rem' }}>{entry.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <span style={{ color: entry.isPlayer ? '#d4a843' : '#ccc', fontSize: '0.85rem', fontWeight: entry.isPlayer ? 'bold' : 'normal' }}>
+                  {entry.name}
+                </span>
+                {entry.personality && (
+                  <span style={{ color: '#666', fontSize: '0.65rem', marginLeft: 6 }}>
+                    {entry.personality === 'aggressive' ? '🔥' : entry.personality === 'steady' ? '📊' : '🎪'}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontFamily: 'Bebas Neue', fontSize: '1rem', color: i === 0 ? '#ffd700' : '#aaa' }}>
+                ${entry.totalEarnings.toFixed(1)}M
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Rival Commentary */}
+      {phase >= 3 && state.seasonHistory.length > 0 && (
+        <div className="animate-slide-down" style={{ marginTop: 16 }}>
+          {generateRivalCommentary(state).map((c, i) => (
+            <div key={i} style={{
+              padding: '8px 12px', marginBottom: 6, borderRadius: 8,
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+              fontSize: '0.78rem', color: '#bbb', fontStyle: 'italic',
+            }}>
+              <span style={{ fontStyle: 'normal', fontWeight: 600, color: c.personality === 'aggressive' ? '#e74c3c' : c.personality === 'steady' ? '#3498db' : '#2ecc71' }}>
+                {c.studioEmoji} {c.studioName}:
+              </span>{' '}
+              "{c.comment}"
             </div>
           ))}
         </div>

@@ -6,10 +6,10 @@ import {
   INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES, generateSeasonEvents,
 } from './data';
 import type { SeasonEventChoice } from './types';
-import { getActiveLegacyPerks } from './unlocks';
+import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
-import { generateRivalSeason, getSeasonIdentity } from './rivals';
+import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
@@ -498,6 +498,10 @@ export function pickScript(script: Script) {
   if (state.activeSeasonEvent?.effect === 'talentShowcase') {
     market = market.map(t => ({ ...t, cost: Math.max(1, t.cost - 3) }));
   }
+  // Season event: Bidding War — talent costs +$3, but talent skill +1
+  if (state.activeSeasonEvent?.effect === 'biddingWar') {
+    market = market.map(t => ({ ...t, cost: t.cost + 3, skill: t.skill + 1 }));
+  }
   // Season event: Union Dispute — crew costs +$2, but crew cards get +1 base quality
   if (state.activeSeasonEvent?.effect === 'unionDispute') {
     market = market.map(t => t.type === 'Crew' ? {
@@ -566,6 +570,15 @@ export function hireTalent(talent: Talent) {
     debt: newDebt,
     talentMarket: state.talentMarket.filter(t => t.id !== talent.id),
   });
+  // Track unique talent hired for achievements
+  try {
+    const u = getUnlocks();
+    if (!u.careerStats.uniqueTalentHired) u.careerStats.uniqueTalentHired = [];
+    if (!u.careerStats.uniqueTalentHired.includes(talent.name)) {
+      u.careerStats.uniqueTalentHired.push(talent.name);
+      saveUnlocks(u);
+    }
+  } catch {}
 }
 
 export function fireTalent(talentId: string) {
@@ -1113,6 +1126,16 @@ export function calculateQuality(s: GameState): {
   const activeChemistry = getActiveChemistry(castNames);
   const chemistryBonus = activeChemistry.reduce((sum, c) => sum + c.qualityBonus, 0);
   
+  // Track chemistry triggers for achievements
+  if (activeChemistry.length > 0) {
+    try {
+      const u = getUnlocks();
+      if (!u.careerStats.chemistryTriggered) u.careerStats.chemistryTriggered = 0;
+      u.careerStats.chemistryTriggered += activeChemistry.length;
+      saveUnlocks(u);
+    } catch {}
+  }
+  
   // Archetype Focus bonus
   const archetypeFocus = calculateArchetypeFocus(prod.tagsPlayed || {});
   const archetypeFocusBonus = archetypeFocus?.bonus || 0;
@@ -1478,7 +1501,7 @@ export function payDebt(amount: number) {
 export function nextSeason() {
   // Generate 3-4 season events for player to choose from
   const eventCount = rng() < 0.4 ? 4 : 3;
-  const events = generateSeasonEvents(eventCount);
+  const events = generateSeasonEvents(eventCount, RIVAL_EVENTS);
   const eventChoices: SeasonEventChoice[] = events.map(e => ({
     id: e.id,
     name: e.name,
@@ -1508,6 +1531,7 @@ export function pickSeasonEvent(eventId: string) {
   // Apply immediate effects
   let budget = state.budget;
   let reputation = state.reputation;
+  let roster = state.roster;
   let streamingDealActive = state.streamingDealActive;
   
   switch (event.effect) {
@@ -1529,12 +1553,29 @@ export function pickSeasonEvent(eventId: string) {
       budget += 8;
       break;
     }
+    // Rival events (R60)
+    case 'awardSnub': {
+      reputation = Math.max(0, reputation - 1);
+      budget += 3;
+      break;
+    }
+    case 'talentPoached': {
+      // Remove lowest-skill talent from roster
+      if (state.roster.length > 0) {
+        const sorted = [...state.roster].sort((a, b) => a.skill - b.skill);
+        const poached = sorted[0];
+        roster = state.roster.filter(t => t.id !== poached.id);
+      }
+      break;
+    }
+    // biddingWar effect applied during next season in beginSeason
     // Other effects applied during next season in beginSeason/resolveRelease
   }
   
   setState({
     budget,
     reputation,
+    roster,
     streamingDealActive,
     activeSeasonEvent: event,
     seasonEventChoices: null,

@@ -77,7 +77,6 @@ button:focus-visible, .card:focus-visible, .cast-slot:focus-visible, .selectable
   .card-3d-tilt { transform: none !important; }
   .shimmer-skeleton::after { animation: none !important; }
   .confetti-burst { display: none !important; }
-  .streak-bounce { animation: none !important; }
   .victory-starburst { display: none !important; }
   .end-screen-defeat::before, .end-screen-defeat::after { animation: none !important; }
 }
@@ -139,10 +138,6 @@ h1, h2, h3, h4 {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-slide-up {
-  animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
@@ -170,10 +165,6 @@ h1, h2, h3, h4 {
   80% { transform: translateX(3px); }
 }
 
-.card-reveal {
-  animation: cardReveal 0.4s ease;
-}
-
 @keyframes cardReveal {
   0% { opacity: 0; transform: rotateY(90deg) scale(0.8); }
   50% { opacity: 1; transform: rotateY(-5deg) scale(1.05); }
@@ -181,10 +172,6 @@ h1, h2, h3, h4 {
 }
 
 /* Staggered entrance for card grids */
-.stagger-1 { animation-delay: 0s; }
-.stagger-2 { animation-delay: 0.08s; }
-.stagger-3 { animation-delay: 0.16s; }
-.stagger-4 { animation-delay: 0.24s; }
 
 /* ===== LAYOUT ===== */
 
@@ -513,15 +500,6 @@ h1, h2, h3, h4 {
 .prod-stat .label { font-size: 0.65rem; color: var(--gray-light); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
 .prod-stat .value { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; }
 
-.production-deck {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 20px 0;
-  min-height: 80px;
-}
-
 /* Horizontal carousel for played cards */
 .production-carousel {
   display: flex;
@@ -682,9 +660,6 @@ h1, h2, h3, h4 {
   border-radius: 3px;
   font-weight: 600;
 }
-.risk-green { background: rgba(46,204,113,0.15); color: var(--green-bright); }
-.risk-yellow { background: rgba(243,156,18,0.15); color: #f39c12; }
-.risk-red { background: rgba(231,76,60,0.15); color: var(--red-bright); }
 
 .source-badge {
   font-size: 0.6rem !important;
@@ -904,17 +879,6 @@ h1, h2, h3, h4 {
 .hit { color: var(--green-bright) !important; text-shadow: 0 0 60px rgba(46,204,113,0.5) !important; }
 .miss { color: var(--red-bright) !important; text-shadow: 0 0 60px rgba(231,76,60,0.5) !important; }
 
-.strike-banner {
-  display: inline-block;
-  background: rgba(231,76,60,0.1);
-  border: 1px solid rgba(231,76,60,0.4);
-  border-radius: 8px;
-  padding: 8px 20px;
-  color: var(--red-bright);
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-}
-
 .nomination-banner {
   color: #d4a843;
   font-size: 1.3rem;
@@ -1085,8 +1049,6 @@ h1, h2, h3, h4 {
   border-bottom: 1px solid rgba(255,255,255,0.04);
   font-size: 0.9rem;
 }
-.film-season { color: #888; font-family: 'Bebas Neue', sans-serif; }
-.film-title { color: #d4a843; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; }
 
 /* ===== PERKS ===== */
 
@@ -1560,9 +1522,6 @@ h1, h2, h3, h4 {
   filter: blur(0);
   transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s, filter 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
 }
-.card-deck-info {
-  margin-top: 4px;
-}
 
 /* Disaster shake — applied to production area */
 .disaster-shake {
@@ -1602,10 +1561,6 @@ h1, h2, h3, h4 {
 }
 
 /* Tag activation burst */
-.tag-activate {
-  animation: tagBurst 0.5s ease;
-  display: inline-block;
-}
 @keyframes tagBurst {
   0% { transform: scale(1); }
   30% { transform: scale(1.6); text-shadow: 0 0 12px currentColor; }
@@ -1841,7 +1796,6 @@ h1, h2, h3, h4 {
     min-height: 120px;
     padding: 10px;
   }
-  .production-deck { gap: 8px; }
 
   /* Choice area (draw-2-pick-1) */
   .choice-area { padding: 16px 12px; border-radius: 12px; }
@@ -2071,19 +2025,12 @@ body {
 }
 
 /* Streak fire bounce */
-.streak-bounce {
-  display: inline-block;
-  animation: streakBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
 @keyframes streakBounce {
   0% { transform: scale(1); }
   25% { transform: scale(1.5) rotate(-10deg); }
   50% { transform: scale(0.9) rotate(5deg); }
   75% { transform: scale(1.2) rotate(-3deg); }
   100% { transform: scale(1) rotate(0); }
-}
-.streak-pulse {
-  animation: streakPulse 2s ease-in-out infinite;
 }
 @keyframes streakPulse {
   0%, 100% { text-shadow: 0 0 4px rgba(243,156,18,0.3); }
@@ -2180,10 +2127,6 @@ body {
 }
 
 /* Greenlight stamp effect */
-.greenlight-stamp {
-  animation: stampSlam 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  transform-origin: center;
-}
 @keyframes stampSlam {
   0% { transform: scale(3) rotate(-15deg); opacity: 0; filter: blur(4px); }
   40% { transform: scale(0.9) rotate(2deg); opacity: 1; filter: blur(0); }
@@ -2243,10 +2186,6 @@ body {
 }
 
 /* Budget animate */
-.budget-change {
-  display: inline-block;
-  animation: budgetPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
 @keyframes budgetPop {
   0% { transform: scale(1); }
   30% { transform: scale(1.3); }
@@ -2655,18 +2594,6 @@ body {
 /* ===== R85: VISUAL POLISH & ANIMATIONS ROUND 2 ===== */
 
 /* --- 1. Enhanced Phase Transitions (slide + fade) --- */
-.phase-exit-slide-left {
-  opacity: 0;
-  transform: translateX(-30px) scale(0.97);
-  filter: blur(2px);
-  transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
-}
-.phase-exit-slide-right {
-  opacity: 0;
-  transform: translateX(30px) scale(0.97);
-  filter: blur(2px);
-  transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
-}
 
 /* --- 2. Card Hover Effects (lift + glow) --- */
 .card:hover,
@@ -3363,12 +3290,4 @@ body {
 /* --- Consistent Section Spacing --- */
 .shop-section + .shop-section {
   margin-top: 32px;
-}
-.section-label {
-  color: #999;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 8px;
-  font-weight: 600;
 }

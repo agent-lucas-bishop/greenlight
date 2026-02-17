@@ -54,6 +54,15 @@ interface EndlessRunStatsProps {
 
 export function EndlessRunStats({ season, cumulativeScore, currentStreak, bestStreakThisRun, strikesUsed }: EndlessRunStatsProps) {
   const escalation = getEndlessEscalation(season);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    // Heartbeat pulse that speeds up with season
+    const speed = Math.min(3, 1 + (season - 1) * 0.15);
+    const intervalMs = Math.max(1500, 4000 / speed);
+    tickRef.current = setInterval(() => sfx.endlessSurvivalTick(speed), intervalMs);
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, [season]);
 
   return (
     <div style={{

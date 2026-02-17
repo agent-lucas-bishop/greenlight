@@ -8,6 +8,7 @@ import PhaseTip from '../components/PhaseTip';
 import MechanicTip from '../components/MechanicTip';
 import { isSimplifiedRun } from '../onboarding';
 import { sfx } from '../sound';
+import { spawnSparkles } from '../visualEffects';
 import { useSwipe } from '../hooks/useSwipe';
 import StatTooltip from '../components/StatTooltip';
 import { announce } from '../accessibility';
@@ -58,6 +59,11 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
     }
     sfx.greenlightStamp();
     setPicked(script.id);
+    // R250: Sparkle effect on legendary script pick
+    if ((script as any).legendary) {
+      const el = document.querySelector(`[data-script-id="${script.id}"]`) as HTMLElement;
+      if (el) spawnSparkles(el, 16, 1200);
+    }
     setTimeout(() => pickScript(script), 800);
   };
 
@@ -178,6 +184,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           return (
             <div
               key={script.id}
+              data-script-id={script.id}
               className={`card tap-target card-stagger ${genreClass} ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''} ${isMobile && expandedId === script.id && !picked ? 'mobile-expanded' : ''} ${isLegendary ? 'legendary-script' : ''}`}
               onClick={() => handlePick(script)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(script); } }}

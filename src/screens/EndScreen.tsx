@@ -3,6 +3,7 @@ import { GameState, SeasonResult, RewardTier } from '../types';
 import { startGame } from '../gameStore';
 import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered, type EndingDef } from '../unlocks';
 import { sfx } from '../sound';
+import { spawnConfetti } from '../visualEffects';
 import { addLeaderboardEntry, isNewHighScore, getEntryRank, getPlayerName, type LeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
@@ -505,7 +506,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   useEffect(() => {
     if (state.gameMode === 'daily') {
       sfx.dailyChallengeComplete();
-    } else if (isVictory) sfx.victory(); else sfx.flop();
+    } else if (isVictory) { sfx.victory(); spawnConfetti('rainbow', 60); } else sfx.flop();
     const timers = [
       setTimeout(() => setPhase(1), 600),
       setTimeout(() => setPhase(2), 1400),

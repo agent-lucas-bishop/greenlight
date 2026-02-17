@@ -452,3 +452,260 @@ function RunsTab({ leaderboard, ca }: { leaderboard: LeaderboardEntry[]; ca: Car
     </div>
   );
 }
+
+// ─── RECORDS TAB — Radar chart, win streak, most profitable film, timeline ───
+
+function GenreRadarChart({ ca }: { ca: CareerAnalyticsData }) {
+  const allGenres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'];
+  const genreColors: Record<string, string> = {
+    Action: '#e74c3c', Comedy: '#f1c40f', Drama: '#3498db', Horror: '#9b59b6',
+    'Sci-Fi': '#1abc9c', Romance: '#e91e63', Thriller: '#e67e22',
+  };
+
+  // Calculate win rates per genre from leaderboard data
+  const leaderboard = getLeaderboard();
+  const genreWins: Record<string, number> = {};
+  const genreTotal: Record<string, number> = {};
+  for (const entry of leaderboard) {
+    for (const f of entry.films) {
+      genreTotal[f.genre] = (genreTotal[f.genre] || 0) + 1;
+      if (f.tier !== 'FLOP') genreWins[f.genre] = (genreWins[f.genre] || 0) + 1;
+    }
+  }
+
+  const maxCount = Math.max(1, ...Object.values(genreTotal));
+  const n = allGenres.length;
+  const size = 240;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 90;
+
+  // Helper to get point on polygon
+  const getPoint = (i: number, value: number) => {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const dist = r * value;
+    return { x: cx + dist * Math.cos(angle), y: cy + dist * Math.sin(angle) };
+  };
+
+  // Background rings
+  const rings = [0.25, 0.5, 0.75, 1.0];
+
+  return (
+    <div style={{ textAlign: 'center', marginBottom: 24 }}>
+      <h3 style={{ color: 'var(--gold)', fontSize: '0.85rem', marginBottom: 12, letterSpacing: 1 }}>
+        🎯 GENRE WIN RATE RADAR
+      </h3>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ maxWidth: '100%' }}>
+        {/* Grid rings */}
+        {rings.map((rv, ri) => (
+          <polygon key={ri}
+            points={allGenres.map((_, i) => { const p = getPoint(i, rv); return `${p.x},${p.y}`; }).join(' ')}
+            fill="none" stroke="#333" strokeWidth={0.5} opacity={0.5}
+          />
+        ))}
+        {/* Axis lines */}
+        {allGenres.map((_, i) => {
+          const p = getPoint(i, 1);
+          return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#333" strokeWidth={0.5} opacity={0.3} />;
+        })}
+        {/* Data polygon — win rate */}
+        <polygon
+          points={allGenres.map((g, i) => {
+            const total = genreTotal[g] || 0;
+            const wins = genreWins[g] || 0;
+            const rate = total > 0 ? wins / total : 0;
+            const p = getPoint(i, rate);
+            return `${p.x},${p.y}`;
+          }).join(' ')}
+          fill="rgba(212,168,67,0.15)" stroke="var(--gold)" strokeWidth={2}
+        />
+        {/* Data dots + labels */}
+        {allGenres.map((g, i) => {
+          const total = genreTotal[g] || 0;
+          const wins = genreWins[g] || 0;
+          const rate = total > 0 ? wins / total : 0;
+          const dp = getPoint(i, rate);
+          const lp = getPoint(i, 1.22);
+          return (
+            <g key={g}>
+              <circle cx={dp.x} cy={dp.y} r={3} fill="var(--gold)" />
+              <text x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
+                fill={genreColors[g] || '#888'} fontSize="9" fontFamily="Bebas Neue">
+                {g}
+              </text>
+              {total > 0 && (
+                <text x={lp.x} y={lp.y + 11} textAnchor="middle" dominantBaseline="middle"
+                  fill="#666" fontSize="7">
+                  {Math.round(rate * 100)}%
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function RecordsTab({ ca, leaderboard }: { ca: CareerAnalyticsData; leaderboard: LeaderboardEntry[] }) {
+  const lifetime = getLifetimeStats();
+
+  // Most profitable film of all time
+  const allFilms: { title: string; bo: number; genre: string; date: string; quality: number }[] = [];
+  for (const entry of leaderboard) {
+    for (const f of entry.films) {
+      allFilms.push({ title: f.title, bo: f.boxOffice ?? 0, genre: f.genre, date: entry.date, quality: f.quality ?? 0 });
+    }
+  }
+  allFilms.sort((a, b) => b.bo - a.bo);
+  const topFilm = allFilms[0] || null;
+
+  return (
+    <div>
+      {/* Genre Radar Chart */}
+      <GenreRadarChart ca={ca} />
+
+      {/* Win Streak Tracker */}
+      <div style={{
+        marginBottom: 24, padding: '16px', background: 'rgba(255,255,255,0.03)',
+        border: '1px solid #222', borderRadius: 10,
+      }}>
+        <h3 style={{ color: 'var(--gold)', fontSize: '0.85rem', marginBottom: 12, letterSpacing: 1 }}>
+          🔥 WIN STREAK TRACKER
+        </h3>
+        <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#e74c3c', fontFamily: 'Bebas Neue', fontSize: '2rem' }}>
+              {lifetime.longestWinStreak}
+            </div>
+            <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Best Streak</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: lifetime.currentWinStreak > 0 ? '#2ecc71' : '#666', fontFamily: 'Bebas Neue', fontSize: '2rem' }}>
+              {lifetime.currentWinStreak}
+            </div>
+            <div style={{ color: '#999', fontSize: '0.6rem', textTransform: 'uppercase' }}>Current Streak</div>
+          </div>
+        </div>
+        {/* Streak visualization */}
+        {leaderboard.length > 0 && (
+          <div style={{ display: 'flex', gap: 3, justifyContent: 'center', marginTop: 12, flexWrap: 'wrap' }}>
+            {leaderboard.slice(-20).map((entry, i) => (
+              <div key={i} style={{
+                width: 16, height: 16, borderRadius: 3,
+                background: entry.won ? 'rgba(46,204,113,0.8)' : 'rgba(231,76,60,0.6)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.5rem', color: '#fff',
+              }} title={`${entry.date}: ${entry.won ? 'Win' : 'Loss'} ($${entry.earnings.toFixed(1)}M)`}>
+                {entry.won ? 'W' : 'L'}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Most Profitable Film */}
+      {topFilm && (
+        <div style={{
+          marginBottom: 24, padding: '16px', background: 'linear-gradient(135deg, rgba(255,215,0,0.06), rgba(255,255,255,0.02))',
+          border: '1px solid rgba(255,215,0,0.15)', borderRadius: 10,
+        }}>
+          <h3 style={{ color: 'var(--gold)', fontSize: '0.85rem', marginBottom: 12, letterSpacing: 1 }}>
+            💰 MOST PROFITABLE FILM OF ALL TIME
+          </h3>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#ffd700', fontFamily: 'Bebas Neue', fontSize: '1.8rem' }}>
+              "${topFilm.title}"
+            </div>
+            <div style={{ color: '#2ecc71', fontFamily: 'Bebas Neue', fontSize: '1.4rem', marginTop: 4 }}>
+              ${topFilm.bo.toFixed(1)}M
+            </div>
+            <div style={{ color: '#888', fontSize: '0.7rem', marginTop: 4 }}>
+              {topFilm.genre} · Quality: {topFilm.quality} · {topFilm.date}
+            </div>
+          </div>
+          {/* Top 5 films list */}
+          {allFilms.length > 1 && (
+            <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+              {allFilms.slice(1, 6).map((f, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', color: '#888', fontSize: '0.65rem' }}>
+                  <span>#{i + 2} "{f.title}" ({f.genre})</span>
+                  <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue' }}>${f.bo.toFixed(1)}M</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* All-Time Records */}
+      {lifetime.records.biggestBO && (
+        <div style={{
+          marginBottom: 24, padding: '16px', background: 'rgba(255,255,255,0.03)',
+          border: '1px solid #222', borderRadius: 10,
+        }}>
+          <h3 style={{ color: 'var(--gold)', fontSize: '0.85rem', marginBottom: 12, letterSpacing: 1 }}>
+            📊 ALL-TIME RECORDS
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+            {[
+              { label: 'Biggest BO', value: lifetime.records.biggestBO ? `$${lifetime.records.biggestBO.value.toFixed(1)}M` : '—', sub: lifetime.records.biggestBO?.filmTitle, color: '#2ecc71' },
+              { label: 'Worst Flop', value: lifetime.records.worstFlop ? `$${lifetime.records.worstFlop.value.toFixed(1)}M` : '—', sub: lifetime.records.worstFlop?.filmTitle, color: '#e74c3c' },
+              { label: 'Highest Quality', value: lifetime.records.highestQuality ? `${lifetime.records.highestQuality.value}` : '—', sub: lifetime.records.highestQuality?.filmTitle, color: '#3498db' },
+              { label: 'Best Critic Score', value: lifetime.records.highestCriticScore ? `${lifetime.records.highestCriticScore.value}%` : '—', sub: lifetime.records.highestCriticScore?.filmTitle, color: '#f39c12' },
+              { label: 'Best Run BO', value: lifetime.records.highestRunBO ? `$${lifetime.records.highestRunBO.value.toFixed(1)}M` : '—', sub: lifetime.records.highestRunBO?.runDate, color: '#9b59b6' },
+              { label: 'Most Films/Run', value: lifetime.records.mostFilmsInRun ? `${lifetime.records.mostFilmsInRun.value}` : '—', sub: lifetime.records.mostFilmsInRun?.runDate, color: '#1abc9c' },
+            ].map((rec, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
+                <div style={{ color: rec.color, fontFamily: 'Bebas Neue', fontSize: '1.1rem' }}>{rec.value}</div>
+                <div style={{ color: '#999', fontSize: '0.55rem', textTransform: 'uppercase' }}>{rec.label}</div>
+                {rec.sub && <div style={{ color: '#555', fontSize: '0.5rem', marginTop: 2 }}>{rec.sub}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Historical Timeline */}
+      {leaderboard.length > 1 && (
+        <div style={{
+          marginBottom: 24, padding: '16px', background: 'rgba(255,255,255,0.03)',
+          border: '1px solid #222', borderRadius: 10,
+        }}>
+          <h3 style={{ color: 'var(--gold)', fontSize: '0.85rem', marginBottom: 12, letterSpacing: 1 }}>
+            📈 HISTORICAL TIMELINE
+          </h3>
+          {/* Mini chart: BO over time using pure CSS bars */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 80, padding: '0 4px' }}>
+            {(() => {
+              const runs = leaderboard.slice(-30);
+              const maxBO = Math.max(1, ...runs.map(r => r.earnings));
+              return runs.map((entry, i) => {
+                const h = Math.max(2, (entry.earnings / maxBO) * 70);
+                return (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <div style={{
+                      width: '100%', maxWidth: 16, height: h, borderRadius: '2px 2px 0 0',
+                      background: entry.won
+                        ? 'linear-gradient(to top, rgba(46,204,113,0.6), rgba(46,204,113,0.9))'
+                        : 'linear-gradient(to top, rgba(231,76,60,0.4), rgba(231,76,60,0.7))',
+                      transition: 'height 0.3s',
+                    }} title={`${entry.date}: $${entry.earnings.toFixed(1)}M (${entry.won ? 'Win' : 'Loss'})`} />
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            <span style={{ color: '#555', fontSize: '0.5rem' }}>{leaderboard[Math.max(0, leaderboard.length - 30)]?.date || ''}</span>
+            <span style={{ color: '#555', fontSize: '0.5rem' }}>Latest</span>
+          </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8, color: '#666', fontSize: '0.55rem' }}>
+            <span>🟩 Win</span>
+            <span>🟥 Loss</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

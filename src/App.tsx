@@ -8,6 +8,7 @@ import StudioFoundingNarrative from './components/StudioFoundingNarrative';
 import { shouldShowNarrative, markNarrativeShown } from './onboarding';
 import { isTutorialActive } from './tutorial';
 import { getRandomTip } from './loadingTips';
+import LoadingScreen from './components/LoadingScreen';
 import { checkAchievements, persistAchievements } from './achievements';
 import type { AchievementDef } from './achievements';
 import AchievementToast from './components/AchievementToast';
@@ -33,7 +34,7 @@ function App() {
   const [seasonOverlay, setSeasonOverlay] = useState<number | null>(null);
   const [seasonOverlayExit, setSeasonOverlayExit] = useState(false);
   const [seasonTip, setSeasonTip] = useState('');
-  const prevSeason = useState(state.season)[0];
+  const [seasonHeadline, setSeasonHeadline] = useState('');
   
   useEffect(() => subscribe(() => setState(getState())), []);
 
@@ -64,8 +65,31 @@ function App() {
       setSeasonOverlay(state.season);
       setSeasonOverlayExit(false);
       setSeasonTip(getRandomTip());
-      const t1 = setTimeout(() => setSeasonOverlayExit(true), 1200);
-      const t2 = setTimeout(() => setSeasonOverlay(null), 1700);
+      // Generate newspaper headline from last season's results
+      const lastSeason = state.seasonHistory[state.seasonHistory.length - 1];
+      if (lastSeason) {
+        const films = state.seasonHistory.filter(s => s.season === state.season - 1);
+        const totalBO = films.reduce((s, f) => s + f.boxOffice, 0);
+        const studioName = state.studioName || 'Studio';
+        const filmCount = films.length;
+        const bestFilm = films.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b, films[0]);
+        const anyNom = films.some(f => f.nominated);
+        const anyFlop = films.some(f => f.tier === 'FLOP');
+        const allHit = films.every(f => f.hitTarget);
+        let headline = '';
+        if (anyNom && allHit) {
+          headline = `SEASON ${state.season - 1} WRAP: ${studioName.toUpperCase()} DAZZLES — $${totalBO.toFixed(0)}M across ${filmCount} film${filmCount !== 1 ? 's' : ''}, awards buzz for "${bestFilm.title}"`;
+        } else if (allHit) {
+          headline = `SEASON ${state.season - 1} WRAP: ${studioName.toUpperCase()} HITS ALL TARGETS — $${totalBO.toFixed(0)}M total, "${bestFilm.title}" leads the slate`;
+        } else if (anyFlop) {
+          headline = `SEASON ${state.season - 1} WRAP: MIXED RESULTS FOR ${studioName.toUpperCase()} — $${totalBO.toFixed(0)}M earned, but "${films.find(f => f.tier === 'FLOP')?.title}" stumbles`;
+        } else {
+          headline = `SEASON ${state.season - 1} WRAP: ${studioName.toUpperCase()} EARNS $${totalBO.toFixed(0)}M — "${bestFilm.title}" headlines the season`;
+        }
+        setSeasonHeadline(headline);
+      }
+      const t1 = setTimeout(() => setSeasonOverlayExit(true), 2800);
+      const t2 = setTimeout(() => setSeasonOverlay(null), 3300);
       return () => { clearTimeout(t1); clearTimeout(t2); };
     }
   }, [state.phase, state.season]);
@@ -109,20 +133,7 @@ function App() {
       {state.phase !== 'start' && <Header state={state} />}
       <div className="film-strip" aria-hidden="true" />
       <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite">
-        <Suspense fallback={
-          <div style={{ padding: '2rem', maxWidth: 600, margin: '0 auto' }}>
-            <div className="shimmer-skeleton" style={{ height: 40, width: '60%', margin: '0 auto 20px', borderRadius: 8 }} />
-            <div className="shimmer-skeleton" style={{ height: 120, marginBottom: 16 }} />
-            <div style={{ display: 'flex', gap: 12 }}>
-              <div className="shimmer-skeleton" style={{ height: 160, flex: 1 }} />
-              <div className="shimmer-skeleton" style={{ height: 160, flex: 1 }} />
-            </div>
-            <div className="shimmer-skeleton" style={{ height: 44, width: '50%', margin: '20px auto 0', borderRadius: 6 }} />
-            <div style={{ textAlign: 'center', marginTop: 20, color: 'rgba(212,168,67,0.6)', fontSize: '0.75rem', fontStyle: 'italic', maxWidth: 350, margin: '20px auto 0' }}>
-              {getRandomTip()}
-            </div>
-          </div>
-        }>
+        <Suspense fallback={<LoadingScreen />}>
           {renderPhase()}
         </Suspense>
       </main>

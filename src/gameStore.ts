@@ -413,6 +413,10 @@ export function resumeGame(saved: Partial<GameState>) {
     if (state.production.pendingBlock) {
       rebuildCardFunctions([state.production.pendingBlock.incident, state.production.pendingBlock.actionCard]);
     }
+    // Rebuild directorVision condition function (lost during JSON serialization)
+    if (state.production.directorVision) {
+      state.production.directorVision = rebuildDirectorVision(state.production.directorVision);
+    }
   }
   // Also rebuild talent card functions on roster and cast
   const allTalentPools = [...ALL_LEADS, ...ALL_SUPPORTS, ...ALL_DIRECTORS, ...ALL_CREW];
@@ -738,59 +742,71 @@ export function fireTalent(talentId: string) {
 }
 
 // ─── DIRECTOR'S VISION ───
+// Vision condition templates keyed by pattern (director name is variable)
+const VISION_TEMPLATES: { pattern: string; condition: (ctx: DirectorVisionContext) => boolean }[] = [
+  {
+    pattern: 'wants a Heart-tagged lead',
+    condition: (ctx) => {
+      const lead = ctx.castSlots.find(s => s.slotType === 'Lead' && s.talent);
+      if (!lead?.talent) return false;
+      return lead.talent.cards.some(c => c.tags?.includes('heart'));
+    },
+  },
+  {
+    pattern: 'prefers a small cast (≤3 talent)',
+    condition: (ctx) => {
+      const filled = ctx.castSlots.filter(s => s.talent).length;
+      return filled <= 3;
+    },
+  },
+  {
+    pattern: 'wants zero incidents',
+    condition: (ctx) => ctx.incidentCount === 0,
+  },
+  {
+    pattern: 'wants 3+ unique tag types',
+    condition: (ctx) => Object.keys(ctx.tagsPlayed).length >= 3,
+  },
+  {
+    pattern: 'wants a Momentum-tagged lead',
+    condition: (ctx) => {
+      const lead = ctx.castSlots.find(s => s.slotType === 'Lead' && s.talent);
+      if (!lead?.talent) return false;
+      return lead.talent.cards.some(c => c.tags?.includes('momentum'));
+    },
+  },
+  {
+    pattern: 'wants 4+ Spectacle tags',
+    condition: (ctx) => (ctx.tagsPlayed['spectacle'] || 0) >= 4,
+  },
+  {
+    pattern: 'wants a full cast (all slots filled)',
+    condition: (ctx) => ctx.castSlots.every(s => s.talent !== null),
+  },
+  {
+    pattern: 'wants ≤1 incident',
+    condition: (ctx) => ctx.incidentCount <= 1,
+  },
+];
+
 // Generate a vision condition for the director based on RNG
 function generateDirectorVision(castSlots: CastSlot[]): DirectorVision | null {
   const director = castSlots.find(s => s.talent?.type === 'Director')?.talent;
   if (!director) return null;
 
-  const visions: { description: string; condition: (ctx: DirectorVisionContext) => boolean }[] = [
-    {
-      description: `${director.name} wants a Heart-tagged lead`,
-      condition: (ctx) => {
-        const lead = ctx.castSlots.find(s => s.slotType === 'Lead' && s.talent);
-        if (!lead?.talent) return false;
-        return lead.talent.cards.some(c => c.tags?.includes('heart'));
-      },
-    },
-    {
-      description: `${director.name} prefers a small cast (≤3 talent)`,
-      condition: (ctx) => {
-        const filled = ctx.castSlots.filter(s => s.talent).length;
-        return filled <= 3;
-      },
-    },
-    {
-      description: `${director.name} wants zero incidents`,
-      condition: (ctx) => ctx.incidentCount === 0,
-    },
-    {
-      description: `${director.name} wants 3+ unique tag types`,
-      condition: (ctx) => Object.keys(ctx.tagsPlayed).length >= 3,
-    },
-    {
-      description: `${director.name} wants a Momentum-tagged lead`,
-      condition: (ctx) => {
-        const lead = ctx.castSlots.find(s => s.slotType === 'Lead' && s.talent);
-        if (!lead?.talent) return false;
-        return lead.talent.cards.some(c => c.tags?.includes('momentum'));
-      },
-    },
-    {
-      description: `${director.name} wants 4+ Spectacle tags`,
-      condition: (ctx) => (ctx.tagsPlayed['spectacle'] || 0) >= 4,
-    },
-    {
-      description: `${director.name} wants a full cast (all slots filled)`,
-      condition: (ctx) => ctx.castSlots.every(s => s.talent !== null),
-    },
-    {
-      description: `${director.name} wants ≤1 incident`,
-      condition: (ctx) => ctx.incidentCount <= 1,
-    },
-  ];
+  const pick = VISION_TEMPLATES[Math.floor(rng() * VISION_TEMPLATES.length)];
+  return { description: `${director.name} ${pick.pattern}`, condition: pick.condition };
+}
 
-  const pick = visions[Math.floor(rng() * visions.length)];
-  return { description: pick.description, condition: pick.condition };
+// Rebuild directorVision condition function after JSON deserialization
+function rebuildDirectorVision(vision: DirectorVision): DirectorVision {
+  for (const tmpl of VISION_TEMPLATES) {
+    if (vision.description.includes(tmpl.pattern)) {
+      return { ...vision, condition: tmpl.condition };
+    }
+  }
+  // Fallback: always false (shouldn't happen)
+  return { ...vision, condition: () => false };
 }
 
 // ─── SCRIPT REWRITE ───

@@ -5,6 +5,8 @@ import { GameState } from './types';
 import StartScreen from './screens/StartScreen';
 import Header from './components/Header';
 import TutorialOverlay from './components/TutorialOverlay';
+import ContextualTooltip from './components/ContextualTooltip';
+import { getTipIfNew, markTipShown, type ContextualTip } from './contextualTips';
 import StudioFoundingNarrative from './components/StudioFoundingNarrative';
 import { shouldShowNarrative, markNarrativeShown } from './onboarding';
 import { isTutorialActive } from './tutorial';
@@ -48,6 +50,7 @@ function App() {
   const [toastQueue, setToastQueue] = useState<AchievementDef[]>([]);
   const [unlockToastQueue, setUnlockToastQueue] = useState<UnlockableDef[]>([]);
   const [checkedPhases, setCheckedPhases] = useState<string>('');
+  const [activeTip, setActiveTip] = useState<ContextualTip | null>(null);
   const [seasonOverlay, setSeasonOverlay] = useState<number | null>(null);
   const [seasonOverlayExit, setSeasonOverlayExit] = useState(false);
   const [seasonTip, setSeasonTip] = useState('');
@@ -76,6 +79,43 @@ function App() {
       applySeasonTheme(state.season);
     }
   }, [state.season, state.phase]);
+
+  // R218: Contextual tooltips — trigger on first encounter of game mechanics
+  useEffect(() => {
+    if (activeTip) return; // don't stack tips
+    // First retirement
+    if (state.retirementNotification) {
+      const tip = getTipIfNew('firstRetirement');
+      if (tip) { setActiveTip(tip); return; }
+    }
+    // First world event
+    if (state.activeWorldEvents && state.activeWorldEvents.length > 0) {
+      const tip = getTipIfNew('firstWorldEvent');
+      if (tip) { setActiveTip(tip); return; }
+    }
+    // First festival
+    if (state.phase === 'festival') {
+      const tip = getTipIfNew('firstFestival');
+      if (tip) { setActiveTip(tip); return; }
+    }
+    // First prestige opportunity (check if prestige data exists in season history)
+    if (state.seasonHistory.some(s => s.nominated)) {
+      const tip = getTipIfNew('firstPrestige');
+      if (tip) { setActiveTip(tip); return; }
+    }
+    // First synergy / ability — check production played cards
+    if (state.phase === 'production' && state.production) {
+      const played = state.production.played;
+      if (played.some(c => c.synergyFired)) {
+        const tip = getTipIfNew('firstSynergy');
+        if (tip) { setActiveTip(tip); return; }
+      }
+      if (played.some(c => c.abilityActivated)) {
+        const tip = getTipIfNew('firstAbility');
+        if (tip) { setActiveTip(tip); return; }
+      }
+    }
+  }, [state.phase, state.retirementNotification, state.activeWorldEvents, state.seasonHistory, state.production, activeTip]);
 
   // Check achievements on phase transitions
   useEffect(() => {
@@ -262,6 +302,9 @@ function App() {
       )}
       {state.phase !== 'start' && isTutorialActive() && (
         <TutorialOverlay phase={state.phase} />
+      )}
+      {activeTip && !isTutorialActive() && (
+        <ContextualTooltip tip={activeTip} onDismiss={() => setActiveTip(null)} />
       )}
       {toastQueue.length > 0 && (
         <AchievementToast

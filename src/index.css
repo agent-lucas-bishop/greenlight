@@ -4437,3 +4437,85 @@ body::after {
   max-height: 2000px;
   opacity: 1;
 }
+
+/* ═══ R217: Synergy Display ═══ */
+
+.synergy-display-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+.synergy-display-container {
+  position: relative; max-width: 500px; width: 90%;
+  padding: 24px; text-align: center;
+}
+.synergy-display-title { margin-bottom: 20px; }
+.synergy-title-glow {
+  font-size: 1.3em; font-weight: bold; color: #fbbf24;
+  text-shadow: 0 0 20px rgba(251,191,36,0.6);
+  animation: synergyTitlePulse 2s ease-in-out infinite;
+}
+@keyframes synergyTitlePulse {
+  0%, 100% { text-shadow: 0 0 20px rgba(251,191,36,0.4); }
+  50% { text-shadow: 0 0 30px rgba(251,191,36,0.8), 0 0 60px rgba(251,191,36,0.3); }
+}
+.synergy-cards-list { display: flex; flex-direction: column; gap: 12px; }
+.synergy-card-r217 {
+  border: 2px solid #555; border-radius: 12px; padding: 14px 16px;
+  background: rgba(20,20,30,0.95); text-align: left;
+  transition: all 0.5s ease; transform: translateY(0);
+}
+.synergy-hidden { opacity: 0; transform: translateY(20px) scale(0.95); }
+.synergy-revealed { opacity: 1; transform: translateY(0) scale(1); }
+.synergy-card-header { display: flex; align-items: center; gap: 8px; font-size: 1.1em; font-weight: bold; }
+.synergy-emoji { font-size: 1.3em; }
+.synergy-name { flex: 1; }
+.synergy-rarity {
+  font-size: 0.65em; padding: 2px 8px; border-radius: 8px;
+  font-weight: 700; letter-spacing: 0.5px;
+}
+.synergy-category { font-size: 0.7em; color: #888; margin-top: 4px; letter-spacing: 1px; }
+.synergy-effect-label { font-size: 0.9em; color: #4ade80; margin-top: 6px; font-weight: 600; }
+.synergy-involved { font-size: 0.75em; color: #aaa; margin-top: 4px; }
+.synergy-flavor { font-size: 0.75em; color: #777; font-style: italic; margin-top: 6px; }
+.synergy-dismiss-btn {
+  margin-top: 20px; padding: 10px 28px; border: 2px solid #fbbf24;
+  background: transparent; color: #fbbf24; border-radius: 8px;
+  font-size: 1em; cursor: pointer; transition: all 0.2s;
+}
+.synergy-dismiss-btn:hover { background: rgba(251,191,36,0.15); }
+@keyframes synergyLinePulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+.synergy-line-pulse { animation: synergyLinePulse 2s ease-in-out infinite; }
+
+/* Synergy Codex */
+.synergy-codex { padding: 8px 0; }
+.synergy-codex-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.synergy-codex-header h2 { margin: 0; font-size: 1.3em; }
+.synergy-codex-progress { color: #fbbf24; font-size: 0.9em; font-weight: 600; }
+.synergy-codex-filters { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.synergy-filter-btn {
+  padding: 4px 12px; border: 1px solid #444; background: transparent;
+  color: #aaa; border-radius: 6px; cursor: pointer; font-size: 0.8em;
+}
+.synergy-filter-btn.active { border-color: #fbbf24; color: #fbbf24; background: rgba(251,191,36,0.1); }
+.synergy-codex-grid { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; }
+.synergy-codex-entry {
+  border: 1px solid #333; border-radius: 10px; padding: 12px 14px;
+  background: rgba(20,20,30,0.9); transition: border-color 0.3s;
+}
+.synergy-codex-entry.discovered { }
+.synergy-codex-entry.locked { opacity: 0.6; }
+.codex-entry-top { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+.codex-rarity { font-size: 0.65em; letter-spacing: 0.5px; }
+.codex-entry-cat { font-size: 0.7em; color: #888; letter-spacing: 1px; margin-top: 2px; }
+.codex-entry-desc { font-size: 0.85em; color: #ccc; margin-top: 6px; }
+.codex-entry-effect { font-size: 0.85em; color: #4ade80; margin-top: 4px; font-weight: 600; }
+.codex-entry-flavor { font-size: 0.75em; color: #777; font-style: italic; margin-top: 4px; }
+.codex-entry-locked { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; }
+.codex-lock-icon { font-size: 1.5em; }
+.codex-lock-text { font-size: 0.85em; color: #666; }
+.codex-lock-hint { font-size: 0.7em; }

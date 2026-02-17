@@ -33,6 +33,7 @@ const CareerStatsDashboard = lazy(() => import('../components/CareerStatsDashboa
 const StatsDashboard = lazy(() => import('../components/StatsDashboard'));
 const HallOfFameTab = lazy(() => import('../components/HallOfFameTab'));
 const TradingCardGallery = lazy(() => import('../components/TradingCardGallery'));
+const SynergyCodex = lazy(() => import('../components/SynergyDisplay').then(m => ({ default: m.SynergyCodex })));
 const LeaderboardScreen = lazy(() => import('../components/LeaderboardScreen'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
@@ -439,7 +440,7 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'create'>('play');
+  const [tab, setTab] = useState<'play' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'create' | 'synergies'>('play');
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
   const [muted, setMutedLocal] = useState(isMuted());
   const [showNamePrompt, setShowNamePrompt] = useState(false);
@@ -485,7 +486,7 @@ export default function StartScreen() {
     return (
       <div className="fade-in" style={{ textAlign: 'center', padding: '40px 20px' }}>
         <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>Choose Difficulty</h2>
-        <p style={{ color: '#888', marginBottom: 24, fontSize: '0.9rem' }}>How tough do you want Hollywood to be?</p>
+        <p style={{ color: '#888', marginBottom: 16, fontSize: '0.9rem' }}>How tough do you want Hollywood to be?</p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 800, margin: '0 auto' }}>
           {DIFFICULTIES.map(d => (
             <div
@@ -520,6 +521,47 @@ export default function StartScreen() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Difficulty Comparison Table */}
+        <div style={{ marginTop: 28, maxWidth: 700, margin: '28px auto 0' }}>
+          <div style={{ color: '#777', fontSize: '0.7rem', fontFamily: 'Bebas Neue', letterSpacing: '0.08em', marginBottom: 8, textAlign: 'center' }}>
+            DETAILED COMPARISON
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', color: '#ccc' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(212,168,67,0.3)' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', color: 'var(--gold)', fontWeight: 600 }}></th>
+                  {DIFFICULTIES.map(d => (
+                    <th key={d.id} style={{ textAlign: 'center', padding: '8px 10px', color: d.color, fontWeight: 700 }}>
+                      {d.emoji} {d.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: 'Starting Budget', key: 'startBudget', fmt: (v: number) => `$${v}M` },
+                  { label: 'Starting Reputation', key: 'startReputation', fmt: (v: number) => '⭐'.repeat(v) },
+                  { label: 'Seasons', key: 'maxSeasons', fmt: (v: number) => `${v} seasons` },
+                  { label: 'Max Strikes', key: 'maxStrikes', fmt: (_v: number, d: any) => d.id === 'indie' ? '4' : d.id === 'mogul' ? '2' : '3' },
+                  { label: 'Market Bonus', key: 'marketMultiplierBonus', fmt: (v: number) => v > 0 ? `+${(v * 100).toFixed(0)}%` : '—' },
+                  { label: 'Incident Rate', key: 'incidentFrequencyMod', fmt: (v: number) => v > 1 ? `+${Math.round((v - 1) * 100)}%` : 'Normal' },
+                  { label: 'Rival Aggression', key: 'rivalAggressiveness', fmt: (v: number) => v < 1 ? 'Passive' : v > 1 ? 'Aggressive' : 'Normal' },
+                ].map(row => (
+                  <tr key={row.label} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '6px 10px', color: '#999', fontWeight: 500 }}>{row.label}</td>
+                    {DIFFICULTIES.map(d => (
+                      <td key={d.id} style={{ textAlign: 'center', padding: '6px 10px' }}>
+                        {row.fmt((d as any)[row.key], d)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -766,6 +808,7 @@ export default function StartScreen() {
           { id: 'achievements', emoji: '🏆', label: 'ACHIEVEMENTS', shortLabel: 'ACHV' },
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
           { id: 'create', emoji: '🎨', label: 'CREATE' },
+          { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
           { id: 'career', emoji: '🏛️', label: 'CAREER' },
           { id: 'history', emoji: '📜', label: 'RUNS' },
           { id: 'archive', emoji: '🎞️', label: 'ARCHIVE' },
@@ -1462,6 +1505,12 @@ export default function StartScreen() {
       {tab === 'create' && (
         <Suspense fallback={<SkeletonLoader />}>
           <CardCreator onClose={() => setTab('play')} />
+        </Suspense>
+      )}
+
+      {tab === 'synergies' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <SynergyCodex onClose={() => setTab('play')} inline />
         </Suspense>
       )}
 

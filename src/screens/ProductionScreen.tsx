@@ -10,6 +10,9 @@ import MechanicTip from '../components/MechanicTip';
 import StatTooltip from '../components/StatTooltip';
 import DeckTracker from '../components/DeckTracker';
 import { announce } from '../accessibility';
+import { detectSynergies, computeSynergyEffects, markSynergiesDiscovered, type DetectedSynergy } from '../cardSynergies';
+import { lazy, Suspense } from 'react';
+const SynergyDisplay = lazy(() => import('../components/SynergyDisplay'));
 
 // Auto-advance component: shows a button with a filling progress bar, auto-clicks after delay
 function AutoAdvance({ onAdvance, delayMs, label }: { onAdvance: () => void; delayMs: number; label: string }) {
@@ -181,8 +184,26 @@ export default function ProductionScreen({ state }: { state: GameState }) {
   const [rejectedCardId, setRejectedCardId] = useState<string | null>(null);
   const prevPlayedCount = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeSynergies, setActiveSynergies] = useState<DetectedSynergy[]>([]);
+  const [showSynergyOverlay, setShowSynergyOverlay] = useState(false);
+  const synergiesDetected = useRef(false);
+
+  // R217: Detect synergies once when production starts
+  useEffect(() => {
+    if (prod && !synergiesDetected.current) {
+      synergiesDetected.current = true;
+      const detected = detectSynergies(state);
+      if (detected.length > 0) {
+        setActiveSynergies(detected);
+        setShowSynergyOverlay(true);
+        markSynergiesDiscovered(detected.map(d => d.synergy.id));
+      }
+    }
+  }, [!!prod]);
 
   if (!prod) return null;
+
+  const synergyEffects = activeSynergies.length > 0 ? computeSynergyEffects(activeSynergies) : null;
 
   const deckSize = prod.deck.length;
   const maxDraws = getMaxDraws(prod);
@@ -877,6 +898,32 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* R217: Active synergies banner */}
+      {activeSynergies.length > 0 && !showSynergyOverlay && (
+        <div style={{ margin: '12px 0', padding: '8px 14px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 10 }}>
+          <div style={{ fontSize: '0.8em', color: '#fbbf24', fontWeight: 600, marginBottom: 4 }}>🔗 Active Synergies</div>
+          {activeSynergies.map(s => (
+            <div key={s.synergy.id} style={{ fontSize: '0.75em', color: '#ccc', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
+              <span>{s.synergy.emoji}</span>
+              <span style={{ fontWeight: 600 }}>{s.synergy.name}</span>
+              <span style={{ color: '#4ade80' }}>{s.synergy.effect.label}</span>
+            </div>
+          ))}
+          {synergyEffects && synergyEffects.totalQualityBonus > 0 && (
+            <div style={{ fontSize: '0.7em', color: '#4ade80', marginTop: 4 }}>
+              Combined: +{synergyEffects.totalQualityBonus} Quality{synergyEffects.totalBoxOfficeMultiplier > 1 ? `, ×${synergyEffects.totalBoxOfficeMultiplier.toFixed(2)} BO` : ''}{synergyEffects.totalCriticBonus > 0 ? `, +${synergyEffects.totalCriticBonus} Critic` : ''}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* R217: Synergy reveal overlay */}
+      {showSynergyOverlay && (
+        <Suspense fallback={null}>
+          <SynergyDisplay synergies={activeSynergies} onDismiss={() => setShowSynergyOverlay(false)} />
+        </Suspense>
       )}
     </div>
   );

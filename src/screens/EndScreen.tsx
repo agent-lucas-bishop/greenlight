@@ -28,6 +28,7 @@ import { buildDirectorProfile, recordDirectorRun, getDirectorCareer, type Direct
 import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionProgress } from '../tradingCards';
 import TradingCardToast from '../components/TradingCardToast';
 import ShareCard from '../components/ShareCard';
+import StrategyTipsModal, { shouldShowStrategyTips } from '../components/StrategyTipsModal';
 import { extractShareData, type RunShareData } from '../sharing';
 import { checkCommunityChallenges, type RunSummary, type CommunityChallenge } from '../challenges';
 import ReplayViewer from '../components/ReplayViewer';
@@ -439,6 +440,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [showShareCard, setShowShareCard] = useState(false);
   const [completedCommunity, setCompletedCommunity] = useState<CommunityChallenge[]>([]);
   const [showReplayViewer, setShowReplayViewer] = useState(false);
+  const [showStrategyTips, setShowStrategyTips] = useState(!isVictory && shouldShowStrategyTips());
   const studioIdentity = getStudioIdentity();
   const runTitle = useMemo(() => generateRunTitle(
     history,
@@ -743,6 +745,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   return (
     <div className={`end-screen fade-in ${!isVictory ? 'end-screen-defeat' : ''}`} style={{ paddingBottom: 60 }}>
       {isVictory && <><VictoryParticles /><div className="victory-starburst" aria-hidden="true" /></>}
+      {showStrategyTips && <StrategyTipsModal onClose={() => setShowStrategyTips(false)} />}
 
       {/* ─── TITLE ─── */}
       <div style={{ marginBottom: 8 }}>

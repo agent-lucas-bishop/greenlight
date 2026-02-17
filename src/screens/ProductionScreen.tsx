@@ -107,6 +107,11 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable, className }: 
         <CardTypeBadge type={card.cardType} />
       </div>
       <div className="prod-card-name">{card.name}</div>
+      {isIncident && card.severity && (
+        <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: card.severity === 'catastrophic' ? '#ff1744' : card.severity === 'major' ? '#ff9800' : '#ffeb3b', marginBottom: 2 }}>
+          {card.severity === 'catastrophic' ? '☠️ CATASTROPHIC' : card.severity === 'major' ? '⚠️ MAJOR' : '⚡ MINOR'}
+        </div>
+      )}
       <div className="prod-card-source">{card.source}</div>
       {card.tags && card.tags.length > 0 && (
         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 2 }}>
@@ -656,17 +661,17 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         <div style={{ background: 'rgba(231,76,60,0.1)', border: '2px solid #e74c3c', borderRadius: 12, padding: 16, marginBottom: 16, textAlign: 'center' }}>
           <h3 style={{ color: '#e74c3c', marginBottom: 8, fontSize: '1rem' }}>🛡️ INCIDENT INCOMING!</h3>
           <p style={{ color: '#ccc', marginBottom: 12, fontSize: '0.9rem' }}>
-            <strong style={{ color: '#e74c3c' }}>{prod.pendingBlock.incident.name}</strong> ({prod.pendingBlock.incident.baseQuality}) was drawn alongside <strong style={{ color: '#2ecc71' }}>{prod.pendingBlock.actionCard.name}</strong>.
+            <strong style={{ color: '#e74c3c' }}>{prod.pendingBlock.incident.name}</strong> ({prod.pendingBlock.incident.baseQuality}{prod.pendingBlock.incident.severity ? `, ${prod.pendingBlock.incident.severity.toUpperCase()}` : ''}) was drawn alongside <strong style={{ color: '#2ecc71' }}>{prod.pendingBlock.actionCard.name}</strong>.
           </p>
           <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: 12 }}>
-            Sacrifice your Action card to block the Incident? Both cards are discarded. <strong style={{ color: '#e74c3c' }}>Costs 3 quality.</strong>
+            Block the Incident? The incident is discarded and you keep your Action card. <strong style={{ color: '#e74c3c' }}>Costs 1 quality (disruption).</strong>
           </p>
           <div className="btn-group" style={{ justifyContent: 'center' }}>
             <button className="btn btn-success" onClick={() => handleBlock(false)}>
-              🎬 KEEP BOTH (Incident fires, keep Action)
+              🎬 LET IT PLAY (Incident fires, keep Action)
             </button>
             <button className="btn btn-danger" onClick={() => handleBlock(true)}>
-              🛡️ BLOCK (Sacrifice Action, discard Incident)
+              🛡️ BLOCK (-1 quality, discard Incident, keep Action)
             </button>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 12, flexWrap: 'wrap' }}>

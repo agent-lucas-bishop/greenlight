@@ -266,17 +266,26 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
     }
   }
 
-  // Assign incident severity based on baseQuality
-  // Minor: -2 to -4, Major: -5 to -8, Catastrophic: -9 or worse (+ possible budget hit)
-  for (const card of deck) {
-    if (card.cardType === 'incident') {
+  // Assign incident severity and scale values for meaningful blocking decisions
+  // Minor (-2 to -4): common. Major (-5 to -8): uncommon. Catastrophic (-10 + budget): rare.
+  const incidents = deck.filter(c => c.cardType === 'incident');
+  // ~15% chance each incident upgrades to catastrophic (rare)
+  for (const card of incidents) {
+    const roll = rng();
+    if (roll < 0.08) {
+      // Catastrophic: -10 quality + budget hit
+      card.severity = 'catastrophic';
+      card.baseQuality = -10;
+      if (!card.synergyCondition || card.synergyCondition.toString().includes('bonus: 0')) {
+        card.synergyCondition = () => ({ bonus: 0, budgetMod: -3, description: 'Catastrophic disaster on set!' });
+      }
+      card.synergyText = '☠️ CATASTROPHIC: ' + card.synergyText;
+    } else {
       const absQ = Math.abs(card.baseQuality);
       if (absQ <= 4) {
         card.severity = 'minor';
-      } else if (absQ <= 8) {
-        card.severity = 'major';
       } else {
-        card.severity = 'catastrophic';
+        card.severity = 'major';
       }
     }
   }

@@ -142,6 +142,7 @@ export type GamePhase =
   | 'production'
   | 'release'
   | 'shop'
+  | 'event'
   | 'gameOver'
   | 'victory';
 
@@ -269,6 +270,19 @@ export interface GameState {
   coldGenres: Genre[]; // 1-2 genres with box office penalty this season
   // Budget debt
   debt: number; // accumulated debt from overspending ($M)
+  // Season events (R55)
+  seasonEventChoices: SeasonEventChoice[] | null; // events to pick from between seasons
+  activeSeasonEvent: SeasonEventChoice | null; // the chosen event for next season
+  streamingDealActive: boolean; // next film -×0.3 mult from streaming deal
+}
+
+export interface SeasonEventChoice {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  flavorText: string;
+  effect: string;
 }
 
 export interface RivalSeasonData {

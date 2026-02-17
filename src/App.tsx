@@ -19,6 +19,7 @@ const CastingScreen = lazy(() => import('./screens/CastingScreen'));
 const ProductionScreen = lazy(() => import('./screens/ProductionScreen'));
 const ReleaseScreen = lazy(() => import('./screens/ReleaseScreen'));
 const ShopScreen = lazy(() => import('./screens/ShopScreen'));
+const EventScreen = lazy(() => import('./screens/EventScreen'));
 const EndScreen = lazy(() => import('./screens/EndScreen'));
 
 function App() {
@@ -77,6 +78,7 @@ function App() {
         return <ReleaseScreen state={state} rivalFilms={latestRivals?.films || []} />;
       }
       case 'shop': return <ShopScreen state={state} />;
+      case 'event': return <EventScreen state={state} />;
       case 'gameOver': return <EndScreen state={state} type="gameover" />;
       case 'victory': return <EndScreen state={state} type="victory" />;
       default: return <StartScreen />;

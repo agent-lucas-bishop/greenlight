@@ -3,8 +3,9 @@ import type { StudioArchetypeId } from './types';
 import {
   starterRoster, generateScripts, generateTalentMarket,
   generateMarketConditions, generatePerkMarket, getSeasonTarget, neowTalent,
-  INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES,
+  INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES, generateSeasonEvents,
 } from './data';
+import type { SeasonEventChoice } from './types';
 import { getActiveLegacyPerks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
@@ -56,6 +57,9 @@ function createInitialState(): GameState {
     hotGenres: [],
     coldGenres: [],
     debt: 0,
+    seasonEventChoices: null,
+    activeSeasonEvent: null,
+    streamingDealActive: false,
   };
 }
 
@@ -464,6 +468,11 @@ function beginSeason() {
     scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 2 }));
   }
   
+  // Season event: Creative Retreat — next film gets +3 base quality
+  if (state.activeSeasonEvent?.effect === 'creativeRetreat') {
+    scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 3 }));
+  }
+  
   // Pass script genres so market generation guarantees at least one matching market
   const scriptGenres = scripts.map(s => s.genre);
   const markets = generateMarketConditions(3, scriptGenres);
@@ -484,6 +493,14 @@ export function pickScript(script: Script) {
   // Challenge: Chaos Reigns — all talent +2 Heat, incidents give +1 quality
   if (state.challengeId === 'chaos_reigns') {
     market = market.map(t => ({ ...t, heat: t.heat + 2 }));
+  }
+  // Season event: Talent Showcase — all talent costs $3 less
+  if (state.activeSeasonEvent?.effect === 'talentShowcase') {
+    market = market.map(t => ({ ...t, cost: Math.max(1, t.cost - 3) }));
+  }
+  // Season event: Union Dispute — crew costs +$2
+  if (state.activeSeasonEvent?.effect === 'unionDispute') {
+    market = market.map(t => t.type === 'Crew' ? { ...t, cost: t.cost + 2 } : t);
   }
   // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - script.cost;
@@ -1186,6 +1203,27 @@ export function resolveRelease() {
   // Genre trend multipliers (tuned R26: reduced from +0.4/-0.3 to +0.25/-0.2 — meaningful but not game-deciding)
   if (state.hotGenres.includes(script.genre as Genre)) multiplier += 0.25;
   if (state.coldGenres.includes(script.genre as Genre)) multiplier -= 0.2;
+  
+  // Season event effects on release
+  const se = state.activeSeasonEvent;
+  if (se) {
+    if (se.effect === 'streamingDeal' || state.streamingDealActive) multiplier -= 0.3;
+    if (se.effect === 'genreRevival') {
+      // Boost most-made genre
+      const entries = Object.entries(state.genreMastery);
+      if (entries.length > 0) {
+        const bestGenre = entries.reduce((a, b) => b[1] > a[1] ? b : a)[0];
+        if (script.genre === bestGenre) multiplier += 0.4;
+      }
+    }
+    if (se.effect === 'foreignDeal') multiplier += 0.3;
+    if (se.effect === 'legacyActor') rawQuality += 5;
+    if (se.effect === 'criticDarling' && prod.cleanWrap && prod.drawCount > 0) {
+      // Double the clean wrap bonus (already calculated above, add it again)
+      const baseCleanWrap = state.studioArchetype === 'prestige' ? 8 : 5;
+      rawQuality += baseCleanWrap;
+    }
+  }
 
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
   // Studio archetype effects
@@ -1213,6 +1251,11 @@ export function resolveRelease() {
   let seasonStipend = 5; // $5M guaranteed income per season
   if (state.challengeId === 'shoestring') seasonStipend = 3;
   
+  // Season event: Viral Marketing — if quality > 25, earn +$5M bonus
+  if (se?.effect === 'viralMarketing' && rawQuality > 25) {
+    bonusMoney += 5;
+  }
+
   switch (tier) {
     case 'FLOP':
       repChange = state.challengeId === 'critics_choice' ? -2 : -1;
@@ -1318,6 +1361,9 @@ export function resolveRelease() {
       ...state.genreMastery,
       [script.genre]: (state.genreMastery[script.genre] || 0) + 1,
     },
+    // Clear season event effects after this film
+    activeSeasonEvent: null,
+    streamingDealActive: false,
   });
 }
 
@@ -1421,6 +1467,18 @@ export function payDebt(amount: number) {
 }
 
 export function nextSeason() {
+  // Generate 3-4 season events for player to choose from
+  const eventCount = rng() < 0.4 ? 4 : 3;
+  const events = generateSeasonEvents(eventCount);
+  const eventChoices: SeasonEventChoice[] = events.map(e => ({
+    id: e.id,
+    name: e.name,
+    emoji: e.emoji,
+    description: e.description,
+    flavorText: e.flavorText,
+    effect: e.effect,
+  }));
+  
   setState({
     season: state.season + 1,
     currentScript: null,
@@ -1428,6 +1486,58 @@ export function nextSeason() {
     production: null,
     activeMarket: null,
     lastTier: null,
+    phase: 'event',
+    seasonEventChoices: eventChoices,
+    activeSeasonEvent: null,
+  });
+}
+
+export function pickSeasonEvent(eventId: string) {
+  const event = state.seasonEventChoices?.find(e => e.id === eventId);
+  if (!event) return;
+  
+  // Apply immediate effects
+  let budget = state.budget;
+  let reputation = state.reputation;
+  let streamingDealActive = state.streamingDealActive;
+  
+  switch (event.effect) {
+    case 'awardBuzz': {
+      // +$5M bonus for best film
+      budget += 5;
+      break;
+    }
+    case 'scandal': {
+      reputation = Math.max(0, reputation - 1);
+      break;
+    }
+    case 'streamingDeal': {
+      budget += 10;
+      streamingDealActive = true;
+      break;
+    }
+    case 'budgetWindfall': {
+      budget += 8;
+      break;
+    }
+    // Other effects applied during next season in beginSeason/resolveRelease
+  }
+  
+  setState({
+    budget,
+    reputation,
+    streamingDealActive,
+    activeSeasonEvent: event,
+    seasonEventChoices: null,
+    phase: 'greenlight',
+  });
+  beginSeason();
+}
+
+export function skipSeasonEvent() {
+  setState({
+    seasonEventChoices: null,
+    activeSeasonEvent: null,
     phase: 'greenlight',
   });
   beginSeason();

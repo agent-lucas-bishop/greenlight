@@ -36,6 +36,7 @@ import { sfx } from './sound';
 import { getAudioEngine } from './audioEngine';
 import { announcePhase, setupGlobalKeyboardListeners } from './accessibility';
 import { showTenseVignette, hideTenseVignette } from './visualEffects';
+import ScreenTransition from './components/ScreenTransition';
 import KeyboardHelp from './components/KeyboardHelp';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import { pickCommentary, type CommentarySnippet, type CommentaryContext } from './commentary';
@@ -386,11 +387,13 @@ function App() {
         <WorldEventBanner events={state.activeWorldEvents} currentSeason={state.season} />
       )}
       <div className="film-strip" aria-hidden="true" />
-      <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite" tabIndex={-1} style={{ outline: 'none' }}>
-        <Suspense fallback={<LoadingScreen />}>
-          {renderPhase()}
-        </Suspense>
-      </main>
+      <ScreenTransition phase={state.phase}>
+        <main id="main-content" className={`main ${transitioning ? 'phase-exit' : 'phase-enter'}`} role="main" aria-live="polite" tabIndex={-1} style={{ outline: 'none' }}>
+          <Suspense fallback={<LoadingScreen />}>
+            {renderPhase()}
+          </Suspense>
+        </main>
+      </ScreenTransition>
       <div className="film-strip" aria-hidden="true" />
       {showNarrative && (
         <StudioFoundingNarrative

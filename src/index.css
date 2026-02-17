@@ -5413,3 +5413,340 @@ body {
   transform: scale(1.05) translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * R311: CINEMATIC TRANSITIONS + ENHANCED VISUAL FEEDBACK
+ * ═══════════════════════════════════════════════════════════════ */
+
+/* --- 1. Film-Reel Wipe Transition --- */
+.tr-film-reel {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+}
+.tr-film-reel.tr-active .tr-film-bar {
+  animation: trFilmBarIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.tr-film-reel.tr-exit .tr-film-bar {
+  animation: trFilmBarOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.tr-film-bar {
+  flex: 1;
+  background: var(--black);
+  transform: translateX(-105%);
+  will-change: transform;
+  border-bottom: 1px solid rgba(212, 168, 67, 0.15);
+}
+.tr-film-bar:nth-child(even) {
+  transform: translateX(105%);
+}
+@keyframes trFilmBarIn {
+  from { transform: translateX(-105%); }
+  to { transform: translateX(0); }
+}
+.tr-film-bar:nth-child(even) {
+  animation-name: trFilmBarInEven;
+}
+@keyframes trFilmBarInEven {
+  from { transform: translateX(105%); }
+  to { transform: translateX(0); }
+}
+@keyframes trFilmBarOut {
+  from { transform: translateX(0); }
+  to { transform: translateX(105%); }
+}
+.tr-film-reel.tr-exit .tr-film-bar:nth-child(even) {
+  animation-name: trFilmBarOutEven;
+}
+@keyframes trFilmBarOutEven {
+  from { transform: translateX(0); }
+  to { transform: translateX(-105%); }
+}
+
+/* --- 2. Projector Flicker Fade-to-Black --- */
+.tr-projector {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+.tr-projector-black {
+  position: absolute;
+  inset: 0;
+  background: var(--black);
+}
+.tr-projector.tr-active .tr-projector-black {
+  animation: trProjectorIn 0.5s ease forwards;
+}
+.tr-projector.tr-exit .tr-projector-black {
+  animation: trProjectorOut 0.35s ease forwards;
+}
+@keyframes trProjectorIn {
+  0% { opacity: 0; }
+  15% { opacity: 0.7; }
+  25% { opacity: 0.3; }
+  40% { opacity: 0.8; }
+  50% { opacity: 0.5; }
+  65% { opacity: 0.9; }
+  75% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+@keyframes trProjectorOut {
+  0% { opacity: 1; }
+  30% { opacity: 0.8; }
+  50% { opacity: 0.3; }
+  70% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* --- 3. Quick Dissolve --- */
+.tr-dissolve {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  background: rgba(10, 10, 10, 0.6);
+}
+.tr-dissolve.tr-active {
+  animation: trDissolveIn 0.15s ease forwards;
+}
+.tr-dissolve.tr-exit {
+  animation: trDissolveOut 0.15s ease forwards;
+}
+@keyframes trDissolveIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes trDissolveOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* --- 4. Card Slam Animation --- */
+.card-slam {
+  animation: cardSlam 0.4s cubic-bezier(0.22, 0.68, 0, 1.71) forwards;
+}
+@keyframes cardSlam {
+  0% {
+    transform: scale(1.3) translateY(-30px);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(0.95) translateY(2px);
+    opacity: 1;
+  }
+  65% {
+    transform: scale(1.02) translateY(-1px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+.card-slam-shake {
+  animation: cardSlamShake 0.3s ease 0.15s;
+}
+@keyframes cardSlamShake {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-2px, 1px) rotate(-0.5deg); }
+  40% { transform: translate(2px, -1px) rotate(0.5deg); }
+  60% { transform: translate(-1px, 0) rotate(-0.3deg); }
+  80% { transform: translate(1px, 0) rotate(0.2deg); }
+}
+
+/* --- 5. Animated Counter --- */
+.animated-counter {
+  display: inline-block;
+  transition: color 0.3s ease;
+  font-variant-numeric: tabular-nums;
+}
+.counter-up {
+  color: var(--green-bright);
+  animation: counterPulseUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.counter-down {
+  color: var(--red-bright);
+  animation: counterPulseDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes counterPulseUp {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.2) translateY(-2px); }
+  100% { transform: scale(1) translateY(0); }
+}
+@keyframes counterPulseDown {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.85) translateY(2px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* --- 6. Slot Machine Number --- */
+.slot-machine-number {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+}
+.slot-digit {
+  display: inline-block;
+  min-width: 0.6em;
+  text-align: center;
+  overflow: hidden;
+  position: relative;
+}
+.slot-digit-rolling .slot-digit-spinner {
+  display: inline-block;
+  animation: slotSpin 0.1s linear infinite;
+  color: var(--gray);
+}
+.slot-digit-revealed {
+  animation: slotReveal 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes slotSpin {
+  0% { transform: translateY(-100%); opacity: 0.3; }
+  50% { transform: translateY(0); opacity: 0.6; }
+  100% { transform: translateY(100%); opacity: 0.3; }
+}
+@keyframes slotReveal {
+  0% { transform: translateY(-100%) scale(1.2); opacity: 0; }
+  60% { transform: translateY(5%) scale(0.95); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* --- 7. Typewriter Number --- */
+.typewriter-number {
+  font-variant-numeric: tabular-nums;
+}
+.typewriter-cursor {
+  display: inline-block;
+  animation: typewriterBlink 0.5s step-end infinite;
+  color: var(--gold);
+  margin-left: 1px;
+}
+@keyframes typewriterBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* --- 8. Tier Reveal --- */
+.tier-reveal {
+  display: inline-block;
+  position: relative;
+}
+.tier-reveal-hidden {
+  opacity: 0;
+}
+.tier-reveal-suspense .tier-suspense-dots {
+  display: inline-block;
+  animation: tierSuspense 0.6s ease infinite;
+  color: var(--gray-light);
+  letter-spacing: 3px;
+  font-weight: 700;
+}
+@keyframes tierSuspense {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.tier-reveal-revealed .tier-text {
+  animation: tierPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--tier-color, var(--gold));
+  font-weight: 700;
+  text-shadow: 0 0 20px var(--tier-color, var(--gold));
+}
+.tier-glow-burst {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--tier-color, var(--gold)) 0%, transparent 70%);
+  opacity: 0;
+  animation: tierGlow 0.6s ease-out;
+  pointer-events: none;
+}
+@keyframes tierPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes tierGlow {
+  0% { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* --- 9. Streak / Fire Indicator --- */
+.streak-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  position: relative;
+  overflow: hidden;
+}
+.streak-fire {
+  background: linear-gradient(135deg, rgba(230, 126, 34, 0.2), rgba(231, 76, 60, 0.2));
+  border: 1px solid rgba(230, 126, 34, 0.4);
+  color: #e67e22;
+}
+.streak-blaze {
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.25), rgba(241, 196, 15, 0.2));
+  border: 1px solid rgba(231, 76, 60, 0.5);
+  color: #f39c12;
+}
+.streak-inferno {
+  background: linear-gradient(135deg, rgba(241, 196, 15, 0.3), rgba(231, 76, 60, 0.3));
+  border: 1px solid rgba(241, 196, 15, 0.6);
+  color: #ffd700;
+  animation: streakPulse 1s ease-in-out infinite;
+}
+.streak-flame {
+  animation: flameFlicker 0.3s ease-in-out infinite alternate;
+}
+.streak-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 165, 0, 0.15), transparent 70%);
+  animation: streakGlowPulse 1.5s ease-in-out infinite;
+}
+.streak-count {
+  font-size: 1rem;
+}
+.streak-label {
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+@keyframes flameFlicker {
+  0% { transform: scale(1) rotate(-3deg); }
+  100% { transform: scale(1.15) rotate(3deg); }
+}
+@keyframes streakPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 165, 0, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(255, 165, 0, 0.6); }
+}
+@keyframes streakGlowPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* --- R311: Reduced Motion Overrides --- */
+@media (prefers-reduced-motion: reduce) {
+  .tr-film-reel, .tr-projector, .tr-dissolve { display: none !important; }
+  .card-slam, .card-slam-shake { animation: none !important; }
+  .counter-up, .counter-down { animation: none !important; }
+  .slot-digit-rolling .slot-digit-spinner { animation: none !important; }
+  .slot-digit-revealed { animation: none !important; }
+  .tier-reveal-revealed .tier-text { animation: none !important; opacity: 1 !important; }
+  .tier-glow-burst { display: none !important; }
+  .streak-flame, .streak-indicator, .streak-glow { animation: none !important; }
+  .typewriter-cursor { display: none !important; }
+}
+.force-reduce-motion .tr-film-reel,
+.force-reduce-motion .tr-projector,
+.force-reduce-motion .tr-dissolve { display: none !important; }
+.force-reduce-motion .card-slam,
+.force-reduce-motion .card-slam-shake { animation: none !important; }
+.force-reduce-motion .streak-flame,
+.force-reduce-motion .streak-indicator { animation: none !important; }
+.force-reduce-motion .tier-glow-burst { display: none !important; }
+.force-reduce-motion .typewriter-cursor { display: none !important; }

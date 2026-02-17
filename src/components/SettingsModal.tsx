@@ -1,5 +1,94 @@
 import { useState } from 'react';
 import { isMuted, setMuted, getVolume, setVolume } from '../sound';
+import { getStudioIdentity, setStudioIdentity, getRandomDefaultName, STUDIO_LOGOS, DEFAULT_STUDIO_NAMES, type StudioLogo } from '../studioIdentity';
+
+function StudioIdentityEditor() {
+  const existing = getStudioIdentity();
+  const [name, setName] = useState(existing?.name || '');
+  const [logo, setLogo] = useState<StudioLogo>(existing?.logo || '🎬');
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    const finalName = name.trim() || getRandomDefaultName();
+    setStudioIdentity({ name: finalName, logo });
+    setName(finalName);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <label htmlFor="studio-name-input" style={{ color: '#aaa', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Studio Name</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            id="studio-name-input"
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Enter studio name..."
+            maxLength={30}
+            style={{
+              flex: 1, background: '#1a1a2e', border: '1px solid #333', borderRadius: 6,
+              padding: '8px 12px', color: '#eee', fontSize: '0.85rem', outline: 'none',
+            }}
+          />
+          <button
+            className="btn btn-small"
+            onClick={() => setName(getRandomDefaultName())}
+            title="Random name"
+            style={{ padding: '8px 12px', fontSize: '0.8rem' }}
+          >
+            🎲
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+          {DEFAULT_STUDIO_NAMES.slice(0, 5).map(n => (
+            <button key={n} onClick={() => setName(n)} style={{
+              background: 'transparent', border: '1px solid #333', borderRadius: 4,
+              padding: '2px 6px', color: '#666', fontSize: '0.6rem', cursor: 'pointer',
+            }}>{n}</button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label style={{ color: '#aaa', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Studio Logo</label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {STUDIO_LOGOS.map(l => (
+            <button
+              key={l}
+              onClick={() => setLogo(l)}
+              style={{
+                fontSize: '1.5rem', width: 44, height: 44, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', borderRadius: 8, cursor: 'pointer',
+                background: logo === l ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.03)',
+                border: `2px solid ${logo === l ? 'var(--gold)' : '#333'}`,
+                transition: 'all 0.2s',
+              }}
+              aria-label={`Logo: ${l}`}
+              aria-pressed={logo === l}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        className="btn btn-small"
+        onClick={handleSave}
+        style={{
+          color: saved ? '#2ecc71' : 'var(--gold)',
+          borderColor: saved ? '#2ecc71' : 'var(--gold-dim)',
+          width: '100%',
+        }}
+      >
+        {saved ? '✅ Saved!' : '💾 Save Studio Identity'}
+      </button>
+    </div>
+  );
+}
 
 function SettingsModal({ onClose }: { onClose: () => void }) {
   const [muted, setMutedLocal] = useState(isMuted());
@@ -101,6 +190,12 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
               <span className="settings-toggle-knob" style={{ transform: reduceMotion ? 'translateX(22px)' : 'translateX(0)' }} />
             </button>
           </div>
+        </div>
+
+        {/* Studio Identity */}
+        <div className="settings-section">
+          <h3 style={{ color: '#ccc', fontSize: '0.85rem', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Studio Identity</h3>
+          <StudioIdentityEditor />
         </div>
 
         {/* Data section */}

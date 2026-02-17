@@ -224,11 +224,16 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       {/* TIER BANNER */}
       {phase >= 1 && tierRevealed && (
         <div
-          className={`tier-banner tier-${tier.toLowerCase()} tier-reveal-suspense`}
+          className={`tier-banner tier-${tier.toLowerCase()} tier-reveal-suspense ${tier === 'FLOP' ? 'tier-flop-styled' : tier === 'HIT' ? 'tier-hit-styled' : tier === 'SMASH' ? 'tier-smash-styled' : tier === 'BLOCKBUSTER' ? 'tier-blockbuster-styled' : ''}`}
           style={{ background: config.bg, borderColor: config.color }}
           aria-live="assertive"
           role="status"
         >
+          {tier === 'BLOCKBUSTER' && (
+            <div className="tier-blockbuster-sparkles" aria-hidden="true">
+              {Array.from({ length: 10 }, (_, i) => <span key={i} className="sparkle" />)}
+            </div>
+          )}
           <div className="tier-emoji" aria-hidden="true">{config.emoji}</div>
           <div className="tier-label" style={{ color: config.color }}>{config.label}</div>
           <div className="tier-subtitle">{config.subtitle}</div>

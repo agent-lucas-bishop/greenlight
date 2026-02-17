@@ -17,6 +17,7 @@ import KeyboardHints from '../components/KeyboardHints';
 import { getUnlockedAchievements, ACHIEVEMENTS } from '../achievements';
 import { CHALLENGE_MODIFIERS, getCombinedModifierMultiplier } from '../challengeModifiers';
 import { hasWeeklyRun, getWeeklyBest } from '../leaderboard';
+import { getStudioIdentity, hasStudioIdentity } from '../studioIdentity';
 
 // Lazy-load heavy modals (only opened on demand)
 const AchievementGallery = lazy(() => import('../components/AchievementGallery'));
@@ -521,6 +522,17 @@ export default function StartScreen() {
       </div>
       <div className="start-title animate-title">GREENLIGHT</div>
       <div className="start-subtitle">A Movie Studio Roguelite</div>
+      {(() => {
+        const identity = getStudioIdentity();
+        return identity ? (
+          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <span style={{ fontSize: '1.2rem' }}>{identity.logo}</span>
+            <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1rem', letterSpacing: '0.08em' }}>
+              {identity.name}
+            </span>
+          </div>
+        ) : null;
+      })()}
 
       {/* Prestige Level */}
       {stats.runs > 0 && (() => {

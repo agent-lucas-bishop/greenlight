@@ -17,6 +17,7 @@ import { getWeeklyModifiers, getModifierById } from '../dailyModifiers';
 import { getRunStats } from '../unlocks';
 import { getDailyNumber, getWeeklyNumber } from '../seededRng';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from '../challengeModifiers';
+import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 
 // ─── Helpers ───
 
@@ -388,6 +389,13 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
   const [prestigeResult, setPrestigeResult] = useState<ReturnType<typeof awardRunXP> | null>(null);
+  const studioIdentity = getStudioIdentity();
+  const runTitle = useMemo(() => generateRunTitle(
+    history,
+    state.totalEarnings,
+    state.reputation,
+    studioIdentity?.name || state.studioName || 'Your Studio',
+  ), []);
   const studioLegacy = useMemo(() => isVictory ? getStudioLegacy(state) : null, []);
   const awardsResult = useMemo(() => calculateAwards(state.seasonHistory), []);
 
@@ -563,9 +571,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
       {/* ─── TITLE ─── */}
       <div style={{ marginBottom: 8 }}>
-        {state.studioName && (
+        {(studioIdentity || state.studioName) && (
           <div style={{ fontSize: 'clamp(0.8rem, 2vw, 1rem)', color: getPrestigeStudioColor() || '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
-            {getPrestigeBadge() ? `${getPrestigeBadge()} ` : ''}{state.studioName}
+            {studioIdentity?.logo ? `${studioIdentity.logo} ` : getPrestigeBadge() ? `${getPrestigeBadge()} ` : ''}{studioIdentity?.name || state.studioName}
+          </div>
+        )}
+        {runTitle && (
+          <div style={{ fontSize: 'clamp(0.7rem, 1.8vw, 0.85rem)', color: '#999', fontStyle: 'italic', letterSpacing: 1, marginBottom: 4 }}>
+            "{runTitle}"
           </div>
         )}
         <h2 style={{ color: isVictory ? '#d4a843' : '#e74c3c', margin: 0 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>

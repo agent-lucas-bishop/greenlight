@@ -309,17 +309,18 @@ h1, h2, h3, h4 {
 .card.selected {
   border-color: var(--gold-bright);
   box-shadow: 0 0 24px rgba(212,168,67,0.2), 0 8px 32px rgba(0,0,0,0.5);
+  animation: cardSelectPulse 200ms ease;
 }
 .card.selected::before { opacity: 1; background: var(--gold-bright); }
 
 /* Card pick animations */
 .card.chosen {
-  animation: cardChosen 0.5s ease forwards;
+  animation: cardChosen 0.2s ease forwards;
 }
 @keyframes cardChosen {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(212,168,67,0.4); }
-  100% { transform: scale(1); border-color: var(--gold-bright); }
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(212,168,67,0); }
+  50% { transform: scale(1.05); box-shadow: 0 0 24px rgba(212,168,67,0.45); }
+  100% { transform: scale(1); border-color: var(--gold-bright); box-shadow: 0 0 12px rgba(212,168,67,0.2); }
 }
 .card.not-chosen {
   animation: cardDismiss 0.5s ease forwards;
@@ -3749,3 +3750,114 @@ button, a, .btn, .card, .cast-slot, .selectable-card, .prod-card-new,
 .cast-slot {
   contain: layout style;
 }
+
+/* ===== R143: VISUAL POLISH PASS 2 — Particles, Transitions, Feedback ===== */
+
+/* --- 1. BLOCKBUSTER Celebration Sparkles (pure CSS, 10 particles) --- */
+.tier-blockbuster-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+.tier-blockbuster-sparkles .sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffd700;
+  box-shadow: 0 0 6px 2px rgba(255, 215, 0, 0.8), 0 0 12px rgba(255, 215, 0, 0.4);
+  opacity: 0;
+  animation: blockbusterSparkle 2s ease-out forwards;
+}
+.tier-blockbuster-sparkles .sparkle:nth-child(1)  { top: 50%; left: 50%; --sx: -60px; --sy: -70px; animation-delay: 0s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(2)  { top: 50%; left: 50%; --sx: 55px;  --sy: -65px; animation-delay: 0.05s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(3)  { top: 50%; left: 50%; --sx: -75px; --sy: 20px;  animation-delay: 0.1s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(4)  { top: 50%; left: 50%; --sx: 70px;  --sy: 30px;  animation-delay: 0.08s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(5)  { top: 50%; left: 50%; --sx: -30px; --sy: -80px; animation-delay: 0.15s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(6)  { top: 50%; left: 50%; --sx: 40px;  --sy: -55px; animation-delay: 0.12s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(7)  { top: 50%; left: 50%; --sx: -50px; --sy: 55px;  animation-delay: 0.18s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(8)  { top: 50%; left: 50%; --sx: 65px;  --sy: 50px;  animation-delay: 0.06s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(9)  { top: 50%; left: 50%; --sx: -20px; --sy: 70px;  animation-delay: 0.2s; }
+.tier-blockbuster-sparkles .sparkle:nth-child(10) { top: 50%; left: 50%; --sx: 10px;  --sy: -75px; animation-delay: 0.14s; }
+
+@keyframes blockbusterSparkle {
+  0% { transform: translate(0, 0) scale(0); opacity: 1; }
+  20% { opacity: 1; transform: translate(calc(var(--sx) * 0.3), calc(var(--sy) * 0.3)) scale(1.5); }
+  60% { opacity: 0.8; }
+  100% { transform: translate(var(--sx), var(--sy)) scale(0); opacity: 0; }
+}
+
+/* --- 2. Card Selection Pulse (script/talent pick) --- */
+.card-select-pulse {
+  animation: cardSelectPulse 200ms ease;
+}
+@keyframes cardSelectPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(212,168,67,0); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(212,168,67,0.35); }
+  100% { transform: scale(1); box-shadow: 0 0 8px rgba(212,168,67,0.15); }
+}
+
+/* --- 3. Tier Banner Visual Treatments --- */
+
+/* FLOP: desaturated */
+.tier-flop-styled {
+  filter: saturate(0.4);
+  animation: flopShakeDesaturate 0.6s ease;
+}
+@keyframes flopShakeDesaturate {
+  0%, 100% { transform: translateX(0); filter: saturate(0.4); }
+  10% { transform: translateX(-8px) rotate(-1deg); }
+  20% { transform: translateX(8px) rotate(1deg); }
+  30% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  50% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+/* HIT: ongoing subtle pulse */
+.tier-hit-styled {
+  animation: hitPop 0.5s ease, hitSubtlePulse 2.5s ease-in-out 0.5s infinite;
+}
+@keyframes hitSubtlePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); box-shadow: 0 0 16px rgba(243,156,18,0.2); }
+}
+
+/* SMASH HIT: glow + gold border */
+.tier-smash-styled {
+  border-color: var(--gold-bright) !important;
+  box-shadow: 0 0 24px rgba(212,168,67,0.25), 0 0 48px rgba(212,168,67,0.1);
+  animation: smashPop 0.6s ease, smashGlow 2s ease 0.6s infinite;
+}
+@keyframes smashGlow {
+  0%, 100% { box-shadow: 0 0 24px rgba(212,168,67,0.25), 0 0 48px rgba(212,168,67,0.1); }
+  50% { box-shadow: 0 0 36px rgba(212,168,67,0.4), 0 0 64px rgba(212,168,67,0.15); }
+}
+
+/* BLOCKBUSTER: gold gradient background + glow + particles */
+.tier-blockbuster-styled {
+  background: linear-gradient(135deg, #2a2200 0%, #4a3800 40%, #5a4a00 100%) !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 30px rgba(255,215,0,0.3), 0 0 60px rgba(255,215,0,0.1);
+  animation: tierSuspense 0.6s cubic-bezier(0.22, 1, 0.36, 1), blockbusterGlow 2s ease 0.6s infinite;
+}
+
+/* --- 4. Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .tier-blockbuster-sparkles { display: none !important; }
+  .card-select-pulse { animation: none !important; }
+  .tier-flop-styled { animation: none !important; filter: saturate(0.4); }
+  .tier-hit-styled { animation: none !important; }
+  .tier-smash-styled { animation: none !important; }
+  .tier-blockbuster-styled { animation: none !important; }
+}
+.force-reduce-motion .tier-blockbuster-sparkles { display: none !important; }
+.force-reduce-motion .card-select-pulse { animation: none !important; }
+.force-reduce-motion .tier-flop-styled { animation: none !important; }
+.force-reduce-motion .tier-hit-styled { animation: none !important; }
+.force-reduce-motion .tier-smash-styled { animation: none !important; }
+.force-reduce-motion .tier-blockbuster-styled { animation: none !important; }

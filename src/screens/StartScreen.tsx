@@ -48,6 +48,7 @@ const ModCreatorPanel = lazy(() => import('../components/ModCreator'));
 const CraftingWorkshop = lazy(() => import('../components/CraftingWorkshop'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
 const CollectionPanel = lazy(() => import('../components/CollectionPanel'));
+const DeckGallery = lazy(() => import('../components/DeckGallery'));
 const PrestigePanel = lazy(() => import('../components/PrestigePanel'));
 const StudioProfileScreen = lazy(() => import('../components/StudioProfileScreen'));
 import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgress, getVeteranScaling, hasMilestone, getUnlockedMilestones } from '../prestige';
@@ -73,6 +74,8 @@ import { getChallengeFromUrl, clearChallengeFromUrl } from '../challengeEditor';
 import type { CustomChallenge } from '../challengeEditor';
 import { getCollectionProgress } from '../tradingCards';
 import { getCollectionStats } from '../cardCollection';
+import { getRegistryCount } from '../cardRegistry';
+import { getDiscoveredCount } from '../deckGalleryTracker';
 import { createMultiplayerSession, saveMultiplayerSession } from '../multiplayer';
 import type { MultiplayerSettings } from '../multiplayer';
 import type { StudioArchetypeId as MPArchetypeId } from '../types';
@@ -518,7 +521,7 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [showTrophyRoom, setShowTrophyRoom] = useState(false);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio' | 'mods' | 'analytics'>('play');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'deckGallery' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio' | 'mods' | 'analytics'>('play');
   const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
   const [modsSubView, setModsSubView] = useState<'manage' | 'create'>('manage');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
@@ -913,6 +916,7 @@ export default function StartScreen() {
           { id: 'trophies' as const, emoji: '🏆', label: 'TROPHIES' },
           { id: 'cards', emoji: '🃏', label: `CARDS (${getCollectionProgress().collected}/${getCollectionProgress().total})`, shortLabel: 'CARDS' },
           { id: 'collection' as const, emoji: '📚', label: `COLLECTION (${getCollectionStats().discovered}/${getCollectionStats().total})`, shortLabel: 'COLLECT' },
+          { id: 'deckGallery' as const, emoji: '🃏', label: `CARD GALLERY (${getDiscoveredCount()}/${getRegistryCount()})`, shortLabel: 'GALLERY' },
           { id: 'create', emoji: '🃏', label: 'WORKSHOP' },
           { id: 'craft' as const, emoji: '⚒️', label: 'CRAFT' },
           { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
@@ -1721,6 +1725,13 @@ export default function StartScreen() {
       {tab === 'cards' && (
         <Suspense fallback={<SkeletonLoader />}>
           <TradingCardGallery onClose={() => setTab('play')} inline />
+        </Suspense>
+      )}
+
+      {/* ─── DECK GALLERY TAB ─── */}
+      {tab === 'deckGallery' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <DeckGallery onClose={() => setTab('play')} />
         </Suspense>
       )}
 

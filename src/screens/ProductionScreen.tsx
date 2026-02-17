@@ -114,7 +114,12 @@ function ProductionCardDisplay({ card, isNew, onClick, selectable, className }: 
         <SourceBadge type={card.sourceType} />
         <CardTypeBadge type={card.cardType} />
       </div>
-      <div className="prod-card-name">{card.name}</div>
+      <div className="prod-card-name">
+        {card.name}
+        {(card as any)._galleryNew && (
+          <span style={{ marginLeft: 4, fontSize: '0.55rem', background: '#f39c12', color: '#000', padding: '1px 4px', borderRadius: 4, fontWeight: 700, verticalAlign: 'super' }}>NEW!</span>
+        )}
+      </div>
       {isIncident && card.severity && (
         <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: card.severity === 'catastrophic' ? '#ff1744' : card.severity === 'major' ? '#ff9800' : '#ffeb3b', marginBottom: 2 }}>
           {card.severity === 'catastrophic' ? '☠️ CATASTROPHIC' : card.severity === 'major' ? '⚠️ MAJOR' : '⚡ MINOR'}

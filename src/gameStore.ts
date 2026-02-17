@@ -146,6 +146,8 @@ import { getEligibleFestivals, canSubmitToFestival, judgeFestival, getFestivalRe
 import { startReplayRecording, recordEvent, finalizeReplay, snapshotState } from './replay';
 import { addCardToCollection } from './cardCollection';
 import { completeTutorialStep, isTutorialActive } from './tutorial';
+import { markCardDiscovered, incrementCardUsage } from './deckGalleryTracker';
+import { lookupRegistryCard } from './cardRegistry';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
@@ -488,6 +490,14 @@ function evaluateSynergy(card: ProductionCard, played: ProductionCard[], totalQu
 }
 
 function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots: CastSlot[]): ProductionState {
+  // R300: Track card discovery & usage in deck gallery
+  const regCard = lookupRegistryCard(card.source, card.name);
+  if (regCard) {
+    const isNew = markCardDiscovered(regCard.id);
+    incrementCardUsage(regCard.id);
+    if (isNew) (card as any)._galleryNew = true;
+  }
+
   const p = { ...prod };
   const drawNumber = p.drawCount; // already incremented
   const played = [...p.played];

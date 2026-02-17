@@ -16,6 +16,8 @@ import { getChallengeById } from '../challenges';
 import { isMuted, toggleMute, sfx, getVolume, setVolume } from '../sound';
 import StatTooltip from './StatTooltip';
 import HelpPanel from './HelpPanel';
+import { lazy, Suspense } from 'react';
+const SettingsModal = lazy(() => import('./SettingsModal'));
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
@@ -83,6 +85,7 @@ function QuickHelp({ onClose }: { onClose: () => void }) {
 export default function Header({ state }: { state: GameState }) {
   const [showHelp, setShowHelp] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
   const [volume, setVolumeState] = useState(getVolume());
   const [showVolume, setShowVolume] = useState(false);
@@ -200,6 +203,7 @@ export default function Header({ state }: { state: GameState }) {
         onClick={() => setShowHelp(true)}
         title="How to Play"
         aria-label="How to Play"
+        style={{ right: 170 }}
       >
         ?
       </button>
@@ -208,9 +212,18 @@ export default function Header({ state }: { state: GameState }) {
         onClick={() => setShowHelpPanel(true)}
         title="Help & Glossary"
         aria-label="Help & Glossary"
-        style={{ right: 90 }}
+        style={{ right: 130 }}
       >
         📖
+      </button>
+      <button
+        className="header-help-btn"
+        onClick={() => setShowSettings(true)}
+        title="Settings"
+        aria-label="Settings"
+        style={{ right: 90 }}
+      >
+        ⚙️
       </button>
       <button
         className="header-help-btn"
@@ -238,6 +251,7 @@ export default function Header({ state }: { state: GameState }) {
       )}
       {showHelp && <QuickHelp onClose={() => setShowHelp(false)} />}
       {showHelpPanel && <HelpPanel onClose={() => setShowHelpPanel(false)} />}
+      {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
     </div>
   );
 }

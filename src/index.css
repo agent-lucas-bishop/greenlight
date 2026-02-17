@@ -3985,6 +3985,11 @@ button, a, .btn, .card, .cast-slot, .selectable-card, .prod-card-new,
 .colorblind-mode .tier-smash-styled { border-style: double !important; }
 .colorblind-mode .tier-blockbuster-styled { border-style: ridge !important; border-width: 3px !important; }
 
+/* R241: Colorblind mode variants — adjust hue filters for specific types */
+.colorblind-protanopia { --type-action: #4a90d9; --type-incident: #d4a017; --green: #4a90d9; --green-bright: #5dade2; --red: #d4a017; --red-bright: #f0c75e; }
+.colorblind-deuteranopia { --type-action: #4a90d9; --type-incident: #d4a017; --green: #4a90d9; --green-bright: #5dade2; --red: #d4a017; --red-bright: #f0c75e; }
+.colorblind-tritanopia { --type-action: #2ecc71; --type-challenge: #e74c3c; --blue: #e74c3c; }
+
 /* Settings tab button hover */
 .settings-tab-btn:hover { background: rgba(212,168,67,0.08) !important; }
 

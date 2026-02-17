@@ -7,6 +7,7 @@ import { setPrestigeChangeCallback } from './prestige'
 import { refreshPrestigeLevelCache } from './data'
 import { runMigrations, trimLargeData } from './storageManager'
 import './index.css'
+import './settings' // R241: Initialize centralized settings (applies CSS classes + audio on load)
 import App from './App.tsx'
 
 // Wire prestige → data cache sync (avoids circular import)

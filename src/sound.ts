@@ -3213,4 +3213,128 @@ export const sfx = {
       note(c, 523, 0, 0.35, 0.02, 'triangle');
     }, 'prestigeStarDisplay');
   },
+
+  // ── R234: Card Creator Workshop (R230) sounds ──
+
+  cardCreatorStepForward() {
+    play(c => {
+      // Satisfying page advancement — ascending two-note chime
+      note(c, 660, 0, 0.08, 0.12, 'triangle');
+      note(c, 880, 0.06, 0.12, 0.1, 'sine');
+      noise(c, 0, 0.03, 0.03);
+    }, 'cardCreatorStepForward');
+  },
+
+  cardCreatorStepBack() {
+    play(c => {
+      // Softer descending reverse of step forward
+      note(c, 660, 0, 0.1, 0.07, 'triangle');
+      note(c, 494, 0.05, 0.12, 0.06, 'sine');
+    }, 'cardCreatorStepBack');
+  },
+
+  cardCreatorSliderTick() {
+    play(c => {
+      // Subtle tick for slider movement
+      note(c, 1200, 0, 0.03, 0.04, 'square');
+    }, 'cardCreatorSliderTick');
+  },
+
+  cardCreatorAbilitySelect() {
+    play(c => {
+      // Magical selection ping with sparkle
+      note(c, 1047, 0, 0.06, 0.1, 'sine');
+      note(c, 1319, 0.04, 0.08, 0.08, 'sine');
+      note(c, 1568, 0.08, 0.15, 0.06, 'triangle');
+      noise(c, 0.06, 0.04, 0.02);
+    }, 'cardCreatorAbilitySelect');
+  },
+
+  cardCreatorPreviewReveal() {
+    play(c => {
+      // Dramatic card flip/reveal — whoosh into bright chord
+      noise(c, 0, 0.12, 0.08);
+      note(c, 330, 0.05, 0.08, 0.06, 'sawtooth');
+      note(c, 523, 0.12, 0.2, 0.12, 'sine');
+      note(c, 659, 0.14, 0.2, 0.1, 'sine');
+      note(c, 784, 0.16, 0.25, 0.08, 'triangle');
+    }, 'cardCreatorPreviewReveal');
+  },
+
+  cardCreatorSave() {
+    play(c => {
+      // Stamp/seal of approval — thud with satisfying ring
+      note(c, 150, 0, 0.08, 0.15, 'sine');
+      noise(c, 0, 0.05, 0.06);
+      note(c, 784, 0.06, 0.15, 0.1, 'triangle');
+      note(c, 1047, 0.1, 0.2, 0.08, 'sine');
+    }, 'cardCreatorSave');
+  },
+
+  cardCreatorImport() {
+    play(c => {
+      // Unwrapping/unboxing — rustling into reveal
+      noise(c, 0, 0.15, 0.06);
+      noise(c, 0.08, 0.1, 0.04);
+      note(c, 440, 0.15, 0.1, 0.08, 'triangle');
+      note(c, 660, 0.2, 0.15, 0.1, 'sine');
+      note(c, 880, 0.25, 0.2, 0.08, 'sine');
+    }, 'cardCreatorImport');
+  },
+
+  cardCreatorExport() {
+    play(c => {
+      // Quick copy/send whoosh — ascending sweep
+      noise(c, 0, 0.08, 0.06);
+      note(c, 600, 0, 0.06, 0.06, 'sawtooth');
+      note(c, 1200, 0.03, 0.08, 0.08, 'triangle');
+      note(c, 1800, 0.06, 0.06, 0.04, 'sine');
+    }, 'cardCreatorExport');
+  },
+
+  cardCreatorDelete() {
+    play(c => {
+      // Soft paper crumple — filtered noise burst
+      noise(c, 0, 0.12, 0.07);
+      noise(c, 0.04, 0.08, 0.04);
+      note(c, 180, 0, 0.1, 0.03, 'sine');
+    }, 'cardCreatorDelete');
+  },
+
+  cardCreatorBalanceWarning() {
+    play(c => {
+      // Cautionary buzz — low dissonant warning
+      note(c, 180, 0, 0.15, 0.1, 'sawtooth');
+      note(c, 190, 0, 0.15, 0.1, 'sawtooth');
+      note(c, 120, 0.08, 0.12, 0.06, 'square');
+    }, 'cardCreatorBalanceWarning');
+  },
+
+  // ── R234: AI Director Battles expanded (R225) sounds ──
+
+  rivalCatchphrase() {
+    play(c => {
+      // Short dramatic sting — bold brass-like hit
+      note(c, 330, 0, 0.06, 0.12, 'sawtooth');
+      note(c, 440, 0, 0.06, 0.1, 'sawtooth');
+      note(c, 220, 0.04, 0.15, 0.08, 'triangle');
+      noise(c, 0, 0.03, 0.04);
+    }, 'rivalCatchphrase');
+  },
+
+  seasonLeaderboardReveal() {
+    play(c => {
+      // Drumroll into placement reveal
+      // Rapid noise hits simulating drumroll
+      for (let i = 0; i < 12; i++) {
+        noise(c, i * 0.06, 0.04, 0.03 + i * 0.002);
+        note(c, 200, i * 0.06, 0.03, 0.02 + i * 0.001, 'triangle');
+      }
+      // Final cymbal crash + reveal chord
+      noise(c, 0.72, 0.3, 0.1);
+      note(c, 523, 0.72, 0.3, 0.12, 'sine');
+      note(c, 659, 0.74, 0.28, 0.1, 'sine');
+      note(c, 784, 0.76, 0.35, 0.08, 'triangle');
+    }, 'seasonLeaderboardReveal');
+  },
 };

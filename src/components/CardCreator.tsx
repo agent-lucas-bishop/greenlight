@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   type CrewCard, type CrewRole, type CrewRarity, type BalanceRating,
   CREW_ROLES, RARITIES, ALL_GENRES, ABILITY_POOL, RARITY_COLORS, ROLE_EMOJI,
@@ -32,6 +32,15 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
   const powerBudget = getPowerBudget(card.rarity);
   const balanceColor = getBalanceColor(balance);
 
+  // Play balance warning when entering OP zone
+  const prevBalanceRef = useRef<BalanceRating | null>(null);
+  useEffect(() => {
+    if (balance === 'overpowered' && prevBalanceRef.current !== 'overpowered') {
+      sfx.cardCreatorBalanceWarning();
+    }
+    prevBalanceRef.current = balance;
+  }, [balance]);
+
   const startEdit = (c: CrewCard) => {
     setEditing(c);
     setCard({ ...c });
@@ -55,7 +64,7 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
       addWorkshopCard(card);
       flash('✅ Card saved!');
     }
-    sfx.cardCreate();
+    sfx.cardCreatorSave();
     resetWizard();
     refresh();
   };
@@ -67,7 +76,7 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
       const all = getWorkshopCards();
       all.push(imported);
       localStorage.setItem('greenlight-custom-cards', JSON.stringify(all));
-      sfx.cardImport();
+      sfx.cardCreatorImport();
       flash(`✅ Imported "${imported.name}"!`);
       setImportStr('');
       setShowImport(false);
@@ -77,7 +86,7 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
 
   const handleShare = (c: CrewCard) => {
     const b64 = exportCard(c);
-    navigator.clipboard.writeText(b64).then(() => flash('📋 Copied share code!')).catch(() => flash('⚠️ Copy failed'));
+    navigator.clipboard.writeText(b64).then(() => { sfx.cardCreatorExport(); flash('📋 Copied share code!'); }).catch(() => flash('⚠️ Copy failed'));
   };
 
   const stepLabels = ['Role', 'Name', 'Genres', 'Stats', 'Ability', 'Preview'];
@@ -137,7 +146,7 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                   ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                  <button onClick={() => setStep(2)} style={nextBtnStyle}>Next →</button>
+                  <button onClick={() => { sfx.cardCreatorStepForward(); setStep(2); }} style={nextBtnStyle}>Next →</button>
                 </div>
               </div>
             )}
@@ -168,8 +177,8 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                   </label>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-                  <button onClick={() => setStep(1)} style={backBtnStyle}>← Back</button>
-                  <button onClick={() => setStep(3)} style={nextBtnStyle}>Next →</button>
+                  <button onClick={() => { sfx.cardCreatorStepBack(); setStep(1); }} style={backBtnStyle}>← Back</button>
+                  <button onClick={() => { sfx.cardCreatorStepForward(); setStep(3); }} style={nextBtnStyle}>Next →</button>
                 </div>
               </div>
             )}
@@ -202,8 +211,8 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                   Selected: {card.genreAffinities.length}/3
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-                  <button onClick={() => setStep(2)} style={backBtnStyle}>← Back</button>
-                  <button onClick={() => setStep(4)} style={nextBtnStyle} disabled={!card.genreAffinities.length}>Next →</button>
+                  <button onClick={() => { sfx.cardCreatorStepBack(); setStep(2); }} style={backBtnStyle}>← Back</button>
+                  <button onClick={() => { sfx.cardCreatorStepForward(); setStep(4); }} style={nextBtnStyle} disabled={!card.genreAffinities.length}>Next →</button>
                 </div>
               </div>
             )}
@@ -217,10 +226,10 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                     <div style={statLabel}>Quality Bonus Range</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                       <label style={labelStyle}>Min ({card.qualityBonusMin})
-                        <input type="range" min={0} max={5} value={card.qualityBonusMin} onChange={e => setCard(p => ({ ...p, qualityBonusMin: +e.target.value }))} style={{ width: '100%' }} />
+                        <input type="range" min={0} max={5} value={card.qualityBonusMin} onChange={e => { sfx.cardCreatorSliderTick(); setCard(p => ({ ...p, qualityBonusMin: +e.target.value })); }} style={{ width: '100%' }} />
                       </label>
                       <label style={labelStyle}>Max ({card.qualityBonusMax})
-                        <input type="range" min={0} max={8} value={card.qualityBonusMax} onChange={e => setCard(p => ({ ...p, qualityBonusMax: +e.target.value }))} style={{ width: '100%' }} />
+                        <input type="range" min={0} max={8} value={card.qualityBonusMax} onChange={e => { sfx.cardCreatorSliderTick(); setCard(p => ({ ...p, qualityBonusMax: +e.target.value })); }} style={{ width: '100%' }} />
                       </label>
                     </div>
                   </div>
@@ -228,10 +237,10 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                     <div style={statLabel}>Salary Range ($M)</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                       <label style={labelStyle}>Min (${card.salaryMin}M)
-                        <input type="range" min={1} max={10} value={card.salaryMin} onChange={e => setCard(p => ({ ...p, salaryMin: +e.target.value }))} style={{ width: '100%' }} />
+                        <input type="range" min={1} max={10} value={card.salaryMin} onChange={e => { sfx.cardCreatorSliderTick(); setCard(p => ({ ...p, salaryMin: +e.target.value })); }} style={{ width: '100%' }} />
                       </label>
                       <label style={labelStyle}>Max (${card.salaryMax}M)
-                        <input type="range" min={1} max={15} value={card.salaryMax} onChange={e => setCard(p => ({ ...p, salaryMax: +e.target.value }))} style={{ width: '100%' }} />
+                        <input type="range" min={1} max={15} value={card.salaryMax} onChange={e => { sfx.cardCreatorSliderTick(); setCard(p => ({ ...p, salaryMax: +e.target.value })); }} style={{ width: '100%' }} />
                       </label>
                     </div>
                   </div>
@@ -258,8 +267,8 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-                  <button onClick={() => setStep(3)} style={backBtnStyle}>← Back</button>
-                  <button onClick={() => setStep(5)} style={nextBtnStyle}>Next →</button>
+                  <button onClick={() => { sfx.cardCreatorStepBack(); setStep(3); }} style={backBtnStyle}>← Back</button>
+                  <button onClick={() => { sfx.cardCreatorStepForward(); setStep(5); }} style={nextBtnStyle}>Next →</button>
                 </div>
               </div>
             )}
@@ -270,7 +279,7 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                 <h3 style={stepTitle}>Special Ability</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
                   {ABILITY_POOL.map(a => (
-                    <button key={a} onClick={() => setCard(p => ({ ...p, ability: a }))} style={{
+                    <button key={a} onClick={() => { sfx.cardCreatorAbilitySelect(); setCard(p => ({ ...p, ability: a })); }} style={{
                       padding: '12px', borderRadius: 8, cursor: 'pointer', textAlign: 'center',
                       background: card.ability === a ? 'rgba(212,168,67,0.15)' : 'rgba(30,30,30,0.8)',
                       border: `1px solid ${card.ability === a ? 'var(--gold)' : '#333'}`,
@@ -282,8 +291,8 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                   ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-                  <button onClick={() => setStep(4)} style={backBtnStyle}>← Back</button>
-                  <button onClick={() => setStep(6)} style={nextBtnStyle}>Preview →</button>
+                  <button onClick={() => { sfx.cardCreatorStepBack(); setStep(4); }} style={backBtnStyle}>← Back</button>
+                  <button onClick={() => { sfx.cardCreatorPreviewReveal(); setStep(6); }} style={nextBtnStyle}>Preview →</button>
                 </div>
               </div>
             )}
@@ -304,7 +313,7 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                   <button onClick={handleSave} style={{ flex: 1, background: 'var(--gold-dim)', border: 'none', borderRadius: 6, padding: '12px 0', color: '#000', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}>
                     {editing ? '💾 Update Card' : '💾 Save Card'}
                   </button>
-                  <button onClick={() => setStep(4)} style={backBtnStyle}>← Back</button>
+                  <button onClick={() => { sfx.cardCreatorStepBack(); setStep(4); }} style={backBtnStyle}>← Back</button>
                   {editing && <button onClick={resetWizard} style={backBtnStyle}>Cancel</button>}
                 </div>
               </div>
@@ -369,7 +378,7 @@ export default function CardCreator({ onClose }: { onClose: () => void }) {
                     }}>{c.enabled ? '✓ Enabled' : 'Disabled'}</button>
                     <button onClick={() => handleShare(c)} style={tinyBtn}>📤</button>
                     <button onClick={() => startEdit(c)} style={tinyBtn}>✏️</button>
-                    <button onClick={() => { if (confirm(`Delete "${c.name}"?`)) { deleteWorkshopCard(c.id); refresh(); } }} style={{ ...tinyBtn, color: '#c66' }}>🗑️</button>
+                    <button onClick={() => { if (confirm(`Delete "${c.name}"?`)) { sfx.cardCreatorDelete(); deleteWorkshopCard(c.id); refresh(); } }} style={{ ...tinyBtn, color: '#c66' }}>🗑️</button>
                   </div>
                 </div>
               );

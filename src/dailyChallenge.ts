@@ -169,6 +169,206 @@ function getScoreTier(score: number): { stars: string; label: string } {
   return { stars: '⭐', label: 'Rookie' };
 }
 
+// ─── R233: Seeded Challenge Constraints ───
+
+import type { Genre } from './types';
+
+export type ChallengeGoalType = 'total_bo' | 'survive_seasons' | 'quality_avg';
+
+export interface DailyChallengeConstraints {
+  seed: number;
+  genreRestriction: Genre | null;
+  budgetCap: number;
+  noLegendaryCards: boolean;
+  goalType: ChallengeGoalType;
+  goalValue: number;
+  goalLabel: string;
+  constraintLabel: string;
+  difficulty: 'studio' | 'mogul';
+}
+
+const GENRES: Genre[] = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller'];
+
+export function getDailyChallengeConstraints(): DailyChallengeConstraints {
+  const seed = getDailySeed();
+  const r = mulberry32(seed);
+  // Burn values
+  for (let i = 0; i < 10; i++) r();
+
+  const genreRoll = r();
+  const genreRestriction = genreRoll < 0.6 ? GENRES[Math.floor(r() * GENRES.length)] : null;
+  const budgetCap = Math.round(5 + r() * 15); // $5M-$20M
+  const noLegendary = r() < 0.3;
+
+  const goalRoll = r();
+  let goalType: ChallengeGoalType;
+  let goalValue: number;
+  let goalLabel: string;
+  if (goalRoll < 0.45) {
+    goalType = 'total_bo';
+    goalValue = Math.round((50 + r() * 150) / 10) * 10;
+    goalLabel = `Reach $${goalValue}M total box office`;
+  } else if (goalRoll < 0.75) {
+    goalType = 'survive_seasons';
+    goalValue = Math.round(3 + r() * 5);
+    goalLabel = `Survive ${goalValue} seasons`;
+  } else {
+    goalType = 'quality_avg';
+    goalValue = Math.round(30 + r() * 30);
+    goalLabel = `Average quality ≥ ${goalValue}`;
+  }
+
+  const parts: string[] = [];
+  if (genreRestriction) parts.push(`${genreRestriction} only`);
+  parts.push(`$${budgetCap}M budget`);
+  if (noLegendary) parts.push('No legendary cards');
+
+  return {
+    seed,
+    genreRestriction,
+    budgetCap,
+    noLegendaryCards: noLegendary,
+    goalType,
+    goalValue,
+    goalLabel,
+    constraintLabel: parts.join(', '),
+    difficulty: r() < 0.3 ? 'mogul' : 'studio',
+  };
+}
+
+export function getWeeklyChallengeConstraints(): DailyChallengeConstraints {
+  const seed = getWeeklySeed();
+  const r = mulberry32(seed);
+  for (let i = 0; i < 10; i++) r();
+
+  // Weekly is always harder
+  const genreRestriction = GENRES[Math.floor(r() * GENRES.length)];
+  const budgetCap = Math.round(3 + r() * 8); // $3M-$11M — tighter
+  const goalType: ChallengeGoalType = 'survive_seasons';
+  const goalValue = Math.round(5 + r() * 4);
+  const goalLabel = `Survive ${goalValue} seasons`;
+
+  return {
+    seed,
+    genreRestriction,
+    budgetCap,
+    noLegendaryCards: true,
+    goalType,
+    goalValue,
+    goalLabel,
+    constraintLabel: `${genreRestriction} only, $${budgetCap}M budget, No legendary cards, Mogul difficulty`,
+    difficulty: 'mogul',
+  };
+}
+
+// ─── R233: Daily/Weekly Leaderboard (localStorage, top 10 per day/week) ───
+
+const DAILY_LB_KEY = 'greenlight_daily_leaderboard';
+const WEEKLY_LB_KEY = 'greenlight_weekly_leaderboard';
+
+export interface DailyLeaderboardEntry {
+  date: string;
+  score: number;
+  timeSeconds: number;
+  totalBO: number;
+  qualityAvg: number;
+  films: number;
+  won: boolean;
+}
+
+function getLbEntries(key: string, dateKey: string): DailyLeaderboardEntry[] {
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const all: Record<string, DailyLeaderboardEntry[]> = JSON.parse(saved);
+      return all[dateKey] || [];
+    }
+  } catch { /* empty */ }
+  return [];
+}
+
+function setLbEntries(key: string, dateKey: string, entries: DailyLeaderboardEntry[]): void {
+  try {
+    const saved = localStorage.getItem(key);
+    const all: Record<string, DailyLeaderboardEntry[]> = saved ? JSON.parse(saved) : {};
+    all[dateKey] = entries.slice(0, 10);
+    // Keep only last 14 days/weeks
+    const keys = Object.keys(all).sort();
+    while (keys.length > 14) {
+      delete all[keys.shift()!];
+    }
+    localStorage.setItem(key, JSON.stringify(all));
+  } catch { /* empty */ }
+}
+
+export function getDailyLeaderboard(): DailyLeaderboardEntry[] {
+  return getLbEntries(DAILY_LB_KEY, getDailyDateString());
+}
+
+export function addDailyLeaderboardEntry(entry: DailyLeaderboardEntry): void {
+  const date = getDailyDateString();
+  const entries = getLbEntries(DAILY_LB_KEY, date);
+  entries.push({ ...entry, date });
+  entries.sort((a, b) => b.score - a.score);
+  setLbEntries(DAILY_LB_KEY, date, entries.slice(0, 10));
+}
+
+export function getWeeklyLeaderboard(): DailyLeaderboardEntry[] {
+  return getLbEntries(WEEKLY_LB_KEY, getWeeklyDateString());
+}
+
+export function addWeeklyLeaderboardEntry(entry: DailyLeaderboardEntry): void {
+  const date = getWeeklyDateString();
+  const entries = getLbEntries(WEEKLY_LB_KEY, date);
+  entries.push({ ...entry, date });
+  entries.sort((a, b) => b.score - a.score);
+  setLbEntries(WEEKLY_LB_KEY, date, entries.slice(0, 10));
+}
+
+// ─── R233: Daily Scoring ───
+
+export function calculateDailyScore(
+  timeSeconds: number,
+  totalBO: number,
+  qualityAvg: number,
+): number {
+  // Time bonus: faster = more points (max 100 at ≤60s, decays over 10 min)
+  const timeBonus = Math.max(0, Math.round(100 - (timeSeconds / 6)));
+  const boScore = Math.round(totalBO * 0.5);
+  const qualityScore = Math.round(qualityAvg * 2);
+  return timeBonus + boScore + qualityScore;
+}
+
+// ─── R233: Reset Countdown Helpers ───
+
+export function getTimeUntilDailyReset(): { hours: number; minutes: number; seconds: number } {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  const diff = tomorrow.getTime() - now.getTime();
+  return {
+    hours: Math.floor(diff / 3600000),
+    minutes: Math.floor((diff % 3600000) / 60000),
+    seconds: Math.floor((diff % 60000) / 1000),
+  };
+}
+
+export function getTimeUntilWeeklyReset(): { days: number; hours: number; minutes: number } {
+  const now = new Date();
+  const day = now.getDay();
+  const daysUntilMonday = day === 0 ? 1 : (8 - day);
+  const nextMonday = new Date(now);
+  nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
+  nextMonday.setHours(0, 0, 0, 0);
+  const diff = nextMonday.getTime() - now.getTime();
+  return {
+    days: Math.floor(diff / 86400000),
+    hours: Math.floor((diff % 86400000) / 3600000),
+    minutes: Math.floor((diff % 3600000) / 60000),
+  };
+}
+
 // ─── Re-exports for convenience ───
 
 export { getDailySeed, getDailyDateString, getDailyNumber } from './seededRng';

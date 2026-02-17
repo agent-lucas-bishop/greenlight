@@ -19,6 +19,7 @@ export function RivalDashboard({ standings, leaderboard, showdowns, currentSeaso
   const [showdownPhase, setShowdownPhase] = useState<'intro' | 'versus' | 'result'>('intro');
 
   const soundedRef = useRef(false);
+  const leaderboardSoundedRef = useRef(false);
 
   // Auto-switch to showdown tab if there are collisions
   useEffect(() => {
@@ -57,7 +58,7 @@ export function RivalDashboard({ standings, leaderboard, showdowns, currentSeaso
       {/* Leaderboard Tab */}
       {tab === 'leaderboard' && (
         <div>
-          <h3 style={{ color: '#f1c40f', margin: '0 0 12px', textAlign: 'center' }}>
+          <h3 ref={el => { if (el && !leaderboardSoundedRef.current) { leaderboardSoundedRef.current = true; sfx.seasonLeaderboardReveal(); } }} style={{ color: '#f1c40f', margin: '0 0 12px', textAlign: 'center' }}>
             Season {currentSeason} Standings
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -198,7 +199,7 @@ function DirectorCard({ director, standing, recentFilms }: { director: AIDirecto
 
       {expanded && (
         <div style={{ marginTop: 10, borderTop: '1px solid #333', paddingTop: 8 }}>
-          <div style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic', marginBottom: 6 }}>
+          <div ref={el => { if (el && !el.dataset.catchSounded) { el.dataset.catchSounded = '1'; sfx.rivalCatchphrase(); } }} style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic', marginBottom: 6 }}>
             "{director.catchphrase}"
           </div>
           <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>

@@ -1237,7 +1237,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── LEGACY PERKS ─── */}
-      {phase >= 5 && newPerks.length > 0 && (
+      {phase >= 5 && endTab === 'progression' && newPerks.length > 0 && (
         <div style={{ marginTop: 24 }} className="animate-slide-down">
           <h3 style={{ color: '#2ecc71', marginBottom: 12 }}>🔓 NEW LEGACY PERKS UNLOCKED!</h3>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -1258,7 +1258,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── PRESTIGE XP ─── */}
-      {phase >= 6 && prestigeResult && (
+      {phase >= 6 && endTab === 'progression' && prestigeResult && (
         <div className="animate-slide-down" style={{ marginTop: 24 }}>
           <h3 style={{ color: 'var(--gold)', marginBottom: 12, letterSpacing: 1 }}>⭐ STUDIO PRESTIGE</h3>
           <div style={{
@@ -1315,7 +1315,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── META-PROGRESSION (R171) ─── */}
-      {phase >= 6 && metaResult && (() => {
+      {phase >= 6 && endTab === 'progression' && metaResult && (() => {
         const meta = getMetaProgression();
         const xpProg = getMetaXPProgress(meta.xp);
         const nextLvl = getNextMetaLevel(meta.xp);
@@ -1458,7 +1458,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       })()}
 
       {/* ─── DAILY/WEEKLY SCORE BREAKDOWN ─── */}
-      {phase >= 3 && (state.gameMode === 'daily' || state.gameMode === 'weekly') && (() => {
+      {phase >= 3 && endTab === 'details' && (state.gameMode === 'daily' || state.gameMode === 'weekly') && (() => {
         const h = state.seasonHistory;
         const avgQuality = h.length > 0 ? Math.round(h.reduce((s, f) => s + f.quality, 0) / h.length) : 0;
         const dayNum = state.gameMode === 'daily' ? getDailyNumber() : getWeeklyNumber();
@@ -1546,7 +1546,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       })()}
 
       {/* ─── DAILY RECAP ─── */}
-      {phase >= 6 && state.gameMode === 'daily' && (() => {
+      {phase >= 6 && endTab === 'details' && state.gameMode === 'daily' && (() => {
         const dailyStats = getDailyStats();
         if (dailyStats.totalDailyRuns <= 1) return null; // Need history to compare
         const isNewBest = score > dailyStats.bestScore;
@@ -1598,7 +1598,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       })()}
 
       {/* ─── PERSONAL BESTS ─── */}
-      {phase >= 6 && (() => {
+      {phase >= 6 && endTab === 'details' && (() => {
         const pb = getPersonalBests();
         const modeKey = state.challengeId || state.gameMode;
         const modeBests = pb.modes[modeKey];
@@ -1628,7 +1628,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       })()}
 
       {/* ─── WHAT HAPPENED? (Loss breakdown for new players) ─── */}
-      {phase >= 4 && !isVictory && history.length > 0 && (() => {
+      {phase >= 4 && (endTab === 'overview' || endTab === 'details') && !isVictory && history.length > 0 && (() => {
         const reasons: { icon: string; text: string }[] = [];
         const flops = history.filter(s => s.tier === 'FLOP');
         const disasters = history.filter(s => s.quality <= 0);
@@ -1677,7 +1677,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       })()}
 
       {/* ─── WORLD EVENTS HISTORY ─── */}
-      {phase >= 6 && (state.worldEventHistory.length > 0 || state.activeWorldEvents.length > 0) && (
+      {phase >= 6 && endTab === 'details' && (state.worldEventHistory.length > 0 || state.activeWorldEvents.length > 0) && (
         <div className="animate-slide-down" style={{ marginTop: 20 }}>
           <h3 style={{ color: '#a855f7', marginBottom: 10, letterSpacing: 1 }}>📰 WORLD EVENTS</h3>
           <div style={{
@@ -1701,7 +1701,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── CAREER NARRATIVE ─── */}
-      {phase >= 6 && (
+      {phase >= 6 && endTab === 'details' && (
         <div className="animate-slide-down" style={{
           background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 12, padding: '16px 20px', margin: '20px auto', maxWidth: 520,
@@ -1750,7 +1750,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       {showShareCard && <ShareCard data={shareData} onClose={() => setShowShareCard(false)} />}
 
       {/* ─── TRADING CARDS ─── */}
-      {phase >= 7 && newCardIds.length > 0 && (
+      {phase >= 7 && endTab === 'progression' && newCardIds.length > 0 && (
         <div className="animate-slide-down" style={{ marginTop: 24 }}>
           <h3 style={{ color: 'var(--gold)', marginBottom: 12, letterSpacing: 1 }}>🃏 NEW TRADING CARDS</h3>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -1783,7 +1783,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       )}
 
       {/* ─── LIFETIME STATS SUMMARY ─── */}
-      {phase >= 7 && <EndScreenStatsSummary />}
+      {phase >= 7 && endTab === 'progression' && <EndScreenStatsSummary />}
 
       {/* ─── PLAY AGAIN ─── */}
       {phase >= 7 && (

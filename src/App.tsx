@@ -37,6 +37,7 @@ import { getAudioEngine } from './audioEngine';
 import { announcePhase, setupGlobalKeyboardListeners } from './accessibility';
 import { showTenseVignette, hideTenseVignette } from './visualEffects';
 import KeyboardHelp from './components/KeyboardHelp';
+import PwaInstallPrompt from './components/PwaInstallPrompt';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -395,6 +396,7 @@ function App() {
           onResolve={resolveNarrativeEvent}
         />
       )}
+      <PwaInstallPrompt />
       <BottomNav state={state} />
       <DevStats />
       {showKeyboardHelp && <KeyboardHelp onClose={() => setShowKeyboardHelp(false)} />}

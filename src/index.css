@@ -39,6 +39,15 @@
   --talent-support: #e67e22;
   --talent-director: #9b59b6;
   --talent-crew: #3498db;
+
+  /* Genre colors */
+  --genre-action: #e74c3c;
+  --genre-comedy: #f1c40f;
+  --genre-horror: #8e44ad;
+  --genre-scifi: #2980b9;
+  --genre-drama: #d4a017;
+  --genre-thriller: #5d6d7e;
+  --genre-romance: #e91e63;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2379,3 +2388,157 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ===== R78: VISUAL IDENTITY — Genre, Talent, Keywords ===== */
+
+/* Genre-specific script card backgrounds */
+.card.genre-action { background: linear-gradient(145deg, #2a1215 0%, #1e1012 50%, #16161a 100%); border-left: 3px solid var(--genre-action); }
+.card.genre-action::before { background: linear-gradient(90deg, transparent, var(--genre-action), transparent); }
+.card.genre-comedy { background: linear-gradient(145deg, #2a2615 0%, #1e1c12 50%, #16161a 100%); border-left: 3px solid var(--genre-comedy); }
+.card.genre-comedy::before { background: linear-gradient(90deg, transparent, var(--genre-comedy), transparent); }
+.card.genre-horror { background: linear-gradient(145deg, #20132a 0%, #1a101e 50%, #16161a 100%); border-left: 3px solid var(--genre-horror); }
+.card.genre-horror::before { background: linear-gradient(90deg, transparent, var(--genre-horror), transparent); }
+.card.genre-scifi { background: linear-gradient(145deg, #121a2a 0%, #10151e 50%, #16161a 100%); border-left: 3px solid var(--genre-scifi); }
+.card.genre-scifi::before { background: linear-gradient(90deg, transparent, var(--genre-scifi), transparent); }
+.card.genre-drama { background: linear-gradient(145deg, #2a2412 0%, #1e1b10 50%, #16161a 100%); border-left: 3px solid var(--genre-drama); }
+.card.genre-drama::before { background: linear-gradient(90deg, transparent, var(--genre-drama), transparent); }
+.card.genre-thriller { background: linear-gradient(145deg, #1a1d22 0%, #15171c 50%, #16161a 100%); border-left: 3px solid var(--genre-thriller); }
+.card.genre-thriller::before { background: linear-gradient(90deg, transparent, var(--genre-thriller), transparent); }
+.card.genre-romance { background: linear-gradient(145deg, #2a1220 0%, #1e1018 50%, #16161a 100%); border-left: 3px solid var(--genre-romance); }
+.card.genre-romance::before { background: linear-gradient(90deg, transparent, var(--genre-romance), transparent); }
+
+/* Talent role visual distinction */
+.talent-card.talent-role-lead {
+  border: 2px solid rgba(231, 76, 60, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.15), 0 2px 8px rgba(0,0,0,0.4);
+}
+.talent-card.talent-role-lead::before {
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  opacity: 0.8;
+}
+.talent-card.talent-role-lead::after {
+  content: '★';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 1rem;
+  color: rgba(255, 215, 0, 0.6);
+  pointer-events: none;
+}
+
+.talent-card.talent-role-director {
+  border-left: 3px solid var(--talent-director);
+}
+.talent-card.talent-role-director::before {
+  background: linear-gradient(90deg, transparent, var(--talent-director), transparent);
+}
+.talent-card.talent-role-director::after {
+  content: '📣';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.85rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.talent-card.talent-role-support {
+  background: linear-gradient(145deg, #1e1e24 0%, #1a1a20 50%, #16161a 100%);
+  border-left: 3px solid var(--talent-support);
+}
+.talent-card.talent-role-support::before {
+  background: linear-gradient(90deg, transparent, var(--talent-support), transparent);
+  opacity: 0.4;
+}
+
+.talent-card.talent-role-crew {
+  border-left: 3px solid var(--talent-crew);
+}
+.talent-card.talent-role-crew::before {
+  background: linear-gradient(90deg, transparent, var(--talent-crew), transparent);
+  opacity: 0.4;
+}
+.talent-card.talent-role-crew::after {
+  content: '⚙';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.9rem;
+  color: rgba(52, 152, 219, 0.4);
+  pointer-events: none;
+}
+
+/* Enhanced keyword tag badges */
+.tag-badge {
+  border: 1px solid transparent;
+}
+.tag-badge.momentum {
+  border-color: rgba(230, 126, 34, 0.3);
+  background: linear-gradient(135deg, rgba(230, 126, 34, 0.18), rgba(230, 126, 34, 0.06));
+}
+.tag-badge.precision {
+  border-color: rgba(52, 152, 219, 0.3);
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.18), rgba(52, 152, 219, 0.06));
+}
+.tag-badge.chaos {
+  border-color: rgba(155, 89, 182, 0.3);
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.18), rgba(155, 89, 182, 0.06));
+}
+.tag-badge.heart {
+  border-color: rgba(233, 30, 99, 0.3);
+  background: linear-gradient(135deg, rgba(233, 30, 99, 0.18), rgba(233, 30, 99, 0.06));
+}
+.tag-badge.spectacle {
+  border-color: rgba(241, 196, 15, 0.3);
+  background: linear-gradient(135deg, rgba(241, 196, 15, 0.18), rgba(241, 196, 15, 0.06));
+}
+
+/* Chemistry connecting glow — enhanced */
+.chemistry-sparkle-pair {
+  box-shadow: 0 0 16px rgba(233, 30, 99, 0.25), inset 0 0 8px rgba(233, 30, 99, 0.08) !important;
+  border-color: rgba(233, 30, 99, 0.4) !important;
+  position: relative;
+}
+.chemistry-sparkle-pair + .chemistry-sparkle-pair {
+  margin-top: -1px;
+}
+.chemistry-sparkle-pair::before {
+  content: '💕';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  animation: sparkleFloat 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Card slam polish — stronger impact feel */
+@keyframes cardSlam {
+  0% { transform: scale(0.85) translateY(-20px); opacity: 0.7; }
+  30% { transform: scale(1.18) rotate(-2deg); box-shadow: 0 0 50px rgba(212,168,67,0.8); opacity: 1; }
+  50% { transform: scale(1.08) rotate(1deg); }
+  70% { transform: scale(1.02) rotate(-0.5deg); }
+  100% { transform: scale(1) rotate(0); box-shadow: 0 0 20px rgba(212,168,67,0.4); border-color: var(--gold-bright); }
+}
+
+/* Genre badge in card subtitle */
+.genre-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.genre-label.action { color: var(--genre-action); background: rgba(231,76,60,0.12); }
+.genre-label.comedy { color: var(--genre-comedy); background: rgba(241,196,15,0.12); }
+.genre-label.horror { color: var(--genre-horror); background: rgba(142,68,173,0.12); }
+.genre-label.scifi { color: var(--genre-scifi); background: rgba(41,128,185,0.12); }
+.genre-label.drama { color: var(--genre-drama); background: rgba(212,160,23,0.12); }
+.genre-label.thriller { color: var(--genre-thriller); background: rgba(93,109,126,0.12); }
+.genre-label.romance { color: var(--genre-romance); background: rgba(233,30,99,0.12); }

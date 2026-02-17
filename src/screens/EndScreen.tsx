@@ -132,7 +132,7 @@ function generateSeasonRecapEmoji(s: SeasonResult): string {
   return '💀';
 }
 
-function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean, legacyRating: string, ending: EndingDef, challenge?: ReturnType<typeof getChallengeById>, prestigeTitle?: string): string {
+function generateShareText(state: GameState, score: number, rank: string, isVictory: boolean, legacyRating: string, ending: EndingDef, challenge?: ReturnType<typeof getChallengeById>, prestigeTitle?: string, studioLegacy?: StudioLegacy | null): string {
   const h = state.seasonHistory;
 
   // Tier grid (Wordle-style colored squares)
@@ -161,6 +161,11 @@ function generateShareText(state: GameState, score: number, rank: string, isVict
   // Add ending title if earned (victory only)
   if (isVictory && ending.title !== 'STUDIO BANKRUPTCY') {
     lines.push(`${ending.emoji} ${ending.title}`);
+  }
+
+  // Studio legacy title
+  if (studioLegacy) {
+    lines.push(`${studioLegacy.emoji} ${studioLegacy.title}`);
   }
 
   // Challenge mode
@@ -292,7 +297,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const currentPrestige = getPrestige();
   const currentPrestigeLevel = getPrestigeLevel(currentPrestige.xp);
   const shareText = useMemo(() => {
-    return generateShareText(state, score, rank, isVictory, legacy.rating, ending, challenge, currentPrestigeLevel.title);
+    return generateShareText(state, score, rank, isVictory, legacy.rating, ending, challenge, currentPrestigeLevel.title, studioLegacy);
   }, []);
 
   useEffect(() => {

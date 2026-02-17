@@ -1,11 +1,11 @@
 import { CardTemplate } from '../types';
 
-const TAG_CONFIG: Record<string, { emoji: string; color: string }> = {
-  momentum: { emoji: '🔥', color: 'var(--tag-momentum, #e67e22)' },
-  precision: { emoji: '🎯', color: 'var(--tag-precision, #3498db)' },
-  chaos: { emoji: '💀', color: 'var(--tag-chaos, #9b59b6)' },
-  heart: { emoji: '💕', color: 'var(--tag-heart, #e91e63)' },
-  spectacle: { emoji: '✨', color: 'var(--tag-spectacle, #f1c40f)' },
+const TAG_CONFIG: Record<string, { emoji: string; color: string; icon: string }> = {
+  momentum: { emoji: '🔥', color: 'var(--tag-momentum, #e67e22)', icon: '⚡' },
+  precision: { emoji: '🎯', color: 'var(--tag-precision, #3498db)', icon: '◎' },
+  chaos: { emoji: '💀', color: 'var(--tag-chaos, #9b59b6)', icon: '☠' },
+  heart: { emoji: '💕', color: 'var(--tag-heart, #e91e63)', icon: '♥' },
+  spectacle: { emoji: '✨', color: 'var(--tag-spectacle, #f1c40f)', icon: '✦' },
 };
 
 export function CardTypeBadge({ type }: { type: string }) {
@@ -30,8 +30,8 @@ export function CardPreview({ card }: { card: CardTemplate }) {
         <span style={{ fontWeight: 600, color: '#ccc' }}>{card.name}</span>
         <span style={{ color: card.baseQuality >= 0 ? '#2ecc71' : '#e74c3c', fontWeight: 600 }}>{card.baseQuality >= 0 ? '+' : ''}{card.baseQuality}</span>
         {card.tags && [...new Set(card.tags)].map((tag, i) => {
-          const tc = TAG_CONFIG[tag] || { emoji: '•', color: '#888' };
-          return <span key={i} style={{ fontSize: '0.55rem', color: tc.color }}>{tc.emoji}</span>;
+          const tc = TAG_CONFIG[tag] || { emoji: '•', color: '#888', icon: '•' };
+          return <span key={i} className={`tag-badge ${tag}`}>{tc.emoji} {tag}</span>;
         })}
       </div>
       {card.synergyText && (

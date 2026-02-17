@@ -83,10 +83,11 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           // Check if any market condition matches this genre
           const hasMarketMatch = state.marketConditions.some(m => m.genreBonus === script.genre);
           
+          const genreClass = 'genre-' + script.genre.toLowerCase().replace('-', '');
           return (
             <div
               key={script.id}
-              className={`card tap-target card-stagger ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''}`}
+              className={`card tap-target card-stagger ${genreClass} ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''}`}
               onClick={() => handlePick(script)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(script); } }}
               tabIndex={picked ? -1 : 0}
@@ -96,11 +97,11 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
                 animationDelay: `${i * 0.1}s`,
               }}
             >
-              <div className="card-subtitle">
-                {script.genre}
-                {state.hotGenres.includes(script.genre as any) && <span style={{ marginLeft: 6, color: '#2ecc71' }}>🔥 HOT</span>}
-                {state.coldGenres.includes(script.genre as any) && <span style={{ marginLeft: 6, color: '#e74c3c' }}>❄️ COLD</span>}
-                {hasMarketMatch && <span style={{ marginLeft: 6, color: 'var(--green-bright)' }}>📈 Market match!</span>}
+              <div className="card-subtitle" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span className={`genre-label ${script.genre.toLowerCase().replace('-', '')}`}>{script.genre}</span>
+                {state.hotGenres.includes(script.genre as any) && <span style={{ color: '#2ecc71', fontSize: '0.65rem' }}>🔥 HOT</span>}
+                {state.coldGenres.includes(script.genre as any) && <span style={{ color: '#e74c3c', fontSize: '0.65rem' }}>❄️ COLD</span>}
+                {hasMarketMatch && <span style={{ color: 'var(--green-bright)', fontSize: '0.65rem' }}>📈 Match</span>}
               </div>
               <div className="card-title">{script.title}</div>
               <div style={{ marginBottom: 8 }}>

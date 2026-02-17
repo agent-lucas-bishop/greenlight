@@ -31,17 +31,13 @@ export function getStudioLegacy(state: GameState): StudioLegacy | null {
   h.forEach(s => { genreCounts[s.genre] = (genreCounts[s.genre] || 0) + 1; });
   const maxGenreCount = Math.max(...Object.values(genreCounts));
 
-  // Max strikes at any point: count consecutive flops
-  let maxStrikes = 0;
-  let currentStrikes = 0;
+  // Max consecutive flops at any point
+  let maxConsecutiveFlops = 0;
+  let currentConsecutive = 0;
   for (const s of h) {
-    if (s.tier === 'FLOP') { currentStrikes++; maxStrikes = Math.max(maxStrikes, currentStrikes); }
-    else currentStrikes = 0;
+    if (s.tier === 'FLOP') { currentConsecutive++; maxConsecutiveFlops = Math.max(maxConsecutiveFlops, currentConsecutive); }
+    else currentConsecutive = 0;
   }
-  // Also use the actual strikes value which accumulates (doesn't reset)
-  maxStrikes = Math.max(maxStrikes, state.strikes + flops - h.filter(s => s.tier === 'FLOP').length + flops);
-  // Simpler: just count total flops as proxy for "had 2+ strikes at any point"
-  // The game tracks state.strikes which only goes up. If they won with strikes, they had them.
 
   // Ordered by priority (first match wins)
   const legacies: (StudioLegacy & { check: () => boolean })[] = [
@@ -51,7 +47,7 @@ export function getStudioLegacy(state: GameState): StudioLegacy | null {
       emoji: '🔄',
       narrative: `They wrote you off after strike two. The trades ran obituaries. But ${state.studioName || 'your studio'} clawed back from the brink, turning certain doom into an improbable triumph. Hollywood loves a redemption arc — and yours is one for the ages.`,
       priority: 90,
-      check: () => flops >= 2,
+      check: () => flops >= 2 && maxConsecutiveFlops >= 2,
     },
     {
       id: 'blockbuster_factory',

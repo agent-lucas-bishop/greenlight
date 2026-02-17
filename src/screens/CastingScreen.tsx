@@ -32,7 +32,7 @@ function TalentCard({ t, onClick, compact, dimmed, highlight }: { t: Talent; onC
 
   return (
     <div
-      className={`card talent-card ${highlight ? 'selected' : ''}`}
+      className={`card talent-card talent-role-${t.type.toLowerCase()} ${highlight ? 'selected' : ''}`}
       onClick={onClick}
       onKeyDown={e => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
       tabIndex={onClick && !dimmed ? 0 : -1}

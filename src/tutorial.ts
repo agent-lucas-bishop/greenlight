@@ -60,6 +60,14 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     dismissLabel: 'See results →',
   },
   {
+    id: 'event-intro',
+    phase: 'event',
+    title: '📰 Season Events (NEW!)',
+    text: 'Between seasons, industry news shakes things up! Pick one event to shape your next season — or skip if none look good. Events add strategic variety to every run.',
+    position: 'top',
+    dismissLabel: 'Interesting! →',
+  },
+  {
     id: 'shop-intro',
     phase: 'shop',
     title: '🏠 Between Seasons',

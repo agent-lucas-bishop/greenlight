@@ -3,6 +3,7 @@ import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getChallengeById } from '../challenges';
 import { isMuted, toggleMute, sfx, getVolume, setVolume } from '../sound';
+import StatTooltip from './StatTooltip';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
@@ -64,7 +65,9 @@ export default function Header({ state }: { state: GameState }) {
           <span className="value">{state.season}/{state.maxSeasons}</span>
         </div>
         <div className="header-stat">
-          <span className="label">Budget</span>
+          <StatTooltip tip="Your money to hire talent and buy perks. Overspending creates debt." inline>
+            <span className="label">Budget</span>
+          </StatTooltip>
           <span className="value">${state.budget.toFixed(1)}M</span>
         </div>
         {state.debt > 0 && (
@@ -74,7 +77,9 @@ export default function Header({ state }: { state: GameState }) {
           </div>
         )}
         <div className="header-stat">
-          <span className="label">Reputation</span>
+          <StatTooltip tip="Star rating (1-5). Multiplies box office earnings. Drops when you miss targets. 0 = game over!" inline>
+            <span className="label">Reputation</span>
+          </StatTooltip>
           <span className="value">
             {Array.from({ length: 5 }, (_, i) => (
               <span key={i} className={`rep-star ${i < state.reputation ? 'filled' : 'empty'}`}>★</span>
@@ -82,11 +87,15 @@ export default function Header({ state }: { state: GameState }) {
           </span>
         </div>
         <div className="header-stat">
-          <span className="label">Target</span>
+          <StatTooltip tip="The box office amount your film must earn this season. Increases each season." inline>
+            <span className="label">Target</span>
+          </StatTooltip>
           <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId)}M</span>
         </div>
         <div className="header-stat">
-          <span className="label">Strikes</span>
+          <StatTooltip tip="Miss a box office target = 1 strike. 3 strikes and you're fired!" inline>
+            <span className="label">Strikes</span>
+          </StatTooltip>
           <span className="value" style={{ color: state.strikes > 0 ? '#e74c3c' : undefined }}>
             {state.strikes}/{state.maxStrikes}
           </span>

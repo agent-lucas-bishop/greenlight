@@ -5,11 +5,12 @@ import { hasSave, loadGameState, clearSave } from '../saveGame';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
 import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
-import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown } from '../onboarding';
+import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest } from '../leaderboard';
 import { CHALLENGE_MODES } from '../challenges';
 import { getDailyDateString } from '../seededRng';
 import { STUDIO_ARCHETYPES as ARCHETYPE_DATA } from '../data';
+import { KeywordGlossary } from '../components/KeywordTooltip';
 
 function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?: boolean }) {
   return (
@@ -102,13 +103,24 @@ function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?
           </div>
 
           <div className="htp-section">
+            <h3>🏷️ Card Keywords</h3>
+            <p style={{ marginBottom: 8 }}>Cards have keyword tags. Focus on one type (50%+ of your played cards) for escalating quality bonuses. <em>Hover/tap for details:</em></p>
+            <KeywordGlossary />
+          </div>
+
+          <div className="htp-section">
             <h3>🔑 Key Mechanics</h3>
             <ul>
               <li><strong>💕 Chemistry</strong> — Certain talent pairs give bonus quality when cast together</li>
               <li><strong>🎬 Director's Cut</strong> — Once per production, peek at top 3 cards and rearrange them</li>
-              <li><strong>🔥🎯💀💕✨ Tags</strong> — Cards have keyword tags. Focus on one type (50%+) for big bonuses</li>
-              <li><strong>🎵 Encore</strong> — After wrapping, risk one more draw for bonus quality</li>
+              <li><strong>🎵 Encore</strong> — After wrapping, risk one more card draw. Success = bonus quality. Failure = lose some. High risk, high reward!</li>
+              <li><strong>🏛️ Studio Archetype</strong> — Choose at the start of each run. Shapes your strategy with unique bonuses (e.g. Prestige studios get critic bonuses, Blockbuster studios earn more $$$)</li>
             </ul>
+          </div>
+
+          <div className="htp-section">
+            <h3>📰 Season Events</h3>
+            <p>Between seasons, industry news breaks! You'll choose from random events that can boost your budget, change multipliers, or shake up your strategy. No two runs play the same.</p>
           </div>
           
           <div className="htp-section">
@@ -139,6 +151,7 @@ function HowToPlay({ onClose, isFirstTime }: { onClose: () => void; isFirstTime?
 
 export default function StartScreen() {
   const firstRun = isFirstRun();
+  const simplified = isSimplifiedRun(); // true until first run complete
   const [showHelp, setShowHelp] = useState(false);
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
@@ -225,7 +238,7 @@ export default function StartScreen() {
       {/* Tab navigation */}
       {stats.runs > 0 && (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>
-          {(['play', 'career', 'history', 'challenges', 'leaderboard'] as const).map(t => (
+          {(['play', 'career', 'history', ...(!simplified ? ['challenges', 'leaderboard'] as const : [])] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               background: tab === t ? 'rgba(212,168,67,0.15)' : 'transparent',
               border: `1px solid ${tab === t ? 'var(--gold-dim)' : '#333'}`,
@@ -283,7 +296,7 @@ export default function StartScreen() {
               <span>Runs: {stats.runs}</span><span>Wins: {stats.wins}</span><span>Win Rate: {stats.winRate}</span><span>Best Score: {stats.bestScore}</span>
             </div>
           )}
-          {stats.legacyPerks.length > 0 && (
+          {stats.legacyPerks.length > 0 && !simplified && (
             <div style={{ marginTop: 16, maxWidth: 500, margin: '16px auto 0' }}>
               <div style={{ color: '#555', fontSize: '0.7rem', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Legacy Perks</div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>

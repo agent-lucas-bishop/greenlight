@@ -82,7 +82,7 @@ export default function TutorialOverlay({ phase }: { phase: GamePhase }) {
         </div>
         {/* Step indicator */}
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 12 }}>
-          {['neow', 'greenlight', 'casting', 'production', 'release', 'shop'].map((p) => (
+          {['neow', 'greenlight', 'casting', 'production', 'release', 'event', 'shop'].map((p) => (
             <div key={p} style={{
               width: 6, height: 6, borderRadius: '50%',
               background: p === phase ? 'var(--gold)' : 'rgba(212,168,67,0.2)',

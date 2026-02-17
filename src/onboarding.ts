@@ -143,6 +143,12 @@ export const PHASE_TIPS: Record<string, { icon: string; title: string; text: str
     text: 'Your quality × market conditions × reputation determines earnings. Hit the target to avoid a strike. 3 strikes = game over!',
     nudge: 'Tip: Reputation stars multiply everything — protecting your rep is as important as raw quality.',
   },
+  event: {
+    icon: '📰',
+    title: 'Season Events',
+    text: 'Industry news shakes things up between seasons! Pick one event to shape your next movie, or skip if none look good. Events add strategic variety — no two runs play the same.',
+    nudge: 'Tip: Budget Windfall and Creative Retreat are safe picks early on. Streaming Deal is a trap if you need multipliers.',
+  },
   shop: {
     icon: '🏠',
     title: 'Between Seasons',

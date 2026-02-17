@@ -498,9 +498,13 @@ export function pickScript(script: Script) {
   if (state.activeSeasonEvent?.effect === 'talentShowcase') {
     market = market.map(t => ({ ...t, cost: Math.max(1, t.cost - 3) }));
   }
-  // Season event: Union Dispute — crew costs +$2
+  // Season event: Union Dispute — crew costs +$2, but crew cards get +1 base quality
   if (state.activeSeasonEvent?.effect === 'unionDispute') {
-    market = market.map(t => t.type === 'Crew' ? { ...t, cost: t.cost + 2 } : t);
+    market = market.map(t => t.type === 'Crew' ? {
+      ...t,
+      cost: t.cost + 2,
+      cards: t.cards.map(c => c.cardType === 'action' ? { ...c, baseQuality: c.baseQuality + 1 } : c),
+    } : t);
   }
   // Allow overspending — excess goes to debt (disabled on first-ever run)
   let newBudget = state.budget - script.cost;
@@ -1207,7 +1211,7 @@ export function resolveRelease() {
   // Season event effects on release
   const se = state.activeSeasonEvent;
   if (se) {
-    if (se.effect === 'streamingDeal' || state.streamingDealActive) multiplier -= 0.3;
+    if (se.effect === 'streamingDeal' || state.streamingDealActive) multiplier -= 0.4;
     if (se.effect === 'genreRevival') {
       // Boost most-made genre
       const entries = Object.entries(state.genreMastery);
@@ -1277,7 +1281,12 @@ export function resolveRelease() {
   }
 
   const newRep = Math.max(0, Math.min(5, currentRep + repChange));
-  const nominated = rawQuality > 25 + state.season * 5;
+  // Cosmic Harvest prestige ability: quality above 35 counts double for nomination threshold
+  let nominationQuality = rawQuality;
+  if (script.ability === 'prestige' && rawQuality > 35) {
+    nominationQuality = 35 + (rawQuality - 35) * 2;
+  }
+  const nominated = nominationQuality > 25 + state.season * 5;
 
   const result = {
     season: state.season,

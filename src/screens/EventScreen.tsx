@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GameState } from '../types';
 import { pickSeasonEvent, skipSeasonEvent } from '../gameStore';
 import { sfx } from '../sound';
+import PhaseTip from '../components/PhaseTip';
 
 export default function EventScreen({ state }: { state: GameState }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -22,6 +23,7 @@ export default function EventScreen({ state }: { state: GameState }) {
 
   return (
     <div className="screen" style={{ textAlign: 'center' }}>
+      <PhaseTip phase="event" />
       <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.8rem)', marginBottom: 4 }}>
         📰 Between Seasons
       </h2>

@@ -1,23 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f0c850"/>
-      <stop offset="100%" stop-color="#d4a843"/>
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
     </linearGradient>
   </defs>
   <!-- Board body -->
-  <rect x="4" y="24" width="56" height="36" rx="3" fill="url(#g)"/>
+  <rect x="4" y="24" width="56" height="36" rx="3" fill="#1a1a2e"/>
   <!-- Clapper top bar -->
-  <rect x="4" y="14" width="56" height="14" rx="3" fill="#1a1a2e"/>
+  <rect x="4" y="14" width="56" height="14" rx="3" fill="url(#g)"/>
   <!-- Clapper stripes -->
-  <polygon points="10,14 18,14 10,28" fill="#f0c850"/>
-  <polygon points="22,14 30,14 22,28" fill="#f0c850"/>
-  <polygon points="34,14 42,14 34,28" fill="#f0c850"/>
-  <polygon points="46,14 54,14 46,28" fill="#f0c850"/>
+  <polygon points="10,14 18,14 10,28" fill="#1a1a2e"/>
+  <polygon points="22,14 30,14 22,28" fill="#1a1a2e"/>
+  <polygon points="34,14 42,14 34,28" fill="#1a1a2e"/>
+  <polygon points="46,14 54,14 46,28" fill="#1a1a2e"/>
   <!-- Hinge circle -->
-  <circle cx="8" cy="17" r="2" fill="#d4a843"/>
+  <circle cx="8" cy="17" r="2" fill="#15803d"/>
   <!-- Text lines on board -->
-  <rect x="10" y="32" width="30" height="3" rx="1" fill="#1a1a2e" opacity="0.6"/>
-  <rect x="10" y="39" width="44" height="3" rx="1" fill="#1a1a2e" opacity="0.4"/>
-  <rect x="10" y="46" width="36" height="3" rx="1" fill="#1a1a2e" opacity="0.3"/>
+  <rect x="10" y="32" width="30" height="3" rx="1" fill="#22c55e" opacity="0.6"/>
+  <rect x="10" y="39" width="44" height="3" rx="1" fill="#22c55e" opacity="0.4"/>
+  <rect x="10" y="46" width="36" height="3" rx="1" fill="#22c55e" opacity="0.3"/>
 </svg>

@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
+    chunkSizeWarningLimit: 200, // R288: warn at 200KB
+    cssCodeSplit: true,         // R288: CSS code splitting (default but explicit)
     rollupOptions: {
       output: {
         manualChunks: {

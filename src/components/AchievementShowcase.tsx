@@ -167,7 +167,7 @@ export default function AchievementShowcase({ onClose, inline }: AchievementShow
         <TabButton
           active={filter === 'all'}
           label={`ALL (${unlockedCount}/${totalCount})`}
-          onClick={() => { setFilter('all'); sfx.uiClick(); }}
+          onClick={() => { setFilter('all'); sfx.click(); }}
         />
         {SHOWCASE_CATEGORIES.map(cat => {
           const items = categorized[cat.id];
@@ -177,7 +177,7 @@ export default function AchievementShowcase({ onClose, inline }: AchievementShow
               key={cat.id}
               active={filter === cat.id}
               label={`${cat.emoji} ${cat.label.toUpperCase()} (${catUnlocked}/${items.length})`}
-              onClick={() => { setFilter(cat.id); sfx.uiClick(); }}
+              onClick={() => { setFilter(cat.id); sfx.click(); }}
             />
           );
         })}

@@ -5,7 +5,7 @@ import NarrativeEventCard from './components/NarrativeEvent';
 import { GameState } from './types';
 import StartScreen from './screens/StartScreen';
 import Header from './components/Header';
-import TutorialOverlay from './components/TutorialOverlay';
+const TutorialOverlay = lazy(() => import('./components/TutorialOverlay'));
 import ContextualTooltip from './components/ContextualTooltip';
 import { getTipIfNew, markTipShown, type ContextualTip } from './contextualTips';
 import StudioFoundingNarrative from './components/StudioFoundingNarrative';
@@ -350,7 +350,9 @@ function App() {
         />
       )}
       {state.phase !== 'start' && isTutorialActive() && (
-        <TutorialOverlay phase={state.phase} />
+        <Suspense fallback={null}>
+          <TutorialOverlay phase={state.phase} />
+        </Suspense>
       )}
       {activeTip && !isTutorialActive() && (
         <ContextualTooltip tip={activeTip} onDismiss={() => setActiveTip(null)} />

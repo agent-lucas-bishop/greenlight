@@ -97,6 +97,7 @@ import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, getWeeklySeed, getWeeklyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
 import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand, generateRivalActions, selectActiveRivals, initRivalStats, updateRivalStats } from './rivals';
+import { AI_DIRECTORS, produceDirectorFilms, detectShowdowns, calculateStandings } from './aiDirectors';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { addFilmToArchive, getCurrentRunNumber } from './filmArchive';
 import { isSimplifiedRun } from './onboarding';
@@ -223,6 +224,9 @@ function createInitialState(): GameState {
     lastMerchIncome: 0,
     lastInvestmentIncome: 0,
     showFinancePanel: false,
+    aiDirectorFilms: [],
+    aiDirectorPrevRanks: {},
+    aiDirectorShowdowns: [],
   };
 }
 
@@ -965,6 +969,9 @@ function beginSeason() {
     lastMerchIncome: merchIncome,
     lastInvestmentIncome: investIncome,
     showFinancePanel: false,
+    aiDirectorFilms: state.aiDirectorFilms || [],
+    aiDirectorPrevRanks: state.aiDirectorPrevRanks || {},
+    aiDirectorShowdowns: [],
   });
 }
 
@@ -2644,6 +2651,15 @@ export function resolveRelease() {
   }
   const rivalSeasonData = { season: state.season, films: rivalFilms };
 
+  // R225: AI Director productions
+  const aiDirectorSeasonFilms = produceDirectorFilms(AI_DIRECTORS, state.season, target, state.hotGenres, state.coldGenres);
+  const updatedAiDirectorFilms = [...(state.aiDirectorFilms || []), aiDirectorSeasonFilms];
+  const aiShowdowns = detectShowdowns(script.genre, boxOffice, generateFilmTitle(script.genre, prod.tagsPlayed), aiDirectorSeasonFilms);
+  // Update prev ranks from standings
+  const aiStandings = calculateStandings(updatedAiDirectorFilms, [...state.seasonHistory.map(h => h.boxOffice), boxOffice], state.aiDirectorPrevRanks || {});
+  const newAiPrevRanks: Record<string, number> = {};
+  for (const s of aiStandings) newAiPrevRanks[s.directorId] = s.currentRank;
+
   // R180: Update persistent rival stats and check nemesis
   const { stats: updatedRivalStats, newNemesis } = updateRivalStats(
     state.rivalStats || {},
@@ -2746,6 +2762,9 @@ export function resolveRelease() {
     cumulativeRivalEarnings: newCumulativeRivalEarnings,
     rivalStats: updatedRivalStats,
     nemesisStudio,
+    aiDirectorFilms: updatedAiDirectorFilms,
+    aiDirectorPrevRanks: newAiPrevRanks,
+    aiDirectorShowdowns: aiShowdowns,
     roster: newRoster,
     genreMastery: {
       ...state.genreMastery,

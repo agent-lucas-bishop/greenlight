@@ -4,6 +4,7 @@ import { startGame, pickArchetype, resumeGame } from '../gameStore';
 import { hasSave, loadGameState, clearSave } from '../saveGame';
 import { STUDIO_ARCHETYPES } from '../data';
 import type { StudioArchetypeId, GameMode } from '../types';
+import { RivalPreview } from '../components/RivalDashboard';
 import { getRunStats, getMilestoneProgress, LEGACY_PERKS } from '../unlocks';
 import { isFirstRun, markRunStarted, shouldShowUnlockToast, markUnlockToastShown, isSimplifiedRun } from '../onboarding';
 import { getLeaderboard, hasDailyRun, getDailyBest, hasPlayerName, getPlayerName, setPlayerName } from '../leaderboard';
@@ -591,6 +592,7 @@ export default function StartScreen() {
           )}
         </div>
         <p style={{ color: '#888', marginBottom: 24, fontSize: '0.9rem' }}>Your studio identity shapes your strategy for the entire run.</p>
+        <div style={{ marginBottom: 24 }}><RivalPreview /></div>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 800, margin: '0 auto' }}>
           {STUDIO_ARCHETYPES.map(a => {
             const isRecommended = a.id === 'blockbuster';

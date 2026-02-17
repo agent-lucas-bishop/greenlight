@@ -10,6 +10,8 @@ import { trackRunEnd } from '../analytics';
 import { careerTrackRunEnd } from '../careerAnalytics';
 import { recordRunStats } from '../statistics';
 import { EndScreenStatsSummary } from '../components/StatsDashboard';
+import { calculateStandings, getSeasonLeaderboard } from '../aiDirectors';
+import { RivalDashboard } from '../components/RivalDashboard';
 import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, hasMilestone, type RunXPData } from '../prestige';
 import { awardMetaXP, getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, canPrestige, performPrestige, getPrestigeBadgeEmoji, type MetaRunXPInput, type MetaXPResult } from '../metaProgression';
 import { recordGenreMasteryFilms } from '../genreMastery';
@@ -1240,6 +1242,18 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         </div>
       )}
+
+      {/* ─── AI DIRECTOR FINAL STANDINGS (R225) ─── */}
+      {phase >= 4 && (state.aiDirectorFilms || []).length > 0 && endTab === 'overview' && (() => {
+        const standings = calculateStandings(state.aiDirectorFilms, state.seasonHistory.map(h => h.boxOffice), state.aiDirectorPrevRanks || {});
+        const lb = getSeasonLeaderboard(standings, state.studioName || 'Your Studio', state.totalEarnings, state.seasonHistory.length, 0);
+        return (
+          <div style={{ marginTop: 24 }} className="animate-slide-down">
+            <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🎬 DIRECTOR BATTLE — FINAL STANDINGS</h3>
+            <RivalDashboard standings={standings} leaderboard={lb} showdowns={[]} currentSeason={state.season} />
+          </div>
+        );
+      })()}
 
       {/* ─── FRANCHISES ─── */}
       {phase >= 4 && state.franchises && Object.keys(state.franchises).length > 0 && endTab === 'overview' && (

@@ -381,6 +381,10 @@ export interface GameState {
   lastMerchIncome: number;
   lastInvestmentIncome: number;
   showFinancePanel: boolean;
+  // R225: AI Director Battles
+  aiDirectorFilms: import('./aiDirectors').DirectorFilm[][]; // films per season
+  aiDirectorPrevRanks: Record<string, number>; // director id -> last season rank
+  aiDirectorShowdowns: import('./aiDirectors').BoxOfficeShowdown[]; // showdowns from latest season
 }
 
 // ─── RIVAL ACTIONS (R150) ───

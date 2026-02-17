@@ -8,6 +8,8 @@ import { formatSoundtrackRating } from '../soundtrack';
 import { sfx } from '../sound';
 import MechanicTip from '../components/MechanicTip';
 import PostFilmSummary from '../components/PostFilmSummary';
+import { RivalDashboard } from '../components/RivalDashboard';
+import { AI_DIRECTORS, calculateStandings, getSeasonLeaderboard } from '../aiDirectors';
 import type { AudienceReaction } from '../audienceReactions';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
@@ -586,6 +588,22 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
           ))}
         </div>
       )}
+
+      {/* R225: AI Director Battles Dashboard */}
+      {phase >= 3 && (state.aiDirectorFilms || []).length > 0 && (() => {
+        const standings = calculateStandings(state.aiDirectorFilms, state.seasonHistory.map(h => h.boxOffice), state.aiDirectorPrevRanks || {});
+        const lb = getSeasonLeaderboard(standings, state.studioName || 'Your Studio', state.totalEarnings, state.seasonHistory.length, (state.aiDirectorPrevRanks || {})['__player'] || 0);
+        return (
+          <div style={{ marginTop: 16 }} className="animate-slide-down">
+            <RivalDashboard
+              standings={standings}
+              leaderboard={lb}
+              showdowns={state.aiDirectorShowdowns || []}
+              currentSeason={state.season}
+            />
+          </div>
+        );
+      })()}
 
       {/* Season history pips */}
       <div className="history" style={{ marginTop: 24 }}>

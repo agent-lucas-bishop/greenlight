@@ -469,6 +469,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   }, []);
 
   const handleCopy = useCallback(() => {
+    sfx.shareSnap();
     navigator.clipboard.writeText(shareText).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -575,7 +576,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
       {/* ─── CAREER STATS ─── */}
       {phase >= 2 && (
-        <div className="end-stats animate-slide-down" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 16 }}>
+        <div className="end-stats end-stats-grid animate-slide-down" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 16 }}>
           <div className="end-stat">
             <div className="label">Total Box Office</div>
             <div className="value">${totalBO.toFixed(1)}M</div>
@@ -649,14 +650,14 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       {phase >= 3 && rivalStandings.length > 0 && (
         <div style={{ marginTop: 24 }} className="animate-slide-down">
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏢 RIVAL STANDINGS</h3>
-          <div style={{ maxWidth: 400, margin: '0 auto' }}>
+          <div className="rival-standings" style={{ maxWidth: 400, margin: '0 auto' }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
               background: 'rgba(212,168,67,0.1)', border: '1px solid var(--gold-dim)', borderRadius: 6, marginBottom: 4,
             }}>
               <span style={{ fontSize: '1rem' }}>⭐</span>
-              <span style={{ flex: 1, color: '#d4a843', fontWeight: 700, fontSize: '0.85rem' }}>{state.studioName || 'Your Studio'}</span>
-              <span style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '1rem' }}>${totalBO.toFixed(1)}M</span>
+              <span style={{ flex: 1, color: '#d4a843', fontWeight: 700, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{state.studioName || 'Your Studio'}</span>
+              <span style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '1rem', flexShrink: 0 }}>${totalBO.toFixed(1)}M</span>
             </div>
             {rivalStandings.map((r, i) => {
               const isAhead = r.earnings > totalBO;
@@ -842,6 +843,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
             {/* Share button */}
             <button className="btn" onClick={() => {
+              sfx.shareSnap();
               navigator.clipboard.writeText(compactShare).then(() => {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);

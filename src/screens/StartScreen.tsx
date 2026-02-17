@@ -446,8 +446,8 @@ export default function StartScreen() {
             <div
               key={a.id}
               className="card"
-              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); }}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); } }}
+              onClick={() => { if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selectedMode === 'daily') sfx.dailyStart(); else if (selectedMode === 'weekly') sfx.weeklyStart(); else sfx.click(); startGame(selectedMode, selectedChallenge, activeModifiers); pickArchetype(a.id as StudioArchetypeId); } }}
               tabIndex={0}
               role="button"
               aria-label={`${a.name}: ${a.description}${isRecommended ? ' (Recommended for beginners)' : ''}`}
@@ -664,16 +664,19 @@ export default function StartScreen() {
                     const active = activeModifiers.includes(mod.id);
                     return (
                       <div key={mod.id}
+                        className="challenge-modifier-row"
                         onClick={() => {
+                          sfx.modifierToggle();
                           setActiveModifiers(prev =>
                             prev.includes(mod.id) ? prev.filter(id => id !== mod.id) : [...prev, mod.id]
                           );
                         }}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
                           background: active ? 'rgba(243,156,18,0.12)' : 'rgba(255,255,255,0.02)',
                           border: `1px solid ${active ? 'rgba(243,156,18,0.4)' : '#333'}`,
                           borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s',
+                          minHeight: 48,
                         }}>
                         <span style={{ fontSize: '1rem', width: 24, textAlign: 'center' }}>
                           {active ? '✅' : '⬜'}
@@ -852,7 +855,7 @@ export default function StartScreen() {
       {/* ─── CAREER STATS TAB ─── */}
       {tab === 'career' && (
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+          <div className="career-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
             {[
               { label: 'Total Films', value: stats.careerStats.totalFilms.toString(), color: '#ccc' },
               { label: 'Lifetime BO', value: `$${(stats.careerStats.totalBoxOffice || 0).toFixed(0)}M`, color: 'var(--gold)' },

@@ -552,6 +552,148 @@ export const sfx = {
     }, 'streak');
   },
 
+  // ── New sounds for R121 ──
+
+  // Challenge modifier toggle — satisfying click/switch
+  modifierToggle() {
+    play(c => {
+      note(c, 1000, 0, 0.04, 0.1, 'square');
+      note(c, 1400, 0.03, 0.05, 0.08, 'triangle');
+      noise(c, 0.01, 0.03, 0.06);
+    }, 'modToggle');
+  },
+
+  // Share/copy — brief camera shutter / clipboard snap
+  shareSnap() {
+    play(c => {
+      // Sharp click
+      noise(c, 0, 0.04, 0.15);
+      note(c, 2000, 0, 0.03, 0.08, 'square');
+      // Mechanical release
+      note(c, 800, 0.04, 0.06, 0.06, 'square');
+      noise(c, 0.05, 0.03, 0.08);
+    }, 'share');
+  },
+
+  // Stats tab switch — subtle tab click
+  tabSwitch() {
+    play(c => {
+      note(c, 1600, 0, 0.03, 0.05, 'square');
+      note(c, 1200, 0.02, 0.03, 0.03, 'triangle');
+    }, 'tab');
+  },
+
+  // Genre mastery milestone — celebration chime
+  masteryMilestone() {
+    play(c => {
+      // Ascending major arpeggio: C5 E5 G5 C6
+      note(c, 523, 0, 0.2, 0.12, 'sine');
+      note(c, 659, 0.1, 0.2, 0.12, 'sine');
+      note(c, 784, 0.2, 0.2, 0.12, 'sine');
+      note(c, 1047, 0.3, 0.4, 0.15, 'sine');
+      // Sparkle overlay
+      note(c, 2093, 0.35, 0.3, 0.06, 'sine');
+      note(c, 2637, 0.4, 0.25, 0.04, 'sine');
+      // Tiny noise shimmer
+      noise(c, 0.3, 0.15, 0.04);
+    }, 'mastery');
+  },
+
+  // Weekly challenge start — intense version of dailyStart
+  weeklyStart() {
+    play(c => {
+      // Heavier mechanical clatter
+      const buf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1000;
+      bp.Q.value = 2;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.15, c.currentTime);
+      g.gain.setValueAtTime(0.1, c.currentTime + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.55);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.6);
+      // More dramatic clicks — lower pitch, more of them
+      note(c, 300, 0, 0.03, 0.1, 'square');
+      note(c, 300, 0.06, 0.03, 0.08, 'square');
+      note(c, 300, 0.12, 0.03, 0.08, 'square');
+      note(c, 300, 0.18, 0.03, 0.07, 'square');
+      note(c, 500, 0.24, 0.04, 0.06, 'square');
+      note(c, 500, 0.30, 0.04, 0.06, 'square');
+      // Low rumble undertone
+      note(c, 80, 0, 0.5, 0.08, 'sine');
+    }, 'weekly');
+  },
+
+  // Event resolution — positive outcome (warm ascending)
+  eventPositive() {
+    play(c => {
+      note(c, 440, 0, 0.15, 0.1, 'triangle');
+      note(c, 554, 0.08, 0.15, 0.1, 'triangle');
+      note(c, 659, 0.16, 0.2, 0.12, 'sine');
+    }, 'eventPos');
+  },
+
+  // Event resolution — negative outcome (dark descending)
+  eventNegative() {
+    play(c => {
+      note(c, 440, 0, 0.15, 0.08, 'triangle');
+      note(c, 370, 0.1, 0.15, 0.07, 'triangle');
+      note(c, 311, 0.2, 0.2, 0.06, 'sine');
+    }, 'eventNeg');
+  },
+
+  // Extended cut decision — dramatic film reel
+  extendedCut() {
+    play(c => {
+      // Film reel sprocket clicks
+      for (let i = 0; i < 6; i++) {
+        note(c, 500 + i * 30, i * 0.05, 0.03, 0.07, 'square');
+      }
+      // Projector whir (filtered noise)
+      const buf = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 800;
+      bp.Q.value = 4;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.06, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      src.connect(bp).connect(g).connect(getMaster());
+      src.start(c.currentTime);
+      src.stop(c.currentTime + 0.5);
+      // Dramatic low tone
+      note(c, 110, 0.1, 0.4, 0.1, 'sawtooth');
+      note(c, 165, 0.15, 0.35, 0.06, 'triangle');
+    }, 'extCut');
+  },
+
+  // Completion bond trigger — shield/protection activation
+  completionBond() {
+    play(c => {
+      // Shield activation — resonant metallic ping
+      note(c, 800, 0, 0.3, 0.15, 'sine');
+      note(c, 1200, 0.02, 0.25, 0.12, 'sine');
+      note(c, 1600, 0.04, 0.2, 0.08, 'sine');
+      // Low protective hum
+      note(c, 150, 0, 0.5, 0.1, 'triangle');
+      note(c, 200, 0.05, 0.4, 0.08, 'triangle');
+      // Shimmer
+      noise(c, 0, 0.08, 0.1);
+      note(c, 2400, 0.1, 0.3, 0.04, 'sine');
+    }, 'bond');
+  },
+
   // Prestige level up — epic ascending chord progression
   prestigeUp() {
     play(c => {

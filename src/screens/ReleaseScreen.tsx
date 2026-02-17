@@ -515,7 +515,7 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
             ⚠️ This uses your next film slot — you'll skip Season {state.season + 1}'s production.
             {state.season + 1 >= state.maxSeasons && <strong> That's your FINAL season!</strong>}
           </p>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <div className="post-prod-actions" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button className="btn btn-primary" onClick={() => { sfx.challenge(); doExtendedCut(); }}>
               🎬 EXTENDED CUT ($3M)
             </button>

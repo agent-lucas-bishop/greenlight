@@ -783,7 +783,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
             <p style={{ color: '#e74c3c', fontSize: '0.75rem', marginBottom: 12 }}>
               ⚠️ Risky! Each incident has a 45% chance of becoming good footage, 30% mild issue, 25% even worse!
             </p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <div className="post-prod-actions" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={() => { sfx.challenge(); performReshoots(); }}>
                 🎬 RESHOOTS ($5M)
               </button>

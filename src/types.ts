@@ -1,6 +1,7 @@
 export type Genre = 'Action' | 'Comedy' | 'Drama' | 'Horror' | 'Sci-Fi' | 'Romance' | 'Thriller';
 
 export type CardType = 'action' | 'challenge' | 'incident';
+export type IncidentSeverity = 'minor' | 'major' | 'catastrophic';
 export type RiskTag = '🟢' | '🟡' | '🔴'; // kept for backward compat, maps to CardType
 export type CardSourceType = 'actor' | 'director' | 'crew' | 'script';
 
@@ -30,6 +31,7 @@ export interface ProductionCard {
   totalValue?: number;
   budgetMod?: number;
   special?: string;
+  severity?: IncidentSeverity; // incident severity level (assigned at deck build)
 }
 
 export type CardTag = 'momentum' | 'precision' | 'chaos' | 'heart' | 'spectacle';

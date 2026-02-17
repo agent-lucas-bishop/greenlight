@@ -6,6 +6,7 @@ import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard
 import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
 import { sfx } from '../sound';
 import MechanicTip from '../components/MechanicTip';
+import PostFilmSummary from '../components/PostFilmSummary';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
@@ -327,6 +328,9 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
           )}
         </div>
       )}
+
+      {/* Post-Film Production Summary */}
+      {phase >= 2 && <PostFilmSummary state={state} />}
 
       {/* Rival rankings — merged from SeasonRecapScreen */}
       {phase >= 3 && rivalFilms.length > 0 && (

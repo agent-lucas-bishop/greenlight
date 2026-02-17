@@ -266,6 +266,21 @@ function buildProductionDeck(castSlots: CastSlot[], script: Script): ProductionC
     }
   }
 
+  // Assign incident severity based on baseQuality
+  // Minor: -2 to -4, Major: -5 to -8, Catastrophic: -9 or worse (+ possible budget hit)
+  for (const card of deck) {
+    if (card.cardType === 'incident') {
+      const absQ = Math.abs(card.baseQuality);
+      if (absQ <= 4) {
+        card.severity = 'minor';
+      } else if (absQ <= 8) {
+        card.severity = 'major';
+      } else {
+        card.severity = 'catastrophic';
+      }
+    }
+  }
+
   // Shuffle (Fisher-Yates)
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -1115,8 +1130,8 @@ export function drawProductionCards() {
   }
 
   // BLOCK MECHANIC: If exactly 1 incident + 1 action card drawn together,
-  // player can sacrifice the action card to block (discard) the incident.
-  // Present this as a choice via pendingBlock state.
+  // player can block (discard) the incident at a cost of -1 quality (disruption).
+  // Player keeps their action card either way. Present choice via pendingBlock state.
   const incidents = resolved.filter(c => c.cardType === 'incident');
   if (incidents.length === 1 && choosable.length === 1) {
     let updatedProd: ProductionState = { ...prod, deck };
@@ -1303,18 +1318,21 @@ export function resolveChallengeBet(accept: boolean) {
   setState({ production: prod });
 }
 
-// Resolve block choice: sacrifice action card to discard incident, or let incident play
+// Resolve block choice: discard incident for -1 quality (keep action card), or let incident play
 export function resolveBlock(block: boolean) {
   if (!state.production?.pendingBlock) return;
   const prod = { ...state.production };
   const { incident, actionCard } = prod.pendingBlock!;
   
   if (block) {
-    // Sacrifice action card to block the incident — both go to discard, costs 2 quality
-    prod.discarded = [...prod.discarded, incident, actionCard];
-    prod.qualityTotal -= 2; // blocking costs production time
+    // Block the incident — only incident is discarded, player keeps action card
+    // Costs -1 quality as "disruption cost" (down from old -2 + losing action card)
+    prod.discarded = [...prod.discarded, incident];
+    prod.qualityTotal -= 1; // disruption cost
     prod.pendingBlock = null;
-    setState({ production: prod });
+    // Auto-keep the action card since player retains it
+    let updatedProd = resolveCardPlay({ ...actionCard }, prod, state.castSlots);
+    setState({ production: updatedProd });
   } else {
     // Let incident auto-play, then keep the action card
     prod.pendingBlock = null;

@@ -8,6 +8,7 @@ import { CardTypeBadge } from '../components/CardComponents';
 import PhaseTip from '../components/PhaseTip';
 import MechanicTip from '../components/MechanicTip';
 import StatTooltip from '../components/StatTooltip';
+import DeckTracker from '../components/DeckTracker';
 
 // Auto-advance component: shows a button with a filling progress bar, auto-clicks after delay
 function AutoAdvance({ onAdvance, delayMs, label }: { onAdvance: () => void; delayMs: number; label: string }) {
@@ -426,22 +427,13 @@ export default function ProductionScreen({ state }: { state: GameState }) {
         </div>
       )}
 
-      {/* Deck remaining count (simplified — no composition breakdown) */}
+      {/* Deck Tracker — collapsible composition viewer + analytics */}
       {deckSize > 0 && !prod.isWrapped && (
-        <div style={{ 
-          background: 'rgba(255,255,255,0.03)', 
-          borderRadius: 8, 
-          padding: '6px 16px', 
-          marginBottom: 12, 
-          textAlign: 'center',
-          fontSize: '0.8rem',
-          color: '#888',
-        }}>
-          📦 {deckSize} cards remaining in deck <StatTooltip tip="When the deck runs out, production wraps automatically. Plan your draws!" />
-          {prod.incidentCount >= 2 && (
-            <span style={{ color: '#e74c3c', fontWeight: 600, marginLeft: 8 }}>⚠️ Disaster risk!</span>
-          )}
-        </div>
+        <DeckTracker
+          prod={prod}
+          lastCardValue={prod.played.length > 0 ? (prod.played[prod.played.length - 1].totalValue || 0) : undefined}
+          studioArchetype={state.studioArchetype}
+        />
       )}
 
       {/* Incident counter */}

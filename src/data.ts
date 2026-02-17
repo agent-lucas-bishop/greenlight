@@ -4954,7 +4954,7 @@ export const ALL_PERKS: PerkDef[] = [
   { name: 'Second Unit', cost: 7, description: 'See 1 extra script choice each season', effect: 'secondUnit' },
   { name: 'Method Acting', cost: 9, description: '+5 quality if lead actor skill ≥ 6', effect: 'methodActing' },
   { name: 'Viral Marketing', cost: 6, description: '×1.2 box office multiplier if script cost < $15M', effect: 'viralMarketing' },
-  { name: 'Genre Pivot', cost: 8, description: 'Making a different genre than last film gives +3 quality', effect: 'genrePivot' },
+  { name: 'Genre Pivot', cost: 8, description: 'Making a different genre than last film gives +5 quality', effect: 'genrePivot' },
   { name: 'Sequel Rights', cost: 10, description: 'Same genre as last film: +$10M box office', effect: 'sequelRights' },
   { name: 'Chaos Dividend', cost: 11, description: '+3 quality per Incident in production (max +9). Dangerous but rewarding.', effect: 'chaosDividend', prestigeRequired: 3 },
   { name: 'Talent Agency', cost: 14, description: 'All hired talent gets +1 Skill. Expensive but elite.', effect: 'talentAgency', prestigeRequired: 5 },

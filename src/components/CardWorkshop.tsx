@@ -98,7 +98,7 @@ function WorkshopCard({ card, isSelected, onClick }: { card: ProductionCard; isS
 
 function UpgradePanel({ card, budget, onDone }: { card: ProductionCard; budget: number; onDone: () => void }) {
   const actions = [
-    { label: '⬆️ Enhance (+2 quality)', cost: 2, action: () => workshopEnhance(card.id), available: true },
+    { label: '⬆️ Enhance (+3 quality)', cost: 2, action: () => workshopEnhance(card.id), available: true },
     { label: '🔄 Transmute (change type)', cost: 3, action: null as (() => void) | null, available: true, isTransmute: true },
     { label: '🗑️ Remove (thin deck)', cost: 1, action: () => { workshopRemove(card.id); onDone(); }, available: true },
     { label: '📋 Duplicate (copy card)', cost: 4, action: () => workshopDuplicate(card.id), available: true },

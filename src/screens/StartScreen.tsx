@@ -669,6 +669,15 @@ export default function StartScreen() {
         );
       })()}
 
+      {/* Studio Lot Visual */}
+      {stats.runs > 0 && (
+        <div style={{ margin: '16px auto 8px', maxWidth: 460 }}>
+          <Suspense fallback={null}>
+            <StudioLot compact />
+          </Suspense>
+        </div>
+      )}
+
       {/* Tab navigation */}
       {stats.runs > 0 && (
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 24, marginTop: 8, flexWrap: 'wrap' }}>

@@ -361,6 +361,7 @@ export function recordRunEnd(won: boolean, score: number, achievementIds: string
   }
 
   saveUnlocks(u);
+
 }
 
 export function getRunStats(): { wins: number; runs: number; bestScore: number; winRate: string; ngPlusUnlocked: boolean; directorUnlocked: boolean; legacyPerks: LegacyPerk[]; careerStats: UnlockState['careerStats']; dailyStreak: UnlockState['dailyStreak']; weeklyStreak: UnlockState['weeklyStreak'] } {

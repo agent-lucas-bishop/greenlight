@@ -1837,7 +1837,7 @@ export function calculateQuality(s: GameState): {
 
   // Genre Pivot perk: +3 quality if genre differs from last film
   const lastGenre = s.seasonHistory.length > 0 ? s.seasonHistory[s.seasonHistory.length - 1].genre : null;
-  const genrePivotBonus = s.perks.some(p => p.effect === 'genrePivot') && lastGenre && lastGenre !== script.genre ? 3 : 0;
+  const genrePivotBonus = s.perks.some(p => p.effect === 'genrePivot') && lastGenre && lastGenre !== script.genre ? 5 : 0;
 
   // Chaos Dividend perk: +3 per incident (max +9)
   const chaosDividendBonus = s.perks.some(p => p.effect === 'chaosDividend') ? Math.min(prod.incidentCount * 3, 9) : 0;
@@ -1905,7 +1905,7 @@ export function goToPostProduction() {
 }
 
 export function pickMarketing(tier: MarketingTier) {
-  const costs: Record<MarketingTier, number> = { none: 0, standard: 2, premium: 4, viral: 1 };
+  const costs: Record<MarketingTier, number> = { none: 0, standard: 1, premium: 3, viral: 1 };
   const multipliers: Record<MarketingTier, number> = { none: 1.0, standard: 1.2, premium: 1.5, viral: 1.0 };
   const cost = costs[tier];
 
@@ -2122,14 +2122,16 @@ export function resolveRelease() {
     }
   }
 
-  // R150: Apply competingFilm rival actions — reduce multiplier if same genre
+  // R150: Apply competingFilm rival actions — reduce multiplier if same genre (capped at -0.3 total)
+  let rivalMultPenalty = 0;
   for (const action of (state.rivalActions || [])) {
     if (action.actionType === 'competingFilm' && action.multiplierPenalty) {
       if (!action.competingGenre || action.competingGenre === script.genre) {
-        multiplier -= action.multiplierPenalty;
+        rivalMultPenalty += action.multiplierPenalty;
       }
     }
   }
+  multiplier -= Math.min(rivalMultPenalty, 0.3);
 
   const totalHeat = state.castSlots.reduce((sum, s) => sum + (s.talent?.heat || 0), 0);
   // Studio archetype effects
@@ -2154,12 +2156,12 @@ export function resolveRelease() {
   const franchiseRootForMult = state.sequelOrigins[script.title];
   if (franchiseRootForMult && state.franchises[franchiseRootForMult]) {
     const f = state.franchises[franchiseRootForMult];
-    // Inherit 50% of original's market multiplier as a bonus
-    multiplier += f.lastMarketMultiplier * 0.5;
-    // Franchise Fatigue: 4th sequel (5th+ film) gets -0.2 multiplier
+    // Inherit 30% of original's market multiplier as a bonus
+    multiplier += f.lastMarketMultiplier * 0.3;
+    // Franchise Fatigue: 3rd sequel (4th+ film) gets -0.2 multiplier
     const filmNum = f.sequelNumber + 1; // this is the next film in the franchise
-    if (filmNum >= 4) {
-      multiplier -= 0.2 * (filmNum - 3);
+    if (filmNum >= 3) {
+      multiplier -= 0.2 * (filmNum - 2);
     }
   }
 
@@ -2343,7 +2345,7 @@ export function resolveRelease() {
       cost: isFranchiseAbility ? 0 : sequelCost,
       cards: script.cards,
       ability: script.ability,
-      abilityDesc: `Sequel to ${rootTitle}. Inherits ${Math.round(franchise.lastMarketMultiplier * 50)}% market bonus.`,
+      abilityDesc: `Sequel to ${rootTitle}. Inherits ${Math.round(franchise.lastMarketMultiplier * 30)}% market bonus.`,
       legendary: isFranchiseAbility,
       keywordTags: script.keywordTags,
     };
@@ -2674,7 +2676,7 @@ export function workshopEnhance(cardId: string) {
   const cost = 2;
   if (state.budget < cost) return;
   const deck = state.workshopDeck.map(c =>
-    c.id === cardId ? { ...c, baseQuality: c.baseQuality + 2 } : c
+    c.id === cardId ? { ...c, baseQuality: c.baseQuality + 3 } : c
   );
   setState({ budget: state.budget - cost, workshopDeck: deck });
 }

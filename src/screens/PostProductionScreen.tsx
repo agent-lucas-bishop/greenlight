@@ -5,8 +5,8 @@ import { sfx } from '../sound';
 
 const MARKETING_OPTIONS: { id: MarketingTier; emoji: string; name: string; cost: number; desc: string }[] = [
   { id: 'none', emoji: '🚫', name: 'No Marketing', cost: 0, desc: '1.0× box office — save your money' },
-  { id: 'standard', emoji: '📺', name: 'Standard Campaign', cost: 2, desc: '1.2× box office — TV spots & posters' },
-  { id: 'premium', emoji: '🌟', name: 'Premium Blitz', cost: 4, desc: '1.5× box office — full media saturation' },
+  { id: 'standard', emoji: '📺', name: 'Standard Campaign', cost: 1, desc: '1.2× box office — TV spots & posters' },
+  { id: 'premium', emoji: '🌟', name: 'Premium Blitz', cost: 3, desc: '1.5× box office — full media saturation' },
   { id: 'viral', emoji: '🎲', name: 'Viral Campaign', cost: 1, desc: '0.8×–2.0× box office — risky but cheap' },
 ];
 

@@ -7,6 +7,7 @@ import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline }
 import { formatSoundtrackRating, getThemeById } from '../soundtrack';
 import { sfx } from '../sound';
 import { getAudioEngine } from '../audioEngine';
+import { levelUpFanfare, currencyGainClink } from '../sounds/procedural';
 import MechanicTip from '../components/MechanicTip';
 import PostFilmSummary from '../components/PostFilmSummary';
 import { RivalDashboard } from '../components/RivalDashboard';

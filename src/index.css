@@ -5750,3 +5750,24 @@ body {
 .force-reduce-motion .streak-indicator { animation: none !important; }
 .force-reduce-motion .tier-glow-burst { display: none !important; }
 .force-reduce-motion .typewriter-cursor { display: none !important; }
+
+/* R314: Rank badge pulse animation */
+@keyframes rankPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* R314: Film strip auto-scroll hide scrollbar */
+.film-strip-scroll::-webkit-scrollbar { display: none; }
+
+/* R314: Rank change animation */
+@keyframes rankSlideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes rankSlideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.rank-change-up { animation: rankSlideUp 0.5s ease; }
+.rank-change-down { animation: rankSlideDown 0.5s ease; }

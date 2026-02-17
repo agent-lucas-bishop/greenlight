@@ -4,6 +4,7 @@ import { drawProductionCards, pickCard, resolveChallengeBet, resolveBlock, wrapP
 import { getSeasonTarget, getActiveChemistry } from '../data';
 import { sfx } from '../sound';
 import { getAudioEngine } from '../audioEngine';
+import { cardPlayWhoosh, cardDrawShuffle, currencyGainClink, achievementChime, negativeEventBuzzer } from '../sounds/procedural';
 import { screenShake, playCardAnimation, showTenseVignette, hideTenseVignette } from '../visualEffects';
 import { getCardBackColor } from '../achievements';
 import { getSelectedCardBackDesign } from '../studioCustomization';
@@ -245,6 +246,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
 
   const handleDraw = () => {
     sfx.cardFlip();
+    cardDrawShuffle(); // R314: procedural SFX layer
     setIsDrawing(true);
     setPickedCardId(null);
     setRejectedCardId(null);
@@ -271,6 +273,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
     setPickedCardId(chosen.id);
     setRejectedCardId(rejected?.id || null);
     sfx.cardPick();
+    cardPlayWhoosh(); // R314: procedural SFX layer
     // R250: Card play flip animation
     const cardEl = document.querySelector(`[data-card-id="${chosen.id}"]`) as HTMLElement;
     if (cardEl) playCardAnimation(cardEl);
@@ -321,6 +324,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       // Sound effects based on card type
       if (newCard.cardType === 'incident') {
         sfx.incident();
+        negativeEventBuzzer(); // R314: procedural SFX layer
         setCombo(0);
         setComboVisible(false);
       } else if (newCard.synergyFired) {
@@ -555,7 +559,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       </div>
 
       {prod.budgetChange !== 0 && (
-        <div style={{ color: prod.budgetChange > 0 ? '#2ecc71' : '#e74c3c', fontSize: '0.85rem', marginBottom: 8 }}>
+        <div ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; if (prod.budgetChange > 0) currencyGainClink(); } }} style={{ color: prod.budgetChange > 0 ? '#2ecc71' : '#e74c3c', fontSize: '0.85rem', marginBottom: 8 }}>
           💰 Budget impact: {prod.budgetChange > 0 ? '+' : ''}${prod.budgetChange}M
         </div>
       )}

@@ -14,6 +14,23 @@ const TIER_EMOJI: Record<string, string> = { BLOCKBUSTER: '🟩', SMASH: '🟨',
 const RANK_COLORS: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999', F: '#e74c3c' };
 const MEDAL = ['🥇', '🥈', '🥉'];
 
+// R314: Rank badge component with animated glow for top 3
+function RankBadge({ index, animated }: { index: number; animated?: boolean }) {
+  if (index >= 3) return <span style={{ fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: '#555' }}>#{index + 1}</span>;
+  const colors = ['#ffd700', '#c0c0c0', '#cd7f32'];
+  const glows = ['rgba(255,215,0,0.4)', 'rgba(192,192,192,0.3)', 'rgba(205,127,50,0.3)'];
+  return (
+    <span style={{
+      fontSize: '1.1rem',
+      filter: animated ? `drop-shadow(0 0 6px ${glows[index]})` : 'none',
+      animation: animated ? 'rankPulse 2s ease-in-out infinite' : 'none',
+      display: 'inline-block',
+    }}>
+      {MEDAL[index]}
+    </span>
+  );
+}
+
 interface Props {
   currentRunId?: string;
 }
@@ -186,8 +203,8 @@ const LeaderboardRow = memo(function LeaderboardRow({ entry, index, isCurrent, i
       border: isEntryRival ? '2px solid rgba(231,76,60,0.5)' : isBestRun ? '1px solid rgba(255,215,0,0.4)' : isCurrent ? '1px solid var(--gold-dim)' : '1px solid transparent',
       borderRadius: (isBestRun || isCurrent || isEntryRival) ? 6 : 0, transition: 'background 0.2s', contain: 'content',
     }}>
-      <span style={{ width: 30, fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: index < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][index] : '#555' }}>
-        {index < 3 ? MEDAL[index] : `#${index + 1}`}
+      <span style={{ width: 30 }}>
+        <RankBadge index={index} animated={isCurrent && index < 3} />
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

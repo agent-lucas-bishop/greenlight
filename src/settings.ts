@@ -25,9 +25,11 @@ export interface GameplaySettings {
   confirmEndTurn: boolean;
   showTooltips: boolean;
   tutorialHints: boolean;
+  defaultDifficulty: string;
 }
 
 export interface Settings {
+  version: number;
   audio: AudioSettings;
   visual: VisualSettings;
   gameplay: GameplaySettings;
@@ -35,10 +37,13 @@ export interface Settings {
 
 // ──── Defaults ───────────────────────────────────────────────
 
+const CURRENT_VERSION = 2;
+
 const DEFAULTS: Settings = {
+  version: CURRENT_VERSION,
   audio: { masterVolume: 70, sfxVolume: 100, musicVolume: 100, muteAll: false },
   visual: { reduceMotion: false, highContrast: false, largeText: false, colorblindMode: 'off' },
-  gameplay: { autoSave: true, confirmEndTurn: false, showTooltips: true, tutorialHints: true },
+  gameplay: { autoSave: true, confirmEndTurn: false, showTooltips: true, tutorialHints: true, defaultDifficulty: 'studio' },
 };
 
 const STORAGE_KEY = 'greenlight-settings';
@@ -53,14 +58,32 @@ function loadSettings(): Settings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return migrateOldSettings();
     const parsed = JSON.parse(raw);
-    return {
+    let settings: Settings = {
+      version: parsed.version || 1,
       audio: { ...DEFAULTS.audio, ...parsed.audio },
       visual: { ...DEFAULTS.visual, ...parsed.visual },
       gameplay: { ...DEFAULTS.gameplay, ...parsed.gameplay },
     };
+    // Run migrations for old versions
+    settings = migrateSettingsVersion(settings);
+    return settings;
   } catch {
-    return { ...DEFAULTS };
+    return structuredClone(DEFAULTS);
   }
+}
+
+/** Migrate settings from older versions to current */
+function migrateSettingsVersion(s: Settings): Settings {
+  // v1 → v2: add defaultDifficulty from old localStorage key
+  if ((s.version || 1) < 2) {
+    try {
+      const oldDiff = localStorage.getItem('greenlight-last-difficulty');
+      if (oldDiff) s.gameplay.defaultDifficulty = oldDiff;
+    } catch {}
+    s.version = 2;
+    persistSettings(s);
+  }
+  return s;
 }
 
 /** Migrate from old scattered localStorage keys to unified settings */

@@ -57,6 +57,9 @@ import { checkRivalBeaten, type Rival } from '../rivalries';
 import AwardsCeremony from '../components/AwardsCeremony';
 import FilmPoster from '../components/FilmPoster';
 import { generatePosterSeed } from '../directorCommentary';
+import FilmStrip from '../components/FilmStrip';
+import StudioReportCard from '../components/StudioReportCard';
+import { cardPlayWhoosh, achievementChime } from '../sounds/procedural';
 
 // ─── Helpers ───
 
@@ -1045,8 +1048,16 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
             NEW HIGH SCORE!
           </div>
           <div style={{ color: '#ccc', fontSize: '0.9rem', marginTop: 4 }}>
-            Rank <span style={{ color: '#ffd700', fontWeight: 700 }}>#{highScoreRank}</span> on the {state.difficulty || 'studio'} leaderboard
+            {highScoreRank <= 3 ? (
+              <span>{['🥇', '🥈', '🥉'][highScoreRank - 1]} </span>
+            ) : null}
+            Rank <span style={{ color: '#ffd700', fontWeight: 700 }} className="rank-change-up">#{highScoreRank}</span> on the {state.difficulty || 'studio'} leaderboard
           </div>
+          {highScoreRank === 1 && (
+            <div style={{ color: '#ffd700', fontSize: '0.75rem', marginTop: 6, fontFamily: 'Bebas Neue', letterSpacing: 2 }}>
+              ⭐ PERSONAL BEST ⭐
+            </div>
+          )}
           <GoldenBurst elaborate />
         </div>
       )}
@@ -1362,6 +1373,23 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
+      {/* ─── R314: FILM STRIP ANIMATION ─── */}
+      {phase >= 3 && endTab === 'overview' && history.length > 0 && (
+        <FilmStrip films={history} />
+      )}
+
+      {/* ─── R314: STUDIO REPORT CARD ─── */}
+      {phase >= 4 && endTab === 'details' && (
+        <StudioReportCard
+          history={history}
+          totalEarnings={state.totalEarnings}
+          budget={state.budget}
+          startBudget={15}
+          reputation={state.reputation}
+          isVictory={isVictory}
+        />
+      )}
+
       {/* ─── FILMOGRAPHY WITH POSTERS (R309) ─── */}
       {phase >= 4 && endTab === 'overview' && (
         <div style={{ marginTop: 28 }} className="animate-slide-down">
@@ -1650,7 +1678,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
       {/* ─── ACHIEVEMENTS ─── */}
       {phase >= 5 && achievements.length > 0 && endTab === 'overview' && (
-        <div style={{ marginTop: 24 }} className="animate-slide-down">
+        <div style={{ marginTop: 24 }} className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; achievementChime(); } }}>
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🏅 ACHIEVEMENTS ({achievements.length})</h3>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             {achievements.map((a, i) => (

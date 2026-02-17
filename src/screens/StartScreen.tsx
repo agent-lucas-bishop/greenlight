@@ -172,6 +172,9 @@ function getLegacyRating(earnings: number, reputation: number, won: boolean): { 
 
 function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLeaderboard> }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filterMode, setFilterMode] = useState<string>('all');
+  const [filterResult, setFilterResult] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('date');
   const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999', F: '#e74c3c' };
   const tierColors: Record<string, string> = { BLOCKBUSTER: '#2ecc71', SMASH: '#f1c40f', HIT: '#e67e22', FLOP: '#e74c3c' };
 
@@ -179,10 +182,41 @@ function RunHistoryTab({ leaderboard }: { leaderboard: ReturnType<typeof getLead
     return <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: 600, margin: '0 auto' }}>No runs completed yet. Finish a run to see your history!</p>;
   }
 
+  // Filter
+  let filtered = leaderboard;
+  if (filterMode !== 'all') filtered = filtered.filter(e => e.mode === filterMode);
+  if (filterResult === 'won') filtered = filtered.filter(e => e.won);
+  else if (filterResult === 'lost') filtered = filtered.filter(e => !e.won);
+
+  // Sort
+  if (sortBy === 'score') filtered = [...filtered].sort((a, b) => b.score - a.score);
+  else if (sortBy === 'earnings') filtered = [...filtered].sort((a, b) => b.earnings - a.earnings);
+  else if (sortBy === 'date') filtered = [...filtered]; // already chronological from leaderboard
+
+  const modes = [...new Set(leaderboard.map(e => e.mode))];
+
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <select value={filterMode} onChange={e => setFilterMode(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
+          <option value="all">All Modes</option>
+          {modes.map(m => <option key={m} value={m}>{m === 'normal' ? 'Standard' : m === 'newGamePlus' ? 'NG+' : m === 'directorMode' ? 'Director' : m === 'daily' ? 'Daily' : m === 'challenge' ? 'Challenge' : m}</option>)}
+        </select>
+        <select value={filterResult} onChange={e => setFilterResult(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
+          <option value="all">Win & Loss</option>
+          <option value="won">Wins Only</option>
+          <option value="lost">Losses Only</option>
+        </select>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: '#1a1a1a', color: '#ccc', border: '1px solid #333', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem' }}>
+          <option value="date">Sort: Recent</option>
+          <option value="score">Sort: Score</option>
+          <option value="earnings">Sort: Earnings</option>
+        </select>
+      </div>
+      {filtered.length === 0 && <p style={{ color: '#666', fontSize: '0.8rem' }}>No runs match filters.</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {leaderboard.map((entry) => {
+        {filtered.map((entry) => {
           const legacy = getLegacyRating(entry.earnings, entry.reputation, entry.won);
           const archetypeEmoji = ARCHETYPE_DATA.find(a => a.id === entry.archetype)?.emoji || '🎬';
           const isExpanded = expandedId === entry.id;
@@ -742,6 +776,9 @@ export default function StartScreen() {
               { label: 'Win Rate', value: stats.winRate, color: '#3498db' },
               { label: 'Best Score', value: stats.bestScore.toString(), color: '#f39c12' },
               { label: 'Perfect Runs', value: stats.careerStats.perfectRuns.toString(), color: '#e74c3c' },
+              { label: 'Time Played', value: `~${Math.max(1, Math.round(stats.careerStats.totalFilms * 3 + stats.runs * 2))}m`, color: '#9b59b6' },
+              { label: 'Fav Genre', value: (() => { const g = stats.careerStats.genreFilms; const entries = Object.entries(g); return entries.length > 0 ? entries.sort((a, b) => b[1] - a[1])[0][0] : '—'; })(), color: '#e67e22' },
+              { label: 'Luckiest Film', value: (() => { const lb = leaderboard; let best = { title: '—', bo: 0 }; for (const e of lb) for (const f of e.films) if ((f.boxOffice || 0) > best.bo) best = { title: f.title, bo: f.boxOffice || 0 }; return best.bo > 0 ? `$${best.bo.toFixed(0)}M` : '—'; })(), color: '#1abc9c' },
             ].map((s, i) => (
               <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222', borderRadius: 8, padding: '12px 8px', textAlign: 'center' }}>
                 <div style={{ color: s.color, fontFamily: 'Bebas Neue', fontSize: '1.3rem' }}>{s.value}</div>

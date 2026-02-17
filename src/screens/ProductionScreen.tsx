@@ -618,7 +618,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
       )}
 
       {/* Actions — at top, before played cards */}
-      <div className="btn-group">
+      <div className="btn-group sticky-action-bar">
         {canDraw && !isDrawing && (
           <button className={`btn btn-primary btn-glow ${prod.incidentCount >= 2 ? 'btn-draw-dramatic' : ''}`} onClick={handleDraw}
             style={prod.drawCount === 0 ? { fontSize: '1.3rem', padding: '14px 36px' } : undefined}>

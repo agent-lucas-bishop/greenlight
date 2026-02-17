@@ -13,6 +13,13 @@ export interface PrestigeLevel {
   xpRequired: number; // cumulative XP to reach this level
 }
 
+export interface PrestigeReward {
+  type: 'studioColor' | 'titleBadge' | 'victoryTheme';
+  id: string;
+  label: string;
+  value: string; // CSS color, badge text, or theme name
+}
+
 export const PRESTIGE_LEVELS: PrestigeLevel[] = [
   { level: 0, title: 'Film Student', emoji: '🎓', xpRequired: 0 },
   { level: 1, title: 'Indie Upstart', emoji: '📹', xpRequired: 50 },
@@ -28,6 +35,55 @@ export const PRESTIGE_LEVELS: PrestigeLevel[] = [
   { level: 11, title: 'Entertainment Conglomerate', emoji: '🌍', xpRequired: 10000 },
   { level: 12, title: 'Living Legend', emoji: '💎', xpRequired: 15000 },
 ];
+
+// Cosmetic rewards unlocked at each prestige level
+export const PRESTIGE_REWARDS: Record<number, PrestigeReward> = {
+  1: { type: 'titleBadge', id: 'badge_newcomer', label: '🎬 Newcomer Badge', value: '🎬' },
+  2: { type: 'studioColor', id: 'color_teal', label: 'Teal Studio Name', value: '#1abc9c' },
+  3: { type: 'victoryTheme', id: 'theme_sunset', label: 'Sunset Victory Theme', value: 'sunset' },
+  4: { type: 'studioColor', id: 'color_coral', label: 'Coral Studio Name', value: '#e74c3c' },
+  5: { type: 'titleBadge', id: 'badge_veteran', label: '🎖️ Veteran Badge', value: '🎖️' },
+  6: { type: 'studioColor', id: 'color_electric', label: 'Electric Blue Studio Name', value: '#3498db' },
+  7: { type: 'victoryTheme', id: 'theme_golden', label: 'Golden Age Victory Theme', value: 'golden' },
+  8: { type: 'studioColor', id: 'color_purple', label: 'Royal Purple Studio Name', value: '#9b59b6' },
+  9: { type: 'titleBadge', id: 'badge_crown', label: '👑 Crown Badge', value: '👑' },
+  10: { type: 'victoryTheme', id: 'theme_neon', label: 'Neon Noir Victory Theme', value: 'neon' },
+  11: { type: 'studioColor', id: 'color_gold', label: 'Gold Studio Name', value: '#ffd700' },
+  12: { type: 'titleBadge', id: 'badge_diamond', label: '💎 Diamond Badge', value: '💎' },
+};
+
+// Get all cosmetic rewards unlocked at or below a prestige level
+export function getUnlockedPrestigeRewards(level: number): PrestigeReward[] {
+  const rewards: PrestigeReward[] = [];
+  for (let i = 1; i <= level; i++) {
+    if (PRESTIGE_REWARDS[i]) rewards.push(PRESTIGE_REWARDS[i]);
+  }
+  return rewards;
+}
+
+// Get the active studio name color (highest unlocked)
+export function getPrestigeStudioColor(): string | null {
+  const prestige = getPrestige();
+  const rewards = getUnlockedPrestigeRewards(prestige.level);
+  const colors = rewards.filter(r => r.type === 'studioColor');
+  return colors.length > 0 ? colors[colors.length - 1].value : null;
+}
+
+// Get the active title badge (highest unlocked)
+export function getPrestigeBadge(): string | null {
+  const prestige = getPrestige();
+  const rewards = getUnlockedPrestigeRewards(prestige.level);
+  const badges = rewards.filter(r => r.type === 'titleBadge');
+  return badges.length > 0 ? badges[badges.length - 1].value : null;
+}
+
+// Get the active victory theme (highest unlocked)
+export function getPrestigeVictoryTheme(): string | null {
+  const prestige = getPrestige();
+  const rewards = getUnlockedPrestigeRewards(prestige.level);
+  const themes = rewards.filter(r => r.type === 'victoryTheme');
+  return themes.length > 0 ? themes[themes.length - 1].value : null;
+}
 
 const PRESTIGE_KEY = 'greenlight_prestige';
 

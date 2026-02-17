@@ -7,7 +7,7 @@ import { addLeaderboardEntry } from '../leaderboard';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
 import { trackRunEnd } from '../analytics';
-import { awardRunXP, getPrestige, getPrestigeLevel, type RunXPData } from '../prestige';
+import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, type RunXPData } from '../prestige';
 import { recordGenreMasteryFilms } from '../genreMastery';
 import { getStudioLegacy, type StudioLegacy } from '../studioLegacy';
 import { recordPersonalBests, getDailyStats, getPersonalBests } from '../personalBests';
@@ -407,8 +407,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       {/* ─── TITLE ─── */}
       <div style={{ marginBottom: 8 }}>
         {state.studioName && (
-          <div style={{ fontSize: 'clamp(0.8rem, 2vw, 1rem)', color: '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
-            {state.studioName}
+          <div style={{ fontSize: 'clamp(0.8rem, 2vw, 1rem)', color: getPrestigeStudioColor() || '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
+            {getPrestigeBadge() ? `${getPrestigeBadge()} ` : ''}{state.studioName}
           </div>
         )}
         <h2 style={{ color: isVictory ? '#d4a843' : '#e74c3c', margin: 0 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>
@@ -663,6 +663,19 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
                 🎉 LEVEL UP! {prestigeResult.oldLevel.title} → {prestigeResult.newLevel.title}
               </div>
             )}
+            {prestigeResult.leveledUp && PRESTIGE_REWARDS[prestigeResult.newLevel.level] && (() => {
+              const reward = PRESTIGE_REWARDS[prestigeResult.newLevel.level];
+              return (
+                <div style={{
+                  background: 'rgba(212,168,67,0.12)', border: '1px solid var(--gold-dim)',
+                  borderRadius: 8, padding: '8px 12px', marginBottom: 12, textAlign: 'center',
+                  animation: 'comboAppear 0.5s ease',
+                }}>
+                  <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Cosmetic Unlocked</div>
+                  <div style={{ color: 'var(--gold)', fontSize: '0.85rem', marginTop: 4 }}>{reward.label}</div>
+                </div>
+              );
+            })()}
             <div style={{ color: '#d4a843', fontFamily: 'Bebas Neue', fontSize: '1.1rem', textAlign: 'center', marginBottom: 8 }}>
               +{prestigeResult.xpGained} XP
             </div>

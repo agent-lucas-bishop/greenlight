@@ -11,9 +11,10 @@ import { useSwipe } from '../hooks/useSwipe';
 export default function GreenlightScreen({ state }: { state: GameState }) {
   const [picked, setPicked] = useState<string | null>(null);
   const [mobileIdx, setMobileIdx] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
   const simplified = isSimplifiedRun();
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
   const swipeHandlers = useSwipe(
     () => setMobileIdx(i => Math.min(i + 1, state.scriptChoices.length - 1)),
     () => setMobileIdx(i => Math.max(i - 1, 0))
@@ -21,6 +22,11 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
 
   const handlePick = (script: typeof state.scriptChoices[0]) => {
     if (picked) return;
+    // Two-tap on mobile: first tap expands, second confirms
+    if (isMobile && expandedId !== script.id) {
+      setExpandedId(script.id);
+      return;
+    }
     sfx.greenlightStamp();
     setPicked(script.id);
     setTimeout(() => pickScript(script), 800);
@@ -87,7 +93,7 @@ export default function GreenlightScreen({ state }: { state: GameState }) {
           return (
             <div
               key={script.id}
-              className={`card tap-target card-stagger ${genreClass} ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''}`}
+              className={`card tap-target card-stagger ${genreClass} ${isPicked ? 'chosen' : ''} ${isOther ? 'not-chosen' : ''} ${isMobile && !picked && i !== mobileIdx ? 'mobile-hidden' : ''} ${isMobile && expandedId === script.id && !picked ? 'mobile-expanded' : ''}`}
               onClick={() => handlePick(script)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(script); } }}
               tabIndex={picked ? -1 : 0}

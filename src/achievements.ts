@@ -301,6 +301,90 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     check: (s) => s.production?.isWrapped === true && s.production?.drawCount <= 5 && s.production?.drawCount > 0,
   },
 
+  // ─── New R88 Achievements ───
+  {
+    id: 'tutorial_graduate',
+    name: 'Tutorial Graduate',
+    emoji: '🎓',
+    category: 'milestone',
+    description: 'Complete your first run (win or lose)',
+    hint: 'Everyone starts somewhere',
+    check: (_s, u) => u.totalRuns >= 1,
+  },
+  {
+    id: 'weekly_warrior',
+    name: 'Weekly Warrior',
+    emoji: '📅',
+    category: 'skill',
+    description: 'Play 7 daily challenges in a row',
+    hint: 'Dedication pays off',
+    check: (_s, u) => u.dailyStreak.best >= 7,
+    progress: (_s, u) => ({ current: Math.min(u.dailyStreak.best, 7), target: 7 }),
+  },
+  {
+    id: 'legendary_event',
+    name: 'Legendary Moment',
+    emoji: '✨',
+    category: 'discovery',
+    description: 'Trigger a legendary season event',
+    hint: 'Some events are rarer than others...',
+    check: (s) => s.activeSeasonEvent?.rarity === 'legendary',
+  },
+  {
+    id: 'zero_flop_run',
+    name: 'Flawless Record',
+    emoji: '💯',
+    category: 'skill',
+    description: 'Win a run with zero flops',
+    hint: 'Not a single failure on the books',
+    check: (s) => s.phase === 'victory' && s.seasonHistory.every(h => h.tier !== 'FLOP'),
+  },
+  {
+    id: 'all_endings',
+    name: 'Story Collector',
+    emoji: '📚',
+    category: 'discovery',
+    description: 'Discover all studio legacy endings',
+    hint: 'Every path has a different story to tell',
+    check: (_s, u) => u.endingsDiscovered.length >= 6,
+    progress: (_s, u) => ({ current: u.endingsDiscovered.length, target: 6 }),
+  },
+  {
+    id: 'billion_club',
+    name: 'Billion Dollar Club',
+    emoji: '💎',
+    category: 'milestone',
+    description: 'Accumulate $1B+ lifetime box office across all runs',
+    hint: 'A lifetime of hits adds up',
+    check: (_s, u) => u.careerStats.totalBoxOffice >= 1000,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.totalBoxOffice, 1000), target: 1000 }),
+  },
+  {
+    id: 'prestige_5',
+    name: 'Industry Veteran',
+    emoji: '🎖️',
+    category: 'milestone',
+    description: 'Reach Prestige Level 5',
+    hint: 'Climb the prestige ladder',
+    check: () => {
+      try {
+        const saved = localStorage.getItem('greenlight_prestige');
+        if (saved) { const p = JSON.parse(saved); return p.level >= 5; }
+      } catch {}
+      return false;
+    },
+  },
+  {
+    id: 'twenty_films',
+    name: 'Studio Workhorse',
+    emoji: '🏭',
+    category: 'discovery',
+    description: 'Make 20 films across all runs',
+    hint: 'Quantity has a quality all its own',
+    check: (_s, u) => u.careerStats.totalFilms >= 20,
+    progress: (_s, u) => ({ current: Math.min(u.careerStats.totalFilms, 20), target: 20 }),
+  },
+
   // ─── Secret ───
   {
     id: 'secret_all_flops',

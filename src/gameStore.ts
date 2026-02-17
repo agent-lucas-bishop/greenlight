@@ -106,6 +106,7 @@ import { sfx } from './sound';
 import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
 import { careerSessionStart, careerTrackTalentHire, careerTrackFilmComplete } from './careerAnalytics';
 import { saveGameState, clearSave } from './saveGame';
+import { autoSave } from './saveSlots';
 import { getGenreMasteryBonus } from './genreMastery';
 import { getEnabledWorkshopCards, crewCardToCardTemplate } from './cardCreator';
 import { getDirectorStyleBonus } from './directorProfile';
@@ -2843,6 +2844,9 @@ export function resolveRelease() {
     sequelOrigins,
     merchStreams: updatedMerchStreams,
   });
+
+  // R255: Auto-save at end of film release
+  autoSave();
 
   // R235: Campaign objective tracking after film release
   try {

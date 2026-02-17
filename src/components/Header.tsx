@@ -18,6 +18,7 @@ import StatTooltip from './StatTooltip';
 import HelpPanel from './HelpPanel';
 import { lazy, Suspense } from 'react';
 const SettingsModal = lazy(() => import('./SettingsModal'));
+const SaveSlotsPanel = lazy(() => import('./SaveSlotsPanel'));
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
@@ -86,6 +87,7 @@ export default function Header({ state }: { state: GameState }) {
   const [showHelp, setShowHelp] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSaveSlots, setShowSaveSlots] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
   const [volume, setVolumeState] = useState(getVolume());
   const [showVolume, setShowVolume] = useState(false);
@@ -203,7 +205,7 @@ export default function Header({ state }: { state: GameState }) {
         onClick={() => setShowHelp(true)}
         title="How to Play"
         aria-label="How to Play"
-        style={{ right: 170 }}
+        style={{ right: 210 }}
       >
         ?
       </button>
@@ -212,10 +214,21 @@ export default function Header({ state }: { state: GameState }) {
         onClick={() => setShowHelpPanel(true)}
         title="Help & Glossary"
         aria-label="Help & Glossary"
-        style={{ right: 130 }}
+        style={{ right: 170 }}
       >
         📖
       </button>
+      {state.gameMode !== 'daily' && state.gameMode !== 'weekly' && (
+        <button
+          className="header-help-btn"
+          onClick={() => setShowSaveSlots(true)}
+          title="Save/Load"
+          aria-label="Save and Load"
+          style={{ right: 130 }}
+        >
+          💾
+        </button>
+      )}
       <button
         className="header-help-btn"
         onClick={() => setShowSettings(true)}
@@ -252,6 +265,7 @@ export default function Header({ state }: { state: GameState }) {
       {showHelp && <QuickHelp onClose={() => setShowHelp(false)} />}
       {showHelpPanel && <HelpPanel onClose={() => setShowHelpPanel(false)} />}
       {showSettings && <Suspense fallback={null}><SettingsModal onClose={() => setShowSettings(false)} /></Suspense>}
+      {showSaveSlots && <Suspense fallback={null}><SaveSlotsPanel onClose={() => setShowSaveSlots(false)} canSave={state.phase !== 'start' && state.gameMode !== 'daily' && state.gameMode !== 'weekly'} /></Suspense>}
     </div>
   );
 }

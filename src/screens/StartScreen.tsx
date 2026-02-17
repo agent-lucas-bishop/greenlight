@@ -57,6 +57,7 @@ import { getCollectionProgress } from '../tradingCards';
 import { getCollectionStats } from '../cardCollection';
 
 const DailyLeaderboard = lazy(() => import('../components/DailyLeaderboard'));
+const SaveSlotsPanel = lazy(() => import('../components/SaveSlotsPanel'));
 
 const EventCalendar = lazy(() => import('../components/EventCalendar'));
 
@@ -455,6 +456,7 @@ export default function StartScreen() {
   const [showArchetypes, setShowArchetypes] = useState(false);
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [showPrestigePanel, setShowPrestigePanel] = useState(false);
+  const [showSaveSlots, setShowSaveSlots] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('studio');
   const [selectedGameModifiers, setSelectedGameModifiers] = useState<GameModifiers | undefined>(undefined);
   const [showUnlockToast, setShowUnlockToast] = useState(false);
@@ -960,6 +962,9 @@ export default function StartScreen() {
                 <EndlessRecords />
               </div>
             )}
+            <button className="btn btn-small" onClick={() => setShowSaveSlots(true)} style={{ color: '#3498db', borderColor: 'rgba(52,152,219,0.3)' }}>
+              💾 SAVES
+            </button>
             <button className="btn btn-small" onClick={() => setShowHelp(true)}>HOW TO PLAY</button>
           </div>
           <div style={{ marginTop: 40, display: 'flex', gap: 24, color: '#999', fontSize: '0.75rem' }}>
@@ -1570,6 +1575,11 @@ export default function StartScreen() {
       {showChallengeBoard && (
         <Suspense fallback={null}>
           <ChallengeBoard onClose={() => setShowChallengeBoard(false)} />
+        </Suspense>
+      )}
+      {showSaveSlots && (
+        <Suspense fallback={null}>
+          <SaveSlotsPanel onClose={() => setShowSaveSlots(false)} canSave={false} />
         </Suspense>
       )}
       {showPlayerProfile && (

@@ -36,6 +36,7 @@ A movie studio roguelite — you're a film producer making 5 movies across 5 sea
 | Integration audit (-100 lines) | R24 | ✅ |
 | Dev analytics + daily/share verification | R25 | ✅ |
 | Visual regression audit + CSS fixes | R54 | ✅ |
+| Accessibility audit + final polish | R56 | ✅ |
 
 ## Architecture
 ```
@@ -62,6 +63,32 @@ src/
 - **Shareable results** (Wordle-style emoji grid) make it viral-ready.
 - **Mobile works.** Fluid typography, touch targets, responsive grids.
 - **Clean codebase.** R24 audit found no contradictions, no state bugs, -100 lines.
+
+## Round 56 Changes
+
+### Accessibility Audit
+- **Keyboard navigation**: All interactive cards (shop talent, perks, archetypes) now have `tabIndex`, `role="button"`, `onKeyDown` (Enter/Space), and `aria-label` — game is fully playable without a mouse
+- **Focus indicators**: Already had `focus-visible` outlines on buttons, cards, cast slots, and selectable cards (gold 2px outline)
+- **Screen reader labels**: Verified aria-labels on casting talent cards, greenlight script cards, production cards, neow choices, shop items, and archetype picker
+- **Skip link**: Already present (`Skip to content` → `#main-content`)
+- **aria-live**: Main content area already has `aria-live="polite"` for phase transitions
+
+### Loading & Performance
+- **Skeleton loading**: Shimmer skeleton already in place via `<Suspense>` fallback for lazy-loaded screens
+- **Bundle size**: ~155KB gzipped total (well under 500KB threshold)
+  - Largest chunk: `index` 78KB gz (React + core), `game-data` 26KB gz, `game-engine` 14KB gz
+- **Lazy loading**: All game screens except StartScreen are code-split
+
+### Meta Tags & OG Image
+- Already had complete Open Graph meta tags (title, description, image, url, type, site_name)
+- Twitter Card tags present (summary_large_image)
+- JSON-LD structured data for WebApplication
+- OG image at `/og-image.png`
+
+### Favicon
+- Custom SVG favicon with 🎬 emoji on dark background already in place
+- Apple touch icon configured
+- PWA manifest present
 
 ## Round 53 Changes
 

@@ -998,7 +998,220 @@ const IRIS_MOON: Omit<Talent, 'id'> = {
   ],
 };
 
-export const ALL_LEADS: Omit<Talent, 'id'>[] = [JAKE_STEELE, VALENTINA_CORTEZ, MARCUS_WEBB, SOPHIE_CHEN, LENA_FROST, DARIUS_KNOX, MEI_LING, OLIVER_CROSS, CAMILLE_DURAND, RAFAEL_SANTOS, YUKI_TANAKA, EZRA_BLACKWOOD, IRIS_MOON];
+// ─── NEW LEADS (Round 55) ───
+
+const BENNY_ROMANO: Omit<Talent, 'id'> = {
+  name: 'Benny Romano',
+  type: 'Lead',
+  skill: 3,
+  heat: 1,
+  cost: 8,
+  genreBonus: { genre: 'Comedy', bonus: 3 },
+  trait: 'Comedy King',
+  traitDesc: '😂 Turns chaos into laughs. Incidents become comedy gold when he\'s around. Heart tags fuel wholesome humor.',
+  cards: [
+    {
+      name: 'Perfect Pratfall',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '😂 +2 per Incident played (max +6). Disasters become comedy gold!',
+      synergyCondition: (ctx) => {
+        const bonus = Math.min(ctx.incidentCount * 2, 6);
+        return bonus > 0 ? { bonus, description: `${ctx.incidentCount} disasters = comedy genius!` } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['heart', 'chaos'] as CardTag[],
+    },
+    {
+      name: 'Improvised Monologue',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '💕 +2 if Actor card played. +1 per Heart tag (max +3). Wholesome humor.',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.playedCards.some(c => c.sourceType === 'actor') ? 2 : 0;
+        bonus += Math.min(ctx.tagsPlayed['heart'] || 0, 3);
+        return bonus > 0 ? { bonus, description: 'Crowd in tears laughing!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['heart'] as CardTag[],
+    },
+    {
+      name: 'Running Bit',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '🔥 +1 per Action card in a row (max +4). The bit keeps building!',
+      synergyCondition: (ctx) => {
+        return ctx.greenStreak > 0 ? { bonus: Math.min(ctx.greenStreak, 4), description: `${ctx.greenStreak} card streak = the bit lands!` } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['momentum'] as CardTag[],
+    },
+    {
+      name: 'Audience Callback',
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet next card is NOT an Incident. Win +4, Lose -3',
+      synergyCondition: noSynergy,
+      riskTag: '🟡',
+      challengeBet: { ...betNextIsNotIncident(), successBonus: 4, failPenalty: -3 },
+      tags: ['heart'] as CardTag[],
+    },
+    {
+      name: 'Bombed On Stage',
+      cardType: 'incident',
+      baseQuality: -4,
+      synergyText: 'Silence. But adds Heart tag (they felt something, at least).',
+      synergyCondition: noSynergy,
+      riskTag: '🔴',
+      tags: ['heart'] as CardTag[],
+    },
+  ],
+};
+
+const CASSANDRA_VOSS: Omit<Talent, 'id'> = {
+  name: 'Cassandra Voss',
+  type: 'Lead',
+  skill: 5,
+  heat: 2,
+  cost: 15,
+  filmsLeft: 3,
+  genreBonus: { genre: 'Thriller', bonus: 2 },
+  trait: 'The Strategist',
+  traitDesc: '🎯✨ Precision + Spectacle hybrid. Rewards diverse, well-planned productions. Calculated brilliance.',
+  cards: [
+    {
+      name: 'Calculated Move',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '🎯 +1 per unique source type played (max +4). +2 if 0 Incidents (perfect execution).',
+      synergyCondition: (ctx) => {
+        const types = new Set(ctx.playedCards.map(c => c.sourceType));
+        let bonus = Math.min(types.size, 4);
+        if (ctx.incidentCount === 0) bonus += 2;
+        return bonus > 0 ? { bonus, description: 'All according to plan!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['precision'] as CardTag[],
+    },
+    {
+      name: 'Power Play',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '✨ +3 if Director card played. +2 if 3+ Spectacle tags (commanding the screen).',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.playedCards.some(c => c.sourceType === 'director') ? 3 : 0;
+        if ((ctx.tagsPlayed['spectacle'] || 0) >= 3) bonus += 2;
+        return bonus > 0 ? { bonus, description: 'Commanding presence!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['spectacle', 'precision'] as CardTag[],
+    },
+    {
+      name: 'Masterclass Scene',
+      cardType: 'action',
+      baseQuality: 2,
+      synergyText: '🎯✨ +2 if both Precision AND Spectacle tags exist. The best of both worlds.',
+      synergyCondition: (ctx) => {
+        const hasBoth = (ctx.tagsPlayed['precision'] || 0) > 0 && (ctx.tagsPlayed['spectacle'] || 0) > 0;
+        return hasBoth ? { bonus: 2, description: 'Precision meets spectacle!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['precision', 'spectacle'] as CardTag[],
+    },
+    {
+      name: 'Hostile Negotiation',
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet next card has high value. Win +5, Lose -3',
+      synergyCondition: noSynergy,
+      riskTag: '🟡',
+      challengeBet: betNextIsHighValue(),
+      tags: ['precision'] as CardTag[],
+    },
+    {
+      name: 'Outmaneuvered',
+      cardType: 'incident',
+      baseQuality: -4,
+      synergyText: 'The plan fell apart. -2 if no Precision tags (no fallback strategy).',
+      synergyCondition: (ctx) => (ctx.tagsPlayed['precision'] || 0) === 0 ? { bonus: -2, description: 'No backup plan!' } : { bonus: 0 },
+      riskTag: '🔴',
+    },
+  ],
+};
+
+const WADE_HARMON: Omit<Talent, 'id'> = {
+  name: 'Wade Harmon',
+  type: 'Lead',
+  skill: 4,
+  heat: 3,
+  cost: 14,
+  genreBonus: { genre: 'Action', bonus: 2 },
+  trait: 'The Showman',
+  traitDesc: '✨🔥 SPECTACLE + MOMENTUM hybrid. Big entrances, bigger finales. The crowd goes wild.',
+  cards: [
+    {
+      name: 'Grand Entrance',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '✨ +4 if draw 1-2. +1 per Spectacle tag (max +2). Start with a bang!',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.drawNumber <= 2 ? 4 : 0;
+        bonus += Math.min(ctx.tagsPlayed['spectacle'] || 0, 2);
+        return bonus > 0 ? { bonus, description: 'What an entrance!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['spectacle', 'momentum'] as CardTag[],
+    },
+    {
+      name: 'Crowd Roar',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '🔥 +1 per Momentum tag + 1 per Spectacle tag (max +6). The show must go on!',
+      synergyCondition: (ctx) => {
+        const mom = ctx.tagsPlayed['momentum'] || 0;
+        const spec = ctx.tagsPlayed['spectacle'] || 0;
+        const bonus = Math.min(mom + spec, 6);
+        return bonus > 0 ? { bonus, description: `${mom} momentum + ${spec} spectacle = showtime!` } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['momentum', 'spectacle'] as CardTag[],
+    },
+    {
+      name: 'Show-Stopping Finale',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '✨ +3 if draw 5+. +2 if Crew card played. The big finish!',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.drawNumber >= 5 ? 3 : 0;
+        if (ctx.playedCards.some(c => c.sourceType === 'crew')) bonus += 2;
+        return bonus > 0 ? { bonus, description: 'What a finish!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['spectacle'] as CardTag[],
+    },
+    {
+      name: 'Ego Check',
+      cardType: 'challenge',
+      baseQuality: 0,
+      synergyText: 'Challenge: Bet next card is Action. Win +5, Lose -4',
+      synergyCondition: noSynergy,
+      riskTag: '🟡',
+      challengeBet: { ...betNextIsAction(), successBonus: 5, failPenalty: -4 },
+      tags: ['momentum'] as CardTag[],
+    },
+    {
+      name: 'Upstaged By Stuntman',
+      cardType: 'incident',
+      baseQuality: -5,
+      synergyText: 'Wade\'s ego bruised. Lose $1M. But Spectacle tag remains.',
+      synergyCondition: () => ({ bonus: 0, budgetMod: -1, description: 'Wade stormed off set!' }),
+      riskTag: '🔴',
+      tags: ['spectacle'] as CardTag[],
+    },
+  ],
+};
+
+export const ALL_LEADS: Omit<Talent, 'id'>[] = [JAKE_STEELE, VALENTINA_CORTEZ, MARCUS_WEBB, SOPHIE_CHEN, LENA_FROST, DARIUS_KNOX, MEI_LING, OLIVER_CROSS, CAMILLE_DURAND, RAFAEL_SANTOS, YUKI_TANAKA, EZRA_BLACKWOOD, IRIS_MOON, BENNY_ROMANO, CASSANDRA_VOSS, WADE_HARMON];
 
 // ─── SUPPORTING ACTORS ───
 
@@ -1501,7 +1714,166 @@ const DIEGO_FUENTES: Omit<Talent, 'id'> = {
   ],
 };
 
-export const ALL_SUPPORTS: Omit<Talent, 'id'>[] = [DANNY_PARK, ROXANNE_BLAZE, OLD_RELIABLE, MIA_TANAKA, HECTOR_MORALES, TOMMY_TBONE_JACKSON, PRIYA_SHARMA, NIKOLAI_VOLKOV, FELIX_WU, DIEGO_FUENTES];
+// ─── NEW SUPPORTS (Round 55) ───
+
+const LUNA_PRICE: Omit<Talent, 'id'> = {
+  name: 'Luna Price',
+  type: 'Support',
+  skill: 3,
+  heat: 1,
+  cost: 7,
+  trait: 'Social Media Star',
+  traitDesc: '✨💕 Bridges Spectacle + Heart. Turns engagement into box office. Modern audience magnet.',
+  cards: [
+    {
+      name: 'Viral Clip',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '✨💕 +1 per Heart tag + 1 per Spectacle tag (max +5). Engagement = money.',
+      synergyCondition: (ctx) => {
+        const h = ctx.tagsPlayed['heart'] || 0;
+        const s = ctx.tagsPlayed['spectacle'] || 0;
+        const bonus = Math.min(h + s, 5);
+        return bonus > 0 ? { bonus, description: `${h} heart + ${s} spectacle = viral!` } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['heart', 'spectacle'] as CardTag[],
+    },
+    {
+      name: 'Behind The Scenes',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '+3 if Crew card played (fans love the BTS content). Earn +$1M.',
+      synergyCondition: (ctx) => ctx.playedCards.some(c => c.sourceType === 'crew') ? { bonus: 3, budgetMod: 1, description: 'BTS content went viral!' } : { bonus: 0 },
+      riskTag: '🟢',
+      tags: ['heart'] as CardTag[],
+    },
+    {
+      name: 'Cancel Culture',
+      cardType: 'incident',
+      baseQuality: -4,
+      synergyText: 'Twitter turned on her. Lose $1M. But adds Heart tag (sympathy engagement).',
+      synergyCondition: () => ({ bonus: 0, budgetMod: -1, description: 'Cancelled!' }),
+      riskTag: '🔴',
+      tags: ['heart'] as CardTag[],
+    },
+  ],
+};
+
+const JACK_NAVARRO: Omit<Talent, 'id'> = {
+  name: 'Jack Navarro',
+  type: 'Support',
+  skill: 3,
+  heat: 0,
+  cost: 6,
+  trait: 'Stunt Coordinator',
+  traitDesc: '🔥✨ MOMENTUM + SPECTACLE specialist. Makes action sequences safe and spectacular.',
+  cards: [
+    {
+      name: 'Precision Stunt',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '🔥 +2 if Lead Skill 4+. +1 per Momentum tag (max +3). Safe and spectacular.',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.leadSkill >= 4 ? 2 : 0;
+        bonus += Math.min(ctx.tagsPlayed['momentum'] || 0, 3);
+        return bonus > 0 ? { bonus, description: 'Stunt perfection!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['momentum', 'spectacle'] as CardTag[],
+    },
+    {
+      name: 'Wire Rig Magic',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '✨ +2 if Crew card played. +2 if previous card was Action (combo setup).',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.playedCards.some(c => c.sourceType === 'crew') ? 2 : 0;
+        if (ctx.previousCard?.cardType === 'action') bonus += 2;
+        return bonus > 0 ? { bonus, description: 'Stunt magic!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['spectacle'] as CardTag[],
+    },
+    {
+      name: 'Safety First',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: 'Remove 1 Incident from remaining deck. Stunts done right.',
+      synergyCondition: () => ({ bonus: 0, description: 'Safety protocols!' }),
+      riskTag: '🟢',
+      special: 'removeRed',
+      tags: ['precision'] as CardTag[],
+    },
+    {
+      name: 'Stunt Gone Wrong',
+      cardType: 'incident',
+      baseQuality: -4,
+      synergyText: 'Someone got hurt. Lose $1M.',
+      synergyCondition: () => ({ bonus: 0, budgetMod: -1, description: 'Medical bills!' }),
+      riskTag: '🔴',
+    },
+  ],
+};
+
+const GRACE_OKONKWO: Omit<Talent, 'id'> = {
+  name: 'Grace Okonkwo',
+  type: 'Support',
+  skill: 4,
+  heat: 1,
+  cost: 9,
+  genreBonus: { genre: 'Drama', bonus: 2 },
+  trait: 'Dramatic Anchor',
+  traitDesc: '💕🎯 HEART + PRECISION. The emotional core of any ensemble. Elevates dramatic scenes.',
+  cards: [
+    {
+      name: 'Emotional Anchor',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '💕 +2 if Lead Actor card played. +1 per Heart tag (max +3). Grounds the ensemble.',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.playedCards.some(c => c.sourceType === 'actor' && c.source !== 'Grace Okonkwo') ? 2 : 0;
+        bonus += Math.min(ctx.tagsPlayed['heart'] || 0, 3);
+        return bonus > 0 ? { bonus, description: 'Emotional anchor!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['heart', 'precision'] as CardTag[],
+    },
+    {
+      name: 'Quiet Power',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '🎯 +3 if ≤ 3 cards played and 0 Incidents. Restrained brilliance.',
+      synergyCondition: (ctx) => (ctx.playedCards.length <= 2 && ctx.incidentCount === 0) ? { bonus: 3, description: 'Less is more!' } : { bonus: 0 },
+      riskTag: '🟢',
+      tags: ['precision'] as CardTag[],
+    },
+    {
+      name: 'Unspoken Bond',
+      cardType: 'action',
+      baseQuality: 1,
+      synergyText: '💕 +2 if 2+ Actor cards played. +2 if 4+ Heart tags (emotional crescendo).',
+      synergyCondition: (ctx) => {
+        let bonus = ctx.playedCards.filter(c => c.sourceType === 'actor').length >= 2 ? 2 : 0;
+        if ((ctx.tagsPlayed['heart'] || 0) >= 4) bonus += 2;
+        return bonus > 0 ? { bonus, description: 'Unspoken chemistry!' } : { bonus: 0 };
+      },
+      riskTag: '🟢',
+      tags: ['heart'] as CardTag[],
+    },
+    {
+      name: 'Overemotional',
+      cardType: 'incident',
+      baseQuality: -3,
+      synergyText: 'Too much feeling. But adds Heart tag.',
+      synergyCondition: noSynergy,
+      riskTag: '🔴',
+      tags: ['heart'] as CardTag[],
+    },
+  ],
+};
+
+export const ALL_SUPPORTS: Omit<Talent, 'id'>[] = [DANNY_PARK, ROXANNE_BLAZE, OLD_RELIABLE, MIA_TANAKA, HECTOR_MORALES, TOMMY_TBONE_JACKSON, PRIYA_SHARMA, NIKOLAI_VOLKOV, FELIX_WU, DIEGO_FUENTES, LUNA_PRICE, JACK_NAVARRO, GRACE_OKONKWO];
 
 // ─── DIRECTORS ───
 

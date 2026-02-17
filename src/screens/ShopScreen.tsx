@@ -18,6 +18,10 @@ function TalentShopCard({ t, onClick, canBuy }: { t: Talent; onClick: () => void
     <div
       className="card talent-card"
       onClick={canBuy ? onClick : undefined}
+      onKeyDown={e => { if (canBuy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
+      tabIndex={canBuy ? 0 : -1}
+      role="button"
+      aria-label={`${t.name}, ${t.type}, Skill ${t.skill}, Heat ${t.heat}, Cost $${t.cost}M${canBuy ? '' : ', cannot afford'}`}
       style={{ opacity: canBuy ? 1 : 0.4, cursor: canBuy ? 'pointer' : 'not-allowed' }}
     >
       <span className="talent-type" style={{ background: typeColors[t.type] || '#666' }}>{t.type}</span>
@@ -107,6 +111,10 @@ export default function ShopScreen({ state }: { state: GameState }) {
                 key={perk.id}
                 className="card"
                 onClick={() => { if (canBuy) { sfx.purchase(); buyPerk(perk); } }}
+                onKeyDown={e => { if (canBuy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); sfx.purchase(); buyPerk(perk); } }}
+                tabIndex={canBuy ? 0 : -1}
+                role="button"
+                aria-label={`${perk.name}, $${perk.cost}M: ${perk.description}${canBuy ? '' : ', cannot afford'}`}
                 style={{ opacity: canBuy ? 1 : 0.4, cursor: canBuy ? 'pointer' : 'not-allowed' }}
               >
                 <div className="card-title">{perk.name}</div>

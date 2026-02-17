@@ -1369,6 +1369,40 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
+      {/* ─── R268: RIVAL STUDIO DOSSIERS ─── */}
+      {phase >= 4 && (state.activeRivalIds || []).length > 0 && endTab === 'overview' && (
+        <div style={{ marginTop: 24 }} className="animate-slide-down">
+          <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>🕵️ RIVAL DOSSIERS</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 550, margin: '0 auto' }}>
+            {(state.activeRivalIds || []).map(id => {
+              const rivalAI = getRivalAIById(id as string);
+              const activeStudios = getActiveRivalStudios(state.activeRivalIds || []);
+              const studio = activeStudios.find(s => s.id === id);
+              if (!rivalAI || !studio) return null;
+              const recentFilms: { title: string; genre: any; boxOffice: number; tier: string }[] = [];
+              for (const rd of state.rivalHistory || []) {
+                for (const f of rd.films) {
+                  if (f.studioName === studio.name) {
+                    recentFilms.push({ title: f.title, genre: f.genre, boxOffice: f.boxOffice, tier: f.tier });
+                  }
+                }
+              }
+              return (
+                <RivalProfile
+                  key={id}
+                  rival={rivalAI}
+                  stats={state.rivalStats?.[studio.name]}
+                  playerTotalEarnings={state.totalEarnings}
+                  isNemesis={state.nemesisStudio === studio.name}
+                  recentFilms={recentFilms}
+                  currentSeason={state.season}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ─── AI DIRECTOR FINAL STANDINGS (R225) ─── */}
       {phase >= 4 && (state.aiDirectorFilms || []).length > 0 && endTab === 'overview' && (() => {
         const standings = calculateStandings(state.aiDirectorFilms, state.seasonHistory.map(h => h.boxOffice), state.aiDirectorPrevRanks || {});

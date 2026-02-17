@@ -15,6 +15,8 @@ import type { AudienceReaction } from '../audienceReactions';
 import { generateNewsItems } from '../rivalAI';
 import { RivalNewsfeed } from '../components/RivalNewsfeed';
 import { rng } from '../seededRng';
+import { starsToDisplay } from '../criticReviews';
+import type { CriticConsensus } from '../criticReviews';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
@@ -250,9 +252,92 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
         </div>
       )}
 
-      {/* Critic quote */}
-      {phase >= 1 && criticQuote && (
+      {/* R302: Critics Say... section with aggregate score + individual reviews */}
+      {phase >= 1 && state.lastCriticConsensus && state.lastCriticConsensus.reviews.length > 0 && (
         <div className="animate-slide-down" ref={el => { if (el && !el.dataset.sounded) { el.dataset.sounded = '1'; sfx.criticRevealSwoosh(); setTimeout(() => { if (lastResult && lastResult.tier !== 'FLOP') { sfx.freshTomatoSplat(); if (lastResult.tier === 'BLOCKBUSTER') setTimeout(() => sfx.criticConsensusFanfare(), 300); } else sfx.rottenSquish(); }, 300); } }} style={{
+          marginTop: 16,
+          maxWidth: 420,
+          margin: '16px auto 0',
+        }}>
+          {/* Aggregate Critics Score */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            marginBottom: 12,
+          }}>
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: `1px solid ${state.lastCriticConsensus.freshPercent >= 60 ? 'rgba(231,76,60,0.3)' : 'rgba(139,195,74,0.3)'}`,
+              borderRadius: 10,
+              padding: '8px 16px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '1.4rem' }}>
+                {state.lastCriticConsensus.freshPercent >= 60 ? '🍅' : '🥬'}
+              </div>
+              <div style={{
+                fontSize: '1.3rem',
+                fontWeight: 700,
+                color: state.lastCriticConsensus.freshPercent >= 60 ? '#e74c3c' : '#8bc34a',
+              }}>
+                {state.lastCriticConsensus.freshPercent}%
+              </div>
+              <div style={{ fontSize: '0.6rem', color: '#888', letterSpacing: 1 }}>
+                {state.lastCriticConsensus.freshPercent >= 60 ? 'FRESH' : 'ROTTEN'}
+              </div>
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontFamily: 'Bebas Neue', fontSize: '0.85rem', color: '#888', letterSpacing: 1 }}>
+                CRITICS SAY...
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#d4a843' }}>
+                {starsToDisplay(state.lastCriticConsensus.avgStars)} ({state.lastCriticConsensus.avgStars}/5)
+              </div>
+            </div>
+          </div>
+
+          {/* Individual reviews */}
+          {state.lastCriticConsensus.reviews.map((review, i) => (
+            <div key={i} className="animate-slide-down" style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: `1px solid ${review.fresh ? 'rgba(212,168,67,0.15)' : 'rgba(231,76,60,0.15)'}`,
+              borderRadius: 8,
+              padding: '10px 14px',
+              marginBottom: 6,
+              animationDelay: `${i * 0.2}s`,
+            }}>
+              <div style={{
+                fontSize: '0.75rem',
+                color: review.fresh ? '#d4a843' : '#e74c3c',
+                marginBottom: 2,
+                letterSpacing: 0.5,
+              }}>
+                {starsToDisplay(review.stars)}
+              </div>
+              <div style={{
+                fontSize: '0.82rem',
+                color: '#ccc',
+                fontStyle: 'italic',
+                lineHeight: 1.45,
+                marginBottom: 6,
+              }}>
+                "{review.quote}"
+              </div>
+              <div style={{
+                fontSize: '0.7rem',
+                color: '#888',
+              }}>
+                — <strong style={{ color: '#aaa' }}>{review.criticName}</strong>, <em>{review.publication}</em>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Fallback: old critic quote if no R302 reviews */}
+      {phase >= 1 && criticQuote && (!state.lastCriticConsensus || state.lastCriticConsensus.reviews.length === 0) && (
+        <div className="animate-slide-down" style={{
           marginTop: 12,
           padding: '10px 16px',
           background: 'rgba(255,255,255,0.03)',

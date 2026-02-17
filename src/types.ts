@@ -379,6 +379,8 @@ export interface GameState {
   nemesisStudio: string | null; // rival name that became nemesis (beaten player 3+ times)
   // R185: Audience reactions
   lastAudienceReaction: import('./audienceReactions').AudienceReaction | null;
+  // R302: Critic reviews for current film
+  lastCriticConsensus: import('./criticReviews').CriticConsensus | null;
   // R197: World events
   activeWorldEvents: import('./worldEvents').ActiveWorldEvent[];
   worldEventHistory: import('./worldEvents').ActiveWorldEvent[];

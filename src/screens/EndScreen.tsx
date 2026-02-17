@@ -51,6 +51,7 @@ import { extractShareData, type RunShareData } from '../sharing';
 import { checkCommunityChallenges, type RunSummary, type CommunityChallenge } from '../challenges';
 import ReplayViewer from '../components/ReplayViewer';
 import { detectAllSynergies } from '../synergies';
+import { getReviewArchive, starsToDisplay } from '../criticReviews';
 
 // ─── Helpers ───
 
@@ -446,7 +447,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const ending = getEndingForRank(rank, isVictory);
 
   const [phase, setPhase] = useState(0);
-  const [endTab, setEndTab] = useState<'overview' | 'details' | 'progression'>('overview');
+  const [endTab, setEndTab] = useState<'overview' | 'details' | 'progression' | 'clippings'>('overview');
   const [copied, setCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [showReplayToast, setShowReplayToast] = useState(false);
@@ -1195,6 +1196,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           {([
             { id: 'overview' as const, label: '📜 Overview' },
             { id: 'details' as const, label: '📊 Details' },
+            { id: 'clippings' as const, label: '📰 Press Clippings' },
             { id: 'progression' as const, label: '⭐ Progression' },
           ]).map(t => (
             <button
@@ -1551,6 +1553,79 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           </div>
         </div>
       )}
+
+      {/* ─── R302: PRESS CLIPPINGS TAB ─── */}
+      {phase >= 4 && endTab === 'clippings' && (() => {
+        const archive = getReviewArchive();
+        if (archive.length === 0) return (
+          <div className="animate-slide-down" style={{ textAlign: 'center', color: '#888', marginTop: 24 }}>
+            No press clippings yet. Make some films!
+          </div>
+        );
+        return (
+          <div className="animate-slide-down" style={{ marginTop: 16 }}>
+            <div style={{ fontFamily: 'Bebas Neue', fontSize: '1rem', color: '#d4a843', letterSpacing: 1, textAlign: 'center', marginBottom: 16 }}>
+              📰 PRESS CLIPPINGS
+            </div>
+            {archive.slice().reverse().map((entry, idx) => (
+              <div key={idx} style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 10,
+                padding: '14px 16px',
+                marginBottom: 12,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div>
+                    <div style={{ color: '#d4a843', fontWeight: 700, fontSize: '0.95rem' }}>
+                      "{entry.filmTitle}"
+                    </div>
+                    <div style={{ color: '#888', fontSize: '0.7rem' }}>
+                      Season {entry.season} · {entry.genre} · Quality {entry.quality}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: entry.freshPercent >= 60 ? 'rgba(231,76,60,0.15)' : 'rgba(139,195,74,0.15)',
+                    border: `1px solid ${entry.freshPercent >= 60 ? 'rgba(231,76,60,0.3)' : 'rgba(139,195,74,0.3)'}`,
+                    borderRadius: 8,
+                    padding: '4px 10px',
+                    textAlign: 'center',
+                    minWidth: 50,
+                  }}>
+                    <div style={{ fontSize: '1rem' }}>{entry.freshPercent >= 60 ? '🍅' : '🥬'}</div>
+                    <div style={{
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      color: entry.freshPercent >= 60 ? '#e74c3c' : '#8bc34a',
+                    }}>
+                      {entry.freshPercent}%
+                    </div>
+                  </div>
+                </div>
+                {entry.reviews.map((review, ri) => (
+                  <div key={ri} style={{
+                    padding: '8px 10px',
+                    marginBottom: 4,
+                    borderLeft: `2px solid ${review.fresh ? 'rgba(212,168,67,0.4)' : 'rgba(231,76,60,0.4)'}`,
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: '0 6px 6px 0',
+                  }}>
+                    <div style={{ fontSize: '0.7rem', color: review.fresh ? '#d4a843' : '#e74c3c', marginBottom: 2 }}>
+                      {starsToDisplay(review.stars)}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#ccc', fontStyle: 'italic', lineHeight: 1.4, marginBottom: 4 }}>
+                      "{review.quote}"
+                    </div>
+                    <div style={{ fontSize: '0.65rem', color: '#888' }}>
+                      — <strong style={{ color: '#aaa' }}>{review.criticName}</strong>, <em>{review.publication}</em>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* ─── LEGACY PERKS ─── */}
       {phase >= 5 && endTab === 'progression' && newPerks.length > 0 && (

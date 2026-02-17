@@ -134,7 +134,7 @@ import {
 const COMPOSERS_COST: Record<string, number> = Object.fromEntries(
   getComposerOptions().map(c => [c.name, c.cost])
 );
-import { generateCriticReviews } from './criticReviews';
+import { generateCriticReviews, saveReviewsToArchive } from './criticReviews';
 import { loadCampaignData, updateCampaignAfterFilm, getActiveCampaign, type CampaignFilmRecord } from './campaigns';
 import { getSeasonalBOMultiplier, getSeasonalQualityBonus, applyEventModifiers } from './seasonalEvents';
 import { getCombinedModifierMultiplier, CHALLENGE_MODIFIERS } from './challengeModifiers';
@@ -212,6 +212,7 @@ function createInitialState(): GameState {
     rivalStats: {},
     nemesisStudio: null,
     lastAudienceReaction: null,
+    lastCriticConsensus: null,
     postProdMarketing: null,
     postProdOption: null,
     postProdMarketingMultiplier: undefined,
@@ -795,6 +796,7 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, activ
     rivalStats,
     nemesisStudio: null,
     lastAudienceReaction: null,
+    lastCriticConsensus: null,
     activeWorldEvents: [],
     worldEventHistory: [],
     worldEventEndedThisSeason: [],
@@ -2645,8 +2647,11 @@ export function resolveRelease() {
   }
   const nominated = nominationQuality > 25 + state.season * 5;
 
-  // R173: Generate critic consensus for career tracking
+  // R173/R302: Generate critic consensus for career tracking
   const criticConsensus = generateCriticReviews(rawQuality, tier, script.genre, script.title);
+
+  // R302: Save reviews to localStorage archive
+  saveReviewsToArchive(script.title, script.genre, rawQuality, state.season, criticConsensus);
 
   const result = {
     season: state.season,
@@ -2908,6 +2913,7 @@ export function resolveRelease() {
       } as SoundtrackHistoryEntry] : []),
     ],
     lastAudienceReaction: finalAudienceData,
+    lastCriticConsensus: criticConsensus,
     debt,
     budget: state.budget + finalEarnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost + streamingDealIncome,
     totalEarnings: state.totalEarnings + finalEarnings + streamingDealIncome,

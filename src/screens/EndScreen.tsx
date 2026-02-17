@@ -27,8 +27,9 @@ import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
 import { getDifficultyBadge } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
-import { updateEndlessPersonalBest } from '../endlessMode';
-import { addDailyLeaderboardEntry, addWeeklyLeaderboardEntry, calculateDailyScore } from '../dailyChallenge';
+import { updateEndlessPersonalBest, getEndlessPersonalBest } from '../endlessMode';
+import { loadCampaignData, getActiveCampaign, getCampaignById } from '../campaigns';
+import { addDailyLeaderboardEntry, addWeeklyLeaderboardEntry, calculateDailyScore, getDailyLeaderboard, getWeeklyLeaderboard } from '../dailyChallenge';
 import { buildDirectorProfile, recordDirectorRun, getDirectorCareer, type DirectorProfile } from '../directorProfile';
 import { updateProfileAfterRun } from '../playerProfile';
 import { checkTradingCardUnlocks, TRADING_CARDS, RARITY_CONFIG, getCollectionProgress } from '../tradingCards';
@@ -726,7 +727,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         // Approximate streak from consecutive hits
         let longestStreak = 0, curStreak = 0;
         for (const s of history) { if (s.hitTarget) { curStreak++; longestStreak = Math.max(longestStreak, curStreak); } else { curStreak = 0; } }
+        const prevPB = getEndlessPersonalBest();
         updateEndlessPersonalBest(history.length, score, longestStreak);
+        if (history.length > prevPB.highestSeason || score > prevPB.bestCumulativeScore) {
+          sfx.endlessPersonalBest();
+        }
       }
       // R233: Daily/Weekly leaderboard entries
       if (state.gameMode === 'daily' || state.gameMode === 'weekly') {
@@ -741,8 +746,15 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           films: history.length,
           won: isVictory,
         };
-        if (state.gameMode === 'daily') addDailyLeaderboardEntry(lbEntry);
-        else addWeeklyLeaderboardEntry(lbEntry);
+        if (state.gameMode === 'daily') {
+          addDailyLeaderboardEntry(lbEntry);
+          const lb = getDailyLeaderboard();
+          if (lb.findIndex(e => e.score === dailyScore) < 10) sfx.dailyLeaderboardEntry();
+        } else {
+          addWeeklyLeaderboardEntry(lbEntry);
+          const lb = getWeeklyLeaderboard();
+          if (lb.findIndex(e => e.score === dailyScore) < 10) sfx.dailyLeaderboardEntry();
+        }
       }
       // R186: Record director profile for career tracking
       recordDirectorRun(directorProfile);
@@ -1203,12 +1215,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
       {/* ─── CAMPAIGN PROGRESS (R235) ─── */}
       {phase >= 4 && endTab === 'overview' && state.campaignMilestonesThisSeason && state.campaignMilestonesThisSeason.length > 0 && (() => {
-        const { loadCampaignData: loadCD, getActiveCampaign: getAC, getCampaignById: getCB } = require('../campaigns');
-        const cData = loadCD();
+        const cData = loadCampaignData();
         // Show milestones completed this season
-        const activeCamp = getAC(cData);
+        const activeCamp = getActiveCampaign(cData);
         const campaignId = activeCamp?.campaign?.id || state.activeCampaignId;
-        const campaign = campaignId ? getCB(campaignId) : null;
+        const campaign = campaignId ? getCampaignById(campaignId) : null;
         if (!campaign) return null;
         const completedIds = new Set(state.campaignMilestonesThisSeason);
         const milestones = campaign.objectives.filter((o: any) => completedIds.has(o.id));

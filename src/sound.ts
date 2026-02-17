@@ -3337,4 +3337,269 @@ export const sfx = {
       note(c, 784, 0.76, 0.35, 0.08, 'triangle');
     }, 'seasonLeaderboardReveal');
   },
+
+  // ── R238: Endless Mode (R233) sounds ──
+
+  endlessEscalation() {
+    play(c => {
+      // Rising filtered noise
+      const buf = c.createBuffer(1, c.sampleRate * 1.2, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const filt = c.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(200, c.currentTime);
+      filt.frequency.exponentialRampToValueAtTime(4000, c.currentTime + 1.0);
+      filt.Q.value = 4;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.001, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, c.currentTime + 0.5);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.2);
+      src.connect(filt).connect(g).connect(getMaster());
+      src.start(); src.stop(c.currentTime + 1.3);
+      // Staccato bass hits
+      for (let i = 0; i < 6; i++) {
+        note(c, 55 + i * 8, i * 0.15, 0.08, 0.12 + i * 0.01, 'square');
+      }
+    }, 'endlessEscalation');
+  },
+
+  endlessPersonalBest() {
+    play(c => {
+      // Triumphant ascending fanfare
+      note(c, 523, 0, 0.12, 0.14, 'sine');
+      note(c, 659, 0.08, 0.12, 0.14, 'sine');
+      note(c, 784, 0.16, 0.12, 0.14, 'sine');
+      note(c, 1047, 0.24, 0.15, 0.16, 'sine');
+      note(c, 1319, 0.32, 0.2, 0.12, 'sine');
+      note(c, 1568, 0.4, 0.35, 0.14, 'sine');
+      // Chord shimmer
+      note(c, 784, 0.45, 0.4, 0.06, 'triangle');
+      note(c, 1047, 0.45, 0.4, 0.06, 'triangle');
+      note(c, 1319, 0.45, 0.4, 0.06, 'triangle');
+      noise(c, 0.4, 0.15, 0.04);
+    }, 'endlessPersonalBest');
+  },
+
+  endlessSurvivalTick(speed: number = 1) {
+    play(c => {
+      const interval = Math.max(0.15, 0.4 / speed);
+      // Heartbeat: two thuds
+      note(c, 50, 0, 0.08, 0.1, 'sine');
+      note(c, 45, 0.06, 0.06, 0.07, 'sine');
+      note(c, 50, interval, 0.08, 0.08, 'sine');
+      note(c, 45, interval + 0.06, 0.06, 0.05, 'sine');
+    }, 'endlessSurvivalTick');
+  },
+
+  // ── R238: Daily Challenge (R233) sounds ──
+
+  dailyChallengeStart() {
+    play(c => {
+      // Newspaper unfold — filtered noise sweep
+      const buf = c.createBuffer(1, c.sampleRate * 0.4, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const filt = c.createBiquadFilter();
+      filt.type = 'highpass';
+      filt.frequency.setValueAtTime(2000, c.currentTime);
+      filt.frequency.exponentialRampToValueAtTime(200, c.currentTime + 0.3);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.08, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+      src.connect(filt).connect(g).connect(getMaster());
+      src.start(); src.stop(c.currentTime + 0.5);
+      // Stamp thud
+      note(c, 80, 0.3, 0.15, 0.18, 'sine');
+      noise(c, 0.3, 0.05, 0.15);
+      note(c, 120, 0.32, 0.1, 0.08, 'triangle');
+    }, 'dailyChallengeStart');
+  },
+
+  dailyLeaderboardEntry() {
+    play(c => {
+      // Satisfying slot-in: descending click + lock
+      note(c, 1200, 0, 0.04, 0.1, 'square');
+      note(c, 800, 0.03, 0.04, 0.1, 'square');
+      note(c, 500, 0.06, 0.06, 0.12, 'sine');
+      // Lock click
+      noise(c, 0.1, 0.03, 0.12);
+      note(c, 300, 0.1, 0.12, 0.08, 'triangle');
+      // Sparkle confirmation
+      note(c, 1568, 0.15, 0.2, 0.06, 'sine');
+      note(c, 2093, 0.2, 0.15, 0.04, 'sine');
+    }, 'dailyLeaderboardEntry');
+  },
+
+  weeklyChallengeFanfare() {
+    play(c => {
+      // Grand brass-like fanfare
+      note(c, 262, 0, 0.2, 0.14, 'sawtooth');
+      note(c, 330, 0.1, 0.2, 0.14, 'sawtooth');
+      note(c, 392, 0.2, 0.2, 0.14, 'sawtooth');
+      note(c, 523, 0.3, 0.25, 0.16, 'sawtooth');
+      // Full chord resolve
+      note(c, 523, 0.4, 0.5, 0.1, 'triangle');
+      note(c, 659, 0.4, 0.5, 0.1, 'triangle');
+      note(c, 784, 0.4, 0.5, 0.1, 'triangle');
+      note(c, 1047, 0.4, 0.5, 0.08, 'sine');
+      // Cymbal shimmer
+      noise(c, 0.4, 0.4, 0.06);
+      // High sparkle
+      note(c, 2093, 0.5, 0.3, 0.04, 'sine');
+      note(c, 2637, 0.55, 0.25, 0.03, 'sine');
+      note(c, 3520, 0.6, 0.3, 0.02, 'sine');
+    }, 'weeklyChallengeFanfare');
+  },
+
+  // ── R238: Campaign (R235) sounds ──
+
+  campaignUnlock() {
+    play(c => {
+      // Lock opening click
+      noise(c, 0, 0.04, 0.12);
+      note(c, 400, 0.02, 0.06, 0.1, 'square');
+      // Rising unlock chime
+      note(c, 523, 0.1, 0.15, 0.12, 'sine');
+      note(c, 659, 0.18, 0.15, 0.12, 'sine');
+      note(c, 784, 0.26, 0.15, 0.12, 'sine');
+      note(c, 1047, 0.34, 0.3, 0.14, 'sine');
+      // Sparkle tail
+      note(c, 2093, 0.4, 0.25, 0.05, 'sine');
+      noise(c, 0.35, 0.15, 0.04);
+    }, 'campaignUnlock');
+  },
+
+  campaignMilestone() {
+    play(c => {
+      // Flag plant: thud + flutter
+      note(c, 70, 0, 0.12, 0.15, 'sine');
+      noise(c, 0, 0.04, 0.1);
+      // Flutter (rapid high notes)
+      for (let i = 0; i < 4; i++) {
+        note(c, 1200 + i * 200, 0.1 + i * 0.05, 0.06, 0.04, 'sine');
+      }
+      // Confirmation chime
+      note(c, 784, 0.3, 0.2, 0.1, 'sine');
+      note(c, 1047, 0.35, 0.2, 0.08, 'triangle');
+    }, 'campaignMilestone');
+  },
+
+  campaignComplete() {
+    play(c => {
+      // Epic fanfare — longer and more dramatic
+      // Brass buildup
+      note(c, 196, 0, 0.3, 0.12, 'sawtooth');
+      note(c, 262, 0.15, 0.3, 0.12, 'sawtooth');
+      note(c, 330, 0.3, 0.3, 0.14, 'sawtooth');
+      note(c, 392, 0.45, 0.3, 0.14, 'sawtooth');
+      note(c, 523, 0.6, 0.4, 0.16, 'sawtooth');
+      // Timpani rolls
+      for (let i = 0; i < 8; i++) {
+        note(c, 80, i * 0.08, 0.06, 0.06 + i * 0.005, 'sine');
+      }
+      // Grand resolve chord
+      note(c, 523, 0.8, 0.8, 0.12, 'sine');
+      note(c, 659, 0.8, 0.8, 0.1, 'sine');
+      note(c, 784, 0.8, 0.8, 0.1, 'sine');
+      note(c, 1047, 0.85, 0.75, 0.1, 'triangle');
+      note(c, 1319, 0.9, 0.7, 0.08, 'triangle');
+      // Cymbal crash
+      noise(c, 0.8, 0.6, 0.08);
+      // Sparkle cascade
+      note(c, 2093, 1.0, 0.4, 0.04, 'sine');
+      note(c, 2637, 1.1, 0.35, 0.03, 'sine');
+      note(c, 3520, 1.2, 0.4, 0.03, 'sine');
+      note(c, 4186, 1.3, 0.3, 0.02, 'sine');
+    }, 'campaignComplete');
+  },
+
+  campaignSelect() {
+    play(c => {
+      // Book opening — low creak
+      note(c, 120, 0, 0.15, 0.08, 'sawtooth');
+      note(c, 140, 0.05, 0.12, 0.06, 'sawtooth');
+      // Page turn — noise swoosh
+      const buf = c.createBuffer(1, c.sampleRate * 0.3, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      const filt = c.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(3000, c.currentTime + 0.15);
+      filt.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.4);
+      filt.Q.value = 2;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.001, c.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0.07, c.currentTime + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      src.connect(filt).connect(g).connect(getMaster());
+      src.start(c.currentTime + 0.15); src.stop(c.currentTime + 0.5);
+      // Soft confirmation tone
+      note(c, 523, 0.35, 0.2, 0.06, 'sine');
+    }, 'campaignSelect');
+  },
+
+  // ── R238: Achievement (R236) sounds ──
+
+  achievementUnlockScaled(rarity: 'common' | 'rare' | 'epic' | 'legendary' = 'common') {
+    play(c => {
+      if (rarity === 'common') {
+        // Simple chime
+        note(c, 1047, 0, 0.15, 0.1, 'sine');
+        note(c, 1319, 0.1, 0.2, 0.08, 'sine');
+      } else if (rarity === 'rare') {
+        // Double chime
+        note(c, 1047, 0, 0.12, 0.1, 'sine');
+        note(c, 1319, 0.08, 0.12, 0.1, 'sine');
+        note(c, 1568, 0.2, 0.12, 0.1, 'sine');
+        note(c, 2093, 0.28, 0.2, 0.08, 'sine');
+      } else if (rarity === 'epic') {
+        // Full chord
+        note(c, 523, 0, 0.3, 0.1, 'sine');
+        note(c, 659, 0, 0.3, 0.1, 'sine');
+        note(c, 784, 0, 0.3, 0.1, 'sine');
+        note(c, 1047, 0.1, 0.3, 0.12, 'sine');
+        note(c, 1319, 0.15, 0.25, 0.08, 'triangle');
+        noise(c, 0.1, 0.1, 0.03);
+      } else {
+        // Legendary: full fanfare
+        note(c, 392, 0, 0.15, 0.12, 'sawtooth');
+        note(c, 523, 0.1, 0.15, 0.12, 'sawtooth');
+        note(c, 659, 0.2, 0.15, 0.14, 'sawtooth');
+        note(c, 784, 0.3, 0.2, 0.14, 'sawtooth');
+        // Chord resolve
+        note(c, 523, 0.4, 0.4, 0.1, 'sine');
+        note(c, 659, 0.4, 0.4, 0.1, 'sine');
+        note(c, 784, 0.4, 0.4, 0.1, 'sine');
+        note(c, 1047, 0.4, 0.4, 0.1, 'triangle');
+        // Sparkle
+        note(c, 2093, 0.5, 0.3, 0.05, 'sine');
+        note(c, 2637, 0.55, 0.25, 0.04, 'sine');
+        note(c, 3520, 0.6, 0.3, 0.03, 'sine');
+        noise(c, 0.45, 0.2, 0.04);
+      }
+    }, 'achievementUnlockScaled');
+  },
+
+  achievementSecretReveal() {
+    play(c => {
+      // Mysterious reveal — eerie rising tones
+      note(c, 220, 0, 0.4, 0.06, 'sine');
+      note(c, 277, 0.1, 0.35, 0.06, 'sine');
+      note(c, 330, 0.2, 0.3, 0.08, 'sine');
+      // Dissonant shimmer
+      note(c, 466, 0.3, 0.4, 0.05, 'triangle');
+      note(c, 494, 0.32, 0.38, 0.05, 'triangle');
+      // Reveal sparkle
+      note(c, 1047, 0.5, 0.25, 0.08, 'sine');
+      note(c, 1397, 0.55, 0.2, 0.06, 'sine');
+      noise(c, 0.4, 0.2, 0.03);
+    }, 'achievementSecretReveal');
+  },
 };

@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { sfx } from '../sound';
 import {
   getDailyChallengeConstraints,
   getWeeklyChallengeConstraints,
@@ -56,7 +57,7 @@ export function DailyChallengeCard({ onStart }: { onStart?: (type: 'daily' | 'we
         <button
           className="btn"
           style={{ marginTop: 12, color: tab === 'daily' ? '#3498db' : '#9b59b6', borderColor: tab === 'daily' ? '#3498db' : '#9b59b6' }}
-          onClick={() => onStart(tab)}
+          onClick={() => { tab === 'weekly' ? sfx.weeklyChallengeFanfare() : sfx.dailyChallengeStart(); onStart(tab); }}
         >
           {tab === 'daily' ? '📅 Start Daily Challenge' : '📆 Start Weekly Challenge'}
         </button>

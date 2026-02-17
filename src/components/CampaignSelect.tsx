@@ -80,7 +80,7 @@ function CampaignCard({
       }}
       onClick={() => {
         if (unlocked && !isActive && !completed) {
-          sfx.click();
+          sfx.campaignSelect();
           onStart();
         }
       }}
@@ -244,7 +244,7 @@ function CampaignCard({
         <button
           className="btn btn-primary"
           style={{ marginTop: 12, width: '100%', fontSize: '0.8rem' }}
-          onClick={e => { e.stopPropagation(); sfx.click(); onStart(); }}
+          onClick={e => { e.stopPropagation(); sfx.campaignSelect(); onStart(); }}
         >
           🎬 Start Campaign
         </button>
@@ -256,6 +256,7 @@ function CampaignCard({
 // ─── Campaign Completion Celebration Modal ───
 
 function CampaignCompletionModal({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
+  useEffect(() => { sfx.campaignComplete(); }, []);
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 480, textAlign: 'center' }}>

@@ -5,8 +5,10 @@
  * - Current run stats during gameplay
  */
 
+import { useEffect, useRef } from 'react';
 import { getEndlessPersonalBest, getEndlessEscalation, type EndlessPersonalBest } from '../endlessMode';
 import { getEndlessLeaderboard } from '../endgame';
+import { sfx } from '../sound';
 
 // ─── Personal Records Display ───
 

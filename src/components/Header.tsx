@@ -15,6 +15,7 @@ function getRepTier(rep: number): { name: string; color: string } {
 import { getChallengeById } from '../challenges';
 import { isMuted, toggleMute, sfx, getVolume, setVolume } from '../sound';
 import StatTooltip from './StatTooltip';
+import HelpPanel from './HelpPanel';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
   return (
@@ -81,6 +82,7 @@ function QuickHelp({ onClose }: { onClose: () => void }) {
 
 export default function Header({ state }: { state: GameState }) {
   const [showHelp, setShowHelp] = useState(false);
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
   const [volume, setVolumeState] = useState(getVolume());
   const [showVolume, setShowVolume] = useState(false);
@@ -203,6 +205,15 @@ export default function Header({ state }: { state: GameState }) {
       </button>
       <button
         className="header-help-btn"
+        onClick={() => setShowHelpPanel(true)}
+        title="Help & Glossary"
+        aria-label="Help & Glossary"
+        style={{ right: 90 }}
+      >
+        📖
+      </button>
+      <button
+        className="header-help-btn"
         onClick={handleToggleMute}
         onContextMenu={e => { e.preventDefault(); setShowVolume(!showVolume); }}
         title={muted ? 'Unmute (right-click for volume)' : 'Mute (right-click for volume)'}
@@ -226,6 +237,7 @@ export default function Header({ state }: { state: GameState }) {
         </div>
       )}
       {showHelp && <QuickHelp onClose={() => setShowHelp(false)} />}
+      {showHelpPanel && <HelpPanel onClose={() => setShowHelpPanel(false)} />}
     </div>
   );
 }

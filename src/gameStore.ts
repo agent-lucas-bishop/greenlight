@@ -2832,11 +2832,13 @@ export function resolveRelease() {
         tier,
         season: state.season,
         nominated: result.nominated,
-        festivalAwards: result.festivalAwards,
+        festivalAwards: (state as any).festivalAwards,
       };
       const campaignResult = updateCampaignAfterFilm(campaignFilm, campaignData);
       if (campaignResult.newlyCompleted.length > 0) {
         setState({ campaignMilestonesThisSeason: campaignResult.newlyCompleted, campaignJustCompleted: campaignResult.campaignComplete });
+        sfx.campaignMilestone();
+        if (campaignResult.campaignComplete) sfx.campaignUnlock();
       }
     }
   } catch {}
@@ -3291,6 +3293,10 @@ export function nextSeason() {
   
   // R197: Tick world events — remove expired, generate new
   const nextSeasonNum = state.season + 1;
+  // R238: Endless escalation sound every 3 seasons
+  if (state.gameMode === 'endless' && nextSeasonNum > 1 && nextSeasonNum % 3 === 1) {
+    sfx.endlessEscalation();
+  }
   const { active: survivingEvents, ended: endedEvents } = tickWorldEvents(state.activeWorldEvents, nextSeasonNum);
   const worldEventCtx = {
     season: nextSeasonNum,

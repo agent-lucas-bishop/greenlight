@@ -1,6 +1,7 @@
 // Achievement toast — gold notification that slides in from the top
 import { useState, useEffect } from 'react';
 import type { AchievementDef } from '../achievements';
+import { getAchievementRarity } from '../achievements-gallery';
 import { sfx } from '../sound';
 import { announce } from '../accessibility';
 
@@ -13,7 +14,9 @@ export default function AchievementToast({ achievement, onDone }: AchievementToa
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    sfx.achievementUnlock();
+    const rarity = getAchievementRarity(achievement);
+    sfx.achievementUnlockScaled(rarity as 'common' | 'rare' | 'epic' | 'legendary');
+    if (achievement.secret) sfx.achievementSecretReveal();
     announce(`Achievement unlocked: ${achievement.name}. ${achievement.description}`);
     const exitTimer = setTimeout(() => setExiting(true), 2500);
     const doneTimer = setTimeout(onDone, 3000);

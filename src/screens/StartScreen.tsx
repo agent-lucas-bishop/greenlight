@@ -43,6 +43,8 @@ const TrophyRoom = lazy(() => import('../components/TrophyRoom'));
 const CampaignSelect = lazy(() => import('../components/CampaignSelect'));
 const PlayerProfileModal = lazy(() => import('../components/PlayerProfile'));
 const CardCreator = lazy(() => import('../components/CardCreator'));
+const ModManagerPanel = lazy(() => import('../components/ModManager'));
+const ModCreatorPanel = lazy(() => import('../components/ModCreator'));
 const CraftingWorkshop = lazy(() => import('../components/CraftingWorkshop'));
 const ChallengeBoard = lazy(() => import('../components/ChallengeBoard'));
 const CollectionPanel = lazy(() => import('../components/CollectionPanel'));
@@ -506,8 +508,9 @@ export default function StartScreen() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
   const [showTrophyRoom, setShowTrophyRoom] = useState(false);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio'>('play');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy' | 'trophies' | 'studio' | 'mods'>('play');
   const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
+  const [modsSubView, setModsSubView] = useState<'manage' | 'create'>('manage');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
   const [activeModifiers, setActiveModifiers] = useState<string[]>([]);
@@ -882,6 +885,7 @@ export default function StartScreen() {
           { id: 'events' as const, emoji: '📅', label: 'EVENTS' },
           { id: 'legacy' as const, emoji: '🏛️', label: 'LEGACY' },
           { id: 'studio' as const, emoji: '🏢', label: 'STUDIO' },
+          { id: 'mods' as const, emoji: '🔧', label: 'MODS' },
           { id: 'career', emoji: '📋', label: 'CAREER' },
           { id: 'history', emoji: '📜', label: 'RUNS' },
           { id: 'archive', emoji: '🎞️', label: 'ARCHIVE' },
@@ -1727,6 +1731,19 @@ export default function StartScreen() {
           </div>
           {/* Motto editor */}
           <MottoEditor />
+        </div>
+      )}
+
+      {/* ─── MODS TAB ─── */}
+      {tab === 'mods' && (
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <Suspense fallback={<SkeletonLoader />}>
+            {modsSubView === 'create' ? (
+              <ModCreatorPanel onClose={() => setModsSubView('manage')} />
+            ) : (
+              <ModManagerPanel onCreateMod={() => setModsSubView('create')} />
+            )}
+          </Suspense>
         </div>
       )}
 

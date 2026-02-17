@@ -23,6 +23,7 @@ const NeowScreen = lazy(() => import('./screens/NeowScreen'));
 const GreenlightScreen = lazy(() => import('./screens/GreenlightScreen'));
 const CastingScreen = lazy(() => import('./screens/CastingScreen'));
 const ProductionScreen = lazy(() => import('./screens/ProductionScreen'));
+const PostProductionScreen = lazy(() => import('./screens/PostProductionScreen'));
 const ReleaseScreen = lazy(() => import('./screens/ReleaseScreen'));
 const ShopScreen = lazy(() => import('./screens/ShopScreen'));
 const EventScreen = lazy(() => import('./screens/EventScreen'));
@@ -130,6 +131,7 @@ function App() {
       case 'greenlight': return <GreenlightScreen state={state} />;
       case 'casting': return <CastingScreen state={state} />;
       case 'production': return <ProductionScreen state={state} />;
+      case 'postProduction': return <PostProductionScreen state={state} />;
       case 'release': {
         const latestRivals = state.rivalHistory[state.rivalHistory.length - 1];
         return <ReleaseScreen state={state} rivalFilms={latestRivals?.films || []} />;

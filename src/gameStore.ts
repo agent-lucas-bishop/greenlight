@@ -163,6 +163,10 @@ function createInitialState(): GameState {
     reshootsBudgetUsed: false,
     prCampaignActive: false,
     rivalActions: [],
+    postProdMarketing: null,
+    postProdOption: null,
+    postProdMarketingMultiplier: undefined,
+    postProdTestScreeningTier: null,
   };
 }
 
@@ -2300,6 +2304,10 @@ export function resolveRelease() {
     sequelOrigins[sequelTitle] = rootTitle;
   }
 
+  // Record film result for talent aging/mood system
+  const castNamesForAging = state.castSlots.map(s => s.talent?.name).filter(Boolean) as string[];
+  recordFilmResult(castNamesForAging, tier);
+
   let newRoster = [...state.roster];
   if (result.hitTarget) {
     newRoster = newRoster.map(t => {
@@ -2487,7 +2495,8 @@ export function proceedToShop() {
   }
   
   // Apply talent drought effect to market size
-  let finalTalentMarket = talentMarket;
+  // Apply talent aging to shop market
+  let finalTalentMarket = talentMarket.map(t => applyAgingToTalent(t));
   if (event.effect === 'talentDrought') {
     finalTalentMarket = talentMarket.slice(0, 3);
   }
@@ -2581,6 +2590,12 @@ export function payDebt(amount: number) {
 }
 
 export function nextSeason() {
+  // Talent aging: age market talent, tick peak counters, check hungry
+  const marketNames = state.talentMarket.map(t => t.name);
+  ageTalentOnMarket(marketNames);
+  tickPeakCounters();
+  checkHungryMood();
+
   // Generate 3-4 season events for player to choose from
   const legacyPerksEvent = getActiveLegacyPerks();
   const extraChoice = legacyPerksEvent.some(p => p.effect === 'extraEventChoice') ? 1 : 0;

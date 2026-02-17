@@ -10,7 +10,7 @@ import type { SeasonEventChoice } from './types';
 import { getActiveLegacyPerks, getUnlocks, saveUnlocks } from './unlocks';
 import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
-import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS } from './rivals';
+import { generateRivalSeason, getSeasonIdentity, RIVAL_EVENTS, calculateRubberBand } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
 import { sfx } from './sound';
@@ -1582,8 +1582,8 @@ export function resolveRelease() {
     return t;
   }).filter(t => t.filmsLeft === undefined || t.filmsLeft > 0);
 
-  // Generate rival films for this season (rivals chase hot genres)
-  let rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres);
+  // Generate rival films for this season (rivals chase hot genres, with rubber-banding)
+  let rivalFilms = generateRivalSeason(state.season, target, state.hotGenres, state.coldGenres, state.totalEarnings + earnings, state.cumulativeRivalEarnings);
   // Legacy perk: Rival Nemesis — rivals get -10% box office
   if (legacyPerksRelease.some(p => p.effect === 'rivalHandicap')) {
     rivalFilms = rivalFilms.map(rf => ({ ...rf, boxOffice: Math.round(rf.boxOffice * 0.9 * 10) / 10 }));
@@ -1898,6 +1898,16 @@ export function pickSeasonEvent(eventId: string) {
     }
     case 'actorsStrike': {
       // Effects applied during talent market generation
+      break;
+    }
+    case 'awardSeasonRivalry': {
+      // Head-to-head: quality > 30 last film = you win, else rival wins
+      if (state.lastQuality > 30) {
+        reputation = Math.min(5, reputation + 2);
+        budget += 8;
+      } else {
+        reputation = Math.max(0, reputation - 1);
+      }
       break;
     }
     // biddingWar effect applied during next season in beginSeason

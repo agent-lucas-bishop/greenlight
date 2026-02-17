@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { GameState, RewardTier } from '../types';
 import { getSeasonTarget } from '../data';
 import { proceedFromRecap, calculateQuality } from '../gameStore';
-import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary } from '../rivals';
+import { RivalFilm, getSeasonIdentity, getSeasonNarrative, getRivalryLeaderboard, generateRivalCommentary, calculateRubberBand } from '../rivals';
 import { generateCriticQuote, generateDetailedHeadline, generateStudioHeadline } from '../narrative';
 import { sfx } from '../sound';
 
@@ -338,9 +338,19 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
       {/* Cumulative Leaderboard */}
       {phase >= 3 && state.seasonHistory.length > 0 && (
         <div className="animate-slide-down" style={{ marginTop: 20 }}>
-          <div style={{ fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: '#888', marginBottom: 8, letterSpacing: 1 }}>
+          <div style={{ fontFamily: 'Bebas Neue', fontSize: '0.9rem', color: '#888', marginBottom: 4, letterSpacing: 1 }}>
             🏆 STUDIO STANDINGS
           </div>
+          {(() => {
+            const rivalTotals = Object.values(state.cumulativeRivalEarnings);
+            const rivalAvg = rivalTotals.length > 0 ? rivalTotals.reduce((a, b) => a + b, 0) / rivalTotals.length : 0;
+            const rb = calculateRubberBand(state.totalEarnings, rivalAvg);
+            return rb.label !== 'neutral' ? (
+              <div style={{ fontSize: '0.7rem', color: rb.label === 'competitive' ? '#e74c3c' : rb.label === 'yourLead' ? '#d4a843' : '#2ecc71', marginBottom: 8, textAlign: 'center', fontStyle: 'italic' }}>
+                {rb.flavorText}
+              </div>
+            ) : null;
+          })()}
           {getRivalryLeaderboard(state).map((entry, i) => (
             <div key={entry.name} style={{
               display: 'flex', alignItems: 'center', gap: 8,
@@ -351,13 +361,23 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
               <span style={{ fontFamily: 'Bebas Neue', fontSize: '1rem', color: i === 0 ? '#ffd700' : '#666', width: 22 }}>#{i + 1}</span>
               <span style={{ fontSize: '1rem' }}>{entry.emoji}</span>
               <div style={{ flex: 1 }}>
-                <span style={{ color: entry.isPlayer ? '#d4a843' : '#ccc', fontSize: '0.85rem', fontWeight: entry.isPlayer ? 'bold' : 'normal' }}>
-                  {entry.name}
-                </span>
-                {entry.personality && (
-                  <span style={{ color: '#666', fontSize: '0.65rem', marginLeft: 6 }}>
-                    {entry.personality === 'aggressive' ? '🔥' : entry.personality === 'steady' ? '📊' : '🎪'}
+                <div>
+                  <span style={{ color: entry.isPlayer ? '#d4a843' : '#ccc', fontSize: '0.85rem', fontWeight: entry.isPlayer ? 'bold' : 'normal' }}>
+                    {entry.name}
                   </span>
+                  {entry.personality && (
+                    <span style={{ color: '#666', fontSize: '0.65rem', marginLeft: 6 }}>
+                      {entry.personality === 'aggressive' ? '🔥' : entry.personality === 'steady' ? '📊' : '🎪'}
+                    </span>
+                  )}
+                </div>
+                {entry.strategyLabel && (
+                  <div style={{ fontSize: '0.6rem', color: '#555', marginTop: 1 }}>{entry.strategyLabel}</div>
+                )}
+                {entry.latestFilm && (
+                  <div style={{ fontSize: '0.65rem', color: '#777', marginTop: 1 }}>
+                    Latest: <em>{entry.latestFilm.title}</em> ({entry.latestFilm.genre}) — {TIER_EMOJI[entry.latestFilm.tier]} ${entry.latestFilm.boxOffice.toFixed(1)}M
+                  </div>
                 )}
               </div>
               <div style={{ fontFamily: 'Bebas Neue', fontSize: '1rem', color: i === 0 ? '#ffd700' : '#aaa' }}>

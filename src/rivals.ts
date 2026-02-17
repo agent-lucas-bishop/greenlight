@@ -373,7 +373,15 @@ function generateRivalFilm(studio: RivalStudio, season: number, target: number):
   return { studioName: studio.name, studioEmoji: studio.emoji, title, genre, boxOffice, tier, quality };
 }
 
-export function generateRivalSeason(season: number, target: number, hotGenres?: Genre[], coldGenres?: Genre[]): RivalFilm[] {
+export function generateRivalSeason(season: number, target: number, hotGenres?: Genre[], coldGenres?: Genre[], playerTotal?: number, rivalCumulativeEarnings?: Record<string, number>): RivalFilm[] {
+  // Calculate rubber-band modifier
+  let rubberBandMult = 1.0;
+  if (playerTotal !== undefined && rivalCumulativeEarnings) {
+    const rivalTotals = Object.values(rivalCumulativeEarnings);
+    const rivalAvg = rivalTotals.length > 0 ? rivalTotals.reduce((a, b) => a + b, 0) / rivalTotals.length : 0;
+    rubberBandMult = calculateRubberBand(playerTotal, rivalAvg).multiplier;
+  }
+
   return RIVAL_STUDIOS.map(studio => {
     const film = generateRivalFilm(studio, season, target);
     // Aggressive rivals always chase hot genres; others 50% chance
@@ -386,6 +394,8 @@ export function generateRivalSeason(season: number, target: number, hotGenres?: 
     if (coldGenres && coldGenres.includes(film.genre)) {
       film.boxOffice = Math.round(film.boxOffice * 0.8 * 10) / 10;
     }
+    // Apply rubber-band scaling
+    film.boxOffice = Math.round(film.boxOffice * rubberBandMult * 10) / 10;
     film.tier = getTier(film.boxOffice, target);
     return film;
   });
@@ -400,10 +410,57 @@ export interface RivalryLeaderboardEntry {
   personality?: RivalPersonality;
   isPlayer: boolean;
   filmCount: number;
+  strategyLabel?: string;
+  latestFilm?: { title: string; boxOffice: number; tier: RewardTier; genre: Genre };
 }
+
+// ─── RUBBER-BAND DIFFICULTY ───
+
+export type MarketPressure = 'competitive' | 'yourLead' | 'underdog' | 'neutral';
+
+export interface RubberBandResult {
+  multiplier: number; // applied to rival BO (e.g. 1.08 = +8%)
+  label: MarketPressure;
+  flavorText: string;
+}
+
+export function calculateRubberBand(playerTotal: number, rivalAvgTotal: number): RubberBandResult {
+  if (rivalAvgTotal === 0 && playerTotal === 0) {
+    return { multiplier: 1.0, label: 'neutral', flavorText: 'Market Conditions: Opening Day' };
+  }
+  const ratio = playerTotal / Math.max(rivalAvgTotal, 1);
+  if (ratio > 1.35) {
+    // Player way ahead — rivals get a boost
+    const boost = Math.min(0.10, (ratio - 1.35) * 0.15);
+    return { multiplier: 1 + boost, label: 'competitive', flavorText: 'Market Conditions: Competitive — rivals are hungry 🔥' };
+  }
+  if (ratio > 1.15) {
+    return { multiplier: 1.05, label: 'yourLead', flavorText: 'Market Conditions: Your Lead — stay sharp' };
+  }
+  if (ratio < 0.75) {
+    // Player way behind — rivals get a slight penalty
+    const penalty = Math.min(0.10, (0.75 - ratio) * 0.15);
+    return { multiplier: 1 - penalty, label: 'underdog', flavorText: 'Market Conditions: Underdog — the industry is rooting for you' };
+  }
+  return { multiplier: 1.0, label: 'neutral', flavorText: 'Market Conditions: Wide Open' };
+}
+
+const STRATEGY_LABELS: Record<RivalPersonality, string> = {
+  aggressive: 'Big Budget · High Risk',
+  steady: 'Prestige · Consistent',
+  scrappy: 'Indie · Scrappy',
+};
 
 export function getRivalryLeaderboard(state: GameState): RivalryLeaderboardEntry[] {
   const seasonCount = state.seasonHistory.length;
+  // Find each rival's latest film from rivalHistory
+  const latestFilms: Record<string, RivalFilm> = {};
+  if (state.rivalHistory.length > 0) {
+    const lastSeason = state.rivalHistory[state.rivalHistory.length - 1];
+    for (const f of lastSeason.films) {
+      latestFilms[f.studioName] = f;
+    }
+  }
   const entries: RivalryLeaderboardEntry[] = [
     {
       name: state.studioName || 'Your Studio',
@@ -411,15 +468,26 @@ export function getRivalryLeaderboard(state: GameState): RivalryLeaderboardEntry
       totalEarnings: state.totalEarnings,
       isPlayer: true,
       filmCount: seasonCount,
+      latestFilm: state.seasonHistory.length > 0 ? {
+        title: state.lastFilmTitle || state.seasonHistory[state.seasonHistory.length - 1].title,
+        boxOffice: state.seasonHistory[state.seasonHistory.length - 1].boxOffice,
+        tier: state.seasonHistory[state.seasonHistory.length - 1].tier,
+        genre: state.seasonHistory[state.seasonHistory.length - 1].genre,
+      } : undefined,
     },
-    ...RIVAL_STUDIOS.map(r => ({
-      name: r.name,
-      emoji: r.emoji,
-      totalEarnings: state.cumulativeRivalEarnings[r.name] || 0,
-      personality: r.personality,
-      isPlayer: false,
-      filmCount: seasonCount, // rivals release one film per season too
-    })),
+    ...RIVAL_STUDIOS.map(r => {
+      const latest = latestFilms[r.name];
+      return {
+        name: r.name,
+        emoji: r.emoji,
+        totalEarnings: state.cumulativeRivalEarnings[r.name] || 0,
+        personality: r.personality,
+        isPlayer: false,
+        filmCount: seasonCount,
+        strategyLabel: STRATEGY_LABELS[r.personality],
+        latestFilm: latest ? { title: latest.title, boxOffice: latest.boxOffice, tier: latest.tier, genre: latest.genre } : undefined,
+      };
+    }),
   ];
   return entries.sort((a, b) => b.totalEarnings - a.totalEarnings);
 }
@@ -459,6 +527,14 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     description: 'A rival\'s film wins the big award over yours. Lose 1 reputation, but gain +$3M sympathy press.',
     flavorText: `"The envelope, please... ${RIVAL_STUDIOS[1].emoji} ${RIVAL_STUDIOS[1].name}! The crowd gasps. You were robbed."`,
     effect: 'awardSnub',
+  },
+  {
+    id: 'award_season_rivalry',
+    name: 'Award Season Rivalry',
+    emoji: '🏆',
+    description: 'Head-to-head with your top rival for nominations. Quality > 30 = +2 rep and +$8M. Quality ≤ 30 = rival wins, -1 rep.',
+    flavorText: '"The critics are split. Two studios, one golden statue. Who takes it home?"',
+    effect: 'awardSeasonRivalry',
   },
 ];
 

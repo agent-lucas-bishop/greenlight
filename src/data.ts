@@ -4892,7 +4892,11 @@ export function generateMarketConditions(count: number, scriptGenres?: string[])
 
 // ─── STUDIO PERKS ───
 
-export const ALL_PERKS: Omit<StudioPerk, 'id'>[] = [
+export interface PerkDef extends Omit<StudioPerk, 'id'> {
+  prestigeRequired?: number; // minimum prestige level to appear in shop
+}
+
+export const ALL_PERKS: PerkDef[] = [
   { name: 'Reshoots Budget', cost: 12, description: 'Redraw 1 production card per film', effect: 'reshoots' },
   { name: 'Casting Network', cost: 8, description: 'See 6 talent in market instead of 4', effect: 'moreTalent' },
   { name: 'Marketing Machine', cost: 10, description: 'Choose your market condition', effect: 'chooseMarket' },
@@ -4905,16 +4909,31 @@ export const ALL_PERKS: Omit<StudioPerk, 'id'>[] = [
   { name: 'Prestige Label', cost: 12, description: 'Award nominations give +×0.3 mult', effect: 'prestige' },
   { name: 'Talent Scout', cost: 7, description: 'Peek at talent before hiring', effect: 'talentScout' },
   { name: 'Development Slate', cost: 6, description: 'See 4 scripts instead of 3', effect: 'devSlate' },
+  // ─── New R92 Perks ───
+  { name: 'Second Unit', cost: 7, description: 'See 1 extra script choice each season', effect: 'secondUnit' },
+  { name: 'Method Acting', cost: 9, description: '+5 quality if lead actor skill ≥ 7', effect: 'methodActing' },
+  { name: 'Viral Marketing', cost: 6, description: '×1.2 box office multiplier if script cost < $15M', effect: 'viralMarketing' },
+  { name: 'Genre Pivot', cost: 8, description: 'Making a different genre than last film gives +3 quality', effect: 'genrePivot' },
+  { name: 'Sequel Rights', cost: 10, description: 'Same genre as last film: +$10M box office', effect: 'sequelRights' },
+  { name: 'Chaos Dividend', cost: 11, description: '+3 quality per Incident in production (max +9). Dangerous but rewarding.', effect: 'chaosDividend', prestigeRequired: 3 },
+  { name: 'Talent Agency', cost: 14, description: 'All hired talent gets +1 Skill. Expensive but elite.', effect: 'talentAgency', prestigeRequired: 5 },
 ];
 
-export function generatePerkMarket(count: number, owned: string[]): StudioPerk[] {
+export function generatePerkMarket(count: number, owned: string[]): (StudioPerk & { prestigeRequired?: number })[] {
+  const prestigeLevel = _cachedPrestigeLevel;
   const pool = ALL_PERKS.filter(p => !owned.includes(p.name));
-  const result: StudioPerk[] = [];
+  const result: (StudioPerk & { prestigeRequired?: number })[] = [];
   for (let i = 0; i < count && pool.length > 0; i++) {
     const idx = Math.floor(rng() * pool.length);
-    result.push({ ...pool.splice(idx, 1)[0], id: uid() });
+    const perk = pool.splice(idx, 1)[0];
+    result.push({ ...perk, id: uid() });
   }
   return result;
+}
+
+/** Check if a perk is locked behind prestige */
+export function isPerkLocked(perk: { prestigeRequired?: number }): boolean {
+  return (perk.prestigeRequired ?? 0) > _cachedPrestigeLevel;
 }
 
 export function getSeasonTarget(season: number, gameMode: string = 'normal', challengeId?: string, dailyModifierId?: string, dailyModifierId2?: string): number {

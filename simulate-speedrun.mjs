@@ -42,7 +42,7 @@ function simProduction(deckSize, incidentRate, synergyBonus) {
 function simRun() {
   let budget = 15, rep = 3, strikes = 0;
   // Speed Run: 3 seasons with S3/S4/S5 targets, 2 strikes = fired
-  const targets = [42, 55, 70]; // season 3,4,5 difficulty
+  const targets = [28, 38, 50]; // season 2,3,4 difficulty (rebalanced from 42/55/70)
   const maxStrikes = 2;
 
   for (let s = 0; s < 3; s++) {

@@ -215,7 +215,7 @@ export default function ProductionScreen({ state }: { state: GameState }) {
     // Play clean wrap chime after state updates (check next tick)
     setTimeout(() => {
       const s = getState();
-      if (s.production?.cleanWrap && !s.production?.isDisaster) sfx.cleanWrap();
+      if (s.production?.cleanWrap && !s.production?.isDisaster) sfx.wrap();
     }, 300);
   };
   

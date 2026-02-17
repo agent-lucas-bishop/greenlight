@@ -45,6 +45,12 @@ function save(data: AnalyticsData) {
   try { localStorage.setItem(ANALYTICS_KEY, JSON.stringify(data)); } catch {}
 }
 
+// Generic track function for arbitrary events
+export function track(event: string) {
+  // Lightweight — just log to console in dev, no persistence needed for ad-hoc events
+  if (typeof console !== 'undefined') console.debug('[analytics]', event);
+}
+
 export function trackRunStart(mode: string, challengeId?: string, archetypeId?: string) {
   const d = load();
   d.runsStarted++;
@@ -77,6 +83,12 @@ export function trackRunEnd(score: number, won: boolean) {
     d.sessionStart = null;
   }
   save(d);
+}
+
+// Generic event tracker (for lightweight one-off events)
+export function track(event: string) {
+  // Currently a no-op stub — extend if needed
+  void event;
 }
 
 export function getAnalytics(): AnalyticsData {

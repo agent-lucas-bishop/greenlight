@@ -115,7 +115,7 @@ import { hasMilestone, getLegacyRunBonuses } from './prestige';
 import { getMetaBudgetBonus, getMetaReputationBonus, getExtraStartingScripts } from './metaProgression';
 import { getPrestigeShopBudgetBonus, getPrestigeRepShield, getPrestigeExtraCardDraw, getPrestigeLuckyBreakChance, getPrestigeTalentScoutBonus, getNGPBudgetPercent, getNGPReputationBonus, getNGPExtraStrikes, getNGPQualityBaselinePercent, getNGPCardDrawBonus, getNGPTalentCostMultiplier } from './prestigeShop';
 import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
-import { generateSoundtrackProfile, getComposerOptions } from './soundtrack';
+import { generateSoundtrackProfile, getComposerOptions, calculateThemeQualityBonus, type MusicalThemeId, type SoundtrackHistoryEntry } from './soundtrack';
 import { generateWorldEvents, tickWorldEvents, getWorldEventBOMultiplier, getWorldEventTalentCostMultiplier, getWorldEventBudgetMultiplier, getWorldEventQualityBonus, getWorldEventStreamingBonus, type ActiveWorldEvent } from './worldEvents';
 import { checkStoryEvents } from './storyEvents';
 import type { StoryEventOutcome } from './storyEvents';
@@ -215,6 +215,8 @@ function createInitialState(): GameState {
     postProdTestScreeningTier: null,
     postProdComposer: null,
     postProdSoundtrack: null,
+    selectedThemeId: null,
+    soundtrackHistory: [],
     activeWorldEvents: [],
     worldEventHistory: [],
     worldEventEndedThisSeason: [],
@@ -2155,6 +2157,16 @@ export function skipComposer() {
   setState({ postProdComposer: null });
 }
 
+// R266: Select a musical theme during pre-production
+export function selectSoundtrackTheme(themeId: MusicalThemeId) {
+  setState({ selectedThemeId: themeId });
+}
+
+// R266: Clear theme selection
+export function clearSoundtrackTheme() {
+  setState({ selectedThemeId: null });
+}
+
 export function pickMarketing(tier: MarketingTier) {
   const costs: Record<MarketingTier, number> = { none: 0, standard: 1, premium: 3, viral: 1 };
   const multipliers: Record<MarketingTier, number> = { none: 1.0, standard: 1.2, premium: 1.5, viral: 1.0 };
@@ -2448,6 +2460,21 @@ export function resolveRelease() {
   );
   rawQuality += soundtrack.qualityBonus;
 
+  // R266: Musical theme quality bonus
+  let themeBonusPercent = 0;
+  if (state.selectedThemeId) {
+    themeBonusPercent = calculateThemeQualityBonus(
+      state.selectedThemeId,
+      script.genre as Genre,
+      state.soundtrackHistory || [],
+    );
+    if (themeBonusPercent > 0) {
+      rawQuality = Math.round(rawQuality * (1 + themeBonusPercent / 100));
+    }
+    soundtrack.themeId = state.selectedThemeId;
+    soundtrack.themeBonusPercent = themeBonusPercent;
+  }
+
   // R197: World event quality bonus
   const isSequel = !!(state.sequelOrigins[script.title]);
   rawQuality += getWorldEventQualityBonus(state.activeWorldEvents, script.genre as Genre, script.cost);
@@ -2618,6 +2645,8 @@ export function resolveRelease() {
     criticScore: criticConsensus.freshPercent,
     criticStars: criticConsensus.avgStars,
     soundtrack,
+    themeId: state.selectedThemeId || undefined,
+    themeBonusPercent: themeBonusPercent || undefined,
     audienceScore: finalAudienceData.audienceScore,
   };
 
@@ -2851,6 +2880,18 @@ export function resolveRelease() {
     lastTier: tier,
     activeMarket: market,
     postProdSoundtrack: soundtrack,
+    selectedThemeId: null,
+    soundtrackHistory: [
+      ...(state.soundtrackHistory || []),
+      ...(state.selectedThemeId ? [{
+        themeId: state.selectedThemeId,
+        filmTitle: script.title,
+        genre: script.genre,
+        season: state.season,
+        qualityBonusPercent: themeBonusPercent,
+        mastered: (state.soundtrackHistory || []).filter(e => e.themeId === state.selectedThemeId).length >= 2,
+      } as SoundtrackHistoryEntry] : []),
+    ],
     lastAudienceReaction: finalAudienceData,
     debt,
     budget: state.budget + finalEarnings + bonusMoney + seasonStipend + prod.budgetChange - baggageCost + streamingDealIncome,

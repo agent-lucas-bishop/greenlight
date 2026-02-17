@@ -13,6 +13,9 @@ import { recordRunStats } from '../statistics';
 import { EndScreenStatsSummary } from '../components/StatsDashboard';
 import { calculateStandings, getSeasonLeaderboard } from '../aiDirectors';
 import { RivalDashboard } from '../components/RivalDashboard';
+import { RivalProfile } from '../components/RivalProfile';
+import { getRivalAIById, RIVAL_STUDIO_AI } from '../rivalAI';
+import { getActiveRivalStudios } from '../rivals';
 import { awardRunXP, getPrestige, getPrestigeLevel, PRESTIGE_REWARDS, getPrestigeStudioColor, getPrestigeBadge, hasMilestone, type RunXPData } from '../prestige';
 import { calculateStarPowerFromRun, awardStarPower, canPrestigeReset, performPrestigeReset, getPrestigeShop, getPrestigeStarsDisplay, getAvailableNGPPerks, getActiveNGPPerks, type StarPowerEarning, type NewGamePlusPerk } from '../prestigeShop';
 import { awardMetaXP, getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, canPrestige, performPrestige, getPrestigeBadgeEmoji, type MetaRunXPInput, type MetaXPResult } from '../metaProgression';
@@ -28,6 +31,7 @@ import { getStudioIdentity, generateRunTitle } from '../studioIdentity';
 import { updateDailyStreak, completeDailyAttempt, addDailyHistoryEntry } from '../dailyChallenge';
 import { getDifficultyBadge } from '../difficulty';
 import { addLegacyFilm, checkEndlessUnlock, checkAndAwardMilestones, addEndlessLeaderboardEntry, STUDIO_MILESTONES } from '../endgame';
+import { updateLegacyAfterRun } from '../studioLegacy';
 import { updateEndlessPersonalBest, getEndlessPersonalBest } from '../endlessMode';
 import { loadCampaignData, getActiveCampaign, getCampaignById } from '../campaigns';
 import { addDailyLeaderboardEntry, addWeeklyLeaderboardEntry, calculateDailyScore, getDailyLeaderboard, getWeeklyLeaderboard } from '../dailyChallenge';
@@ -721,6 +725,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       // R177: Studio Milestones
       const freshScores = history.filter(s => (s.criticScore ?? 0) >= 60).length;
       checkAndAwardMilestones(freshScores);
+      // R267: Update legacy meta-progression
+      const legacyUnlocks = updateLegacyAfterRun();
+      if (legacyUnlocks.length > 0) {
+        console.log('[Legacy] New milestones:', legacyUnlocks);
+      }
       // R177: Endless Mode leaderboard
       if (state.gameMode === 'endless') {
         addEndlessLeaderboardEntry({

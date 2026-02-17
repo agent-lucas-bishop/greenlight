@@ -50,7 +50,9 @@ import { getPrestige, getPrestigeLevel, getNextPrestigeLevel, getPrestigeXPProgr
 import { getPrestigeShop, getPrestigeStarsDisplay, getActiveNGPPerks } from '../prestigeShop';
 import { getMetaProgression, getMetaLevel, getMetaXPProgress, getNextMetaLevel, getPrestigeBadgeEmoji, META_LEVELS, isStudioLegend } from '../metaProgression';
 import { getAllGenreStats, MASTERY_THRESHOLDS } from '../genreMastery';
-import { getCareerMilestones } from '../studioLegacy';
+import { getCareerMilestones, updateLegacyAfterRun } from '../studioLegacy';
+const LegacyPanel = lazy(() => import('../components/LegacyPanel'));
+const StudioLogoEditor = lazy(() => import('../components/StudioLogoEditor'));
 import { getAllUnlockableStatus } from '../unlockableContent';
 import { isEndlessUnlocked } from '../endgame';
 import { EndlessRecords, EndlessLauncherInfo } from '../components/EndlessPanel';
@@ -468,7 +470,7 @@ export default function StartScreen() {
   const [showUnlockToast, setShowUnlockToast] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedChallenge, setSelectedChallenge] = useState<string | undefined>(undefined);
-  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft'>('play');
+  const [tab, setTab] = useState<'play' | 'daily' | 'campaigns' | 'challenges' | 'leaderboard' | 'career' | 'history' | 'stats' | 'archive' | 'achievements' | 'dashboard' | 'hallOfFame' | 'cards' | 'collection' | 'create' | 'synergies' | 'events' | 'craft' | 'legacy'>('play');
   const [dailySubTab, setDailySubTab] = useState<'challenge' | 'weekly' | 'create' | 'import'>('challenge');
   const [urlChallenge, setUrlChallenge] = useState<CustomChallenge | null>(() => getChallengeFromUrl());
   const [showCampaignSelect, setShowCampaignSelect] = useState(false);
@@ -833,7 +835,8 @@ export default function StartScreen() {
           { id: 'craft' as const, emoji: '⚒️', label: 'CRAFT' },
           { id: 'synergies', emoji: '🔗', label: 'SYNERGIES' },
           { id: 'events' as const, emoji: '📅', label: 'EVENTS' },
-          { id: 'career', emoji: '🏛️', label: 'CAREER' },
+          { id: 'legacy' as const, emoji: '🏛️', label: 'LEGACY' },
+          { id: 'career', emoji: '📋', label: 'CAREER' },
           { id: 'history', emoji: '📜', label: 'RUNS' },
           { id: 'archive', emoji: '🎞️', label: 'ARCHIVE' },
           { id: 'hallOfFame', emoji: '🏛️', label: 'HALL OF FAME', shortLabel: 'HOF' },
@@ -1222,6 +1225,16 @@ export default function StartScreen() {
       {tab === 'dashboard' && (
         <Suspense fallback={<SkeletonLoader />}>
           <StatsDashboard />
+        </Suspense>
+      )}
+
+      {/* ─── LEGACY TAB ─── */}
+      {tab === 'legacy' && (
+        <Suspense fallback={<SkeletonLoader />}>
+          <LegacyPanel inline />
+          <div style={{ marginTop: 24, maxWidth: 500, margin: '24px auto 0' }}>
+            <StudioLogoEditor />
+          </div>
         </Suspense>
       )}
 

@@ -35,9 +35,9 @@ export interface RivalFilm {
 const RIVAL_STUDIOS: RivalStudio[] = [
   {
     id: 'pinnacle',
-    name: 'Pinnacle Pictures',
-    emoji: '⛰️',
-    style: 'Blockbuster focused, high budget. Go big or go home.',
+    name: 'Titan Pictures',
+    emoji: '🏔️',
+    style: 'Blockbuster focused, huge budgets. Go big or go home.',
     personality: 'aggressive',
     qualityRange: [15, 50],
     genrePool: ['Action', 'Sci-Fi', 'Thriller', 'Action', 'Sci-Fi', 'Action'],
@@ -48,9 +48,9 @@ const RIVAL_STUDIOS: RivalStudio[] = [
   },
   {
     id: 'arthouse',
-    name: 'Arthouse Alliance',
+    name: 'Lumière Films',
     emoji: '🎭',
-    style: 'Quality over quantity. The critics\' darling.',
+    style: 'Art house, festival darlings. Quality over quantity.',
     personality: 'steady',
     qualityRange: [25, 42],
     genrePool: ['Drama', 'Romance', 'Thriller', 'Drama', 'Drama'],
@@ -61,55 +61,55 @@ const RIVAL_STUDIOS: RivalStudio[] = [
   },
   {
     id: 'sequel_machine',
-    name: 'Sequel Machine Studios',
-    emoji: '🔄',
-    style: 'Franchise obsessed. Everything gets a sequel.',
+    name: 'Apex Entertainment',
+    emoji: '🦈',
+    style: 'Aggressive and cutthroat. Steals talent, counter-programs.',
     personality: 'aggressive',
     qualityRange: [12, 45],
-    genrePool: ['Action', 'Sci-Fi', 'Comedy', 'Action', 'Action', 'Sci-Fi'],
+    genrePool: ['Action', 'Sci-Fi', 'Thriller', 'Action', 'Action', 'Drama'],
     budgetTier: 'high',
     breakoutChance: 0.18,
     consistencyBonus: 3,
-    actionWeights: [0.20, 0.55, 0.25], // competing films + steal scripts
+    actionWeights: [0.45, 0.30, 0.25], // heavy talent poaching
   },
   {
     id: 'flash',
-    name: 'Flash Films',
-    emoji: '⚡',
-    style: 'Rush releases, quantity over quality. Speed is king.',
+    name: 'Neon Pulse',
+    emoji: '👾',
+    style: 'Genre specialists. Horror and sci-fi masters.',
     personality: 'scrappy',
-    qualityRange: [5, 30],
-    genrePool: ['Horror', 'Comedy', 'Action', 'Thriller', 'Horror', 'Comedy'],
+    qualityRange: [8, 35],
+    genrePool: ['Horror', 'Sci-Fi', 'Thriller', 'Horror', 'Horror', 'Sci-Fi'],
     budgetTier: 'low',
-    breakoutChance: 0.12,
+    breakoutChance: 0.20,
     consistencyBonus: 0,
-    actionWeights: [0.35, 0.35, 0.30], // balanced chaos
+    actionWeights: [0.35, 0.35, 0.30], // balanced
   },
   {
     id: 'golden_age',
-    name: 'Golden Age Cinema',
-    emoji: '🌟',
-    style: 'Classic genres, consistent quality. Old-school reliable.',
+    name: 'Heartland Studios',
+    emoji: '🌾',
+    style: 'Family and comedy. Consistent, reliable, crowd-pleasing.',
     personality: 'steady',
     qualityRange: [20, 40],
-    genrePool: ['Drama', 'Romance', 'Thriller', 'Comedy', 'Drama'],
+    genrePool: ['Comedy', 'Romance', 'Drama', 'Comedy', 'Comedy'],
     budgetTier: 'mid',
     breakoutChance: 0.08,
     consistencyBonus: 5,
-    actionWeights: [0.30, 0.30, 0.40], // steals scripts (protect their turf)
+    actionWeights: [0.15, 0.40, 0.45], // protects turf, less aggressive
   },
   {
     id: 'chaos',
-    name: 'Chaos Productions',
-    emoji: '🎪',
-    style: 'Unpredictable. Wild swings between genius and disaster.',
+    name: 'Phoenix Rising',
+    emoji: '🔥',
+    style: 'Comeback kings. Volatile swings between genius and disaster.',
     personality: 'scrappy',
     qualityRange: [3, 55],
-    genrePool: ['Horror', 'Sci-Fi', 'Comedy', 'Drama', 'Action', 'Romance', 'Thriller'],
+    genrePool: ['Drama', 'Action', 'Thriller', 'Sci-Fi', 'Comedy', 'Horror', 'Romance'],
     budgetTier: 'low',
-    breakoutChance: 0.28,
+    breakoutChance: 0.30,
     consistencyBonus: 0,
-    actionWeights: [0.33, 0.34, 0.33], // truly random
+    actionWeights: [0.33, 0.34, 0.33], // truly unpredictable
   },
 ];
 
@@ -494,12 +494,12 @@ export interface RivalryLeaderboardEntry {
 }
 
 const STRATEGY_LABELS: Record<RivalPersonalityId, string> = {
-  pinnacle: 'Blockbuster · High Budget',
-  arthouse: 'Prestige · Quality First',
-  sequel_machine: 'Franchise · Sequel Factory',
-  flash: 'Speed · Quantity Rush',
-  golden_age: 'Classic · Consistent',
-  chaos: 'Wildcard · Unpredictable',
+  pinnacle: 'Blockbuster · Huge Budgets',
+  arthouse: 'Art House · Festival Darlings',
+  sequel_machine: 'Aggressive · Steals Talent',
+  flash: 'Genre Specialist · Horror/Sci-Fi',
+  golden_age: 'Family/Comedy · Consistent',
+  chaos: 'Comeback Kings · Volatile',
 };
 
 export function getRivalryLeaderboard(state: GameState): RivalryLeaderboardEntry[] {
@@ -596,7 +596,7 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     name: 'Bidding War',
     emoji: '💸',
     description: 'A rival wants the same talent! All talent costs +$3 next season, but talent quality is higher (+1 skill).',
-    flavorText: '"⛰️ Pinnacle Pictures is throwing money around. Match their offer or lose out."',
+    flavorText: '"🏔️ Titan Pictures is throwing money around. Match their offer or lose out."',
     effect: 'biddingWar',
   },
   {
@@ -604,7 +604,7 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     name: 'Poached!',
     emoji: '🦅',
     description: 'A rival steals your lowest-skill talent from your roster.',
-    flavorText: '"🎭 Arthouse Alliance made them an offer they couldn\'t refuse. Your loss."',
+    flavorText: '"🦈 Apex Entertainment made them an offer they couldn\'t refuse. Your loss."',
     effect: 'talentPoached',
   },
   {
@@ -612,7 +612,7 @@ export const RIVAL_EVENTS: RivalEvent[] = [
     name: 'Award Snub',
     emoji: '😤',
     description: 'A rival\'s film wins the big award over yours. Lose 1 reputation, but gain +$3M sympathy press.',
-    flavorText: '"The envelope, please... 🌟 Golden Age Cinema! The crowd gasps. You were robbed."',
+    flavorText: '"The envelope, please... 🎭 Lumière Films! The crowd gasps. You were robbed."',
     effect: 'awardSnub',
   },
   {

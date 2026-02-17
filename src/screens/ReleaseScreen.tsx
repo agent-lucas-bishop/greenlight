@@ -11,6 +11,9 @@ import PostFilmSummary from '../components/PostFilmSummary';
 import { RivalDashboard } from '../components/RivalDashboard';
 import { AI_DIRECTORS, calculateStandings, getSeasonLeaderboard } from '../aiDirectors';
 import type { AudienceReaction } from '../audienceReactions';
+import { generateNewsItems } from '../rivalAI';
+import { RivalNewsfeed } from '../components/RivalNewsfeed';
+import { rng } from '../seededRng';
 
 function CountUp({ target, duration = 1500 }: { target: number; duration?: number }) {
   const [current, setCurrent] = useState(0);
@@ -446,6 +449,13 @@ export default function ReleaseScreen({ state, rivalFilms }: Props) {
 
       {/* Post-Film Production Summary */}
       {phase >= 2 && <PostFilmSummary state={state} />}
+
+      {/* R268: Rival Newsfeed Ticker */}
+      {phase >= 2 && state.activeRivalIds && state.activeRivalIds.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <RivalNewsfeed items={generateNewsItems(state.activeRivalIds as string[], state.season, rng)} />
+        </div>
+      )}
 
       {/* Rival rankings — merged from SeasonRecapScreen */}
       {phase >= 3 && rivalFilms.length > 0 && (

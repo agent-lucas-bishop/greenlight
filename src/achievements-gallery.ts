@@ -173,3 +173,82 @@ export function getTrophyShelfAchievements(): GalleryAchievement[] {
     .map(id => all.find(a => a.def.id === id))
     .filter((a): a is GalleryAchievement => a !== undefined);
 }
+
+// ─── R269: Achievement Point System ───
+export const ACHIEVEMENT_POINTS: Record<AchievementRarity, number> = {
+  common: 10,
+  uncommon: 25,
+  rare: 50,
+  epic: 100,
+  legendary: 250,
+};
+
+export function getAchievementScore(): { total: number; earned: number; byCategory: Record<GalleryCategory, { total: number; earned: number }> } {
+  const all = getGalleryAchievements();
+  const byCategory: Record<GalleryCategory, { total: number; earned: number }> = {
+    career: { total: 0, earned: 0 },
+    collection: { total: 0, earned: 0 },
+    mastery: { total: 0, earned: 0 },
+    secret: { total: 0, earned: 0 },
+  };
+  let total = 0;
+  let earned = 0;
+  for (const a of all) {
+    const pts = ACHIEVEMENT_POINTS[a.rarity];
+    total += pts;
+    byCategory[a.galleryCategory].total += pts;
+    if (a.isUnlocked) {
+      earned += pts;
+      byCategory[a.galleryCategory].earned += pts;
+    }
+  }
+  return { total, earned, byCategory };
+}
+
+/** Achievements with >50% progress that are not yet unlocked */
+export function getNearestToUnlock(): GalleryAchievement[] {
+  // We need game state to evaluate progress
+  try {
+    const { getState } = require('./gameStore') as { getState: () => import('./types').GameState };
+    const { getUnlocks } = require('./unlocks') as { getUnlocks: () => import('./unlocks').UnlockState };
+    const state = getState();
+    const unlockState = getUnlocks();
+    const all = getGalleryAchievements();
+    const suggestions: { ach: GalleryAchievement; pct: number }[] = [];
+    for (const a of all) {
+      if (a.isUnlocked) continue;
+      if (!a.def.progress) continue;
+      try {
+        const prog = a.def.progress(state, unlockState);
+        if (prog && prog.target > 0) {
+          const pct = prog.current / prog.target;
+          if (pct > 0.5 && pct < 1) {
+            suggestions.push({ ach: a, pct });
+          }
+        }
+      } catch { /* skip */ }
+    }
+    return suggestions.sort((a, b) => b.pct - a.pct).map(s => s.ach);
+  } catch {
+    return [];
+  }
+}
+
+// ─── R269: Trophy material based on rarity ───
+export type TrophyMaterial = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+
+export const RARITY_TO_MATERIAL: Record<AchievementRarity, TrophyMaterial> = {
+  common: 'bronze',
+  uncommon: 'silver',
+  rare: 'gold',
+  epic: 'platinum',
+  legendary: 'diamond',
+};
+
+export const MATERIAL_COLORS: Record<TrophyMaterial, { primary: string; secondary: string; glow: string }> = {
+  bronze:   { primary: '#cd7f32', secondary: '#a0522d', glow: 'rgba(205,127,50,0.3)' },
+  silver:   { primary: '#c0c0c0', secondary: '#808080', glow: 'rgba(192,192,192,0.3)' },
+  gold:     { primary: '#ffd700', secondary: '#b8860b', glow: 'rgba(255,215,0,0.4)' },
+  platinum: { primary: '#e5e4e2', secondary: '#9b59b6', glow: 'rgba(155,89,182,0.4)' },
+  diamond:  { primary: '#b9f2ff', secondary: '#00bfff', glow: 'rgba(0,191,255,0.5)' },
+};

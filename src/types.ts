@@ -174,6 +174,9 @@ export interface SoundtrackData {
   qualityRating: number; // 1-5
   qualityBonus: number; // +0 to +2
   cost: number;
+  // R266: Musical theme data
+  themeId?: import('./soundtrack').MusicalThemeId;
+  themeBonusPercent?: number;
 }
 
 export interface CastSlot {
@@ -358,6 +361,9 @@ export interface GameState {
   // R179: Soundtrack system
   postProdComposer?: string | null; // hired composer name (null = no hire, use free default)
   postProdSoundtrack?: SoundtrackData | null; // generated soundtrack profile for current film
+  // R266: Soundtrack Composer System
+  selectedThemeId?: import('./soundtrack').MusicalThemeId | null; // theme picked during pre-production
+  soundtrackHistory?: import('./soundtrack').SoundtrackHistoryEntry[]; // all themes used across films
   // R150: Active Rival System
   prCampaignActive: boolean; // $2M PR Campaign reduces rival interference this season
   rivalActions: RivalAction[]; // rival actions applied this season
@@ -494,5 +500,7 @@ export interface SeasonResult {
   criticStars?: number; // R173: average star rating (1-5)
   festivalAwards?: { festivalId: string; award: string }[]; // R176: festival laurels
   soundtrack?: SoundtrackData | null; // R179: soundtrack profile
+  themeId?: import('./soundtrack').MusicalThemeId; // R266: musical theme used
+  themeBonusPercent?: number; // R266: quality bonus from theme
   audienceScore?: number; // R185: audience score (0-100)
 }

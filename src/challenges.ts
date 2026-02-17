@@ -65,7 +65,7 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
     description: 'Only 3 seasons to prove yourself.',
     rules: [
       'Game ends after 3 seasons instead of 5',
-      'Targets are seasons 3/4/5 difficulty',
+      'Targets are seasons 2/3/4 difficulty',
       '2 strikes = fired (instead of 3)',
     ],
     scoreMultiplier: 2.0,

@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { GameState } from '../types';
 import { getSeasonTarget, STUDIO_ARCHETYPES } from '../data';
 import { getChallengeById } from '../challenges';
-import { isMuted, toggleMute, getVolume, setVolume, sfx } from '../sound';
-import StatTooltip from './StatTooltip';
+import { isMuted, toggleMute, sfx, getVolume, setVolume } from '../sound';
 
 function QuickHelp({ onClose }: { onClose: () => void }) {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 480;
   return (
-    <div className={`modal-overlay ${isMobile ? 'bottom-sheet' : ''}`} onClick={onClose} role="dialog" aria-modal="true" aria-label="Quick Reference">
+    <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
-        <button className="modal-close" onClick={onClose} aria-label="Close dialog">✕</button>
+        <button className="modal-close" onClick={onClose}>✕</button>
         <h2 style={{ color: 'var(--gold)', marginBottom: 16 }}>Quick Reference</h2>
         <div className="how-to-play">
           <div className="htp-section">
@@ -45,17 +43,13 @@ function QuickHelp({ onClose }: { onClose: () => void }) {
 export default function Header({ state }: { state: GameState }) {
   const [showHelp, setShowHelp] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
-  const [showVolume, setShowVolume] = useState(false);
   const [volume, setVolumeState] = useState(getVolume());
+  const [showVolume, setShowVolume] = useState(false);
   const archetype = STUDIO_ARCHETYPES.find(a => a.id === state.studioArchetype);
   const handleToggleMute = () => { const m = toggleMute(); setMutedState(m); if (!m) sfx.click(); };
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseFloat(e.target.value);
-    setVolume(v);
-    setVolumeState(v);
-  };
+  const handleVolume = (v: number) => { setVolume(v); setVolumeState(v); };
   return (
-    <header className="header" role="banner" aria-label="Game status">
+    <div className="header">
       <h1>🎬 {state.studioName ? state.studioName.toUpperCase() : archetype ? `${archetype.emoji} ${archetype.name.toUpperCase()}` : 'GREENLIGHT'}</h1>
       {(state.studioTagline || archetype) && (
         <div style={{ fontSize: '0.6rem', color: '#666', fontStyle: 'italic', marginTop: -4, marginBottom: 4, letterSpacing: '0.05em' }}>
@@ -80,7 +74,7 @@ export default function Header({ state }: { state: GameState }) {
           </div>
         )}
         <div className="header-stat">
-          <span className="label">Reputation <StatTooltip tip="Stars multiply your box office earnings. Gain stars from big hits, lose them from flops and debt." /></span>
+          <span className="label">Reputation</span>
           <span className="value">
             {Array.from({ length: 5 }, (_, i) => (
               <span key={i} className={`rep-star ${i < state.reputation ? 'filled' : 'empty'}`}>★</span>
@@ -88,11 +82,11 @@ export default function Header({ state }: { state: GameState }) {
           </span>
         </div>
         <div className="header-stat">
-          <span className="label">Target <StatTooltip tip="Earn at least this much at the box office to avoid a strike. Increases each season." /></span>
-          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2)}M</span>
+          <span className="label">Target</span>
+          <span className="value">${getSeasonTarget(state.season, state.gameMode, state.challengeId)}M</span>
         </div>
         <div className="header-stat">
-          <span className="label">Strikes <StatTooltip tip="Miss the box office target and you get a strike. 3 strikes = game over!" /></span>
+          <span className="label">Strikes</span>
           <span className="value" style={{ color: state.strikes > 0 ? '#e74c3c' : undefined }}>
             {state.strikes}/{state.maxStrikes}
           </span>
@@ -100,8 +94,8 @@ export default function Header({ state }: { state: GameState }) {
         {state.gameMode !== 'normal' && (
           <div className="header-stat">
             <span className="label">Mode</span>
-            <span className="value" style={{ color: state.gameMode === 'directorMode' ? '#e74c3c' : state.gameMode === 'daily' ? '#3498db' : state.gameMode === 'weekly' ? '#9b59b6' : state.gameMode === 'seeded' ? '#888' : 'var(--gold)', fontSize: '0.9rem' }}>
-              {state.gameMode === 'newGamePlus' ? '⭐ NG+' : state.gameMode === 'directorMode' ? '🔥 Director' : state.gameMode === 'daily' ? '📅 Daily' : state.gameMode === 'weekly' ? '📆 Weekly' : state.gameMode === 'seeded' ? '🌱 Seeded' : state.gameMode === 'challenge' ? '⚡ Challenge' : ''}
+            <span className="value" style={{ color: state.gameMode === 'directorMode' ? '#e74c3c' : state.gameMode === 'daily' ? '#3498db' : 'var(--gold)', fontSize: '0.9rem' }}>
+              {state.gameMode === 'newGamePlus' ? '⭐ NG+' : state.gameMode === 'directorMode' ? '🔥 Director' : state.gameMode === 'daily' ? '📅 Daily' : state.gameMode === 'challenge' ? '⚡ Challenge' : ''}
             </span>
           </div>
         )}
@@ -111,12 +105,6 @@ export default function Header({ state }: { state: GameState }) {
             <span className="value" style={{ color: '#e67e22', fontSize: '0.85rem' }}>{ch.emoji} {ch.name}</span>
           </div>
         ) : null; })()}
-        {state.seedDisplay && (
-          <div className="header-stat">
-            <span className="label">Seed</span>
-            <span className="value" style={{ color: '#888', fontSize: '0.75rem', fontFamily: 'monospace' }}>🌱 {state.seedDisplay}</span>
-          </div>
-        )}
       </div>
       {state.perks.length > 0 && (
         <div className="perks-bar">
@@ -127,31 +115,32 @@ export default function Header({ state }: { state: GameState }) {
         className="header-help-btn" 
         onClick={() => setShowHelp(true)}
         title="How to Play"
-        aria-label="How to Play"
       >
         ?
       </button>
-      <div style={{ position: 'absolute', right: 54, top: 12, zIndex: 20 }}>
-        <button
-          className="header-help-btn"
-          onClick={handleToggleMute}
-          onContextMenu={e => { e.preventDefault(); setShowVolume(v => !v); }}
-          onDoubleClick={() => setShowVolume(v => !v)}
-          title={muted ? 'Unmute (right-click for volume)' : 'Mute (right-click for volume)'}
-          aria-label={muted ? 'Unmute sound' : 'Mute sound'}
-          style={{ position: 'static' }}
-        >
-          {muted ? '🔇' : '🔊'}
-        </button>
-        {showVolume && (
-          <div style={{ position: 'absolute', right: 0, top: 36, background: 'var(--card-bg, #1a1a2e)', border: '1px solid var(--gold, #d4a017)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', zIndex: 30 }}>
-            <span style={{ fontSize: '0.7rem', color: '#999' }}>🔈</span>
-            <input type="range" min="0" max="1" step="0.05" value={volume} onChange={handleVolumeChange} style={{ width: 80, accentColor: 'var(--gold, #d4a017)' }} aria-label="Master volume" />
-            <span style={{ fontSize: '0.7rem', color: '#999' }}>🔊</span>
-          </div>
-        )}
-      </div>
+      <button
+        className="header-help-btn"
+        onClick={handleToggleMute}
+        onContextMenu={e => { e.preventDefault(); setShowVolume(!showVolume); }}
+        title={muted ? 'Unmute (right-click for volume)' : 'Mute (right-click for volume)'}
+        style={{ right: 40 }}
+      >
+        {muted ? '🔇' : volume > 0.5 ? '🔊' : volume > 0 ? '🔉' : '🔈'}
+      </button>
+      {showVolume && (
+        <div style={{
+          position: 'absolute', right: 40, top: 36, background: '#1a1a2e', border: '1px solid var(--gold-dim)',
+          borderRadius: 8, padding: '8px 12px', zIndex: 100, display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontSize: '0.7rem', color: '#888' }}>🔈</span>
+          <input type="range" min="0" max="100" value={Math.round(volume * 100)}
+            onChange={e => handleVolume(parseInt(e.target.value) / 100)}
+            style={{ width: 80, accentColor: 'var(--gold)' }} />
+          <span style={{ fontSize: '0.7rem', color: '#888' }}>🔊</span>
+          <span style={{ fontSize: '0.65rem', color: 'var(--gold)', width: 28 }}>{Math.round(volume * 100)}%</span>
+        </div>
+      )}
       {showHelp && <QuickHelp onClose={() => setShowHelp(false)} />}
-    </header>
+    </div>
   );
 }

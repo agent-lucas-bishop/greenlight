@@ -1,16 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameState, SeasonResult, RewardTier } from '../types';
 import { startGame } from '../gameStore';
-import { recordRunEnd, getActiveLegacyPerks, getEndingForRank, recordEndingDiscovered, getEndingsDiscovered, ENDINGS } from '../unlocks';
+import { recordRunEnd, getActiveLegacyPerks } from '../unlocks';
 import { sfx } from '../sound';
 import { addLeaderboardEntry } from '../leaderboard';
-import { updateHallOfFame, getHallOfFame } from '../hallOfFame';
-import { getRunStats, getMilestoneProgress } from '../unlocks';
 import { getChallengeById } from '../challenges';
 import { markFirstRunComplete } from '../onboarding';
-import { getModifierById } from '../dailyModifiers';
-import { getSeedLeaderboard } from '../leaderboard';
-import { getWeeklyDateString } from '../seededRng';
+import { trackRunEnd } from '../analytics';
 
 // ─── Helpers ───
 
@@ -204,13 +200,8 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
 
   const [phase, setPhase] = useState(0); // 0=title, 1=summary, 2=stats, 3=filmography, 4=achievements, 5=share
   const [copied, setCopied] = useState(false);
-  const [dailyCopied, setDailyCopied] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [newPerks, setNewPerks] = useState<{ id: string; name: string; emoji: string; description: string }[]>([]);
-  const [newHofRecords, setNewHofRecords] = useState<string[]>([]);
-  const [expandedFilm, setExpandedFilm] = useState<number | null>(null);
-  const ending = getEndingForRank(rank, isVictory);
-  const endingsFound = getEndingsDiscovered();
 
   // Career stats
   const totalBO = state.totalEarnings;
@@ -226,7 +217,7 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
   const shareText = useMemo(() => generateShareText(state, score, rank, isVictory), []);
 
   useEffect(() => {
-    if (isVictory) sfx.victory(); else sfx.gameOver();
+    if (isVictory) sfx.victory(); else sfx.flop();
     // Stagger reveals
     const timers = [
       setTimeout(() => setPhase(1), 600),
@@ -254,30 +245,10 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         archetype: state.studioArchetype || undefined,
         challengeId: state.challengeId,
         dailySeed: state.dailySeed,
-        weeklySeed: state.gameMode === 'weekly' ? getWeeklyDateString() : undefined,
       });
       const afterPerks = getActiveLegacyPerks();
       const newlyUnlocked = afterPerks.filter(p => !beforePerks.includes(p.id));
       if (newlyUnlocked.length > 0) setNewPerks(newlyUnlocked);
-      // Build rich film data with cast/director info
-      const richFilms = history.map(s => {
-        const castNames = state.castSlots
-          .filter(slot => slot.talent && slot.talent.type !== 'Director')
-          .map(slot => slot.talent!.name);
-        const director = state.castSlots
-          .find(slot => slot.talent?.type === 'Director')?.talent?.name;
-        return {
-          title: s.title,
-          genre: s.genre,
-          tier: s.tier,
-          quality: s.quality,
-          boxOffice: s.boxOffice,
-          season: s.season,
-          cast: castNames,
-          director,
-          nominated: s.nominated,
-        };
-      });
       addLeaderboardEntry({
         date: new Date().toISOString().slice(0, 10),
         score,
@@ -288,24 +259,12 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         mode: state.gameMode,
         challenge: state.challengeId,
         archetype: state.studioArchetype || 'unknown',
-        films: richFilms,
+        films: history.map(s => ({ title: s.title, genre: s.genre, tier: s.tier })),
         won: isVictory,
         dailySeed: state.dailySeed,
-        studioName: state.studioName || undefined,
       });
-      // Update Hall of Fame
-      const hofRecords = updateHallOfFame({
-        studioName: state.studioName || 'Unknown Studio',
-        date: new Date().toISOString().slice(0, 10),
-        rank,
-        score,
-        seasons: history.length,
-        totalGross: state.totalEarnings,
-        films: history.map(s => ({ title: s.title, genre: s.genre, quality: s.quality, boxOffice: s.boxOffice, tier: s.tier })),
-      });
-      if (hofRecords.length > 0) setNewHofRecords(hofRecords);
-      recordEndingDiscovered(ending.id);
       markFirstRunComplete();
+      trackRunEnd(score, isVictory);
       setRecorded(true);
     }
     return () => timers.forEach(clearTimeout);
@@ -318,62 +277,32 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
     });
   }, [shareText]);
 
-  const dailyModifier = state.dailyModifierId ? getModifierById(state.dailyModifierId) : null;
-  const dailyShareText = useMemo(() => {
-    if (!state.dailySeed || !dailyModifier) return '';
-    const h = state.seasonHistory;
-    const grid = h.map(s => tierEmoji(s.tier, s.quality <= 0)).join('');
-    return [
-      `🎬 GREENLIGHT Daily ${state.dailySeed}`,
-      `${dailyModifier.emoji} ${dailyModifier.name}`,
-      grid,
-      `Score: ${score} (${rank}) · $${state.totalEarnings.toFixed(1)}M`,
-      `greenlight-plum.vercel.app`,
-    ].join('\n');
-  }, [state.dailySeed, dailyModifier, score, rank]);
-
-  const handleDailyCopy = useCallback(() => {
-    navigator.clipboard.writeText(dailyShareText).then(() => {
-      setDailyCopied(true);
-      setTimeout(() => setDailyCopied(false), 2000);
-    });
-  }, [dailyShareText]);
-
   const rankColors: Record<string, string> = { S: '#ff6b6b', A: '#ffd93d', B: '#6bcb77', C: '#5dade2', D: '#999' };
 
   return (
     <div className="end-screen fade-in" style={{ paddingBottom: 60 }}>
       {isVictory && <VictoryParticles />}
 
-      {/* ─── ENDING TITLE ─── */}
+      {/* ─── TITLE ─── */}
       <div style={{ marginBottom: 8 }}>
         {state.studioName && (
           <div style={{ fontSize: 'clamp(0.8rem, 2vw, 1rem)', color: '#888', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
             {state.studioName}
           </div>
         )}
-        <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>{ending.emoji}</div>
-        <h2 style={{ color: ending.color, margin: 0, letterSpacing: 2 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>
-          {ending.title}
+        <h2 style={{ color: isVictory ? '#d4a843' : '#e74c3c', margin: 0 }} className={isVictory ? 'end-title-victory' : 'end-title-gameover'}>
+          {isVictory ? '🏆 LEGENDARY PRODUCER' : '💀 FIRED'}
         </h2>
-        <div style={{ color: ending.color, opacity: 0.7, fontSize: 'clamp(0.75rem, 2vw, 0.9rem)', fontStyle: 'italic', marginTop: 4 }}>
-          {ending.subtitle}
-        </div>
       </div>
 
       {state.gameMode !== 'normal' && (
         <div style={{ marginBottom: 4, fontSize: '0.85rem', color: state.gameMode === 'directorMode' ? '#e74c3c' : 'var(--gold)' }}>
-          {state.gameMode === 'newGamePlus' ? '⭐ New Game+' : state.gameMode === 'directorMode' ? '🔥 Director Mode' : state.gameMode === 'daily' ? '📅 Daily Run' : state.gameMode === 'weekly' ? '📆 Weekly Challenge' : state.gameMode === 'seeded' ? `🌱 Seed: ${state.customSeed}` : ''}
+          {state.gameMode === 'newGamePlus' ? '⭐ New Game+' : state.gameMode === 'directorMode' ? '🔥 Director Mode' : state.gameMode === 'daily' ? '📅 Daily Run' : ''}
         </div>
       )}
       {challenge && (
         <div style={{ marginBottom: 4, fontSize: '0.85rem', color: '#e67e22' }}>
           {challenge.emoji} {challenge.name} Challenge (×{challenge.scoreMultiplier} score)
-        </div>
-      )}
-      {dailyModifier && (
-        <div style={{ marginBottom: 4, fontSize: '0.85rem', color: '#3498db' }}>
-          {dailyModifier.emoji} {dailyModifier.name} — {dailyModifier.shortDesc}
         </div>
       )}
 
@@ -382,11 +311,11 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         RANK: {rank}
       </div>
 
-      {/* ─── ENDING FLAVOR TEXT ─── */}
+      {/* ─── CAREER SUMMARY ─── */}
       {phase >= 1 && (
         <div className="animate-slide-down" style={{
-          background: `${ending.color}08`,
-          border: `1px solid ${ending.color}33`,
+          background: 'rgba(212,168,67,0.06)',
+          border: '1px solid rgba(212,168,67,0.2)',
           borderRadius: 12,
           padding: '16px 20px',
           margin: '16px auto',
@@ -395,23 +324,6 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           color: '#ccc',
           fontSize: 'clamp(0.8rem, 2.2vw, 0.95rem)',
           lineHeight: 1.6,
-        }}>
-          {ending.flavorText}
-        </div>
-      )}
-
-      {/* ─── CAREER SUMMARY ─── */}
-      {phase >= 1 && (
-        <div className="animate-slide-down" style={{
-          background: 'rgba(212,168,67,0.06)',
-          border: '1px solid rgba(212,168,67,0.2)',
-          borderRadius: 12,
-          padding: '16px 20px',
-          margin: '8px auto',
-          maxWidth: 520,
-          color: '#999',
-          fontSize: 'clamp(0.75rem, 2vw, 0.85rem)',
-          lineHeight: 1.5,
         }}>
           {careerSummary}
         </div>
@@ -461,98 +373,34 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
       {phase >= 3 && (
         <div style={{ marginTop: 28 }} className="animate-slide-down">
           <h3 style={{ color: '#d4a843', marginBottom: 12, letterSpacing: 1 }}>📜 FILMOGRAPHY</h3>
-          <p style={{ color: '#666', fontSize: '0.7rem', marginBottom: 8 }}>Tap a film for details</p>
           <div style={{ maxWidth: 540, margin: '0 auto' }}>
-            {history.map((r, i) => {
-              const isExpanded = expandedFilm === i;
-              const castNames = state.castSlots
-                .filter(slot => slot.talent && slot.talent.type !== 'Director')
-                .map(slot => slot.talent!.name);
-              const director = state.castSlots
-                .find(slot => slot.talent?.type === 'Director')?.talent?.name;
-              return (
-                <div key={i}>
-                  <div className="filmography-row" onClick={() => setExpandedFilm(isExpanded ? null : i)} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 12px',
-                    borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.06)',
-                    flexWrap: 'wrap',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s',
-                    background: isExpanded ? 'rgba(212,168,67,0.06)' : 'transparent',
-                    borderRadius: isExpanded ? '8px 8px 0 0' : 0,
-                  }}>
-                    <span style={{ color: '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
-                    <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
-                    <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
-                    <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
-                    <span style={{
-                      color: TIER_COLOR[r.tier],
-                      fontFamily: 'Bebas Neue',
-                      fontSize: '1rem',
-                      minWidth: 55,
-                      textAlign: 'right',
-                    }}>
-                      ${r.boxOffice.toFixed(1)}M
-                    </span>
-                    <span style={{ width: 18, textAlign: 'center' }}>
-                      {r.nominated ? '🏆' : r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
-                    </span>
-                  </div>
-                  {isExpanded && (
-                    <div style={{
-                      background: 'rgba(212,168,67,0.04)',
-                      border: '1px solid rgba(212,168,67,0.15)',
-                      borderTop: 'none',
-                      borderRadius: '0 0 8px 8px',
-                      padding: '16px 20px',
-                      marginBottom: 8,
-                    }}>
-                      {/* Movie poster / playbill style */}
-                      <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                        <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 3, color: '#666', marginBottom: 4 }}>
-                          Season {r.season} · {r.genre}
-                        </div>
-                        <div style={{ fontSize: '1.3rem', fontFamily: 'Bebas Neue', color: TIER_COLOR[r.tier], letterSpacing: 1 }}>
-                          "{r.title}"
-                        </div>
-                        <div style={{
-                          display: 'inline-block', marginTop: 6, padding: '2px 12px',
-                          background: `${TIER_COLOR[r.tier]}20`, border: `1px solid ${TIER_COLOR[r.tier]}40`,
-                          borderRadius: 4, color: TIER_COLOR[r.tier], fontFamily: 'Bebas Neue', fontSize: '0.85rem',
-                        }}>
-                          {TIER_LABEL[r.tier]} {r.nominated && '🏆 Nominated'}
-                        </div>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.75rem' }}>
-                        <div style={{ textAlign: 'center', padding: 8, background: 'rgba(0,0,0,0.2)', borderRadius: 6 }}>
-                          <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase' }}>Quality</div>
-                          <div style={{ color: r.quality >= 30 ? '#2ecc71' : r.quality >= 15 ? '#f1c40f' : '#e74c3c', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>{r.quality}</div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: 8, background: 'rgba(0,0,0,0.2)', borderRadius: 6 }}>
-                          <div style={{ color: '#888', fontSize: '0.6rem', textTransform: 'uppercase' }}>Box Office</div>
-                          <div style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '1.2rem' }}>${r.boxOffice.toFixed(1)}M</div>
-                        </div>
-                      </div>
-                      {director && (
-                        <div style={{ marginTop: 10, textAlign: 'center', fontSize: '0.75rem' }}>
-                          <span style={{ color: '#888' }}>Directed by </span>
-                          <span style={{ color: '#ccc', fontWeight: 600 }}>{director}</span>
-                        </div>
-                      )}
-                      {castNames.length > 0 && (
-                        <div style={{ marginTop: 6, textAlign: 'center', fontSize: '0.7rem' }}>
-                          <span style={{ color: '#888' }}>Starring </span>
-                          <span style={{ color: '#aaa' }}>{castNames.join(' · ')}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {history.map((r, i) => (
+              <div key={i} className="filmography-row" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 12px',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                flexWrap: 'wrap',
+              }}>
+                <span style={{ color: '#666', fontFamily: 'Bebas Neue', fontSize: '0.9rem', width: 28 }}>S{r.season}</span>
+                <span style={{ color: TIER_COLOR[r.tier], fontSize: '1.1rem' }}>{tierEmoji(r.tier, r.quality <= 0)}</span>
+                <span style={{ flex: 1, minWidth: 100, color: '#eee', fontWeight: 600, fontSize: 'clamp(0.8rem, 2vw, 0.95rem)' }}>{r.title}</span>
+                <span className="card-stat blue" style={{ fontSize: '0.75rem' }}>{r.genre}</span>
+                <span style={{
+                  color: TIER_COLOR[r.tier],
+                  fontFamily: 'Bebas Neue',
+                  fontSize: '1rem',
+                  minWidth: 55,
+                  textAlign: 'right',
+                }}>
+                  ${r.boxOffice.toFixed(1)}M
+                </span>
+                <span style={{ width: 18, textAlign: 'center' }}>
+                  {r.nominated ? '🏆' : r.hitTarget ? <span style={{ color: '#2ecc71' }}>✓</span> : <span style={{ color: '#e74c3c' }}>✗</span>}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -605,33 +453,6 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
         </div>
       )}
 
-      {/* ─── SEED LEADERBOARD ─── */}
-      {phase >= 4 && state.dailySeed && (() => {
-        const seedRuns = getSeedLeaderboard(state.dailySeed);
-        if (seedRuns.length <= 1) return null;
-        return (
-          <div className="animate-slide-down" style={{ marginTop: 24 }}>
-            <h3 style={{ color: '#3498db', marginBottom: 12, letterSpacing: 1 }}>🌱 SEED LEADERBOARD</h3>
-            <p style={{ color: '#666', fontSize: '0.7rem', marginBottom: 8 }}>Your attempts on this seed</p>
-            <div style={{ maxWidth: 400, margin: '0 auto' }}>
-              {seedRuns.slice(0, 8).map((entry, i) => (
-                <div key={entry.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
-                  background: entry.score === score ? 'rgba(52,152,219,0.1)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${entry.score === score ? '#3498db' : '#222'}`,
-                  borderRadius: 6, marginBottom: 4,
-                }}>
-                  <span style={{ color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#555', fontFamily: 'Bebas Neue', fontSize: '1rem', width: 24 }}>#{i + 1}</span>
-                  <span style={{ flex: 1, color: '#ccc', fontSize: '0.8rem' }}>{entry.studioName || entry.archetype}</span>
-                  <span style={{ color: 'var(--gold)', fontFamily: 'Bebas Neue', fontSize: '0.95rem' }}>{entry.score}pts</span>
-                  <span style={{ color: entry.won ? '#2ecc71' : '#e74c3c', fontSize: '0.7rem' }}>{entry.won ? '✓' : '✗'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
       {/* ─── SHARE BLOCK ─── */}
       {phase >= 5 && (
         <div className="animate-slide-down" style={{ marginTop: 28 }}>
@@ -652,124 +473,24 @@ export default function EndScreen({ state, type }: { state: GameState; type: 'ga
           }}>
             {shareText}
           </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
-            <button
-              className="btn"
-              onClick={handleCopy}
-              style={{
-                background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
-                border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
-                color: copied ? '#2ecc71' : '#d4a843',
-                padding: '8px 24px',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-              }}
-            >
-              {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
-            </button>
-            {state.dailySeed && dailyModifier && (
-              <button
-                className="btn"
-                onClick={handleDailyCopy}
-                style={{
-                  background: dailyCopied ? 'rgba(46,204,113,0.2)' : 'rgba(52,152,219,0.15)',
-                  border: `1px solid ${dailyCopied ? '#2ecc71' : '#3498db'}`,
-                  color: dailyCopied ? '#2ecc71' : '#3498db',
-                  padding: '8px 24px',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-              >
-                {dailyCopied ? '✅ Copied!' : `📅 Copy Daily Score`}
-              </button>
-            )}
-          </div>
+          <button
+            className="btn"
+            onClick={handleCopy}
+            style={{
+              marginTop: 10,
+              background: copied ? 'rgba(46,204,113,0.2)' : 'rgba(212,168,67,0.15)',
+              border: `1px solid ${copied ? '#2ecc71' : 'var(--gold-dim)'}`,
+              color: copied ? '#2ecc71' : '#d4a843',
+              padding: '8px 24px',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+            }}
+          >
+            {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
+          </button>
         </div>
       )}
-
-      {/* ─── ENDINGS TRACKER ─── */}
-      {phase >= 5 && (
-        <div className="animate-slide-down" style={{ marginTop: 24 }}>
-          <div style={{ color: '#888', fontSize: '0.8rem', marginBottom: 8, letterSpacing: 1 }}>
-            📖 ENDINGS DISCOVERED: {endingsFound.length}/{ENDINGS.length}
-          </div>
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {ENDINGS.map(e => {
-              const found = endingsFound.includes(e.id);
-              return (
-                <div key={e.id} style={{
-                  width: 36, height: 36,
-                  borderRadius: 8,
-                  background: found ? `${e.color}20` : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${found ? e.color + '66' : '#333'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  opacity: found ? 1 : 0.3,
-                }} title={found ? e.title : '???'}>
-                  {found ? e.emoji : '❓'}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ─── NEW HALL OF FAME RECORDS ─── */}
-      {phase >= 5 && newHofRecords.length > 0 && (
-        <div className="animate-slide-down" style={{ marginTop: 24, textAlign: 'center' }}>
-          <h3 style={{ color: '#ffd700', marginBottom: 8 }}>🏅 NEW RECORDS SET!</h3>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {newHofRecords.map((r, i) => (
-              <span key={i} style={{
-                background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)',
-                borderRadius: 6, padding: '4px 12px', fontSize: '0.8rem', color: '#ffd700',
-              }}>🏆 {r}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ─── ONE MORE RUN HOOK ─── */}
-      {phase >= 5 && (() => {
-        const runStats = getRunStats();
-        const hof = getHallOfFame();
-        const milestones = getMilestoneProgress();
-        const nextMilestone = milestones.find(m => !m.unlocked);
-        const hooks: string[] = [];
-
-        if (hof.longestRunSeasons && hof.longestRunSeasons.value > history.length) {
-          hooks.push(`Your best run lasted ${hof.longestRunSeasons.value} seasons. Can you beat it?`);
-        } else if (history.length >= 5) {
-          hooks.push(`You survived all 5 seasons! Can you get an S-rank next time?`);
-        }
-
-        if (hof.highestTotalGross && hof.highestTotalGross.value > state.totalEarnings) {
-          hooks.push(`Your record gross is $${hof.highestTotalGross.value.toFixed(1)}M — just $${(hof.highestTotalGross.value - state.totalEarnings).toFixed(1)}M ahead.`);
-        }
-
-        if (nextMilestone) {
-          hooks.push(`${nextMilestone.emoji} ${nextMilestone.progressText} toward "${nextMilestone.name}"`);
-        }
-
-        if (runStats.runs > 1 && rank !== 'S') {
-          hooks.push(`${runStats.runs} runs completed. The S-rank awaits.`);
-        }
-
-        const hook = hooks.length > 0 ? hooks[Math.floor(Math.random() * hooks.length)] : null;
-        return hook ? (
-          <div className="animate-slide-down" style={{
-            marginTop: 20, padding: '14px 20px', maxWidth: 480, margin: '20px auto 0',
-            background: 'rgba(212,168,67,0.08)', border: '1px solid rgba(212,168,67,0.25)',
-            borderRadius: 10, textAlign: 'center',
-          }}>
-            <div style={{ color: 'var(--gold)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-              💡 {hook}
-            </div>
-          </div>
-        ) : null;
-      })()}
 
       {/* ─── PLAY AGAIN ─── */}
       {phase >= 5 && (

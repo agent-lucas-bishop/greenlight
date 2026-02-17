@@ -3612,8 +3612,8 @@ export function generatePerkMarket(count: number, owned: string[]): StudioPerk[]
 
 export function getSeasonTarget(season: number, gameMode: string = 'normal', challengeId?: string, dailyModifierId?: string, dailyModifierId2?: string): number {
   let adjustedSeason = season;
-  // Speed Run: use seasons 3/4/5 difficulty for seasons 1/2/3
-  if (challengeId === 'speed_run') adjustedSeason = season + 2;
+  // Speed Run: use seasons 2/3/4 difficulty for seasons 1/2/3 (was +2, too punishing)
+  if (challengeId === 'speed_run') adjustedSeason = season + 1;
   const base = [20, 28, 38, 50, 62][adjustedSeason - 1] || 62 + (adjustedSeason - 5) * 12;
   let target = base;
   if (gameMode === 'newGamePlus') target = Math.round(base * 1.4);

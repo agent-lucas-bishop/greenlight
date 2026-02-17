@@ -6,22 +6,16 @@ import {
   INDUSTRY_EVENTS, getActiveChemistry, STUDIO_ARCHETYPES,
 } from './data';
 import { getActiveLegacyPerks } from './unlocks';
-import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString, getWeeklySeed, getWeeklyDateString, hashCustomSeed } from './seededRng';
+import { rng, activateSeed, deactivateSeed, getDailySeed, getDailyDateString } from './seededRng';
 import { getChallengeById } from './challenges';
-import { getTodayModifier, getWeeklyModifiers } from './dailyModifiers';
 import { generateRivalSeason, getSeasonIdentity } from './rivals';
 import { generateStudioName, generateFilmTitle } from './narrative';
 import { isSimplifiedRun } from './onboarding';
-import { saveGame, clearSave, loadGame } from './savegame';
-import { track } from './analytics';
+import { trackRunStart, trackTalentPick, trackGenrePick } from './analytics';
+import { saveGameState, clearSave } from './saveGame';
 
 let _cardId = 0;
 const cardUid = () => `card_${_cardId++}`;
-
-// Helper: check if a modifier is active (either primary or secondary for weekly)
-function hasModifier(modId: string): boolean {
-  return state.dailyModifierId === modId || state.dailyModifierId2 === modId;
-}
 
 function createInitialState(): GameState {
   return {
@@ -72,12 +66,11 @@ const listeners: Set<Listener> = new Set();
 export function getState(): GameState { return state; }
 
 function setState(partial: Partial<GameState>) {
-  const prevPhase = state.phase;
   state = { ...state, ...partial };
   listeners.forEach(l => l());
-  // Auto-save on phase transitions (skip start screen and end states)
-  if (state.phase !== prevPhase && state.phase !== 'start' && state.phase !== 'gameOver' && state.phase !== 'victory') {
-    saveGame(state);
+  // Auto-save on every state change (phase transitions and mid-phase)
+  if (state.phase !== 'start') {
+    saveGameState(state);
   }
 }
 
@@ -226,15 +219,6 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
     cardBase += 1;
   }
   
-  // R33: Wildcard Entertainment chaos archetype — chaos-tagged cards get +1 base quality
-  if (state.studioArchetype === 'chaos' && card.tags?.includes('chaos')) {
-    cardBase += 1;
-  }
-  // Daily modifier: Method Madness — every card gets +1 base quality
-  if (hasModifier('method_madness')) {
-    cardBase += 1;
-  }
-  
   let totalCardValue = cardBase + synResult.bonus;
 
   // Apply poison from previous card
@@ -352,24 +336,22 @@ function resolveCardPlay(card: ProductionCard, prod: ProductionState, castSlots:
 
 // ─── ACTIONS ───
 
-export function resumeGame(): boolean {
-  const saved = loadGame();
-  if (!saved) return false;
-  state = saved;
+export function resumeGame(saved: Partial<GameState>) {
+  // Restore saved state — note: synergy functions are stripped, but that's OK
+  // because production cards in played[] don't need them anymore, and
+  // the deck/script will be rebuilt if the player is mid-production
+  clearSave();
+  state = { ...createInitialState(), ...saved };
   listeners.forEach(l => l());
-  return true;
+  // Re-save immediately to persist
+  if (state.phase !== 'start') saveGameState(state);
 }
 
-export function startGame(mode: GameMode = 'normal', challengeId?: string, customSeed?: string) {
-  // Clear any existing mid-run save
+export function startGame(mode: GameMode = 'normal', challengeId?: string) {
   clearSave();
-  // Activate seeded RNG for daily/weekly/seeded runs
+  // Activate seeded RNG for daily runs
   if (mode === 'daily') {
     activateSeed(getDailySeed());
-  } else if (mode === 'weekly') {
-    activateSeed(getWeeklySeed());
-  } else if (mode === 'seeded' && customSeed) {
-    activateSeed(hashCustomSeed(customSeed));
   } else {
     deactivateSeed();
   }
@@ -383,25 +365,12 @@ export function startGame(mode: GameMode = 'normal', challengeId?: string, custo
     maxStrikes = 2;
   }
 
-  const dailyModifier = mode === 'daily' ? getTodayModifier() : undefined;
-  const weeklyMods = mode === 'weekly' ? getWeeklyModifiers() : undefined;
-  
-  // Determine seed display string
-  let seedDisplay: string | undefined;
-  if (mode === 'daily') seedDisplay = getDailyDateString();
-  else if (mode === 'weekly') seedDisplay = `W:${getWeeklyDateString()}`;
-  else if (mode === 'seeded' && customSeed) seedDisplay = customSeed;
-
   setState({
     ...createInitialState(),
     phase: 'start',
     gameMode: mode,
     challengeId,
-    dailySeed: mode === 'daily' ? getDailyDateString() : mode === 'weekly' ? `weekly:${getWeeklyDateString()}` : mode === 'seeded' && customSeed ? `seed:${customSeed}` : undefined,
-    dailyModifierId: dailyModifier?.id || weeklyMods?.[0].id,
-    dailyModifierId2: weeklyMods?.[1].id,
-    customSeed: customSeed,
-    seedDisplay,
+    dailySeed: mode === 'daily' ? getDailyDateString() : undefined,
     maxSeasons,
     maxStrikes,
   });
@@ -422,10 +391,8 @@ export function pickArchetype(archetypeId: StudioArchetypeId) {
   if (state.gameMode === 'daily' && legacyPerks.some(p => p.effect === 'dailyBudget3')) budget += 3;
   // Challenge: Shoestring Budget
   if (state.challengeId === 'shoestring') budget = 8;
-  // Daily modifier: Budget Crunch — start with 30% less money
-  if (hasModifier('budget_crunch')) budget = Math.round(budget * 0.7);
   const studio = generateStudioName();
-  track('game_start', { mode: state.gameMode, archetype: archetypeId });
+  trackRunStart(state.gameMode, state.challengeId, archetypeId);
   setState({ studioArchetype: archetypeId, budget, studioName: studio.name, studioTagline: studio.tagline, phase: 'neow' as GamePhase });
 }
 
@@ -496,13 +463,6 @@ function beginSeason() {
   if (state.industryEvent?.effect === 'baseBoost') {
     scripts = scripts.map(s => ({ ...s, baseScore: s.baseScore + 2 }));
   }
-  // Daily modifier: Blockbuster Summer — Action/Sci-Fi +2, others -1
-  if (hasModifier('blockbuster_summer')) {
-    scripts = scripts.map(s => ({
-      ...s,
-      baseScore: (s.genre === 'Action' || s.genre === 'Sci-Fi') ? s.baseScore + 2 : s.baseScore - 1,
-    }));
-  }
   
   // Pass script genres so market generation guarantees at least one matching market
   const scriptGenres = scripts.map(s => s.genre);
@@ -525,23 +485,14 @@ export function pickScript(script: Script) {
   if (state.challengeId === 'chaos_reigns') {
     market = market.map(t => ({ ...t, heat: t.heat + 2 }));
   }
-  // Daily modifier: Indie Spirit — no S-tier talent (skill 5+), costs halved
-  if (hasModifier('indie_spirit')) {
-    market = market.filter(t => t.skill < 5).map(t => ({ ...t, cost: Math.max(1, Math.floor(t.cost / 2)) }));
-  }
-  // Daily modifier: Method Madness — all talent Heat +1
-  if (hasModifier('method_madness')) {
-    market = market.map(t => ({ ...t, heat: t.heat + 1 }));
-  }
-  // Daily modifier: Indie Spirit — all costs halved
-  const scriptCost = hasModifier('indie_spirit') ? Math.max(1, Math.floor(script.cost / 2)) : script.cost;
   // Allow overspending — excess goes to debt (disabled on first-ever run)
-  let newBudget = state.budget - scriptCost;
+  let newBudget = state.budget - script.cost;
   let newDebt = state.debt;
   if (newBudget < 0 && !isSimplifiedRun()) {
     newDebt += Math.abs(newBudget);
     newBudget = 0;
   }
+  trackGenrePick(script.genre);
   setState({
     currentScript: script,
     budget: newBudget,
@@ -560,6 +511,7 @@ export function assignTalent(slotIndex: number, talent: Talent) {
   if (talent.baggage?.slotBlocked && slots[slotIndex].slotType === talent.baggage.slotBlocked) return;
   slots.forEach((s, i) => { if (s.talent?.id === talent.id) slots[i] = { ...s, talent: null }; });
   slots[slotIndex] = { ...slots[slotIndex], talent };
+  trackTalentPick(talent.name);
   setState({ castSlots: slots });
 }
 
@@ -685,6 +637,7 @@ export function drawProductionCards() {
     for (const ch of challenges) {
       updatedProd = resolveCardPlay({ ...ch }, updatedProd, state.castSlots);
       if (ch.challengeBet) {
+        const ctx = buildSynergyContext(updatedProd.played, updatedProd.qualityTotal, updatedProd.drawCount, state.castSlots, updatedProd.deck);
         updatedProd.pendingChallenge = { card: ch, bet: ch.challengeBet };
         updatedProd.challengeBetActive = true;
       }
@@ -713,6 +666,7 @@ export function drawProductionCards() {
     
     if (challengeCard.challengeBet) {
       // Show bet prompt to player
+      const ctx = buildSynergyContext(updatedProd.played, updatedProd.qualityTotal, updatedProd.drawCount, state.castSlots, updatedProd.deck);
       updatedProd.pendingChallenge = {
         card: challengeCard,
         bet: challengeCard.challengeBet,
@@ -864,10 +818,9 @@ export function resolveBlock(block: boolean) {
   const { incident, actionCard } = prod.pendingBlock!;
   
   if (block) {
-    // Sacrifice action card to block the incident — both go to discard, costs 3 quality
-    // R33: increased from -2 to -3 — blocking was almost always optimal vs -3 to -6 incident damage
+    // Sacrifice action card to block the incident — both go to discard, costs 2 quality
     prod.discarded = [...prod.discarded, incident, actionCard];
-    prod.qualityTotal -= 3;
+    prod.qualityTotal -= 2; // blocking costs production time
     prod.pendingBlock = null;
     setState({ production: prod });
   } else {
@@ -962,9 +915,7 @@ export function useReshoots() {
 
 export function getMaxDraws(prod: ProductionState): number {
   const totalDeckSize = prod.deck.length + prod.played.length + prod.discarded.length;
-  let baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
-  // Daily modifier: Producer's Cut — max draws reduced by 2
-  if (hasModifier('producers_cut')) baseDraw = Math.max(3, baseDraw - 2);
+  const baseDraw = Math.min(15, Math.max(6, Math.ceil(totalDeckSize * 0.55)));
   return baseDraw + (prod.forceExtraDraw ? 2 : 0);
 }
 
@@ -1032,9 +983,8 @@ export function attemptEncore() {
   const card = deck.shift()!;
 
   if (card.cardType === 'incident') {
-    // Encore failure: incident hits harder (-3 extra penalty) and breaks clean wrap
-    // R33: reduced from -5 to -3 — old penalty made encore never worth the risk
-    const penalty = card.baseQuality - 3;
+    // Encore failure: incident hits harder (-5 extra penalty) and breaks clean wrap
+    const penalty = card.baseQuality - 5;
     prod.qualityTotal += penalty;
     prod.incidentCount++;
     prod.cleanWrap = false;
@@ -1103,14 +1053,12 @@ export function calculateQuality(s: GameState): {
   const precisionFilm = s.perks.some(p => p.effect === 'precisionFilm');
   let cleanWrapBonus = 0;
   if (prod.cleanWrap && prod.drawCount > 0) {
-    const baseCleanWrap = s.studioArchetype === 'prestige' ? 7 : 5; // R33: prestige 8→7, still best but less dominant
+    const baseCleanWrap = s.studioArchetype === 'prestige' ? 8 : 5;
     cleanWrapBonus = precisionFilm ? baseCleanWrap + 3 : baseCleanWrap;
     // Precision Craft script doubles clean wrap
     if (script.ability === 'precisionCraft') cleanWrapBonus *= 2;
     // Legacy perk: Precision Master — Clean Wrap +3
     if (legacyPerks.some(p => p.effect === 'precisionCleanWrap3')) cleanWrapBonus += 3;
-    // Daily modifier: Producer's Cut — clean wrap bonus doubled
-    if (s.dailyModifierId === 'producers_cut' || s.dailyModifierId2 === 'producers_cut') cleanWrapBonus *= 2;
   }
 
   let scriptAbilityBonus = prod.scriptAbilityBonus;
@@ -1149,12 +1097,6 @@ export function calculateQuality(s: GameState): {
   const archetypeFocusBonus = archetypeFocus?.bonus || 0;
 
   let rawQuality = scriptBase + talentSkill + productionBonus + cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus;
-
-  // Daily modifier: Critics' Darling — quality bonuses doubled (excluding base)
-  if (s.dailyModifierId === 'critics_darling' || s.dailyModifierId2 === 'critics_darling') {
-    const bonusPortion = cleanWrapBonus + scriptAbilityBonus + genreMasteryBonus + chemistryBonus + archetypeFocusBonus;
-    rawQuality += bonusPortion; // effectively doubles the bonus portion
-  }
 
   // Industry event quality bonuses
   const ie = s.industryEvent;
@@ -1257,19 +1199,10 @@ export function resolveRelease() {
   if (state.perks.some(p => p.effect === 'buzz') && rawQuality > 35) multiplier += 0.5;
 
   const currentRep = state.reputation;
-  // R33: Rep 0 was ×0 (unrecoverable death spiral). Now ×0.25 minimum — you're in trouble but not dead.
-  const repBonus = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
-
-  // Daily modifier: Critics' Darling — box office -20%
-  if (hasModifier('critics_darling')) multiplier *= 0.8;
-  // Daily modifier: Sequel Mania — same genre twice in a row = +30% BO
-  if (hasModifier('sequel_mania') && state.seasonHistory.length > 0) {
-    const lastGenre = state.seasonHistory[state.seasonHistory.length - 1].genre;
-    if (lastGenre === script.genre) multiplier *= 1.3;
-  }
+  const repBonus = [0, 0.5, 0.75, 1.0, 1.25, 1.5][currentRep] || 1.0;
 
   const boxOffice = Math.round(rawQuality * multiplier * repBonus * 10) / 10;
-  let target = getSeasonTarget(state.season, state.gameMode, state.challengeId, state.dailyModifierId, state.dailyModifierId2);
+  const target = getSeasonTarget(state.season, state.gameMode, state.challengeId);
   const tier = getTier(boxOffice, target);
 
   let repChange = 0;
@@ -1277,10 +1210,8 @@ export function resolveRelease() {
   let earnings = boxOffice;
 
   // Baseline season income: prevents death spiral from bad seasons
-  // R33: stipend decreases in later seasons (6/5/5/4/3) — late game should feel tighter
-  const stipendByseason = [6, 5, 5, 4, 3];
-  let seasonStipend = stipendByseason[Math.min(state.season - 1, 4)];
-  if (state.challengeId === 'shoestring') seasonStipend = Math.max(2, seasonStipend - 2);
+  let seasonStipend = 5; // $5M guaranteed income per season
+  if (state.challengeId === 'shoestring') seasonStipend = 3;
   
   switch (tier) {
     case 'FLOP':
@@ -1302,8 +1233,6 @@ export function resolveRelease() {
       break;
   }
 
-  // Daily modifier: Award Season — reputation gains doubled
-  if (hasModifier('award_season') && repChange > 0) repChange *= 2;
   const newRep = Math.max(0, Math.min(5, currentRep + repChange));
   const nominated = rawQuality > 25 + state.season * 5;
 
@@ -1322,7 +1251,7 @@ export function resolveRelease() {
   if (result.hitTarget) {
     newRoster = newRoster.map(t => {
       if (t.trait === 'Rising Star' && state.castSlots.some(s => s.talent?.id === t.id)) {
-        return { ...t, skill: Math.min(t.skill + 1, 5) }; // R33: cap at 5 (was 6) — Sophie Chen was too dominant as a $6 investment
+        return { ...t, skill: Math.min(t.skill + 1, 6) };
       }
       return t;
     });
@@ -1355,8 +1284,6 @@ export function resolveRelease() {
   // Generate procedural film title based on genre + tags
   const filmTitle = generateFilmTitle(script.genre, prod.tagsPlayed);
 
-  track('season_end', { season: state.season, tier, genre: script.genre, quality: rawQuality, boxOffice });
-
   // Debt interest: 20% per season compounding
   let debt = state.debt;
   if (debt > 0) {
@@ -1368,9 +1295,8 @@ export function resolveRelease() {
     if (slot.talent?.baggage?.extraCost) baggageCost += slot.talent.baggage.extraCost;
     if (slot.talent?.baggage?.budgetDrain) baggageCost += slot.talent.baggage.budgetDrain;
   }
-  // R33: Debt rep penalty tightened — threshold lowered from $15 to $10, and $20+ = -2 rep
-  // Encourages paying debt sooner; debt spiral is more punishing
-  let debtRepPenalty = debt >= 20 ? -2 : debt >= 10 ? -1 : 0;
+  // Debt reputation penalty: lose 1 rep if in significant debt
+  let debtRepPenalty = debt >= 15 ? -1 : 0;
 
   setState({
     phase: 'release',
@@ -1398,13 +1324,11 @@ export function resolveRelease() {
 export function proceedFromRecap() {
   if (state.reputation <= 0 || state.strikes >= state.maxStrikes) {
     clearSave();
-    track('game_complete', { mode: state.gameMode, archetype: state.studioArchetype || '', won: false, seasons: state.season });
     setState({ phase: 'gameOver' });
     return;
   }
   if (state.season >= state.maxSeasons) {
     clearSave();
-    track('game_complete', { mode: state.gameMode, archetype: state.studioArchetype || '', won: true, seasons: state.season });
     setState({ phase: 'victory' });
     return;
   }

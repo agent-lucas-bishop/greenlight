@@ -10,6 +10,7 @@ import { isTutorialActive } from './tutorial';
 import { checkAchievements, persistAchievements } from './achievements';
 import type { AchievementDef } from './achievements';
 import AchievementToast from './components/AchievementToast';
+import DevStats from './components/DevStats';
 
 // Lazy-load screens that aren't needed at startup
 const NeowScreen = lazy(() => import('./screens/NeowScreen'));
@@ -55,7 +56,6 @@ function App() {
   useEffect(() => {
     if (state.phase !== prevPhase) {
       setTransitioning(true);
-      // Scroll to top on phase change
       window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
       const t = setTimeout(() => {
         setTransitioning(false);
@@ -120,6 +120,7 @@ function App() {
           onDone={() => setToastQueue(prev => prev.slice(1))}
         />
       )}
+      <DevStats />
     </>
   );
 }

@@ -34,6 +34,7 @@ A movie studio roguelite — you're a film producer making 5 movies across 5 sea
 | Narrative (titles, critics, studio names) | R22 | ✅ |
 | End-of-run recap + shareable results | R23 | ✅ |
 | Integration audit (-100 lines) | R24 | ✅ |
+| Dev analytics + daily/share verification | R25 | ✅ |
 
 ## Architecture
 ```
@@ -65,10 +66,11 @@ src/
 1. **No browser playtesting done** — all iteration was code-review based. Visual regressions are possible, especially R18+R19 CSS layering.
 2. **Sound might be overwhelming** — lots of procedural effects added but never heard together in a real session.
 3. **Challenge mode balance untested** — Speed Run (3 seasons, ×2.0 multiplier) might be trivial or impossible.
-4. **Daily mode needs verification** — seeded RNG is implemented but never tested end-to-end.
-5. **No analytics** — no way to know if real players find it fun, what they click, where they drop off.
+4. ~~**Daily mode needs verification**~~ — ✅ Code-audited: seeded RNG (`mulberry32`) is activated at `startGame('daily')` and all random calls use `rng()` (data.ts, narrative.ts, gameStore.ts, rivals.ts). Same date → same seed → deterministic talent pool, scripts, markets. Verified no `Math.random()` leaks in game logic.
+5. ~~**No analytics**~~ — ✅ Added lightweight localStorage analytics (`analytics.ts`). Tracks: runs started/completed, scores, talent picks, genre picks, challenge usage, archetype picks, run duration. Dev Stats panel toggled via **Ctrl+Shift+D**.
 6. **Leaderboard is local-only** — no sharing or global competition.
 7. **No save/resume** — closing the tab loses your run.
+8. ~~**Shareable results**~~ — ✅ Verified: Wordle-style emoji grid (`generateShareText`) uses tier emojis (🟩🟨🟧🟥💀), copies to clipboard via `navigator.clipboard.writeText`. Working correctly.
 
 ## Recommended Next Steps (When Cody Plays It)
 1. **Play a full run yourself** — first impressions matter most
